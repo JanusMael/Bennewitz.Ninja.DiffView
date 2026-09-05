@@ -2,9 +2,9 @@ namespace Bennewitz.Ninja.ThemeAudit;
 
 /// <summary>
 /// One theme variant's effective resources: every key it defines after merging its shared base,
-/// its variant-specific keys, and — through <see cref="ThemeInventory"/> — the keys it inherits
-/// from a parent variant. A key resolves to a colour when it is a literal or an alias chain that
-/// ends in one; a thickness, a gradient or an unresolved alias is defined but not colour-scored.
+/// its variant-specific keys, and the keys it inherits from a parent variant. A key resolves to a
+/// colour when it is a literal or an alias chain that ends in one; a thickness, a gradient or an
+/// unresolved alias is defined but not colour-scored.
 /// </summary>
 public sealed class VariantInventory
 {
@@ -57,8 +57,8 @@ public sealed class VariantInventory
 
 /// <summary>
 /// The per-variant inventory of a theme: which keys each variant defines and what colour each
-/// resolves to, built by walking the variant map's include graph, scanning every contributing
-/// file, and layering shared base keys, variant-specific keys, and inherited keys.
+/// resolves to, built by <see cref="ThemeGraphWalker"/> walking the resource graph with a variant
+/// context, then layering shared base keys, variant-specific keys, and inherited keys.
 /// </summary>
 public sealed class ThemeInventory
 {
@@ -68,10 +68,10 @@ public sealed class ThemeInventory
         Unresolved = unresolved;
     }
 
-    /// <summary>The theme's variants, in declaration order.</summary>
+    /// <summary>The theme's variants, in the order they are first declared.</summary>
     public IReadOnlyList<VariantInventory> Variants { get; }
 
-    /// <summary>Every include the resolver could not turn into a local file.</summary>
+    /// <summary>Every include or code-behind reference the walker could not resolve.</summary>
     public IReadOnlyList<UnresolvedInclude> Unresolved { get; }
 
     /// <summary>
@@ -88,80 +88,14 @@ public sealed class ThemeInventory
         string? assemblyName = null,
         IReadOnlyDictionary<string, string>? inheritance = null)
     {
-        string entry = Path.GetFullPath(entryFile);
-        ThemeVariantMap map = ThemeVariantMapParser.Parse(entry, baseDirectory, assemblyName);
-        List<UnresolvedInclude> unresolved = [.. map.Unresolved];
+        WalkResult walk = ThemeGraphWalker.Walk(entryFile, baseDirectory, assemblyName);
 
-        // Shared base keys (Variant == null) apply to every variant; a variant key found while
-        // scanning a shared file (an inline-variant entry) routes to that variant instead.
-        Dictionary<string, ResourceValue> sharedBase = new(StringComparer.Ordinal);
-        Dictionary<string, Dictionary<string, ResourceValue>> own = new(StringComparer.Ordinal);
-        foreach (ThemeVariant variant in map.Variants)
-        {
-            own[variant.Key] = new Dictionary<string, ResourceValue>(StringComparer.Ordinal);
-        }
-
-        Dictionary<string, ResourceValue> BucketFor(string? variantKey)
-        {
-            if (variantKey is null)
-            {
-                return sharedBase;
-            }
-
-            if (!own.TryGetValue(variantKey, out Dictionary<string, ResourceValue>? bucket))
-            {
-                bucket = new Dictionary<string, ResourceValue>(StringComparer.Ordinal);
-                own[variantKey] = bucket;
-            }
-
-            return bucket;
-        }
-
-        // The entry file is scanned directly (not expanded), because expanding it would follow its
-        // ThemeDictionaries includes and pull variant files into the shared set. Its own base keys
-        // are shared; its inline-variant keys route to their variant.
-        foreach (DefinedResource resource in ThemeDefinitionScanner.ScanFile(entry))
-        {
-            BucketFor(resource.Variant)[resource.Key] = resource.Value;
-        }
-
-        // Other shared roots (top-level merged includes) are expanded and contribute base keys.
-        foreach (string sharedRoot in map.SharedRoots.Where(r => !string.Equals(r, entry, StringComparison.Ordinal)))
-        {
-            IncludeResolution resolution = ResourceIncludeResolver.Resolve(sharedRoot, baseDirectory, assemblyName);
-            unresolved.AddRange(resolution.Unresolved);
-            foreach (string file in resolution.Files)
-            {
-                foreach (DefinedResource resource in ThemeDefinitionScanner.ScanFile(file))
-                {
-                    BucketFor(resource.Variant)[resource.Key] = resource.Value;
-                }
-            }
-        }
-
-        // Each variant's own include roots contribute variant-specific keys.
-        foreach (ThemeVariant variant in map.Variants)
-        {
-            foreach (string variantRoot in variant.Roots)
-            {
-                IncludeResolution resolution = ResourceIncludeResolver.Resolve(variantRoot, baseDirectory, assemblyName);
-                unresolved.AddRange(resolution.Unresolved);
-                foreach (string file in resolution.Files)
-                {
-                    foreach (DefinedResource resource in ThemeDefinitionScanner.ScanFile(file))
-                    {
-                        BucketFor(resource.Variant ?? variant.Key)[resource.Key] = resource.Value;
-                    }
-                }
-            }
-        }
-
-        // effectiveOwn = sharedBase overlaid by the variant's own keys.
+        // effectiveOwn = shared base overlaid by the variant's own keys.
         Dictionary<string, Dictionary<string, ResourceValue>> effectiveOwn = new(StringComparer.Ordinal);
-        foreach (ThemeVariant variant in map.Variants)
+        foreach (VariantId variant in walk.Variants)
         {
-            Dictionary<string, ResourceValue> merged = new(sharedBase, StringComparer.Ordinal);
-            foreach ((string key, ResourceValue value) in own[variant.Key])
+            Dictionary<string, ResourceValue> merged = new(walk.Base, StringComparer.Ordinal);
+            foreach ((string key, ResourceValue value) in walk.Own[variant.Key])
             {
                 merged[key] = value;
             }
@@ -169,14 +103,13 @@ public sealed class ThemeInventory
             effectiveOwn[variant.Key] = merged;
         }
 
-        // Apply inheritance by display name, transitively, so a child sees its parent's keys under
-        // its own. Cycles fall back to the child's own effective map.
-        Dictionary<string, ThemeVariant> byDisplayName = map.Variants
+        // Inheritance by display name, transitive, child over parent; a cycle falls back to own.
+        Dictionary<string, VariantId> byDisplayName = walk.Variants
             .GroupBy(v => v.DisplayName, StringComparer.Ordinal)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
         Dictionary<string, IReadOnlyDictionary<string, ResourceValue>> effective = new(StringComparer.Ordinal);
 
-        IReadOnlyDictionary<string, ResourceValue> Effective(ThemeVariant variant, HashSet<string> visiting)
+        IReadOnlyDictionary<string, ResourceValue> Effective(VariantId variant, HashSet<string> visiting)
         {
             if (effective.TryGetValue(variant.Key, out IReadOnlyDictionary<string, ResourceValue>? done))
             {
@@ -186,7 +119,7 @@ public sealed class ThemeInventory
             Dictionary<string, ResourceValue> result;
             if (inheritance is not null
                 && inheritance.TryGetValue(variant.DisplayName, out string? parentName)
-                && byDisplayName.TryGetValue(parentName, out ThemeVariant? parent)
+                && byDisplayName.TryGetValue(parentName, out VariantId? parent)
                 && !ReferenceEquals(parent, variant)
                 && visiting.Add(variant.Key))
             {
@@ -205,10 +138,10 @@ public sealed class ThemeInventory
             return result;
         }
 
-        List<VariantInventory> inventories = map.Variants
+        List<VariantInventory> inventories = walk.Variants
             .Select(v => new VariantInventory(v.Key, v.DisplayName, Effective(v, [])))
             .ToList();
 
-        return new ThemeInventory(inventories, unresolved);
+        return new ThemeInventory(inventories, walk.Unresolved);
     }
 }

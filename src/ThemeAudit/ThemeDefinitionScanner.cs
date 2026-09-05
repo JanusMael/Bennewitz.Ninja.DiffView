@@ -67,7 +67,7 @@ public static class ThemeDefinitionScanner
         foreach (XElement element in document.Descendants())
         {
             XAttribute? key = element.Attribute(XamlNamespace + "Key");
-            if (key is null || IsVariantContainer(element))
+            if (key is null || IsThemeDictionarySlotChild(element))
             {
                 continue;
             }
@@ -79,12 +79,14 @@ public static class ThemeDefinitionScanner
         return defined;
     }
 
-    /// <summary>A <c>ResourceDictionary</c> that is itself a <c>ThemeDictionaries</c> child is a
-    /// variant container, not a defined resource — skip it.</summary>
-    private static bool IsVariantContainer(XElement element)
+    /// <summary>
+    /// A direct child of a <c>ThemeDictionaries</c> slot is a variant container or reference — an
+    /// inline <c>ResourceDictionary</c>, a <c>ResourceInclude</c>, or a code-behind dictionary
+    /// element — not a defined resource, so its <c>x:Key</c> names a variant, not a resource.
+    /// </summary>
+    internal static bool IsThemeDictionarySlotChild(XElement element)
     {
-        return element.Name.LocalName == "ResourceDictionary"
-               && element.Parent is { } parent
+        return element.Parent is { } parent
                && parent.Name.LocalName.EndsWith("ThemeDictionaries", StringComparison.Ordinal);
     }
 
@@ -104,7 +106,8 @@ public static class ThemeDefinitionScanner
         return null;
     }
 
-    private static ResourceValue ValueOf(XElement element)
+    /// <summary>The value a keyed resource element resolves to (literal colour, alias, or opaque).</summary>
+    internal static ResourceValue ValueOf(XElement element)
     {
         string localName = element.Name.LocalName;
 

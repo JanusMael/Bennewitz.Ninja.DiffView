@@ -15,22 +15,22 @@ public sealed record ThemeVariant(string Key, IReadOnlyList<string> Roots, bool 
     /// A readable name: the trailing member of an <c>{x:Static ns:Type.Member}</c> key (Semi's
     /// high-contrast variants are declared that way), otherwise the key verbatim.
     /// </summary>
-    public string DisplayName
-    {
-        get
-        {
-            if (Key.StartsWith('{') && Key.Contains("x:Static", StringComparison.Ordinal))
-            {
-                int dot = Key.LastIndexOf('.');
-                int end = Key.IndexOf('}', dot < 0 ? 0 : dot);
-                if (dot >= 0 && end > dot)
-                {
-                    return Key[(dot + 1)..end].Trim();
-                }
-            }
+    public string DisplayName => DisplayNameOf(Key);
 
-            return Key;
+    /// <summary>The readable name for a raw variant key. Shared with the graph walker.</summary>
+    public static string DisplayNameOf(string key)
+    {
+        if (key.StartsWith('{') && key.Contains("x:Static", StringComparison.Ordinal))
+        {
+            int dot = key.LastIndexOf('.');
+            int end = key.IndexOf('}', dot < 0 ? 0 : dot);
+            if (dot >= 0 && end > dot)
+            {
+                return key[(dot + 1)..end].Trim();
+            }
         }
+
+        return key;
     }
 }
 
