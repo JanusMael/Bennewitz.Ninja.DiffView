@@ -3,8 +3,9 @@
 ## Resume
 
 **Phase 2 — Theme-key audit and exhaustive dictionaries** of
-[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main` except for the
-ClaudeForge contribution, which is in flight (see *Upstreamed to ClaudeForge*). The `theme-audit`
+[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`; the ClaudeForge
+contribution is open as a draft pull request awaiting the user's click-through (see
+*Upstreamed to ClaudeForge*). The `theme-audit`
 tool inventories Fluent, Simple and Semi from the reference checkouts exactly as Avalonia resolves
 them, scans DiffView, AvaloniaEdit's theme files, Fluent's control templates and ClaudeForge,
 and writes [docs/theme-audit.md](docs/theme-audit.md); `theme-audit compat` generates
@@ -31,7 +32,7 @@ dotnet run --project src/ThemeAudit -- report
 |---|---|---|
 | 0 Bootstrap | done | 7 tests across three tiers; trim-check clean; manual dialog/F12 check passed |
 | 1 Virtual-padding spike | done — go | 6 headless tests, 1 of them `Perf`; priming batched at 256 |
-| 2 Theme-key audit and exhaustive dictionaries | done (ClaudeForge PR in flight) | `theme-audit` `report` and `compat` over a JSON configuration; inventories model Default fallback, `StyleInclude`, linked files, code providers and brush opacity; contrast scoring against each variant's own surface; reviewed Fluent→Semi and Simple→Semi mappings; `DiffView.Tokens.axaml` + colour-blind sibling; `docs/theme-audit.md` committed with drift tests; runtime resolution and rendering tests under all ten targets; tool packed as 1.1.0 |
+| 2 Theme-key audit and exhaustive dictionaries | done (ClaudeForge PR #38 draft) | `theme-audit` `report` and `compat` over a JSON configuration; inventories model Default fallback, `StyleInclude`, linked files, code providers and brush opacity; contrast scoring against each variant's own surface; reviewed Fluent→Semi and Simple→Semi mappings; `DiffView.Tokens.axaml` + colour-blind sibling; `docs/theme-audit.md` committed with drift tests; runtime resolution and rendering tests under all ten targets; tool packed as 1.1.0 |
 | 3 Core model, probing, search engine | not started | |
 | 4 Pane presenter, padding, gutters | not started | lifts the spike's mechanism; normalises the caret column after `Home` |
 | 5 Composite control, scroll sync, headers, status strip, theming | not started | |
@@ -53,7 +54,7 @@ dotnet run --project src/ThemeAudit -- report
 | Resolution: with the compat dictionary every AvaloniaEdit theme key resolves under all six Semi variants; without it the test names the missing keys | pass, static and at runtime: with compat 0 missing; without, the Fluent theme file lacks 6 keys (`ContentControlThemeFontFamily`, `ControlContentThemeFontSize`, `SystemAccentColor`, `SystemBaseLowColor`, `SystemChromeMediumColor`, `ToolTipBorderThemeThickness`) and the Simple theme file 9 — the plan's "six" counted only the Fluent file |
 | Contrast: every `DiffView.*` pair meets its floor under all ten targets | pass: 30 pairs × 10 targets, both palettes, 0 below the floor, 0 unmeasurable |
 | Headless: a plain `TextEditor` renders under each Semi variant with the compat dictionary and no resource warning | pass: `ThemeResolutionTests.A_TextEditor_with_its_Fluent_search_panel_renders_under_Semi_with_the_compat_dictionary`, six variants, search panel open and painted, no binding warning |
-| ClaudeForge pull request open and referenced here | see *Upstreamed to ClaudeForge* |
+| ClaudeForge pull request open and referenced here | pass: [JanusMael/ClaudeForge#38](https://github.com/JanusMael/ClaudeForge/pull/38), draft — see *Upstreamed to ClaudeForge* |
 | `dotnet build DiffView.slnx -warnaserror` | clean |
 | `dotnet test --solution DiffView.slnx` | 102 passed |
 | New headless tests proven able to fail | removing the compat include from the `TextEditor` test failed it (the Fluent theme's static references throw at load) before the include was restored |
@@ -92,7 +93,7 @@ dotnet run --project src/ThemeAudit -- report
 | Change | Reference | State |
 |---|---|---|
 | Live-log window ignored F12 (toggle lived on the host's main window only); and `LayeredEditors.Avalonia.Diagnostics` named a `PackageReadmeFile` it did not ship, so `dotnet pack` failed | [JanusMael/ClaudeForge#37](https://github.com/JanusMael/ClaudeForge/pull/37) | PR open; consumed here as diagnostics 1.0.1, pin at branch head `f7980f2` |
-| Theme audit: the report for ClaudeForge's views (seven `SystemControl*` keys still referenced and undefined under Semi, one of them — `SystemAccentColorBrush` — defined by no theme at all), the generated `FluentKeys.Semi.axaml` / `SimpleKeys.Semi.axaml`, the tool as a local dotnet tool, and the `docs/UI-STYLE-GUIDE.md` §2 update | pending | branch being prepared in this session |
+| Theme audit: the report for ClaudeForge's views (seven `SystemControl*` keys still referenced and undefined under Semi, one of them — `SystemAccentColorBrush` — defined by no theme at all), the generated `FluentKeys.Semi.axaml` / `SimpleKeys.Semi.axaml` merged in its `App.axaml`, the tool as a local dotnet tool, and the `docs/UI-STYLE-GUIDE.md` §2 update | [JanusMael/ClaudeForge#38](https://github.com/JanusMael/ClaudeForge/pull/38) | draft PR open from branch `feat/theme-audit-compat` (`7a6e015`); draft because the merge turns ~60 muted-text sites from the inherited primary colour to muted, a visible change on most pages, and the CONTRIBUTING click-through with screenshots is the user's to do; the ClaudeForge session was told first and confirmed no collision |
 
 ## Measurements
 
