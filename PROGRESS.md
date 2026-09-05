@@ -18,7 +18,7 @@ tool's consumer scan, findings, contrast check and compat generator, then the ex
 |---|---|---|
 | 0 Bootstrap | done (manual dialog check pending) | 7 tests across three tiers; trim-check clean |
 | 1 Virtual-padding spike | done — go | 6 headless tests, 1 of them `Perf`; priming batched at 256 |
-| 2 Theme-key audit and exhaustive dictionaries | in progress | `inventory` exists; colour model + WCAG contrast maths landed with 26 unit tests. Next: reference scanner, per-variant inventory, findings, Fluent→Semi compat, DiffView.* tokens |
+| 2 Theme-key audit and exhaustive dictionaries | in progress | Library core landing bottom-up, 39 unit tests: colour model + WCAG contrast; consumer reference scanner; variant-aware definition scanner with colour values; ResourceInclude graph resolver. Next: per-variant inventory over the real Semi graph (with inheritance), findings, `docs/theme-audit.md`, Fluent→Semi compat dictionaries, DiffView.* tokens, the reference-trait resolution/contrast/drift tests |
 | 3 Core model, probing, search engine | not started | |
 | 4 Pane presenter, padding, gutters | not started | lifts the spike's mechanism; normalises the caret column after `Home` |
 | 5 Composite control, scroll sync, headers, status strip, theming | not started | |
