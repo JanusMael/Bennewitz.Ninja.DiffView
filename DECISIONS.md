@@ -76,3 +76,74 @@ VSTest bridge, so `global.json` carries `"test": { "runner": "Microsoft.Testing.
 The first smoke snapshot printed the log directory in the demo's status bar, which differs per
 user and OS. Rendered text in anything the snapshot tests capture must be machine-independent;
 the demo shows the logs path as a tooltip, in the Debug menu and in the log itself instead.
+
+## Virtual padding: go
+
+The Phase 1 spike (`tests/DiffView.Avalonia.Tests/Spike`, `VirtualPaddingSpikeTests`) passed all
+six items of the plan against two plain `TextEditor`s — AvaloniaEdit 12.0.0 on Avalonia 12.1.2,
+headless with Skia — so the padding design stands: the source document is never touched, padding
+is a zero-width `DrawableTextRun`, and heights are primed. No projection layer, no plan 00002.
+What the spike established, each a fact the Phase 4 presenter is built on:
+
+**Line metrics.** For a `DrawableTextRun`, Avalonia's `TextLineImpl.CreateLineMetrics` takes
+`ascent = min(ascent, −run.Baseline)` and `descent = max(descent, run.Size.Height − run.Baseline)`,
+then `height = descent − ascent + lineGap`. AvaloniaEdit's `LineHeightFactor` (default 1.16) makes
+a plain row taller than its text, and the text is centred with
+`halfSlack = (DefaultLineHeight − naturalTextHeight) / 2` above and below. A spacer with
+`Baseline = ascent + halfSlack + above · lineHeight` and
+`Size.Height = Baseline + descent + halfSlack + below · lineHeight` therefore makes the visual line
+exactly `(1 + above + below) · lineHeight` tall with its text centred in its own row — measured
+exact to 10⁻⁶ px for padding above a line and trailing padding after the last line. Ascent,
+descent and line gap come from `new TextMetrics(typeface.GlyphTypeface, fontSize)`, the numbers
+the formatter itself starts from. The run's `Properties` must be non-null: Avalonia switches on
+its `BaselineAlignment` and throws on a null run properties object.
+
+**One element per padded line, at the line start.** Visual length 1, document length 0, emitted at
+the line's offset whichever direction the padding goes; direction lives in the run's metrics. The
+element returns no caret stop of its own and reports `HandlesLineBorders = true`, so the visual
+line adds no implicit stop at column 0 and the text element supplies column 1 for the line's first
+offset; on an empty line the element is alone and supplies that single stop itself. Every arrow
+key, `End`, `Home` and click then moves one caret position per press, and a click at x = 0 lands on
+column 1 because Avalonia's hit test gives a zero-width run a trailing length of 1.
+
+**Known wart, owned by Phase 4.** `Home` pressed twice — AvalonEdit's toggle to "column 0, before
+the indentation" — puts the caret on the padding column: same offset, same x, and the next `Right`
+is a no-op. The presenter normalises the caret's visual column on `Caret.PositionChanged` to
+`VisualLine.GetVisualColumn(offset)`.
+
+**Priming.** `TextView.GetOrConstructVisualLine` writes the line's height into the height tree,
+but the scroll extent is republished only by a measure pass, so priming ends with
+`InvalidateMeasure`. A padded line's height-tree position is the top of its padding block; the row
+it shares with the other side is `position + above · lineHeight`. Heights survive `Redraw`; a
+`Document` swap recreates the tree, and a `FontSize` change rebases only lines still at the old
+default height (padded lines keep stale heights) — both re-prime, as the plan says.
+
+**Priming cost.** 10,000 gaps: 10.3–10.5 s in one pass, 200–240 ms in batches of 256 with
+`Redraw()` between batches (two runs each, Debug, this machine). `GetOrConstructVisualLine` keeps every built line in the text view's list, and both the
+`GetVisualLine` lookup and the `VisualTop` refresh walk that list — quadratic in the batch.
+`PaddingHeightPrimer` batches; the batch size is a named constant carrying this measurement.
+
+**Selection and caret.** `TextArea.SelectionBrush` transparent, `SelectionBorder` null,
+`Caret.CaretBrush` transparent; renderers in `KnownLayer.Selection` and `KnownLayer.Caret` draw
+from `VisualYPosition.TextTop` / `TextBottom`, which span the natural text height inside the row.
+Pixel-asserted: neither paints a padding row.
+
+**Editor settings the presenter forces.** `AllowScrollBelowDocument` defaults to true in
+AvaloniaEdit 12 (the WPF original defaults to false); the presenter sets it false on both panes so
+`ExtentHeight` equals the height tree's total. Scrollbar visibility `Hidden` keeps scrolling
+enabled without a bar; `Disabled` switches the text view to word wrap.
+
+**Theme include.** Only `avares://AvaloniaEdit/Themes/Base.xaml`, `Themes/Fluent/AvaloniaEdit.xaml`
+and `Themes/Simple/AvaloniaEdit.xaml` are addressable; the per-control files are merged at compile
+time. `Base.xaml` carries the `TextEditor` and `TextArea` control themes without the Fluent or
+Simple static-resource keys Semi lacks, so the spike merges it into its window. Phase 4's presenter
+style replaces it, bound to `DiffView.*` tokens only.
+
+## Stopwatch tests are excluded by an MSBuild property
+
+Tests that measure carry `[Trait("Category", "Perf")]`. `tests/Directory.Build.props` sets
+`TestingPlatformCommandLineArguments` to `--filter-not-trait Category=Perf` unless
+`IncludePerfTests` is `true`, and `dotnet test` in Microsoft.Testing.Platform mode honours the
+property, so the default run and CI skip them and
+`dotnet test --solution DiffView.slnx -p:IncludePerfTests=true` runs them. Their numbers are read
+from the test output (the `.trx` report carries it) and recorded in `PROGRESS.md`.

@@ -2,24 +2,25 @@
 
 ## Resume
 
-**Phase 0 — Bootstrap** of [plan 00001](plans/00001-side-by-side-diff-control.md) (approved,
-commit `ea23596`; phase committed as `6042d6e` on `main`, no remote yet) is complete on this
-machine except for one manual check at a real window:
-Debug → *Throw on the UI thread* must show the fatal-error dialog with a working copy button,
-and F12 must open the live log, in the Debug build and in the trimmed publish. Everything else
-in the phase's *done when* list holds. Next is **Phase 1 — the virtual-padding spike**,
-time-boxed to two working days, whose outcome goes to `DECISIONS.md` before any pane code is
-written.
+**Phase 1 — Virtual-padding spike** of [plan 00001](plans/00001-side-by-side-diff-control.md)
+is complete on `main` with a **go**: all six items pass as headless tests
+(`tests/DiffView.Avalonia.Tests/Spike`), and the facts they established, the priming cost and
+the one deferred wart are in `DECISIONS.md` under *Virtual padding: go*. Phase 0's manual check
+at a real window is still open: Debug → *Throw on the UI thread* must show the fatal-error dialog
+with a working copy button, and F12 must open the live log, in the Debug build and in the
+trimmed publish. Next is **Phase 2 — theme-key audit and exhaustive dictionaries**: the audit
+tool's consumer scan, findings, contrast check and compat generator, then the exhaustive
+`DiffView.*` dictionaries for every target (plan §Phase 2).
 
 ## Phases
 
 | Phase | Status | Notes |
 |---|---|---|
 | 0 Bootstrap | done (manual dialog check pending) | 7 tests across three tiers; trim-check clean |
-| 1 Virtual-padding spike | not started | time-boxed to two working days |
+| 1 Virtual-padding spike | done — go | 6 headless tests, 1 of them `Perf`; priming batched at 256 |
 | 2 Theme-key audit and exhaustive dictionaries | not started | `theme-audit inventory` exists and packs |
 | 3 Core model, probing, search engine | not started | |
-| 4 Pane presenter, padding, gutters | not started | |
+| 4 Pane presenter, padding, gutters | not started | lifts the spike's mechanism; normalises the caret column after `Home` |
 | 5 Composite control, scroll sync, headers, status strip, theming | not started | |
 | 6 Word-level highlights and options | not started | |
 | 7 Navigation, minimap, connectors, tooltips | not started | |
@@ -27,6 +28,21 @@ written.
 | 9 Syntax highlighting | not started | |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 1 verification
+
+| Item | Test | Result |
+|---|---|---|
+| 1 Padding above a line and after the last line, height exactly `(k + 1) · lineHeight` | `Item1_padding_run_pads_above_a_line_and_after_the_last_line_by_whole_rows` | pass: 4 rows for 3 above, 5 rows for 4 trailing, text row centred as a plain line's; glyph pixels only in the text row |
+| 2 Caret skips the zero-length element; click in padding lands on the adjacent line | `Item2_caret_skips_the_padding_element_and_a_click_in_padding_lands_on_the_adjacent_line` | pass: Right, Left, Up, Down, End, Home move one position per press; clicks in padding above, at x = 0, and in trailing padding land on the right line |
+| 3 Priming equalises extents before any scrolling; survives `Redraw`; re-primes after `Document` and `FontSize` change | `Item3_height_priming_equalises_extents_before_scrolling_and_survives_redraw_document_swap_and_font_change` | pass: extents differ before priming (94 vs 90 rows), equal 99 rows after, every shared row at the same top |
+| 4 Own selection and caret over transparent editor brushes paint only text bands | `Item4_selection_and_caret_drawn_from_text_extents_paint_only_text_bands` | pass: no selection or caret pixels in three padding rows; both present in the text rows |
+| 5 1:1 offset sync at top, middle and bottom | `Item5_offset_sync_is_one_to_one_at_top_middle_and_bottom` | pass: equal maximum offsets, equal first visible row, every shared row aligned at all three offsets |
+| 6 Priming cost for 10k gaps | `Item6_priming_cost_for_ten_thousand_gaps` (`Category=Perf`) | measured: see below |
+| `dotnet build DiffView.slnx -warnaserror` | | clean |
+| `dotnet test --solution DiffView.slnx` | | 12 passed (7 from Phase 0, 5 spike); the `Perf` test is excluded by default and passes with `-p:IncludePerfTests=true` |
+| New tests proven able to fail | | a temporary `Assert.Fail` at the top of item 1 failed the run before removal |
+| Trimmed publish (`linux-x64`, self-contained) | | succeeds, 0 IL warnings, 48 MB; no shipped code changed in this phase |
 
 ## Phase 0 verification
 
@@ -51,5 +67,7 @@ written.
 
 | What | Value | Where |
 |---|---|---|
-| Test run, all three projects | ~0.9 s | this machine, Debug |
+| Test run, all three projects | ~1 s | this machine, Debug, `Perf` excluded |
 | Trimmed self-contained publish of the demo, linux-x64 | 48 MB | `dotnet publish -c Release -r linux-x64 --self-contained true` |
+| Priming 10,000 padding gaps in one pass | 10.3–10.5 s (two runs) | `Item6_priming_cost_for_ten_thousand_gaps`, this machine, Debug; quadratic in the text view's built-line list |
+| Priming 10,000 padding gaps in batches of 256 with `Redraw()` between batches | 200–240 ms (two runs) | same test, including the layout pass that republishes the extent |

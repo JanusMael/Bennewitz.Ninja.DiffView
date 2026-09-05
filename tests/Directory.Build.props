@@ -10,6 +10,12 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
+  <!-- Stopwatch tests carry Category=Perf and stay out of the default run; their numbers are
+       recorded in PROGRESS.md, not asserted. Run them with -p:IncludePerfTests=true. -->
+  <PropertyGroup Condition="'$(IncludePerfTests)' != 'true'">
+    <TestingPlatformCommandLineArguments>--filter-not-trait Category=Perf</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- xunit v3 runs on Microsoft.Testing.Platform (see dotnet.config at the root); the VSTest
          bridge packages are deliberately absent. TrxReport gives CI its .trx files. -->

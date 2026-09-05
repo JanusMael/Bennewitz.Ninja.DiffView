@@ -7,7 +7,7 @@ not a rewrite. A second, standalone deliverable is `theme-audit`, a dotnet tool 
 resource keys an Avalonia theme leaves undefined (the invisible-control cases) and the tokens
 below a contrast floor, for any Avalonia project.
 
-Status: **Phase 0 — bootstrap.** The plan is [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
+Status: **Phase 1 — virtual-padding spike: go.** Next is Phase 2, the theme-key audit. The plan is [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
 progress is tracked in [PROGRESS.md](PROGRESS.md) and decisions in [DECISIONS.md](DECISIONS.md).
 
 ## Layout
@@ -46,6 +46,13 @@ dotnet test --solution DiffView.slnx
 The first command fetches the upstream sources (or finds a sibling ClaudeForge checkout); the
 second builds ClaudeForge's diagnostics library into the feed. `dotnet test` runs the fetch
 itself when a reference checkout is missing.
+
+Stopwatch tests (`Category=Perf`) stay out of the default run; their numbers are recorded in
+`PROGRESS.md`. To run them too:
+
+```bash
+dotnet test --solution DiffView.slnx -p:IncludePerfTests=true
+```
 
 Run the demo under a different theme or variant:
 
