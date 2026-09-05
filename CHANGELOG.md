@@ -35,3 +35,12 @@ All notable changes to DiffView are recorded here. The format follows
   resolves under all ten targets; the AvaloniaEdit gaps are exactly the known ones; a
   `TextEditor` with its search panel renders under each Semi variant with the compat dictionary.
 - `scripts/pack-theme-audit.*`, packing the tool as `Bennewitz.Ninja.ThemeAudit` 1.1.0.
+- Phase 3, the core model: `PaneSource` (bytes decoded by BOM, strict UTF-8, then Latin-1;
+  binary detected on the bytes), `TextProbe`, `LineSplitter`, `DiffOptions`, the similarity
+  gate, `DiffDocumentBuilder` producing a source-indexed `SideBySideDocument` (per-side lines,
+  aligned rows, change blocks with per-side line ranges, derived padding) with diagnostics and
+  warnings, `WordDiffCache` for lazily computed LRU-cached word-level pieces, and `DiffSearch`
+  over `IPaneText` with scope, whole-word, regex (non-backtracking first), a match cap and a
+  timeout. Tests for the seven invariants, every failure path, the cache and the search;
+  `Perf` measurements for the 10k and 200k pairs and the gate.
+- `fixtures/small`, the committed small pair; larger pairs are generated from a seed in the tests.

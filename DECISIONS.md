@@ -269,3 +269,58 @@ stamps `PackageVersion` — 1.1.0 now that the tool has `report` and `compat`, s
 1.0.0 that carried only `inventory`. The reviewed mappings ship inside the package
 (`Mappings/*.json` beside the executable), so a configuration names them bare
 (`"mapping": "FluentToSemi"`) or points at its own file.
+
+## Core model: an empty side is one empty line, as the editor sees it
+
+DiffPlex treats the empty string as zero lines; an editor's empty document has one line, and
+invariant 1 (every line of each side in exactly one row) needs the model to agree with the
+editor, not the engine. The builder therefore never hands DiffPlex an empty side: two empty
+sides are one unchanged row; an empty side against <em>n</em> lines is one block of one deleted
+line against <em>n</em> inserted lines, so the empty line pairs with the first line of the other
+side as a modified row and the rest are inserted (or deleted) rows with padding opposite. The
+plan's "empty left → all Inserted" holds for every right line but the first, and the tests say
+so. `LineSplitter` is the model's line splitter — the same three terminators as DiffPlex's
+`LineChunker` and AvaloniaEdit's `NewLineFinder`, which a test checks against `LineChunker` on
+mixed text — and `TextProbe.LineCount` is terminators plus one. `LineEnding.None` was added for
+a text with no terminator at all; the plan's four values had no name for a single line.
+
+## Similarity gate: Dice over line multisets, gated by size, forceable
+
+`SimilarityGate.Measure` is the Dice coefficient of the two sides' line multisets after the
+options' normalisation (trim for `IgnoreWhitespace`, ordinal-ignore-case for `IgnoreCase`), one
+pass and one dictionary — linear where Myers on unrelated inputs is not. Defaults:
+`AlignmentSimilarityFloor` 0.1, `AlignmentSizeThreshold` 10,000 combined lines (below it the
+gate never fires; Myers on small inputs is fast whatever the inputs), and `ForceAlignment` for
+the banner's "Force". An unaligned document has one block covering every row with both full
+line ranges, so invariant 4 holds there too.
+
+## Large fixtures are generated from a seed, not committed
+
+The plan lists 10k-line, 200k-line, unrelated and 1 MB single-line fixtures under `fixtures/`.
+A 200k-line pair is megabytes of text that would sit in every clone; `Fixtures` in
+`tests/DiffView.Core.Tests` generates each from a fixed seed with `System.Random`, whose
+sequence is stable for a given seed within a .NET major version, so a measurement names its
+seed and line count and reproduces. Only the small pair (`fixtures/small`, a class with a using
+and a field added, a signature changed, a method removed) is committed; the demo can open it.
+The mixed-line-ending and binary inputs are built in code where the terminators and NUL bytes
+are explicit. Phase 10 reuses the generator.
+
+## Core tests suppress xUnit1051
+
+xunit's analyzer xUnit1051 asks that `TestContext.Current.CancellationToken` be passed to
+every call that accepts a token. Core's build and search take an optional token by design and
+the tests exercise the default deliberately, with two tests passing a cancelled token of their
+own; the rule is disabled for `tests/DiffView.Core.Tests` in its project file with the reason.
+The other analyzer rules stayed on and caught two real slips (`Assert.Single`, `Assert.Contains`).
+
+## Search: non-backtracking first, timeout second, errors as results
+
+`DiffSearch` compiles a regular expression with `RegexOptions.NonBacktracking` and falls back to
+the backtracking engine with `FindOptions.MatchTimeout` (default one second) only when the
+pattern uses a construct the linear engine refuses (backreferences, lookarounds). An invalid
+pattern and a timeout come back as `FindResult.Error`; cancellation throws; an empty query is
+`FindResult.Empty`. Whole-word literal search checks the neighbouring characters; whole-word
+regex wraps the pattern in `\b(?:…)\b`, which both engines support. A pane text shorter than
+the document (an editor snapshot a keystroke behind the rebuild) is tolerated, never thrown on.
+`DiffOptions.Default` is declared after `DefaultWordSeparators` because static initialisers run
+in textual order — the first cut had them reversed and the default separators were null.

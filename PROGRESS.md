@@ -2,21 +2,20 @@
 
 ## Resume
 
-**Phase 2 — Theme-key audit and exhaustive dictionaries** of
-[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`; the ClaudeForge
-contribution is open as a draft pull request awaiting the user's click-through (see
-*Upstreamed to ClaudeForge*). The `theme-audit`
-tool inventories Fluent, Simple and Semi from the reference checkouts exactly as Avalonia resolves
-them, scans DiffView, AvaloniaEdit's theme files, Fluent's control templates and ClaudeForge,
-and writes [docs/theme-audit.md](docs/theme-audit.md); `theme-audit compat` generates
-`src/DiffView.Avalonia/Themes/Compat/{FluentKeys,SimpleKeys}.Semi.axaml` from the reviewed
-mappings; `Themes/DiffView.Tokens.axaml` and its colour-blind sibling define every `DiffView.*`
-token for Light and Dark and meet every floor in `contrast-pairs.json` under all ten targets.
-Reference-trait tests keep the report and the dictionaries equal to a fresh run and check the
-same facts at runtime through `TryGetResource`. Next is **Phase 3 — Core model, probing, search
-engine** (plan §Phase 3). Phase 0's manual check passed (table below).
+**Phase 3 — Core model, probing, search engine** of
+[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`: `DiffView.Core`
+builds a source-indexed `SideBySideDocument` (per-side lines, aligned rows, change blocks with
+per-side line ranges, derived padding) from two `PaneSource`s through probe → similarity gate →
+DiffPlex line diff → rows → blocks, with diagnostics and warnings; `WordDiffCache` computes
+word-level pieces lazily into an LRU keyed by document version; `DiffSearch` finds a query in
+either or both sides in row order. Every invariant, failure path and search case of plan
+§Phase 3 has a passing test and the `Perf` numbers are recorded below. Next is **Phase 4 —
+Pane presenter, padding, gutters** (plan §Phase 4), which lifts the Phase 1 spike's mechanism
+into the library and owes the caret-column normalisation after `Home` twice. Phase 2's
+ClaudeForge contribution is open as draft PR #38 awaiting the user's click-through (see
+*Upstreamed to ClaudeForge*).
 
-Regenerate after a pin bump, in this order:
+The theme audit regenerates after a pin bump, in this order:
 
 ```bash
 dotnet run --project src/ThemeAudit -- compat
@@ -33,7 +32,7 @@ dotnet run --project src/ThemeAudit -- report
 | 0 Bootstrap | done | 7 tests across three tiers; trim-check clean; manual dialog/F12 check passed |
 | 1 Virtual-padding spike | done — go | 6 headless tests, 1 of them `Perf`; priming batched at 256 |
 | 2 Theme-key audit and exhaustive dictionaries | done (ClaudeForge PR #38 draft) | `theme-audit` `report` and `compat` over a JSON configuration; inventories model Default fallback, `StyleInclude`, linked files, code providers and brush opacity; contrast scoring against each variant's own surface; reviewed Fluent→Semi and Simple→Semi mappings; `DiffView.Tokens.axaml` + colour-blind sibling; `docs/theme-audit.md` committed with drift tests; runtime resolution and rendering tests under all ten targets; tool packed as 1.1.0 |
-| 3 Core model, probing, search engine | not started | |
+| 3 Core model, probing, search engine | done | `PaneSource`, `TextProbe`, `LineSplitter`, `DiffOptions`, `SimilarityGate`, `DiffDocumentBuilder`, `SideBySideDocument` + `Padding`, `WordDiffCache`, `DiffSearch`; 87 unit tests (seven invariants, every failure path, cache, search) and 4 `Perf` measurements |
 | 4 Pane presenter, padding, gutters | not started | lifts the spike's mechanism; normalises the caret column after `Home` |
 | 5 Composite control, scroll sync, headers, status strip, theming | not started | |
 | 6 Word-level highlights and options | not started | |
@@ -42,6 +41,26 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | not started | |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 3 verification
+
+| Done-when item | Result |
+|---|---|
+| Invariant 1 — every line of each side appears exactly once in `Rows`, in order | pass on seven pairs (small, generated 1000-line, identical, empty left, empty right, both empty, no trailing terminator); the pane's row pointers agree with the table and the line count is the editor's |
+| Invariant 2 — no row has both sides `null` | pass, and each kind has exactly the sides it implies |
+| Invariant 3 — a modified row's pieces concatenate to its lines | pass on every modified row of every pair, in word and character mode, and on edge lines (empty sides, separators only, trailing space) |
+| Invariant 4 — blocks disjoint, ordered, covering every changed row, with exact per-side ranges | pass; an empty range sits where the side's next line would go |
+| Invariant 5 — `Cr`, `CrLf`, `Lf` variants produce identical rows | pass on a 300-line pair with changes |
+| Invariant 6 — `Padding.Before` summed plus `Padding.Trailing` equals the side's `null` rows | pass on every pair; padding before a line equals the run of `null` rows above it |
+| Invariant 7 — below the floor on large inputs: unaligned concatenation, `Aligned` false, `TooDifferentToAlign` | pass on a 6,000-line unrelated pair over a 10,000-line threshold; `ForceAlignment` and a higher threshold align it; a small unrelated pair aligns regardless |
+| Identical inputs → no blocks; empty left / empty right; binary → `BinaryInput`; mixed and CR-only endings → `MixedLineEndings`; Latin-1 fallback warned; long line → `LongLinesSkipped` and no pieces; cancellation between stages | pass — an empty side is one empty line that pairs with the other side's first line as modified (see `DECISIONS.md`) |
+| `WordDiffCache` returns the same instance twice, evicts by LRU, keys by document version | pass |
+| Search: scope filtering; `Both` ordering (row, left, column); whole word at line boundaries; `ChangedRowsOnly`; invalid regex → `Error`; catastrophic backtracking → timeout `Error`; `Truncated` above `MaxMatches`; cancellation | pass; a backreference pattern runs on the fallback engine; a pane text shorter than the document is tolerated |
+| `Perf`: `Build` on the 10k and 200k pairs; the gate on the unrelated pair | measured, see *Measurements* |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 189 passed |
+| Tests proven able to fail | the search fixture, the small-pair block expectation and the default-options static initialiser each failed a run during the phase before the code or the expectation was corrected |
+| Trimmed publish (`linux-x64`, self-contained) | succeeds, 0 IL warnings, 48 MB |
 
 ## Phase 2 verification
 
@@ -107,3 +126,7 @@ dotnet run --project src/ThemeAudit -- report
 | Semi 12.1.0.1 inventory | 2225–2242 keys, 285 files per variant | `docs/theme-audit.md` |
 | `FluentKeys.Semi.axaml` | 42 mapped, 1912 copied, 72 skipped (36 named sub-templates × 2 variants) | `docs/theme-audit.md` §Compat dictionaries |
 | `SimpleKeys.Semi.axaml` | 38 mapped, 336 copied, 4 restored, 56 skipped | same |
+| `DiffDocumentBuilder.Build`, generated similar pair, 10,000 lines (400 blocks) | 8 ms | `PerfTests.Build_on_a_similar_pair`, this machine, Debug, seed 11 |
+| `DiffDocumentBuilder.Build`, generated similar pair, 200,000 lines (8,000 blocks, 204,001 rows) | 459 ms | same |
+| `SimilarityGate.Measure`, 2 × 200,000 unrelated lines | 16 ms (similarity 0.000) | `PerfTests.The_similarity_gate_on_the_unrelated_pair`; the gated, unaligned build of the same pair takes 109 ms |
+| `DiffSearch.Find` over the 10,000-line pair | literal 3 ms (1,995 matches); regex `\b(alpha\|beta)\b` 54 ms (3,940 matches) | `PerfTests.Search_on_the_10k_pair` |
