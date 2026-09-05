@@ -22,6 +22,32 @@ public static class ThemeAuditFindings
         ThemeInventory inventory,
         IReadOnlySet<string>? alsoDefined = null)
     {
+        return Find(references, inventory.Variants.Select(v => (v.DisplayName, v)), alsoDefined)
+            .OrderBy(f => f.DisplayName, StringComparer.Ordinal)
+            .ThenBy(f => f.Key, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    /// <summary>
+    /// The same comparison for the named <paramref name="variants"/> only — each resolved the way
+    /// an application requesting it would be (<see cref="ThemeInventory.ForVariant"/>) and reported
+    /// under the requested name, so Fluent's <c>Light</c> is audited as the <c>Default</c>
+    /// dictionary it resolves to. Ordered by the variants' given order, then key.
+    /// </summary>
+    public static IReadOnlyList<UndefinedKeyFinding> UndefinedKeys(
+        IReadOnlyList<ResourceReference> references,
+        ThemeInventory inventory,
+        IReadOnlyList<string> variants,
+        IReadOnlySet<string>? alsoDefined = null)
+    {
+        return Find(references, variants.Select(name => (name, inventory.ForVariant(name))), alsoDefined);
+    }
+
+    private static List<UndefinedKeyFinding> Find(
+        IReadOnlyList<ResourceReference> references,
+        IEnumerable<(string Name, VariantInventory Variant)> variants,
+        IReadOnlySet<string>? alsoDefined)
+    {
         // Worst reference kind per key: Static (throws) outranks Dynamic (invisible).
         Dictionary<string, ReferenceKind> worstKind = new(StringComparer.Ordinal);
         foreach (ResourceReference reference in references)
@@ -37,20 +63,17 @@ public static class ThemeAuditFindings
         }
 
         List<UndefinedKeyFinding> findings = [];
-        foreach (VariantInventory variant in inventory.Variants)
+        foreach ((string name, VariantInventory variant) in variants)
         {
-            foreach ((string key, ReferenceKind kind) in worstKind)
+            foreach ((string key, ReferenceKind kind) in worstKind.OrderBy(kv => kv.Key, StringComparer.Ordinal))
             {
                 if (!variant.Defines(key) && (alsoDefined is null || !alsoDefined.Contains(key)))
                 {
-                    findings.Add(new UndefinedKeyFinding(variant.Key, variant.DisplayName, key, kind));
+                    findings.Add(new UndefinedKeyFinding(variant.Key, name, key, kind));
                 }
             }
         }
 
-        return findings
-            .OrderBy(f => f.DisplayName, StringComparer.Ordinal)
-            .ThenBy(f => f.Key, StringComparer.Ordinal)
-            .ToList();
+        return findings;
     }
 }
