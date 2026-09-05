@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -6,11 +7,19 @@ namespace Bennewitz.Ninja.ThemeAudit;
 /// <summary>What a defined resource resolves to, as far as the audit needs.</summary>
 public abstract record ResourceValue
 {
-    /// <summary>A literal colour: <c>&lt;Color&gt;#..&lt;/Color&gt;</c> or a brush's literal <c>Color</c>.</summary>
-    public sealed record ColorLiteral(AuditColor Color) : ResourceValue;
+    /// <summary>
+    /// A literal colour: <c>&lt;Color&gt;#..&lt;/Color&gt;</c> or a brush's literal <c>Color</c>.
+    /// <paramref name="Opacity"/> is the brush's own <c>Opacity</c> (1 when absent), folded into
+    /// the alpha when the colour is scored.
+    /// </summary>
+    public sealed record ColorLiteral(AuditColor Color, double Opacity = 1.0) : ResourceValue;
 
-    /// <summary>An alias to another key: <c>Color="{DynamicResource X}"</c> or <c>ResourceKey="X"</c>.</summary>
-    public sealed record Alias(string TargetKey) : ResourceValue;
+    /// <summary>
+    /// An alias to another key: <c>Color="{DynamicResource X}"</c> or <c>ResourceKey="X"</c>.
+    /// <paramref name="Opacity"/> is the aliasing brush's own <c>Opacity</c> (1 when absent),
+    /// multiplied along the chain when the colour is scored.
+    /// </summary>
+    public sealed record Alias(string TargetKey, double Opacity = 1.0) : ResourceValue;
 
     /// <summary>A defined key that is not a resolvable colour (a thickness, a gradient, a control theme).
     /// It still counts as defined for the undefined-key finding; it is just not colour-scored.</summary>
@@ -127,15 +136,17 @@ public static class ThemeDefinitionScanner
                 : new ResourceValue.Opaque();
         }
 
-        // <SolidColorBrush x:Key="A" Color="#.." /> or Color="{DynamicResource X}".
+        // <SolidColorBrush x:Key="A" Color="#.." /> or Color="{DynamicResource X}", either with an
+        // optional Opacity that scales the colour as seen.
         if (localName.EndsWith("SolidColorBrush", StringComparison.Ordinal))
         {
+            double opacity = OpacityOf(element);
             string? colorAttribute = element.Attribute("Color")?.Value;
             if (colorAttribute is not null)
             {
                 if (AuditColor.TryParse(colorAttribute, out AuditColor brushColor))
                 {
-                    return new ResourceValue.ColorLiteral(brushColor);
+                    return new ResourceValue.ColorLiteral(brushColor, opacity);
                 }
 
                 (ReferenceKind, string Key)? reference = ResourceReferenceScanner
@@ -144,12 +155,24 @@ public static class ThemeDefinitionScanner
                     .FirstOrDefault();
                 if (reference is { } r)
                 {
-                    return new ResourceValue.Alias(r.Key);
+                    return new ResourceValue.Alias(r.Key, opacity);
                 }
             }
         }
 
         return new ResourceValue.Opaque();
+    }
+
+    private static double OpacityOf(XElement element)
+    {
+        string? text = element.Attribute("Opacity")?.Value;
+        if (text is not null
+            && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double opacity))
+        {
+            return Math.Clamp(opacity, 0, 1);
+        }
+
+        return 1.0;
     }
 
     private static IEnumerable<string> EnumerateXamlFiles(string directory)

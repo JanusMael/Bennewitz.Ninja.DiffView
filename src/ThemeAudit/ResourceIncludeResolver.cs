@@ -16,6 +16,8 @@ public sealed record IncludeResolution(IReadOnlyList<string> Files, IReadOnlyLis
 /// a leading <c>/</c> is rooted at the assembly's <c>avares</c> base (the project directory here),
 /// a bare path is relative to the including file, and <c>avares://Assembly/path</c> is rooted when
 /// the assembly is this theme's and recorded as cross-assembly otherwise. Cycles are followed once.
+/// A file the project links in from elsewhere (<c>&lt;AvaloniaResource Include="…" Link="…"/&gt;</c>)
+/// is not under the base directory; a link map names where it really is.
 /// </summary>
 public static class ResourceIncludeResolver
 {
@@ -27,19 +29,22 @@ public static class ResourceIncludeResolver
     /// is the assembly's <c>avares</c> root (a <c>/</c>-rooted <c>Source</c> resolves under it);
     /// <paramref name="assemblyName"/>, when given, is this theme's assembly, so an
     /// <c>avares://Assembly/…</c> source pointing at it resolves rather than being called cross-assembly.
+    /// <paramref name="links"/> maps a resource path that is not on disk under the base directory
+    /// to the file that supplies it (see <see cref="TryResolveSource"/>).
     /// </summary>
-    public static IncludeResolution Resolve(string entryFile, string baseDirectory, string? assemblyName = null)
+    public static IncludeResolution Resolve(string entryFile, string baseDirectory, string? assemblyName = null,
+                                            IReadOnlyDictionary<string, string>? links = null)
     {
         string root = Path.GetFullPath(baseDirectory);
         List<string> ordered = [];
         List<UnresolvedInclude> unresolved = [];
         HashSet<string> visited = new(StringComparer.Ordinal);
 
-        Visit(Path.GetFullPath(entryFile), root, assemblyName, ordered, unresolved, visited);
+        Visit(Path.GetFullPath(entryFile), root, assemblyName, links, ordered, unresolved, visited);
         return new IncludeResolution(ordered, unresolved);
     }
 
-    private static void Visit(string file, string root, string? assemblyName,
+    private static void Visit(string file, string root, string? assemblyName, IReadOnlyDictionary<string, string>? links,
                               List<string> ordered, List<UnresolvedInclude> unresolved, HashSet<string> visited)
     {
         if (!visited.Add(file))
@@ -79,9 +84,9 @@ public static class ResourceIncludeResolver
                 continue;
             }
 
-            if (TryResolveSource(source.Trim(), file, root, assemblyName, out string resolved, out string reason))
+            if (TryResolveSource(source.Trim(), file, root, assemblyName, out string resolved, out string reason, links))
             {
-                Visit(resolved, root, assemblyName, ordered, unresolved, visited);
+                Visit(resolved, root, assemblyName, links, ordered, unresolved, visited);
             }
             else
             {
@@ -94,11 +99,15 @@ public static class ResourceIncludeResolver
     /// Resolves one <c>Source</c> to a local file, applying Avalonia's rules: a leading <c>/</c> is
     /// rooted at <paramref name="baseDirectory"/>, a bare path is relative to
     /// <paramref name="includingFile"/>, and <c>avares://Assembly/path</c> resolves only when
-    /// <paramref name="assemblyName"/> is given and matches. Returns false with a
-    /// <paramref name="reason"/> for a cross-assembly URI, a malformed URI, or a missing file.
+    /// <paramref name="assemblyName"/> is given and matches. When the file is not on disk,
+    /// <paramref name="links"/> is consulted by the resource path (<c>/Strings/Invariant.xaml</c>,
+    /// or the full <c>avares://</c> URI for a cross-assembly source) and its value is the file that
+    /// supplies it. Returns false with a <paramref name="reason"/> for a cross-assembly URI, a
+    /// malformed URI, or a missing file.
     /// </summary>
     public static bool TryResolveSource(string source, string includingFile, string baseDirectory, string? assemblyName,
-                                        out string resolved, out string reason)
+                                        out string resolved, out string reason,
+                                        IReadOnlyDictionary<string, string>? links = null)
     {
         string root = Path.GetFullPath(baseDirectory);
         resolved = string.Empty;
@@ -118,9 +127,15 @@ public static class ResourceIncludeResolver
             string assembly = rest[..slash];
 
             // Resolve an avares URI only when the caller declared this theme's assembly and it
-            // matches; otherwise it points into another assembly we do not have on disk here.
+            // matches; otherwise it points into another assembly we do not have on disk here —
+            // unless a link says where that assembly's file is.
             if (assemblyName is null || !string.Equals(assembly, assemblyName, StringComparison.OrdinalIgnoreCase))
             {
+                if (TryLink(links, source, out resolved, out reason))
+                {
+                    return true;
+                }
+
                 reason = $"cross-assembly: {assembly}";
                 return false;
             }
@@ -134,14 +149,14 @@ public static class ResourceIncludeResolver
         else
         {
             string directory = Path.GetDirectoryName(includingFile) ?? root;
-            string candidate = Path.GetFullPath(Path.Combine(directory, source));
-            return Found(candidate, out resolved, out reason);
+            return Found(Path.GetFullPath(Path.Combine(directory, source)), root, links, out resolved, out reason);
         }
 
-        return Found(Path.GetFullPath(Path.Combine(root, relativePath)), out resolved, out reason);
+        return Found(Path.GetFullPath(Path.Combine(root, relativePath)), root, links, out resolved, out reason);
     }
 
-    private static bool Found(string candidate, out string resolved, out string reason)
+    private static bool Found(string candidate, string root, IReadOnlyDictionary<string, string>? links,
+                              out string resolved, out string reason)
     {
         if (File.Exists(candidate))
         {
@@ -150,8 +165,35 @@ public static class ResourceIncludeResolver
             return true;
         }
 
+        string resourcePath = "/" + Path.GetRelativePath(root, candidate).Replace('\\', '/');
+        if (TryLink(links, resourcePath, out resolved, out reason))
+        {
+            return true;
+        }
+
         resolved = string.Empty;
         reason = "file not found";
+        return false;
+    }
+
+    private static bool TryLink(IReadOnlyDictionary<string, string>? links, string resourcePath,
+                                out string resolved, out string reason)
+    {
+        resolved = string.Empty;
+        reason = string.Empty;
+        if (links is null || !links.TryGetValue(resourcePath, out string? target))
+        {
+            return false;
+        }
+
+        string full = Path.GetFullPath(target);
+        if (File.Exists(full))
+        {
+            resolved = full;
+            return true;
+        }
+
+        reason = $"linked file not found: {full}";
         return false;
     }
 }
