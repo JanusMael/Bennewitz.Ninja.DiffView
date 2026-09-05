@@ -11,15 +11,16 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
 
 /// <summary>
 /// Proves the harness end to end: the headless host renders real pixels, the demo window comes
-/// up under the test theme in both variants, nothing binds badly, and the frame matches its
-/// committed snapshot within the comparer's tolerance.
+/// up under the test theme in both variants with its two panes over the bundled fixture,
+/// nothing binds badly, and the frame matches its committed snapshot within the comparer's
+/// tolerance.
 /// </summary>
 public sealed class SmokeSnapshotTests
 {
     [AvaloniaTheory]
     [InlineData("Light")]
     [InlineData("Dark")]
-    public async Task Empty_demo_window_renders(string variant)
+    public async Task Demo_window_renders(string variant)
     {
         TestLogSink.Instance.Clear();
         Application.Current!.RequestedThemeVariant = variant == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;

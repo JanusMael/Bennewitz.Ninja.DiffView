@@ -39,17 +39,8 @@ public sealed class ThemeResolutionTests
     private static readonly string[] SimpleThemeGaps =
         ["ContentControlThemeFontFamily", "FontSizeNormal", "HighlightColor", "ThemeBackgroundBrush", "ThemeBackgroundColor", "ThemeBorderLowColor", "ThemeBorderMidBrush", "ThemeBorderThickness", "ThemeForegroundColor"];
 
-    public static TheoryData<string, string> Targets => new()
-    {
-        { "Fluent", "Light" }, { "Fluent", "Dark" },
-        { "Simple", "Light" }, { "Simple", "Dark" },
-        { "Semi", "Light" }, { "Semi", "Dark" }, { "Semi", "Aquatic" }, { "Semi", "Desert" }, { "Semi", "Dusk" }, { "Semi", "NightSky" },
-    };
-
-    public static TheoryData<string> SemiVariants => ["Light", "Dark", "Aquatic", "Desert", "Dusk", "NightSky"];
-
     [AvaloniaTheory]
-    [MemberData(nameof(Targets))]
+    [MemberData(nameof(ThemeTargets.All), MemberType = typeof(ThemeTargets))]
     public void Every_DiffView_token_resolves_in_both_palettes(string theme, string variant)
     {
         using ThemeSwap swap = ThemeSwap.To(theme, variant);
@@ -76,7 +67,7 @@ public sealed class ThemeResolutionTests
     }
 
     [AvaloniaTheory]
-    [MemberData(nameof(SemiVariants))]
+    [MemberData(nameof(ThemeTargets.SemiVariants), MemberType = typeof(ThemeTargets))]
     public void AvaloniaEdit_theme_keys_resolve_under_Semi_only_with_the_compat_dictionaries(string variant)
     {
         using ThemeSwap swap = ThemeSwap.To("Semi", variant);
@@ -125,7 +116,7 @@ public sealed class ThemeResolutionTests
     }
 
     [AvaloniaTheory]
-    [MemberData(nameof(SemiVariants))]
+    [MemberData(nameof(ThemeTargets.SemiVariants), MemberType = typeof(ThemeTargets))]
     public void A_TextEditor_with_its_Fluent_search_panel_renders_under_Semi_with_the_compat_dictionary(string variant)
     {
         using ThemeSwap swap = ThemeSwap.To("Semi", variant);
@@ -200,70 +191,4 @@ public sealed class ThemeResolutionTests
             .ToList();
     }
 
-    /// <summary>
-    /// Puts the named theme in place of the test application's Semi and requests a variant;
-    /// disposing restores Semi and the previous variant, so the snapshot tests keep their host.
-    /// </summary>
-    private sealed class ThemeSwap : IDisposable
-    {
-        private readonly IStyle _original;
-        private readonly IStyle _replacement;
-        private readonly ThemeVariant? _previousVariant;
-
-        private ThemeSwap(IStyle original, IStyle replacement, ThemeVariant? previousVariant, ThemeVariant variant)
-        {
-            _original = original;
-            _replacement = replacement;
-            _previousVariant = previousVariant;
-            Variant = variant;
-        }
-
-        public ThemeVariant Variant { get; }
-
-        public static ThemeSwap To(string theme, string variant)
-        {
-            Application app = Application.Current!;
-            IStyle original = app.Styles[0];
-            Assert.IsType<SemiTheme>(original);
-
-            IStyle replacement = theme switch
-            {
-                "Fluent" => new FluentTheme(),
-                "Simple" => new SimpleTheme(),
-                "Semi" => original,
-                _ => throw new ArgumentOutOfRangeException(nameof(theme), theme, "unknown theme"),
-            };
-            if (!ReferenceEquals(replacement, original))
-            {
-                app.Styles.RemoveAt(0);
-                app.Styles.Insert(0, replacement);
-            }
-
-            ThemeVariant requested = variant switch
-            {
-                "Light" => ThemeVariant.Light,
-                "Dark" => ThemeVariant.Dark,
-                "Aquatic" => SemiTheme.Aquatic,
-                "Desert" => SemiTheme.Desert,
-                "Dusk" => SemiTheme.Dusk,
-                "NightSky" => SemiTheme.NightSky,
-                _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, "unknown variant"),
-            };
-            ThemeVariant? previous = app.RequestedThemeVariant;
-            app.RequestedThemeVariant = requested;
-            return new ThemeSwap(original, replacement, previous, requested);
-        }
-
-        public void Dispose()
-        {
-            Application app = Application.Current!;
-            if (!ReferenceEquals(_replacement, _original))
-            {
-                app.Styles.RemoveAt(0);
-                app.Styles.Insert(0, _original);
-            }
-
-            app.RequestedThemeVariant = _previousVariant;
-        }
-    }
 }

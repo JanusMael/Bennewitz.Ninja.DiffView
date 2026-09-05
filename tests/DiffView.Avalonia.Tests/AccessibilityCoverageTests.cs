@@ -34,6 +34,9 @@ public sealed class AccessibilityCoverageTests
         "TimePicker",
         "CalendarDatePicker",
         "MenuItem",
+        // The editor panes take keyboard focus and carry a caret: interactive, so named.
+        "TextEditor",
+        "DiffPanePresenter",
     };
 
     /// <summary>

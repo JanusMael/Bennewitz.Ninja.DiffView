@@ -2,18 +2,22 @@
 
 ## Resume
 
-**Phase 3 — Core model, probing, search engine** of
-[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`: `DiffView.Core`
-builds a source-indexed `SideBySideDocument` (per-side lines, aligned rows, change blocks with
-per-side line ranges, derived padding) from two `PaneSource`s through probe → similarity gate →
-DiffPlex line diff → rows → blocks, with diagnostics and warnings; `WordDiffCache` computes
-word-level pieces lazily into an LRU keyed by document version; `DiffSearch` finds a query in
-either or both sides in row order. Every invariant, failure path and search case of plan
-§Phase 3 has a passing test and the `Perf` numbers are recorded below. Next is **Phase 4 —
-Pane presenter, padding, gutters** (plan §Phase 4), which lifts the Phase 1 spike's mechanism
-into the library and owes the caret-column normalisation after `Home` twice. Both ClaudeForge
-contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the merge (see
-*Upstreamed to ClaudeForge*).
+**Phase 4 — Pane presenter, padding, gutters** of
+[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`:
+`DiffPanePresenter` hosts the pane's source document and renders a `SideBySideDocument`'s
+padding as empty space over it — the Phase 1 spike's mechanism lifted into
+`src/DiffView.Avalonia/Padding` — fills rows by kind, draws its own text-band selection and
+caret, carries line-number and change-marker gutters, primes the padded heights so two panes
+report equal extents before any scrolling, normalises the caret column after `Home` twice, and
+treats every decorator as a fault boundary that reports once through `RenderFault` and disables
+itself. Its control themes travel with the control; the `DiffView.*` tokens come from the host
+include. The demo shows two presenters over the small fixture (or the `--left` / `--right`
+files) fed from one Core build, with no scroll sync yet. `AGENTS.md` records the cross-file
+contracts. Next is **Phase 5 — Composite control, scroll sync, headers, status strip, theming**
+(plan §Phase 5): `SideBySideDiffView`, `ScrollSync`, `DiffPaneHeader`, `DiffStatusStrip` on
+`StatusController` lifted from ClaudeForge, the latest-wins build worker, `DiffViewStrings`
+behind every string, and the library logging rules. Both ClaudeForge contributions (PR #37 and
+PR #38) are merged and the ClaudeForge pin follows the merge (see *Upstreamed to ClaudeForge*).
 
 The theme audit regenerates after a pin bump, in this order:
 
@@ -33,7 +37,7 @@ dotnet run --project src/ThemeAudit -- report
 | 1 Virtual-padding spike | done — go | 6 headless tests, 1 of them `Perf`; priming batched at 256 |
 | 2 Theme-key audit and exhaustive dictionaries | done (ClaudeForge PR #38 merged) | `theme-audit` `report` and `compat` over a JSON configuration; inventories model Default fallback, `StyleInclude`, linked files, code providers and brush opacity; contrast scoring against each variant's own surface; reviewed Fluent→Semi and Simple→Semi mappings; `DiffView.Tokens.axaml` + colour-blind sibling; `docs/theme-audit.md` committed with drift tests; runtime resolution and rendering tests under all ten targets; tool packed as 1.1.0 |
 | 3 Core model, probing, search engine | done | `PaneSource`, `TextProbe`, `LineSplitter`, `DiffOptions`, `SimilarityGate`, `DiffDocumentBuilder`, `SideBySideDocument` + `Padding`, `WordDiffCache`, `DiffSearch`; 87 unit tests (seven invariants, every failure path, cache, search) and 4 `Perf` measurements |
-| 4 Pane presenter, padding, gutters | not started | lifts the spike's mechanism; normalises the caret column after `Home` |
+| 4 Pane presenter, padding, gutters | done | `DiffPanePresenter` over the source document; `PaddingRun` / `PaddingElement` / `PaddingElementGenerator` / `PaddingHeightPrimer` lifted from the spike; `PaneMetadata` bounds-checked and version-stamped; `DiffLineBackgroundRenderer`, `DiffSelectionRenderer`, `DiffCaretRenderer`, `DiffLineNumberMargin`, `ChangeMarkerMargin`, `DiffBrushes`; the fault boundary with `RenderFault`; caret column normalised after `Home` twice; control themes in `Themes/DiffPanePresenter.axaml`; `AGENTS.md`; 26 headless, pixel and snapshot test cases |
 | 5 Composite control, scroll sync, headers, status strip, theming | not started | |
 | 6 Word-level highlights and options | not started | |
 | 7 Navigation, minimap, connectors, tooltips | not started | |
@@ -41,6 +45,30 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | not started | |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 4 verification
+
+| Done-when item | Result |
+|---|---|
+| Headless: the presenter renders under all ten theme targets with zero binding and resource warnings from the logger bridge | pass: `DiffPanePresenterTests.Renders_under_every_theme_target_with_no_binding_or_resource_warnings` over the ten targets; each pane paints its own `DiffView.PaneBackgroundBrush` under every one, and the bridge saw no warning in any area |
+| Headless: each presenter's document text equals its source text exactly — no padding in the document | pass: `The_document_text_equals_the_source_text_and_the_line_counts_agree`, both sides, character for character |
+| Headless: on the mixed-line-ending fixture, `DiffPane.Lines` count equals the presenter's `TextDocument.LineCount` | pass: `The_model_and_the_editor_count_the_same_lines_on_mixed_line_endings` — CRLF, CR and LF in one text, five lines both ways, the `MixedLineEndings` warning raised |
+| Headless: after a load both presenters report equal scroll extents before any scrolling, and the renderer receives the expected `Kind` per visual line | pass: `After_a_load_both_extents_are_equal_before_scrolling_and_the_renderer_sees_each_lines_kind` — a 200 px viewport keeps one padded line below it; both extents equal the row count times the line height, every shared row sits at the same top, the background renderer and the marker margin report each visible line's own kind and padding, and a font change to 18 px re-primes with the extents still equal. `Assigning_a_new_model_reprimes_so_lines_that_lost_their_padding_return_to_one_row` covers the union rule on a model swap |
+| Headless: the line-number margin shows the document's own numbers and nothing over padding space | pass: `The_line_number_margin_shows_the_documents_own_numbers_and_nothing_over_padding_space` — numbers in visual-line order at each line's text top; the margin's pixels over the padding rows are the gutter background only, the text row carries the number |
+| Headless: no `SearchPanel` is installed on the presenter | pass: `No_search_panel_is_installed` — no search input handler nested in the text area, and Ctrl+F leaves the panel closed |
+| Headless: the presenter honours `IsReadOnly` — typing is rejected when true and accepted when false | pass: `IsReadOnly_is_honoured_and_defaults_to_true` — the default is true; headless text input changes nothing until the flag is cleared |
+| Headless: with metadata for a shorter document, every line renders as `Unchanged` and nothing throws | pass: `Metadata_for_a_different_document_renders_unknown_lines_as_unchanged_and_never_throws` — a longer document keeps the known lines' kinds and renders the rest unchanged and unpadded; a shorter one renders every line it has; no fault either way (the reading is in `DECISIONS.md`) |
+| Headless: a renderer that throws raises `RenderFault` once, disables itself, and the text is still rendered; a generator that throws does the same and the line renders without padding | pass: `A_throwing_renderer_raises_RenderFault_once_disables_itself_and_the_text_still_renders`, `A_throwing_generator_raises_RenderFault_once_and_the_lines_render_without_padding` — one fault each over two frames, glyphs still drawn, every line one row tall after the generator fault; a new model re-enables the generator |
+| Pixel assertions: inserted and deleted text bands and padding space carry their theme brushes; a selection across a padded line paints only text bands; the caret on a padded line is one text line tall | pass: `PresenterPixelTests.Inserted_and_deleted_rows_and_padding_space_carry_their_theme_brushes` (row bands match the composited token colours; the padding rows carry the fill and the hatch), `A_selection_across_a_padded_line_paints_only_text_bands_and_the_caret_is_one_text_line_tall` (selection in both text bands, none in the padding rows; caret in the padded line's text band only, gone when the other pane takes focus) |
+| Snapshot: the small fixture in light and dark | pass: `PresenterSnapshotTests.Small_fixture_renders` under Semi Light and Dark at 900×600, reviewed and approved; the demo smoke snapshot re-approved with the two panes in it |
+| The caret column after `Home` twice, owed by Phase 1 | pass: `Home_pressed_twice_on_a_padded_line_keeps_the_caret_on_the_first_text_column` — the second `Home` lands on column 1 at visual column 1, and `Right` moves to column 2 |
+| Automation names on the new surface | the two margins carry names through `DiffViewStrings` (`Margins_carry_automation_names_through_the_string_resolver`); the demo's panes are named; the accessibility guard counts `DiffPanePresenter` and `TextEditor` |
+| `AGENTS.md` started with the first cross-file contracts | done: the metadata stamp, the no-worker rule, `SearchPanel.Uninstall()`, the priming triggers, the fault boundary, the padding geometry, the theming rules and the test seams |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 215 passed |
+| New headless tests proven able to fail | the extents test failed one padding row short before `OnLoaded` became a priming trigger — the defect it was written to catch, and one the 320 px hosts of the other tests hid; the selection test failed while it sampled an empty padded line and the bands test while its sample band still held glyphs, before their fixtures were corrected |
+| Trimmed publish (`linux-x64`, self-contained) | succeeds, 0 IL warnings, 50 MB; the first draft's runtime `ResourceInclude` failed it with IL2026 and became the compiled `DiffPanePresenterTheme` (see `DECISIONS.md`) |
+| Demo launched on this machine | boots, builds the bundled pair (33 rows, 5 blocks, no warnings) and shows both panes; no fault or error in the log |
 
 ## Phase 3 verification
 
@@ -118,8 +146,8 @@ dotnet run --project src/ThemeAudit -- report
 
 | What | Value | Where |
 |---|---|---|
-| Test run, all three projects | ~5 s | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files |
-| Trimmed self-contained publish of the demo, linux-x64 | 48 MB | `dotnet publish -c Release -r linux-x64 --self-contained true` |
+| Test run, all three projects | ~5 s | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter tests render under all ten theme targets |
+| Trimmed self-contained publish of the demo, linux-x64 | 50 MB after Phase 4 (48 MB through Phase 3) | `dotnet publish -c Release -r linux-x64 --self-contained true` |
 | Priming 10,000 padding gaps in one pass | 10.3–10.5 s (two runs) | `Item6_priming_cost_for_ten_thousand_gaps`, this machine, Debug; quadratic in the text view's built-line list |
 | Priming 10,000 padding gaps in batches of 256 with `Redraw()` between batches | 200–240 ms (two runs) | same test, including the layout pass that republishes the extent |
 | Fluent 12.1.2 inventory | 1153 keys, 85 files per variant | `docs/theme-audit.md` |

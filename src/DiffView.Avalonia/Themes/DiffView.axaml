@@ -24,6 +24,11 @@
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://DiffView.Avalonia/Themes/DiffView.Tokens.axaml" />
       </ResourceDictionary.MergedDictionaries>
+      <!-- The panes' font: the first installed family of the stack, ending in the generic
+           fallback. A host overrides it by defining the same key; the tests do, with the
+           bundled font, so rendered frames do not depend on installed fonts. Not a palette
+           token, so it lives here rather than in the two token dictionaries. -->
+      <FontFamily x:Key="DiffView.MonospaceFontFamily">Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace</FontFamily>
     </ResourceDictionary>
   </Styles.Resources>
 </Styles>

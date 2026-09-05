@@ -8,7 +8,7 @@ was read or adapted, and the assets bundled into the repository.
 |---|---|---|
 | [ClaudeForge](https://github.com/JanusMael/ClaudeForge) | MIT | Design reference and lifted code: the status controller, status and kind tokens, the accessibility coverage guard, the demo's crash-handling shape; `LayeredEditors.Avalonia.Diagnostics` consumed as a package |
 | [SourceGit](https://github.com/sourcegit-scm/sourcegit) | MIT | Design reference for the diff rendering approach (background renderers, margins, scroll binding, minimap) |
-| [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) | MIT | The text editor the panes are built on; source read for the padding and priming design |
+| [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) | MIT | The text editor the panes are built on; source read for the padding and priming design; its `TextEditor` and `TextArea` control templates adapted in `src/DiffView.Avalonia/Themes/DiffPanePresenter.axaml` |
 | [Avalonia](https://github.com/AvaloniaUI/Avalonia) | MIT | The UI framework; Fluent and Simple theme sources read by the theme audit |
 | [Semi.Avalonia](https://github.com/irihitech/Semi.Avalonia) | MIT | The demo's primary theme; source read by the theme audit |
 | [DiffPlex](https://github.com/mmanela/diffplex) | Apache-2.0 | Line diff engine and word chunkers |

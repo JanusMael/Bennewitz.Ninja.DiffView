@@ -33,4 +33,10 @@
   <ItemGroup>
     <ProjectReference Include="../DiffView.Avalonia/DiffView.Avalonia.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- The committed small pair, shown when the left and right flags name no files. -->
+    <AvaloniaResource Include="../../fixtures/small/left.txt" Link="Fixtures/small/left.txt" />
+    <AvaloniaResource Include="../../fixtures/small/right.txt" Link="Fixtures/small/right.txt" />
+  </ItemGroup>
 </Project>

@@ -335,3 +335,101 @@ in the local feed and the version in `Directory.Packages.props` stay at 1.0.1 an
 keeps its constant — a repack would produce the same content under a new timestamp. The audit
 report was regenerated because the sibling checkout now carries ClaudeForge's own copies of the
 compat dictionaries, which the consumer scan counts as keys it defines itself.
+
+## The presenter's control themes travel with the control
+
+`DiffPanePresenter` merges `Themes/DiffPanePresenter.axaml`, compiled as the
+`DiffPanePresenterTheme` dictionary class — its own control theme and the `TextArea` theme it
+applies by key — into its own `Resources` in its constructor. The first draft merged a runtime
+`ResourceInclude` by URI, and the trim-check refused it with IL2026: the include's loader
+resolves the resource by reflection. An `x:Class` dictionary is resolved by the XAML compiler at
+build time and trims clean, so the fix is the class, not a suppression. The host's
+`DiffView.axaml` include supplies the `DiffView.*` tokens those themes bind to, and
+`DiffBrushes` carries a hard fallback per token. A host that forgets the include therefore gets
+a structurally complete pane in the fallback palette rather than the invisible control the
+theme audit exists to prevent; AvaloniaEdit's `Base.xaml` is not needed under Semi, Fluent or
+Simple, because neither template references a host theme key. The cost: a host restyles the
+presenter by setting `Theme` on the instance or deriving from the shipped theme
+(`DiffViewResources.PresenterThemeUri`), not by an application-level `{x:Type}` theme, since
+the control's own resources are consulted first. The two templates are AvaloniaEdit's
+`TextEditor.xaml` and `TextArea.xaml` with the watermark and the theme-keyed selection brush
+removed, attributed in `THIRD-PARTY-NOTICES.md`.
+
+## The panes' font is a token, and the tests override it
+
+The plan's monospace stack is the value of `DiffView.MonospaceFontFamily`, defined in
+`DiffView.axaml` beside the merged palette rather than inside the two token dictionaries, so
+the test that holds both palettes to the same key set still holds. `HeadlessTestApp` overrides
+the key with the bundled DejaVu Sans Mono at application level, where a resource beats the
+include's, and that is what keeps the presenter and demo snapshots machine-independent. A host
+picks its editor font the same way.
+
+## Priming runs on Loaded first, then on LayoutUpdated
+
+The presenter primes at once when it is loaded and its text view is measured, and otherwise
+leaves the prime pending. The first draft waited for `LayoutUpdated` only, and its tests
+passed — because every padded line of the small fixture was inside a 320 px viewport, where the
+measure pass builds the line with its padding anyway. `Loaded` is dispatched after the first
+layout pass and after that pass's `LayoutUpdated`, so a prime requested before the control was
+in the tree never ran; a test with a 200 px viewport, which keeps one padded line below it,
+failed one row short and is now the regression guard. `OnLoaded` runs the pending prime;
+`OnLayoutUpdated` runs a pending prime that arrived while the tree was already loaded but
+unmeasured, and re-primes when the default line height moved (a font change rebases only the
+lines still at the old default height, as the spike found). A re-prime covers the union of the
+old and new padded sets, because a line that lost its padding keeps its stale height until it
+is rebuilt.
+
+## Two AvaloniaEdit facts the presenter's constructor had to learn
+
+`TextEditor.OnIsReadOnlyChanged` applies the flag to the text area only when the property
+changes, so overriding the default value would leave the text area writable; the presenter sets
+`IsReadOnly = true` as a local value in its constructor instead. `TextEditor.OnApplyTemplate`
+installs the search panel, so it is null in the constructor — the first draft dereferenced it
+there — and `SearchPanel.Uninstall()` lives in the presenter's own `OnApplyTemplate`, after
+the base call, where it runs on every template application.
+
+## Metadata for a document that is not the model's
+
+The plan asks that "with metadata for a shorter document, every line renders as `Unchanged` and
+nothing throws". `PaneMetadata` implements the per-line reading: a line the model knows keeps
+its kind and padding, a line beyond the model's count is `Unchanged` with no padding, and the
+trailing padding belongs to the document's last line only while the document and the model
+agree on the line count — otherwise it would sit on the wrong line. Between a keystroke and
+the next build this is what the editing plan needs: known lines stay tinted, nothing flashes,
+nothing throws. The test covers both a longer and a shorter document than the model's.
+
+## Where SourceGit's approach did not carry over
+
+The plan characterises SourceGit as padding with real lines in a padded document built from a
+git hunk; nothing of that pipeline ports, because the presenter renders padding over the source
+document. What carried over is the layering: a background renderer per row kind on
+`KnownLayer.Background`, own selection and caret renderers, custom margins on
+`TextArea.LeftMargins`. Avalonia 12 specifics met on the way: `ImmutablePen` takes an
+`IImmutableBrush`, so the hatch pen is a `Pen` over the token brush; `GetVisualRoot` is not on
+this API, and `IsLoaded` plus the text view's `IsMeasureValid` is the right question anyway;
+margin text goes through `FormattedText` directly, since AvaloniaEdit's `TextFormatterFactory`
+is internal.
+
+## The caret blinks on the presenter's timer; tests turn it off
+
+`DiffCaretRenderer` blinks at AvaloniaEdit's 500 ms cadence on a `DispatcherTimer` the
+presenter owns, restarted on every caret move, stopped on focus loss and on detach.
+`IsCaretBlinkEnabled` turns blinking off; `PresenterHost` sets it off so a pixel assertion
+never races the timer. AvaloniaEdit's own caret layer keeps running with a transparent brush.
+
+## Gutter tooltips wait for Phase 7
+
+The Phase 4 type table mentions a tooltip on the line-number margin and on the change markers;
+Phase 7's own list owns "Tooltips on line numbers and markers", and their text belongs behind
+`DiffViewStrings`, which Phase 5 wires through every user-visible string. The margins ship
+without tooltips now, with automation names (`DiffViewStrings.LineNumbersMarginName`,
+`ChangeMarkersMarginName`) so a screen reader can name the gutters; the accessibility guard
+counts `DiffPanePresenter` and `TextEditor` as interactive from this phase on.
+
+## The Phase 1 spike stays in the test project
+
+The presenter's padding types are the spike's, lifted into `src/DiffView.Avalonia/Padding`.
+The spike itself — `tests/DiffView.Avalonia.Tests/Spike` — stays: it proves the mechanism
+against two plain `TextEditor`s with no presenter in the way, which is the regression canary
+wanted when AvaloniaEdit or Avalonia is bumped, and it is the record Phase 1's verification
+table cites.

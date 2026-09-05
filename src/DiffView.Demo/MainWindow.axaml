@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dv="using:Bennewitz.Ninja.DiffView.Avalonia"
         x:Class="Bennewitz.Ninja.DiffView.Demo.MainWindow"
         Title="DiffView Demo"
         Width="1100" Height="720"
@@ -30,9 +31,12 @@
       <TextBlock x:Name="StatusText" FontSize="12" />
     </Border>
 
-    <TextBlock Text="DiffView demo — phase 0"
-               FontSize="20"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+    <!-- Phase 4: two presenters fed from one Core build, no scroll sync yet; the composite
+         control of Phase 5 replaces this grid. -->
+    <Grid ColumnDefinitions="*,1,*">
+      <dv:DiffPanePresenter x:Name="LeftPane" Side="Left" AutomationProperties.Name="Left pane" />
+      <Border Grid.Column="1" Background="{DynamicResource DiffView.GutterBackgroundBrush}" />
+      <dv:DiffPanePresenter x:Name="RightPane" Grid.Column="2" Side="Right" AutomationProperties.Name="Right pane" />
+    </Grid>
   </DockPanel>
 </Window>

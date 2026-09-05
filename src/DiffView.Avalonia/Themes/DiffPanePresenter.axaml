@@ -1,0 +1,67 @@
+<!--
+    The control themes of DiffPanePresenter and of the AvaloniaEdit TextArea inside it. The
+    presenter merges this file, compiled as the DiffPanePresenterTheme class named in x:Class below
+    (a runtime ResourceInclude loads by reflection and the trimmer refuses it with IL2026), into
+    its own resources, so the structure never depends on a host
+    include; the DiffView.* brushes and the monospace font family it binds to come from the
+    host's DiffView.axaml include (with hard fallbacks in the presenter's palette). No host theme
+    key is referenced, so the pane renders the same under Semi, Fluent and Simple, and
+    AvaloniaEdit's own theme files — whose Fluent and Simple keys Semi lacks — are not needed.
+
+    The two templates are AvaloniaEdit's own (Themes/TextEditor.xaml and Editing/TextArea.xaml,
+    MIT) with the watermark and the theme-keyed selection brush removed: the presenter draws the
+    selection itself and makes the editor's brush transparent in code.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dv="using:Bennewitz.Ninja.DiffView.Avalonia"
+                    xmlns:editing="using:AvaloniaEdit.Editing"
+                    x:Class="Bennewitz.Ninja.DiffView.Avalonia.DiffPanePresenterTheme">
+  <ControlTheme x:Key="{x:Type dv:DiffPanePresenter}" TargetType="dv:DiffPanePresenter">
+    <Setter Property="Background" Value="{DynamicResource DiffView.PaneBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource DiffView.PaneForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource DiffView.MonospaceFontFamily}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <ScrollViewer Name="PART_ScrollViewer"
+                        Focusable="False"
+                        VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"
+                        HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+                        VerticalContentAlignment="Top"
+                        HorizontalContentAlignment="Left"
+                        Padding="{TemplateBinding Padding}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="DiffView.TextAreaTheme" TargetType="editing:TextArea">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DockPanel Focusable="False" Background="{TemplateBinding Background}">
+          <ItemsControl DockPanel.Dock="Left"
+                        Focusable="False"
+                        ItemsSource="{TemplateBinding LeftMargins}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+          <ContentPresenter Name="PART_CP"
+                            Cursor="IBeam"
+                            Focusable="False"
+                            Background="{TemplateBinding Background}" />
+        </DockPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

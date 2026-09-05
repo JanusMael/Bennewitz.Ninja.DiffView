@@ -26,6 +26,9 @@ public sealed class HeadlessTestApp : Application
     {
         Styles.Add(new SemiTheme { Locale = CultureInfo.GetCultureInfo("en-US") });
         Styles.Add(new StyleInclude(new Uri("avares://DiffView.Avalonia.Tests/")) { Source = DiffViewResources.ThemeUri });
+        // The panes' font token, overridden with the bundled font: application resources beat
+        // the theme include's, so rendered frames never depend on the machine's installed fonts.
+        Resources[DiffViewResources.MonospaceFontFamilyKey] = new FontFamily(TestFonts.MonoFamilyName);
     }
 
     public static AppBuilder BuildAvaloniaApp()

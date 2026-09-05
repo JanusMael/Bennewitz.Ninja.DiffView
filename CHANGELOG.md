@@ -44,3 +44,23 @@ All notable changes to DiffView are recorded here. The format follows
   timeout. Tests for the seven invariants, every failure path, the cache and the search;
   `Perf` measurements for the 10k and 200k pairs and the gate.
 - `fixtures/small`, the committed small pair; larger pairs are generated from a seed in the tests.
+- Phase 4, the pane presenter: `DiffPanePresenter` over the pane's source document, with the
+  padding mechanism lifted from the spike (`PaddingRun`, `PaddingElement`,
+  `PaddingElementGenerator`, `PaddingHeightPrimer`), `PaneMetadata` (bounds-checked,
+  version-stamped, 1-based), `DiffLineBackgroundRenderer` (row tints, hatched padding),
+  `DiffSelectionRenderer` and `DiffCaretRenderer` over text bands, `DiffLineNumberMargin` and
+  `ChangeMarkerMargin`, `DiffBrushes` with fallbacks, the fault boundary (`RenderFault`,
+  `RenderFaultEventArgs`, `IsDegraded`, `Faults`), the caret-column normalisation after `Home`
+  twice, `DiffViewStrings`, `DiffViewLogCategories`; the presenter's control themes in
+  `Themes/DiffPanePresenter.axaml`, merged into the control's own resources; the
+  `DiffView.MonospaceFontFamily` token.
+- `AGENTS.md`, the fact-shaped cross-file contracts, starting with the presenter's.
+- The demo shows two presenters over the bundled small fixture, or over the files named by
+  `--left` and `--right`, fed from one Core build; the status bar carries the diff counts.
+- Headless, pixel and snapshot tests for the presenter under all ten theme targets;
+  `PresenterHost`, `ThemeSwap` and `ThemeTargets` as shared fixtures.
+
+### Changed
+
+- The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and
+  `DiffPanePresenter` as interactive controls.
