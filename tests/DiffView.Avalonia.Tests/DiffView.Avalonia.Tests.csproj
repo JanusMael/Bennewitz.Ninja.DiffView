@@ -11,6 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="../../src/DiffView.Avalonia/DiffView.Avalonia.csproj" />
     <ProjectReference Include="../../src/DiffView.Demo/DiffView.Demo.csproj" />
+    <!-- The audit tool's scanners read the token and theme files the resolution tests check at runtime. -->
+    <ProjectReference Include="../../src/ThemeAudit/ThemeAudit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

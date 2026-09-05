@@ -2,4 +2,12 @@
   <ItemGroup>
     <ProjectReference Include="../../src/ThemeAudit/ThemeAudit.csproj" />
   </ItemGroup>
+
+  <!-- The Reference-trait tests run the repository's audit over the checkouts under reference/.
+       Fetch whatever is missing before this project builds, so `dotnet test` on a fresh clone
+       self-heals. The script is a no-op when everything is present. Skip with
+       -p:SkipReferenceSources=true. -->
+  <Target Name="EnsureReferenceSources" BeforeTargets="Build" Condition="'$(SkipReferenceSources)' != 'true'">
+    <Exec Command="dotnet run &quot;$(RepoRoot)scripts/fetch-reference.cs&quot; -- --quiet" WorkingDirectory="$(RepoRoot)" />
+  </Target>
 </Project>
