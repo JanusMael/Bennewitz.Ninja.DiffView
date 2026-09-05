@@ -36,34 +36,44 @@ public static class ThemeDefinitionScanner
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
     private static readonly string[] SkippedDirectories = ["bin", "obj", ".git"];
 
+    /// <summary>Scans every AXAML/XAML file under a directory.</summary>
     /// <exception cref="InvalidDataException">A file is not well-formed XML.</exception>
     public static IReadOnlyList<DefinedResource> Scan(string directory)
     {
         List<DefinedResource> defined = [];
-
         foreach (string file in EnumerateXamlFiles(directory))
         {
-            XDocument document;
-            try
+            defined.AddRange(ScanFile(file));
+        }
+
+        return defined;
+    }
+
+    /// <summary>Scans one AXAML/XAML file — the unit the inventory composes per contributing file.</summary>
+    /// <exception cref="InvalidDataException">The file is not well-formed XML.</exception>
+    public static IReadOnlyList<DefinedResource> ScanFile(string file)
+    {
+        XDocument document;
+        try
+        {
+            document = XDocument.Load(file, LoadOptions.SetLineInfo);
+        }
+        catch (XmlException ex)
+        {
+            throw new InvalidDataException($"{file}: {ex.Message}", ex);
+        }
+
+        List<DefinedResource> defined = [];
+        foreach (XElement element in document.Descendants())
+        {
+            XAttribute? key = element.Attribute(XamlNamespace + "Key");
+            if (key is null || IsVariantContainer(element))
             {
-                document = XDocument.Load(file, LoadOptions.SetLineInfo);
-            }
-            catch (XmlException ex)
-            {
-                throw new InvalidDataException($"{file}: {ex.Message}", ex);
+                continue;
             }
 
-            foreach (XElement element in document.Descendants())
-            {
-                XAttribute? key = element.Attribute(XamlNamespace + "Key");
-                if (key is null || IsVariantContainer(element))
-                {
-                    continue;
-                }
-
-                int line = ((IXmlLineInfo)element).HasLineInfo() ? ((IXmlLineInfo)element).LineNumber : 0;
-                defined.Add(new DefinedResource(file, VariantOf(element), key.Value, ValueOf(element), line));
-            }
+            int line = ((IXmlLineInfo)element).HasLineInfo() ? ((IXmlLineInfo)element).LineNumber : 0;
+            defined.Add(new DefinedResource(file, VariantOf(element), key.Value, ValueOf(element), line));
         }
 
         return defined;
