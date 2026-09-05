@@ -1,0 +1,26 @@
+<!--
+    DiffView styles and tokens. A host includes this file once:
+
+        <StyleInclude Source="avares://DiffView.Avalonia/Themes/DiffView.axaml" />
+
+    Every brush the controls use is a DiffView.* token defined here. The controls never
+    reference a host theme's own keys (Fluent's SystemControl* family, Semi's tokens), so they
+    render the same under Semi, Fluent and Simple. A host overrides any token by defining the
+    same key in its own resources.
+
+    This is a <Styles> document rather than a <ResourceDictionary> so it can be pulled in with a
+    plain StyleInclude; Styles.Resources does not accept a ResourceInclude (AVLN3000).
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <!-- Change-marker glyph colours (+ / - / ~). Theme-neutral: the same values ClaudeForge uses
+           for its Save Changes kind pills, so DiffView reads as native inside it. Orange 700 rather
+           than Orange 900, which reads as red beside the deleted marker. -->
+      <SolidColorBrush x:Key="DiffView.MarkerInsertedBrush" Color="#2E7D32" />
+      <SolidColorBrush x:Key="DiffView.MarkerDeletedBrush" Color="#C62828" />
+      <SolidColorBrush x:Key="DiffView.MarkerModifiedBrush" Color="#F57C00" />
+    </ResourceDictionary>
+  </Styles.Resources>
+</Styles>

@@ -1,0 +1,24 @@
+# Build output
+bin/
+obj/
+artifacts/
+publish/
+TestResults/
+test-results/
+*.nupkg
+*.snupkg
+*.user
+*.suo
+.vs/
+.idea/
+*.swp
+
+# Read-only upstream checkouts fetched on demand by scripts/fetch-reference.*
+# from reference/sources.json. Only the manifest and the README are versioned.
+reference/*/
+
+# Verify: a .received file is a mismatch under review, never a commit.
+*.received.*
+
+# Logs the demo writes when launched from the repository
+logs/

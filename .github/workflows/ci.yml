@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # The sibling feed (../nuget-local) holds packages built from the author's other
+      # repositories. The reference fetch clones ClaudeForge at its pin when no sibling
+      # checkout exists, and the pack script builds the diagnostics package from it.
+      - name: Fetch reference sources
+        run: dotnet run scripts/fetch-reference.cs
+
+      - name: Pack ClaudeForge diagnostics into the local feed
+        run: dotnet run scripts/pack-diagnostics.cs
+
+      - name: Restore
+        run: dotnet restore DiffView.slnx
+
+      - name: Build (Debug)
+        run: dotnet build DiffView.slnx --no-restore -c Debug -warnaserror
+
+      # Microsoft.Testing.Platform mode (global.json "test.runner"); trx from the TrxReport extension.
+      - name: Test
+        run: >
+          dotnet test --solution DiffView.slnx
+          --no-build -c Debug
+          --report-trx
+          --results-directory ./test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: ./test-results/*.trx
+          retention-days: 14
+
+  trim-check:
+    name: Trim Check (Release linux-x64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Fetch reference sources
+        run: dotnet run scripts/fetch-reference.cs
+
+      - name: Pack ClaudeForge diagnostics into the local feed
+        run: dotnet run scripts/pack-diagnostics.cs
+
+      # The first intended host publishes trimmed; a new IL2xxx here is fixed or
+      # suppressed with a DECISIONS.md entry, never ignored.
+      - name: Publish (Release, linux-x64, trimmed)
+        run: >
+          dotnet publish src/DiffView.Demo
+          -c Release -r linux-x64
+          --self-contained true
+          -o /tmp/trim-check

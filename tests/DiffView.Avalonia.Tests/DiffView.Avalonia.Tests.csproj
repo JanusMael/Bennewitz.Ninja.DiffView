@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Avalonia.Skia" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Themes.Simple" />
+    <PackageReference Include="Semi.Avalonia" />
+    <PackageReference Include="Verify.XunitV3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/DiffView.Avalonia/DiffView.Avalonia.csproj" />
+    <ProjectReference Include="../../src/DiffView.Demo/DiffView.Demo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bundled monospace font so rendered snapshots never depend on the machine's fonts. -->
+    <AvaloniaResource Include="../../fixtures/fonts/DejaVuSansMono.ttf" Link="Fonts/DejaVuSansMono.ttf" />
+    <!-- Serial execution: every Avalonia test shares the one headless dispatcher. -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Reference-dependent tests read the checkouts under reference/. Fetch whatever is missing
+       before this project builds, so `dotnet test` on a fresh clone self-heals. The script is a
+       no-op when everything is present. Skip with -p:SkipReferenceSources=true. -->
+  <Target Name="EnsureReferenceSources" BeforeTargets="Build" Condition="'$(SkipReferenceSources)' != 'true'">
+    <Exec Command="dotnet run &quot;$(RepoRoot)scripts/fetch-reference.cs&quot; -- --quiet" WorkingDirectory="$(RepoRoot)" />
+  </Target>
+</Project>

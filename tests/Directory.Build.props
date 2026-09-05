@@ -1,0 +1,24 @@
+<Project>
+  <!-- MSBuild applies only the closest Directory.Build.props; import the repository root's
+       settings explicitly, then add the test-only pieces. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- xunit v3 test projects are executables. -->
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- xunit v3 runs on Microsoft.Testing.Platform (see dotnet.config at the root); the VSTest
+         bridge packages are deliberately absent. TrxReport gives CI its .trx files. -->
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- xunit v3 does not add its namespace as an implicit using. -->
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

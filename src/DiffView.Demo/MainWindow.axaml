@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Bennewitz.Ninja.DiffView.Demo.MainWindow"
+        Title="DiffView Demo"
+        Width="1100" Height="720"
+        MinWidth="640" MinHeight="400">
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File" AutomationProperties.Name="File menu">
+        <MenuItem Header="E_xit" Click="OnExit" AutomationProperties.Name="Exit" />
+      </MenuItem>
+      <MenuItem Header="_View" AutomationProperties.Name="View menu">
+        <MenuItem x:Name="VariantLight" Header="_Light" ToggleType="Radio" GroupName="variant"
+                  Click="OnVariantLight" AutomationProperties.Name="Light theme variant" />
+        <MenuItem x:Name="VariantDark" Header="_Dark" ToggleType="Radio" GroupName="variant"
+                  Click="OnVariantDark" AutomationProperties.Name="Dark theme variant" />
+        <MenuItem x:Name="VariantSystem" Header="_System" ToggleType="Radio" GroupName="variant"
+                  Click="OnVariantSystem" AutomationProperties.Name="Follow the system theme variant" />
+      </MenuItem>
+      <MenuItem Header="_Debug" AutomationProperties.Name="Debug menu">
+        <MenuItem Header="Show live _log (F12)" Click="OnToggleLiveLog" AutomationProperties.Name="Show live log window" />
+        <MenuItem Header="Open logs _folder" Click="OnOpenLogsFolder" AutomationProperties.Name="Open logs folder" />
+        <Separator />
+        <MenuItem Header="_Throw on the UI thread" Click="OnThrowOnUiThread" AutomationProperties.Name="Throw a test exception on the UI thread" />
+        <MenuItem Header="Throw in an _unobserved task" Click="OnThrowInUnobservedTask" AutomationProperties.Name="Throw a test exception in an unobserved task" />
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Bottom" Padding="8,4">
+      <TextBlock x:Name="StatusText" FontSize="12" />
+    </Border>
+
+    <TextBlock Text="DiffView demo — phase 0"
+               FontSize="20"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center" />
+  </DockPanel>
+</Window>

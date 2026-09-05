@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- The first intended host publishes trimmed; the demo is the trim canary. A self-contained
+       Release publish for a runtime identifier must stay clean of IL2xxx, and the settings below
+       keep each warning tied to its originating .axaml file and line. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>link</TrimMode>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <TrimmerRemoveSymbols>false</TrimmerRemoveSymbols>
+    <AvaloniaXamlIlVerboseExceptions>true</AvaloniaXamlIlVerboseExceptions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Themes.Simple" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Semi.Avalonia" />
+    <!-- ClaudeForge's logging and crash-handling pipeline, from the local feed. Serilog flows
+         transitively from it. -->
+    <PackageReference Include="LayeredEditors.Avalonia.Diagnostics" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../DiffView.Avalonia/DiffView.Avalonia.csproj" />
+  </ItemGroup>
+</Project>

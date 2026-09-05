@@ -1,0 +1,36 @@
+{
+  "sources": [
+    {
+      "name": "Semi.Avalonia",
+      "dir": "reference/Semi.Avalonia",
+      "url": "https://github.com/irihitech/Semi.Avalonia.git",
+      "ref": "v12.1.0.1"
+    },
+    {
+      "name": "Avalonia",
+      "dir": "reference/Avalonia",
+      "url": "https://github.com/AvaloniaUI/Avalonia.git",
+      "ref": "12.1.2",
+      "sparse": ["src/Avalonia.Themes.Fluent", "src/Avalonia.Themes.Simple"]
+    },
+    {
+      "name": "AvaloniaEdit",
+      "dir": "reference/AvaloniaEdit",
+      "url": "https://github.com/AvaloniaUI/AvaloniaEdit.git",
+      "ref": "12.0.0"
+    },
+    {
+      "name": "DiffPlex",
+      "dir": "reference/DiffPlex",
+      "url": "https://github.com/mmanela/diffplex.git",
+      "ref": "f500e73f28e28813f942f1f16dec5a34b40e48e3"
+    },
+    {
+      "name": "ClaudeForge",
+      "dir": "reference/ClaudeForge",
+      "local": "../cl/ClaudeForge",
+      "url": "https://github.com/JanusMael/ClaudeForge.git",
+      "ref": "befedb047b6425494de16772b261217a426ecd4d"
+    }
+  ]
+}

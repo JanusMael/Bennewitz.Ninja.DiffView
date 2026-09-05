@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Side-by-side diff control for Avalonia 12, built on AvaloniaEdit.</Description>
+    <IsPackable>true</IsPackable>
+    <!-- Public API is documented; a missing comment is a build error (CS1591 under warnings-as-errors). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" />
+    <PackageReference Include="AvaloniaEdit.TextMate" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../DiffView.Core/DiffView.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>DiffView.Avalonia.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

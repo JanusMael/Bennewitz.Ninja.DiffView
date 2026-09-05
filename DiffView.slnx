@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/solution items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="NuGet.config" />
+    <File Path="global.json" />
+    <File Path="PROGRESS.md" />
+    <File Path="DECISIONS.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/DiffView.Core/DiffView.Core.csproj" />
+    <Project Path="src/DiffView.Avalonia/DiffView.Avalonia.csproj" />
+    <Project Path="src/DiffView.Demo/DiffView.Demo.csproj" />
+    <Project Path="src/ThemeAudit/ThemeAudit.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DiffView.Core.Tests/DiffView.Core.Tests.csproj" />
+    <Project Path="tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj" />
+    <Project Path="tests/ThemeAudit.Tests/ThemeAudit.Tests.csproj" />
+  </Folder>
+</Solution>

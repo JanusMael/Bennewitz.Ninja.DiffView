@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>
+      Diff model for the DiffView side-by-side control: alignment, probing, search and
+      diagnostics. No UI dependency.
+    </Description>
+    <IsPackable>true</IsPackable>
+    <!-- Public API is documented; a missing comment is a build error (CS1591 under warnings-as-errors). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DiffPlex" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>DiffView.Core.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

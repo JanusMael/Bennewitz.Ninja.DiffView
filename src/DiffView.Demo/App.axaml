@@ -1,0 +1,10 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Bennewitz.Ninja.DiffView.Demo.App"
+             RequestedThemeVariant="Default">
+  <!-- The base theme — Semi by default, Fluent or Simple by the theme flag — is inserted ahead
+       of these styles in code-behind, so the flag can choose it. -->
+  <Application.Styles>
+    <StyleInclude Source="avares://DiffView.Avalonia/Themes/DiffView.axaml" />
+  </Application.Styles>
+</Application>
