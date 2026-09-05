@@ -7,7 +7,9 @@ not a rewrite. A second, standalone deliverable is `theme-audit`, a dotnet tool 
 resource keys an Avalonia theme leaves undefined (the invisible-control cases) and the tokens
 below a contrast floor, for any Avalonia project.
 
-Status: **Phase 2 — theme-key audit, in progress.** The audit's detection core is built and verified against the reference themes; the generation half (report, compat and token dictionaries) is next. The plan is [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
+Status: **Phase 2 — theme-key audit — complete; Phase 3, the core diff model, is next.** The
+audit report is [docs/theme-audit.md](docs/theme-audit.md). The plan is
+[plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
 progress is tracked in [PROGRESS.md](PROGRESS.md) and decisions in [DECISIONS.md](DECISIONS.md).
 
 ## Layout
@@ -62,9 +64,30 @@ dotnet run --project src/DiffView.Demo -- --theme fluent --variant dark
 
 ## The theme audit
 
+`theme-audit.json` at the root names the themes (from the reference checkouts), the consumers
+and the compat dictionaries. Regenerate the dictionaries, then the report:
+
+```bash
+dotnet run --project src/ThemeAudit -- compat
+```
+
+```bash
+dotnet run --project src/ThemeAudit -- report
+```
+
+`--check` on either writes nothing and exits 1 when the committed output differs from a fresh
+run; the Reference-trait tests do the same. The report is [docs/theme-audit.md](docs/theme-audit.md):
+what each theme defines per variant, what each consumer references, the undefined keys per
+(consumer, theme, variant), the contrast matrix for the `DiffView.*` tokens, and the ledger of
+the generated `Themes/Compat/*.Semi.axaml` dictionaries. The quick per-directory key count is
+still there:
+
 ```bash
 dotnet run --project src/ThemeAudit -- inventory reference/Semi.Avalonia/src/Semi.Avalonia/Themes/Light
 ```
 
-Later phases add the consumer scan, the findings report, the contrast check and the compat
-dictionary generator; the tool packs with `dotnet pack src/ThemeAudit -o ../nuget-local`.
+Pack the tool into the local feed for another repository to adopt (`dotnet tool install Bennewitz.Ninja.ThemeAudit`):
+
+```bash
+scripts/pack-theme-audit.sh
+```

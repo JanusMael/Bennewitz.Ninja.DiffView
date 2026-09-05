@@ -20,3 +20,18 @@ All notable changes to DiffView are recorded here. The format follows
 - `PixelProbe`, for pixel assertions on captured frames.
 - Stopwatch tests carry `Category=Perf` and stay out of the default `dotnet test` run;
   `-p:IncludePerfTests=true` includes them.
+- Phase 2, the theme-key audit: `theme-audit report` and `theme-audit compat` over a JSON
+  configuration (`theme-audit.json`), inventorying Fluent, Simple and Semi as Avalonia resolves
+  them — Default fallback, inheritance, `StyleInclude`, linked files, code providers, brush
+  opacity — scanning consumers for undefined keys, scoring contrast pairs against each variant's
+  own surfaces, and writing `docs/theme-audit.md`; `--check` is the drift test.
+- The reviewed Fluent→Semi and Simple→Semi mappings and the generated
+  `Themes/Compat/FluentKeys.Semi.axaml` / `SimpleKeys.Semi.axaml`, which let a control templated
+  for Fluent or Simple (AvaloniaEdit's search panel) resolve every key under all six Semi variants.
+- `Themes/DiffView.Tokens.axaml`, the `DiffView.*` palette for Light and Dark, its colour-blind
+  sibling, the contrast contract in `contrast-pairs.json`, `SemiThemeVariants`, and the resource
+  URIs on `DiffViewResources`.
+- Reference-trait tests: the committed report and dictionaries equal a fresh run; every token
+  resolves under all ten targets; the AvaloniaEdit gaps are exactly the known ones; a
+  `TextEditor` with its search panel renders under each Semi variant with the compat dictionary.
+- `scripts/pack-theme-audit.*`, packing the tool as `Bennewitz.Ninja.ThemeAudit` 1.1.0.

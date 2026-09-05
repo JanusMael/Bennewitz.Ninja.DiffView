@@ -161,3 +161,111 @@ pin in `reference/sources.json` moved to the branch head `f7980f2` so CI packs t
 source the local sibling checkout is on. The three move together: the pin, the constant in the
 pack script, and the version in `Directory.Packages.props`. When the pull request merges, the
 pin moves to the merge commit in a routine bump.
+
+## Theme audit: Avalonia's variant lookup, modelled exactly
+
+Building the inventories over the real checkouts exposed five gaps between a naive model and
+what Avalonia resolves; the walker models each, and the runtime tests
+(`ThemeResolutionTests`) confirm the static view against `TryGetResource`.
+
+- **Default is a fallback, not a variant.** Avalonia looks a key up in the requested variant,
+  then along its `InheritVariant` chain, then in `Default`; Fluent and Simple declare only
+  `Default` and `Dark`, so their `Light` *is* `Default`, and a key present in `Default` but
+  absent from `Dark` still resolves under `Dark`. `ThemeInventory.ForVariant` applies the chain
+  and `Default`'s keys sit under every variant. Lookup order, lowest first: shared base, `Default`,
+  inherit chain, own — an inheriting variant sees its parent over `Default`, never the reverse
+  (the first cut had that backwards and painted NightSky's page white).
+- **A dictionary with no `ThemeDictionaries` has one variant, `Default`;** one that declares
+  variants but no `Default` still serves its base keys under any variant, through the last
+  fallback.
+- **`StyleInclude` is an include.** Fluent and Simple reach their control themes through
+  `StyleInclude → Styles.Resources → MergeResourceInclude`; following it took Fluent from 831 to
+  1153 keys with nothing unresolved.
+- **Linked files and code providers are declared, not guessed.** Simple's
+  `/Strings/InvariantResources.xaml` is an MSBuild link into Fluent's folder (`ThemeSource.Links`);
+  Fluent's `SystemAccentColors` and `ColorPaletteResourcesCollection` are `ResourceProvider`s in
+  C# (`ThemeSource.Providers`, with the accent and its six HSL shades as literals). Both live in
+  `theme-audit.json`, so the report names what was assumed.
+- **Brush opacity is part of the colour.** Semi's `SemiColorText1..3` are Grey9 at `Opacity`
+  0.8/0.62/0.35; the opacity multiplies into the alpha along the alias chain so contrast is
+  scored as seen.
+
+## Compat dictionaries: mapped colours, verbatim aliases, no templates, and stand-in variant keys
+
+`theme-audit compat` writes, per target variant, every key the source theme defines that the
+target lacks. The reviewed table (`src/ThemeAudit/Mappings/FluentToSemi.json`,
+`SimpleToSemi.json`) maps only what has a meaning in the target: the 14 opaque `System*`
+colours and the seven accent shades onto Semi's palette tokens, the Simple `Theme*` colours onto
+Semi's greys by their Light value. Everything else is Fluent's or Simple's own definition copied
+verbatim — the `SystemControl*` brushes and control resources are aliases and follow the mapped
+colours; the white-or-black-at-alpha ramps read the same over Semi's surfaces. Templates, styles
+and includes are never copied: Fluent's 36 named sub-templates would restyle controls Semi
+already themes. Every generated element must close over the target or the dictionary itself;
+a colour that would dangle is written out and flagged for review (none was), anything else is
+dropped with the reason (two Simple keys reference colours Simple never defines).
+
+**Semi's high-contrast variants define `HighlightColor` themselves,** a name Simple also uses.
+An application's `Resources` are consulted before its `Styles`, so a compat entry in the
+dictionary's `Dark` would shadow NightSky's own value; the generator restores such a key in a
+per-variant dictionary. Avalonia's `ThemeVariant` type converter accepts only `Default`,
+`Light` and `Dark` as strings — a custom variant needs `{x:Static}` — and `DiffView.Avalonia`
+does not reference Semi. `ThemeVariant` equality is by key, and Semi declares each variant as
+`new ThemeVariant("Aquatic", ThemeVariant.Dark)`, so `SemiThemeVariants` in `DiffView.Avalonia`
+declares the same four keys and the generated dictionaries address them through it
+(`variantKeys` on the compat entry); the runtime test proves `SemiTheme.NightSky` finds them.
+A project that references Semi (ClaudeForge) omits `variantKeys` and gets Semi's own keys.
+
+The dictionaries are opt-in: `DiffViewResources.FluentCompatUri` / `SimpleCompatUri`, merged
+after the theme by a host that runs Semi and also hosts Fluent- or Simple-templated controls.
+`Themes/DiffView.axaml` does not include them; DiffView's own controls need no host key.
+
+## DiffView tokens: ClaudeForge's palette, one step darker where a floor demanded it
+
+`Themes/DiffView.Tokens.axaml` defines every `DiffView.*` brush for `Default` (Light) and `Dark`;
+no Semi-variant override was needed — the pairs in `contrast-pairs.json` pass under all ten
+targets, including the high-contrast pages (`SemiColorWindow`: Aquatic `#202020`, Desert
+`#FFFAEF`, Dusk `#2D3236`, NightSky `#000000`). Two deviations from the plan's "ClaudeForge's
+values": the modified marker is `#D96A00` rather than the pill's Orange 700 `#F57C00`, which is
+2.8:1 on white, and Orange 800 (`#EF6C00`) still fell short on the gutter (2.80) and on Desert's
+warm page (2.96) against the 3.0 floor for a change marker; and Dark uses lighter siblings of the
+same hues (`#66BB6A`, `#EF5350`, `#FFA726`) because `#C62828` is 2.3:1 on the dark pane. The
+status family carries ClaudeForge's measured status-bar values verbatim in both variants. Row
+tints are translucent and scored composited over the pane background. The colour-blind sibling
+uses Okabe–Ito blue / vermillion / reddish purple, the purple one step darker (`#B5588F`) than
+`#CC79A7` for the same gutter floor. Pane background is `#FFFFFF` / `#1E1E1E`, independent of the
+host page.
+
+## Plan drift: the AvaloniaEdit gaps are six plus nine, and the hosts have gaps of their own
+
+The plan's resolution test expected "exactly the six missing keys" under Semi without the
+compat dictionary. The audit counts six for AvaloniaEdit's Fluent theme file
+(`ContentControlThemeFontFamily`, `ControlContentThemeFontSize`, `SystemAccentColor`,
+`SystemBaseLowColor`, `SystemChromeMediumColor`, `ToolTipBorderThemeThickness`) and nine for its
+Simple theme file, three of the six and six of the nine static — they throw when the style
+loads, which is why AvaloniaEdit's own theme cannot simply be added under Semi. The tests assert
+those sets; with the compat dictionaries both are empty under all six variants.
+
+Findings the report carries about others, left where they are: Fluent 12.1.2's control templates
+reference `ScrollBarButtonBackgroundDisabled` and `ToggleSwitchFillOffDisabled`, which Fluent
+never defines (the compat dictionary cannot invent them); ClaudeForge's views still reference
+seven `SystemControl*` keys undefined under Semi, six of which the compat dictionary supplies
+and one of which — `SystemAccentColorBrush` — no theme defines, reported to the ClaudeForge
+session per the working rule rather than edited here.
+
+## The Reference trait runs by default, and drift leaves a `.received` file
+
+`ReferenceAuditTests` and `ThemeResolutionTests` carry `Category=Reference` for filtering but are
+not excluded: the checkouts self-heal through each test project's `EnsureReferenceSources`
+target, and CI fetches them first. When the committed report or a compat dictionary differs from
+a fresh run, the test writes the fresh output beside it as `*.received.md` / `*.received.axaml`
+(gitignored by the existing `*.received.*` rule) so the difference can be read, and names the two
+commands that regenerate.
+
+## theme-audit packs as 1.1.0, stamped by its own script
+
+`scripts/pack-theme-audit.{cs,sh,ps1}` mirrors the diagnostics packer: the project sets no
+package version (the AutoVersioning generator stamps assemblies, not packages), so the script
+stamps `PackageVersion` — 1.1.0 now that the tool has `report` and `compat`, superseding the
+1.0.0 that carried only `inventory`. The reviewed mappings ship inside the package
+(`Mappings/*.json` beside the executable), so a configuration names them bare
+(`"mapping": "FluentToSemi"`) or points at its own file.
