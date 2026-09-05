@@ -3,7 +3,8 @@
 ## Resume
 
 **Phase 0 — Bootstrap** of [plan 00001](plans/00001-side-by-side-diff-control.md) (approved,
-commit `ea23596`) is complete on this machine except for one manual check at a real window:
+commit `ea23596`; phase committed as `6042d6e` on `main`, no remote yet) is complete on this
+machine except for one manual check at a real window:
 Debug → *Throw on the UI thread* must show the fatal-error dialog with a working copy button,
 and F12 must open the live log, in the Debug build and in the trimmed publish. Everything else
 in the phase's *done when* list holds. Next is **Phase 1 — the virtual-padding spike**,
