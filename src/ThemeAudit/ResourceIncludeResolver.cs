@@ -90,9 +90,17 @@ public static class ResourceIncludeResolver
         }
     }
 
-    private static bool TryResolveSource(string source, string includingFile, string root, string? assemblyName,
-                                         out string resolved, out string reason)
+    /// <summary>
+    /// Resolves one <c>Source</c> to a local file, applying Avalonia's rules: a leading <c>/</c> is
+    /// rooted at <paramref name="baseDirectory"/>, a bare path is relative to
+    /// <paramref name="includingFile"/>, and <c>avares://Assembly/path</c> resolves only when
+    /// <paramref name="assemblyName"/> is given and matches. Returns false with a
+    /// <paramref name="reason"/> for a cross-assembly URI, a malformed URI, or a missing file.
+    /// </summary>
+    public static bool TryResolveSource(string source, string includingFile, string baseDirectory, string? assemblyName,
+                                        out string resolved, out string reason)
     {
+        string root = Path.GetFullPath(baseDirectory);
         resolved = string.Empty;
         reason = string.Empty;
 
