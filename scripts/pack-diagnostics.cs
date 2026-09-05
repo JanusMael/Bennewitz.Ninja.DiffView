@@ -15,6 +15,10 @@ using System.Text.Json.Serialization;
 const string ManifestPath = "reference/sources.json";
 const string ProjectRelativePath = "src/LayeredEditors.Avalonia.Diagnostics/LayeredEditors.Avalonia.Diagnostics.csproj";
 
+// The upstream project sets no package version, so this script stamps it. Bump it together
+// with the ClaudeForge pin in reference/sources.json and the pin in Directory.Packages.props.
+const string PackageVersion = "1.0.1";
+
 string feed = Path.GetFullPath(Path.Combine("..", "nuget-local"));
 for (int i = 0; i < args.Length; i++)
 {
@@ -58,9 +62,8 @@ if (!File.Exists(project))
 Directory.CreateDirectory(feed);
 Console.WriteLine($"pack-diagnostics: {Path.GetFullPath(checkout)} → {feed}");
 
-// PackageReadmeFile is set in that csproj but the README does not ship; clear it for the pack.
 ProcessStartInfo start = new("dotnet") { UseShellExecute = false };
-foreach (string argument in new[] { "pack", project, "-c", "Release", "-o", feed, "-p:PackageReadmeFile=", "--nologo" })
+foreach (string argument in new[] { "pack", project, "-c", "Release", "-o", feed, $"-p:PackageVersion={PackageVersion}", "--nologo" })
 {
     start.ArgumentList.Add(argument);
 }

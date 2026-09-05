@@ -55,13 +55,13 @@ tool's consumer scan, findings, contrast check and compat generator, then the ex
 | Trimmed publish (`linux-x64`, self-contained, `TrimMode=link`) | succeeds, 0 IL warnings, 48 MB output, boots and logs |
 | Reference self-heal | removing `reference/DiffPlex` and building the Avalonia test project re-fetched it at its pin; `git status` shows nothing under `reference/` but the manifest and README |
 | `theme-audit inventory` on Semi Light | 624 keys in 44 files; the tool packs into the local feed |
-| Deliberate throw → dialog, F12 live log | **manual, pending** — needs a click at the window |
+| Deliberate throw → dialog, F12 live log | **pass** at the window, Debug build and trimmed publish (user, 2026-09-04): the dialog shows with a working copy button and F12 opens the live log. Found: F12 pressed inside the live-log window did not close it, because the toggle lived on the main window's key handler only; fixed upstream in the diagnostics package (see *Upstreamed*) and consumed as 1.0.1 |
 
 ## Upstreamed to ClaudeForge
 
 | Change | Reference | State |
 |---|---|---|
-| `LayeredEditors.Avalonia.Diagnostics` sets `PackageReadmeFile` but ships no README; `dotnet pack` fails without an override | — | to open |
+| Live-log window ignored F12 (toggle lived on the host's main window only); and `LayeredEditors.Avalonia.Diagnostics` named a `PackageReadmeFile` it did not ship, so `dotnet pack` failed | [JanusMael/ClaudeForge#37](https://github.com/JanusMael/ClaudeForge/pull/37) | PR open; consumed here as diagnostics 1.0.1, pin at branch head `f7980f2` |
 
 ## Measurements
 

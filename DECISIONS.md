@@ -147,3 +147,17 @@ Tests that measure carry `[Trait("Category", "Perf")]`. `tests/Directory.Build.p
 property, so the default run and CI skip them and
 `dotnet test --solution DiffView.slnx -p:IncludePerfTests=true` runs them. Their numbers are read
 from the test output (the `.trx` report carries it) and recorded in `PROGRESS.md`.
+
+## Diagnostics package 1.0.1: the pack script stamps the version, the pin follows the fix
+
+Phase 0's manual check found that F12 inside the live-log window did not close it: the
+toggle lived on the host's main-window key handler, which never sees a key pressed while the
+log window has focus. The fix belongs to the package, so it went to ClaudeForge first per the
+plan's *Contributing back* protocol — branch `fix/diagnostics-live-log-f12-and-readme`,
+pull request https://github.com/JanusMael/ClaudeForge/pull/37 — together with the README the project's `PackageReadmeFile` had been
+naming without shipping. `scripts/pack-diagnostics.cs` no longer clears that property; it now
+stamps `PackageVersion` (**1.0.1**) because the upstream project sets none, and the ClaudeForge
+pin in `reference/sources.json` moved to the branch head `f7980f2` so CI packs the same
+source the local sibling checkout is on. The three move together: the pin, the constant in the
+pack script, and the version in `Directory.Packages.props`. When the pull request merges, the
+pin moves to the merge commit in a routine bump.

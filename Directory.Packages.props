@@ -25,7 +25,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <!-- From the local feed (../nuget-local), packed from ClaudeForge by scripts/pack-diagnostics.* -->
-    <PackageVersion Include="LayeredEditors.Avalonia.Diagnostics" Version="1.0.0" />
+    <PackageVersion Include="LayeredEditors.Avalonia.Diagnostics" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup Label="Tooling">
