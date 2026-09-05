@@ -1,26 +1,29 @@
 <!--
-    DiffView styles and tokens. A host includes this file once:
+    DiffView styles. A host includes this file once:
 
         <StyleInclude Source="avares://DiffView.Avalonia/Themes/DiffView.axaml" />
 
-    Every brush the controls use is a DiffView.* token defined here. The controls never
-    reference a host theme's own keys (Fluent's SystemControl* family, Semi's tokens), so they
-    render the same under Semi, Fluent and Simple. A host overrides any token by defining the
-    same key in its own resources.
+    Every brush the controls use is a DiffView.* token from DiffView.Tokens.axaml, merged here.
+    The controls never reference a host theme's own keys (Fluent's SystemControl* family, Semi's
+    tokens), so they render the same under Semi, Fluent and Simple. A host overrides any token by
+    defining the same key in its own resources, or swaps the whole palette for the colour-blind
+    sibling by merging DiffView.Tokens.ColorBlind.axaml after this include.
 
     This is a <Styles> document rather than a <ResourceDictionary> so it can be pulled in with a
-    plain StyleInclude; Styles.Resources does not accept a ResourceInclude (AVLN3000).
+    plain StyleInclude; Styles.Resources does not accept a ResourceInclude directly (AVLN3000),
+    so the tokens arrive through a merged dictionary.
+
+    Compat/FluentKeys.Semi.axaml and Compat/SimpleKeys.Semi.axaml are not included here: a host
+    that runs Semi and also hosts controls templated for Fluent or Simple (AvaloniaEdit's search
+    panel among them) merges them itself — see DiffViewResources.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Styles.Resources>
     <ResourceDictionary>
-      <!-- Change-marker glyph colours (+ / - / ~). Theme-neutral: the same values ClaudeForge uses
-           for its Save Changes kind pills, so DiffView reads as native inside it. Orange 700 rather
-           than Orange 900, which reads as red beside the deleted marker. -->
-      <SolidColorBrush x:Key="DiffView.MarkerInsertedBrush" Color="#2E7D32" />
-      <SolidColorBrush x:Key="DiffView.MarkerDeletedBrush" Color="#C62828" />
-      <SolidColorBrush x:Key="DiffView.MarkerModifiedBrush" Color="#F57C00" />
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://DiffView.Avalonia/Themes/DiffView.Tokens.axaml" />
+      </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Styles.Resources>
 </Styles>

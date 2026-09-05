@@ -43,14 +43,13 @@ public sealed record DefinedResource(string File, string? Variant, string Key, R
 public static class ThemeDefinitionScanner
 {
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
-    private static readonly string[] SkippedDirectories = ["bin", "obj", ".git"];
 
-    /// <summary>Scans every AXAML/XAML file under a directory.</summary>
+    /// <summary>Scans every AXAML/XAML file under a directory, leaving out <paramref name="excludedDirectories"/>.</summary>
     /// <exception cref="InvalidDataException">A file is not well-formed XML.</exception>
-    public static IReadOnlyList<DefinedResource> Scan(string directory)
+    public static IReadOnlyList<DefinedResource> Scan(string directory, IReadOnlyList<string>? excludedDirectories = null)
     {
         List<DefinedResource> defined = [];
-        foreach (string file in EnumerateXamlFiles(directory))
+        foreach (string file in XamlFiles.Enumerate(directory, excludedDirectories))
         {
             defined.AddRange(ScanFile(file));
         }
@@ -173,23 +172,5 @@ public static class ThemeDefinitionScanner
         }
 
         return 1.0;
-    }
-
-    private static IEnumerable<string> EnumerateXamlFiles(string directory)
-    {
-        return Directory
-            .EnumerateFiles(directory, "*.*xaml", SearchOption.AllDirectories)
-            .Where(f => f.EndsWith(".axaml", StringComparison.OrdinalIgnoreCase)
-                        || f.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
-            .Where(f => !IsUnderSkippedDirectory(directory, f))
-            .Order(StringComparer.Ordinal);
-    }
-
-    private static bool IsUnderSkippedDirectory(string root, string file)
-    {
-        string relative = Path.GetRelativePath(root, file);
-        string[] segments = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return segments.Take(segments.Length - 1)
-                       .Any(segment => SkippedDirectories.Contains(segment, StringComparer.OrdinalIgnoreCase));
     }
 }

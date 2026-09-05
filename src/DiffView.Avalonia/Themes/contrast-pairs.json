@@ -1,0 +1,45 @@
+{
+  // The contrast contract of the DiffView.* palette, scored by `theme-audit report` under every
+  // target theme and variant. 4.5 is WCAG AA for text; 3.0 is AA for large text and non-text
+  // UI — a change marker, a caret, a connector, a border. A translucent background is scored
+  // composited over its `over` key. `$Page` is the host theme's own page surface per variant.
+  "pairs": [
+    // Text on the pane and on every row tint it can sit on.
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text on the pane" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.InsertedBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text on an inserted row" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.DeletedBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text on a deleted row" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.ModifiedBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text on a modified row" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.PaddingBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text beside padding" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.WordInsertedBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text under an inserted-word highlight" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.WordDeletedBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text under a deleted-word highlight" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.SelectionBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "selected text" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.FindMatchBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text in a find match" },
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.FindCurrentMatchBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text in the current find match" },
+    { "foreground": "DiffView.LineNumberForegroundBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 4.5, "purpose": "line numbers" },
+
+    // Non-text UI on the pane and gutter.
+    { "foreground": "DiffView.CaretBrush", "background": "DiffView.PaneBackgroundBrush", "floor": 3.0, "purpose": "caret" },
+    { "foreground": "DiffView.CurrentBlockBorderBrush", "background": "DiffView.PaneBackgroundBrush", "floor": 3.0, "purpose": "current-block border" },
+    { "foreground": "DiffView.MarkerInsertedBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "+ marker in the gutter" },
+    { "foreground": "DiffView.MarkerDeletedBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "- marker in the gutter" },
+    { "foreground": "DiffView.MarkerModifiedBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "~ marker in the gutter" },
+    { "foreground": "DiffView.ConnectorBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "connector in the gutter" },
+
+    // Drawn on the host's own page surface: minimap ticks, connectors, the block border.
+    { "foreground": "DiffView.MarkerInsertedBrush", "background": "$Page", "floor": 3.0, "purpose": "inserted tick on the host page" },
+    { "foreground": "DiffView.MarkerDeletedBrush", "background": "$Page", "floor": 3.0, "purpose": "deleted tick on the host page" },
+    { "foreground": "DiffView.MarkerModifiedBrush", "background": "$Page", "floor": 3.0, "purpose": "modified tick on the host page" },
+    { "foreground": "DiffView.ConnectorBrush", "background": "$Page", "floor": 3.0, "purpose": "connector on the host page" },
+    { "foreground": "DiffView.CurrentBlockBorderBrush", "background": "$Page", "floor": 3.0, "purpose": "block border on the host page" },
+
+    // Headers and status strip.
+    { "foreground": "DiffView.HeaderForegroundBrush", "background": "DiffView.HeaderBackgroundBrush", "floor": 4.5, "purpose": "header text" },
+    { "foreground": "DiffView.MutedForegroundBrush", "background": "DiffView.HeaderBackgroundBrush", "floor": 4.5, "purpose": "muted header text" },
+    { "foreground": "DiffView.StatusForegroundBrush", "background": "DiffView.StatusBackgroundBrush", "floor": 4.5, "purpose": "status text" },
+    { "foreground": "DiffView.MutedForegroundBrush", "background": "DiffView.StatusBackgroundBrush", "floor": 4.5, "purpose": "muted status text" },
+    { "foreground": "DiffView.StatusSuccessForegroundBrush", "background": "DiffView.StatusSuccessBackgroundBrush", "floor": 4.5, "purpose": "success pill" },
+    { "foreground": "DiffView.StatusWarningForegroundBrush", "background": "DiffView.StatusWarningBackgroundBrush", "floor": 4.5, "purpose": "warning pill" },
+    { "foreground": "DiffView.StatusFailureForegroundBrush", "background": "DiffView.StatusFailureBackgroundBrush", "floor": 4.5, "purpose": "failure pill" },
+    { "foreground": "DiffView.StatusActiveForegroundBrush", "background": "DiffView.StatusActiveBackgroundBrush", "floor": 4.5, "purpose": "active pill" }
+  ]
+}

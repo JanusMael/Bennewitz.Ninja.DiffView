@@ -29,15 +29,14 @@ public sealed record ResourceReference(string File, string Key, ReferenceKind Ki
 /// </summary>
 public static class ResourceReferenceScanner
 {
-    private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
-    private static readonly string[] SkippedDirectories = ["bin", "obj", ".git"];
-
+    /// <param name="directory">The root to scan.</param>
+    /// <param name="excludedDirectories">Absolute directories under the root to leave out.</param>
     /// <exception cref="InvalidDataException">A file is not well-formed XML.</exception>
-    public static IReadOnlyList<ResourceReference> Scan(string directory)
+    public static IReadOnlyList<ResourceReference> Scan(string directory, IReadOnlyList<string>? excludedDirectories = null)
     {
         List<ResourceReference> references = [];
 
-        foreach (string file in EnumerateXamlFiles(directory))
+        foreach (string file in XamlFiles.Enumerate(directory, excludedDirectories))
         {
             XDocument document;
             try
@@ -218,23 +217,5 @@ public static class ResourceReferenceScanner
         }
 
         return -1;
-    }
-
-    private static IEnumerable<string> EnumerateXamlFiles(string directory)
-    {
-        return Directory
-            .EnumerateFiles(directory, "*.*xaml", SearchOption.AllDirectories)
-            .Where(f => f.EndsWith(".axaml", StringComparison.OrdinalIgnoreCase)
-                        || f.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
-            .Where(f => !IsUnderSkippedDirectory(directory, f))
-            .Order(StringComparer.Ordinal);
-    }
-
-    private static bool IsUnderSkippedDirectory(string root, string file)
-    {
-        string relative = Path.GetRelativePath(root, file);
-        string[] segments = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return segments.Take(segments.Length - 1)
-                       .Any(segment => SkippedDirectories.Contains(segment, StringComparer.OrdinalIgnoreCase));
     }
 }

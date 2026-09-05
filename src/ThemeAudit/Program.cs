@@ -79,7 +79,7 @@ compat.SetAction(parseResult =>
             ThemeTarget from = themes.TryGetValue(entry.From, out ThemeTarget? f) ? f : themes[entry.From] = AuditRunner.BuildTheme(config, config.Theme(entry.From));
             ThemeTarget to = themes.TryGetValue(entry.To, out ThemeTarget? t) ? t : themes[entry.To] = AuditRunner.BuildTheme(config, config.Theme(entry.To));
             CompatMapping mapping = CompatMapping.Load(CompatMapping.Locate(config, entry.Mapping));
-            CompatGeneration generation = CompatGenerator.Generate(from.Inventory, to.Inventory, mapping, entry.From, entry.To);
+            CompatGeneration generation = CompatGenerator.Generate(from.Inventory, to.Inventory, mapping, entry.From, entry.To, entry.VariantKeys);
             string output = config.Resolve(entry.Output);
 
             string summary = Summarize(generation);

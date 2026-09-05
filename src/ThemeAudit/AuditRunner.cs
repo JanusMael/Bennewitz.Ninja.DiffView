@@ -87,7 +87,7 @@ public static class AuditRunner
             ThemeTarget from = themes.Single(t => t.Config.Name == entry.From);
             ThemeTarget to = themes.Single(t => t.Config.Name == entry.To);
             CompatMapping mapping = CompatMapping.Load(CompatMapping.Locate(config, entry.Mapping));
-            compat.Add(new CompatOutcome(entry, mapping, CompatGenerator.Generate(from.Inventory, to.Inventory, mapping, entry.From, entry.To)));
+            compat.Add(new CompatOutcome(entry, mapping, CompatGenerator.Generate(from.Inventory, to.Inventory, mapping, entry.From, entry.To, entry.VariantKeys)));
         }
 
         return new AuditResult(config, themes, consumers, findings, compat);
@@ -148,13 +148,14 @@ public static class AuditRunner
         List<string> files = [];
         List<ResourceReference> references = [];
         HashSet<string> own = new(StringComparer.Ordinal);
+        List<string> excluded = consumer.Exclude?.Select(config.Resolve).ToList() ?? [];
 
         foreach (PathCandidates candidates in consumer.Paths)
         {
             string directory = candidates.ResolveDirectory(config);
-            files.AddRange(XamlFiles.Enumerate(directory));
-            references.AddRange(ResourceReferenceScanner.Scan(directory));
-            own.UnionWith(ThemeDefinitionScanner.Scan(directory).Select(d => d.Key));
+            files.AddRange(XamlFiles.Enumerate(directory, excluded));
+            references.AddRange(ResourceReferenceScanner.Scan(directory, excluded));
+            own.UnionWith(ThemeDefinitionScanner.Scan(directory, excluded).Select(d => d.Key));
         }
 
         if (consumer.Tokens is { } tokens)

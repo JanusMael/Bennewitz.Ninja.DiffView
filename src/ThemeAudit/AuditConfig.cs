@@ -239,6 +239,9 @@ public sealed class ConsumerConfig
     /// <summary>The directories to scan; each entry is a path or a list of candidate paths, the first that exists winning.</summary>
     public List<PathCandidates> Paths { get; set; } = [];
 
+    /// <summary>Directories under <see cref="Paths"/> left out of the scan — a generated subtree the consumer does not author.</summary>
+    public List<string>? Exclude { get; set; }
+
     /// <summary>The consumer's own token dictionary, for contrast scoring.</summary>
     public TokensConfig? Tokens { get; set; }
 
@@ -279,6 +282,31 @@ public sealed class CompatConfig
 
     /// <summary>Where the generated dictionary is written.</summary>
     public required string Output { get; set; }
+
+    /// <summary>
+    /// How a custom (non built-in) target variant is keyed in the output. Avalonia's
+    /// <c>ThemeVariant</c> converter accepts only <c>Default</c>, <c>Light</c> and <c>Dark</c> as
+    /// strings; any other variant needs <c>{x:Static Type.Member}</c>, and the type must be
+    /// visible to the project that compiles the dictionary. Omitted, the target theme's own key
+    /// is written (<c>{x:Static semi:SemiTheme.Aquatic}</c>), which compiles only where that theme
+    /// is referenced; set, the member is looked up on the named type by the variant's name —
+    /// <c>ThemeVariant</c> equality is by key string, so a stand-in type with the same names
+    /// matches the theme's variants at runtime without referencing it.
+    /// </summary>
+    public VariantKeyStyle? VariantKeys { get; set; }
+}
+
+/// <summary>The static type whose members name a theme's custom variants, for <c>{x:Static prefix:Type.Member}</c> keys.</summary>
+public sealed class VariantKeyStyle
+{
+    /// <summary>The XML prefix to declare.</summary>
+    public required string Prefix { get; set; }
+
+    /// <summary>The XML namespace (<c>using:Some.Namespace</c>).</summary>
+    public required string Namespace { get; set; }
+
+    /// <summary>The type whose static members are the variants.</summary>
+    public required string Type { get; set; }
 }
 
 /// <summary>A path or a list of candidate paths; the first that exists is used.</summary>

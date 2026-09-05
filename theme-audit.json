@@ -1,0 +1,133 @@
+{
+  // The theme audit (plan 00001 §Phase 2). Themes come from the reference checkouts at their
+  // pins in reference/sources.json; consumers are DiffView's own templates, AvaloniaEdit's
+  // theme files, Fluent's control templates (what any Fluent-styled control may reach for),
+  // and ClaudeForge's views through the manifest's local entry or the fetched checkout.
+  //
+  //   dotnet run --project src/ThemeAudit -- compat     regenerate Themes/Compat/*.Semi.axaml
+  //   dotnet run --project src/ThemeAudit -- report     regenerate docs/theme-audit.md
+  //   … --check                                          the drift check the tests also run
+  "title": "DiffView theme audit",
+  "report": "docs/theme-audit.md",
+  "themes": [
+    {
+      "name": "Fluent",
+      "entry": "reference/Avalonia/src/Avalonia.Themes.Fluent/FluentTheme.xaml",
+      "baseDirectory": "reference/Avalonia/src/Avalonia.Themes.Fluent",
+      "assembly": "Avalonia.Themes.Fluent",
+      "variants": ["Light", "Dark"],
+      // SystemAccentColors is a ResourceProvider in C#: the platform accent, #0078D7 by default,
+      // and six HSL shades computed from it (SystemAccentColors.CalculateAccentShades).
+      // ColorPaletteResourcesCollection supplies nothing until an application sets a palette.
+      "providers": {
+        "SystemAccentColors": {
+          "SystemAccentColor": "#FF0078D7",
+          "SystemAccentColorDark1": "#FF00589E",
+          "SystemAccentColorDark2": "#FF004175",
+          "SystemAccentColorDark3": "#FF002542",
+          "SystemAccentColorLight1": "#FF269FFF",
+          "SystemAccentColorLight2": "#FF64BBFF",
+          "SystemAccentColorLight3": "#FFA6D8FF"
+        },
+        "ColorPaletteResourcesCollection": {}
+      },
+      "surfaces": { "Page": "SystemRegionBrush", "Text": "SystemControlForegroundBaseHighBrush" }
+    },
+    {
+      "name": "Simple",
+      "entry": "reference/Avalonia/src/Avalonia.Themes.Simple/SimpleTheme.xaml",
+      "baseDirectory": "reference/Avalonia/src/Avalonia.Themes.Simple",
+      "assembly": "Avalonia.Themes.Simple",
+      "variants": ["Light", "Dark"],
+      // Simple's project links Fluent's strings file in as /Strings/InvariantResources.xaml.
+      "links": { "/Strings/InvariantResources.xaml": "reference/Avalonia/src/Avalonia.Themes.Fluent/Strings/InvariantResources.xaml" },
+      "surfaces": { "Page": "ThemeBackgroundBrush", "Text": "ThemeForegroundBrush" }
+    },
+    {
+      "name": "Semi",
+      "entry": "reference/Semi.Avalonia/src/Semi.Avalonia/Index.axaml",
+      "baseDirectory": "reference/Semi.Avalonia/src/Semi.Avalonia",
+      "assembly": "Semi.Avalonia",
+      "variants": ["Light", "Dark", "Aquatic", "Desert", "Dusk", "NightSky"],
+      // SemiTheme.axaml.cs: Desert inherits Light; Aquatic, Dusk and NightSky inherit Dark.
+      "inheritance": { "Desert": "Light", "Aquatic": "Dark", "Dusk": "Dark", "NightSky": "Dark" },
+      // Light and Dark paint the window with SemiColorBackground0 / SemiColorText0; the
+      // high-contrast variants paint it with SemiColorWindow / SemiColorWindowText.
+      "surfaces": { "Page": "SemiColorBackground0", "Text": "SemiColorText0" },
+      "variantSurfaces": {
+        "Aquatic": { "Page": "SemiColorWindow", "Text": "SemiColorWindowText" },
+        "Desert": { "Page": "SemiColorWindow", "Text": "SemiColorWindowText" },
+        "Dusk": { "Page": "SemiColorWindow", "Text": "SemiColorWindowText" },
+        "NightSky": { "Page": "SemiColorWindow", "Text": "SemiColorWindowText" }
+      }
+    },
+    {
+      "name": "Semi + compat",
+      "extends": "Semi",
+      "merge": [
+        "src/DiffView.Avalonia/Themes/Compat/FluentKeys.Semi.axaml",
+        "src/DiffView.Avalonia/Themes/Compat/SimpleKeys.Semi.axaml"
+      ]
+    }
+  ],
+  "consumers": [
+    {
+      // The generated Compat/ dictionaries are not DiffView's own references; they are audited
+      // through the "Semi + compat" theme instead.
+      "name": "DiffView",
+      "paths": ["src/DiffView.Avalonia/Themes"],
+      "exclude": ["src/DiffView.Avalonia/Themes/Compat"],
+      "tokens": { "entry": "src/DiffView.Avalonia/Themes/DiffView.Tokens.axaml", "assembly": "DiffView.Avalonia" },
+      "contrast": "src/DiffView.Avalonia/Themes/contrast-pairs.json"
+    },
+    {
+      "name": "DiffView (colour-blind palette)",
+      "paths": ["src/DiffView.Avalonia/Themes"],
+      "exclude": ["src/DiffView.Avalonia/Themes/Compat"],
+      "tokens": { "entry": "src/DiffView.Avalonia/Themes/DiffView.Tokens.ColorBlind.axaml", "assembly": "DiffView.Avalonia" },
+      "contrast": "src/DiffView.Avalonia/Themes/contrast-pairs.json"
+    },
+    {
+      // AvaloniaEdit's theme files, each audited under the theme it targets and under Semi.
+      "name": "AvaloniaEdit Fluent theme",
+      "paths": ["reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent"],
+      "themes": ["Fluent", "Semi", "Semi + compat"]
+    },
+    {
+      "name": "AvaloniaEdit Simple theme",
+      "paths": ["reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple"],
+      "themes": ["Simple", "Semi", "Semi + compat"]
+    },
+    {
+      "name": "Fluent controls",
+      "paths": ["reference/Avalonia/src/Avalonia.Themes.Fluent/Controls"],
+      "themes": ["Fluent", "Semi", "Semi + compat"]
+    },
+    {
+      "name": "ClaudeForge",
+      "paths": [
+        ["../cl/ClaudeForge/src/ClaudeForge", "reference/ClaudeForge/src/ClaudeForge"],
+        ["../cl/ClaudeForge/src/ClaudeForge.Avalonia", "reference/ClaudeForge/src/ClaudeForge.Avalonia"],
+        ["../cl/ClaudeForge/src/LayeredEditors.Avalonia", "reference/ClaudeForge/src/LayeredEditors.Avalonia"]
+      ],
+      "themes": ["Semi", "Semi + compat"]
+    }
+  ],
+  "compat": [
+    // DiffView.Avalonia does not reference Semi, so a per-variant entry for a Semi high-contrast
+    // variant is keyed through DiffView's own SemiThemeVariants (ThemeVariant equality is by
+    // key, so it matches Semi's at runtime).
+    {
+      "name": "FluentKeys.Semi", "from": "Fluent", "to": "Semi",
+      "mapping": "src/ThemeAudit/Mappings/FluentToSemi.json",
+      "output": "src/DiffView.Avalonia/Themes/Compat/FluentKeys.Semi.axaml",
+      "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView.Avalonia", "type": "SemiThemeVariants" }
+    },
+    {
+      "name": "SimpleKeys.Semi", "from": "Simple", "to": "Semi",
+      "mapping": "src/ThemeAudit/Mappings/SimpleToSemi.json",
+      "output": "src/DiffView.Avalonia/Themes/Compat/SimpleKeys.Semi.axaml",
+      "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView.Avalonia", "type": "SemiThemeVariants" }
+    }
+  ]
+}

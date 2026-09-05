@@ -139,6 +139,25 @@ public sealed class CompatGeneratorTests : IDisposable
     }
 
     [Fact]
+    public void A_custom_variant_can_be_keyed_through_a_stand_in_type()
+    {
+        (ThemeInventory from, ThemeInventory to, CompatMapping mapping) = Load();
+        VariantKeyStyle standIn = new() { Prefix = "dv", Namespace = "using:Consumer.Theming", Type = "HostVariants" };
+
+        CompatGeneration generation = CompatGenerator.Generate(from, to, mapping, "From", "To", standIn);
+
+        XElement root = XDocument.Parse(generation.Xml).Root!;
+        Dictionary<string, string> declared = root.Attributes().Where(a => a.IsNamespaceDeclaration && a.Name.LocalName != "xmlns")
+            .ToDictionary(a => a.Name.LocalName, a => a.Value, StringComparer.Ordinal);
+        Assert.Equal("using:Consumer.Theming", declared["dv"]);
+        Assert.False(declared.ContainsKey("fx")); // the theme's own prefix is no longer needed
+
+        List<string> keys = root.Element(Avalonia + "ResourceDictionary.ThemeDictionaries")!.Elements()
+            .Select(d => d.Attribute(Xaml + "Key")!.Value).ToList();
+        Assert.Equal(["Light", "Dark", "{x:Static dv:HostVariants.Vivid}"], keys);
+    }
+
+    [Fact]
     public void The_shipped_mappings_load_by_bare_name()
     {
         AuditConfig config = AuditConfig.Parse("""{ "themes": [] }""", _root);

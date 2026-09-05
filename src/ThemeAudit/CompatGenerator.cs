@@ -47,8 +47,11 @@ public static class CompatGenerator
     /// <summary>
     /// Generates the dictionary carrying <paramref name="from"/>'s keys into <paramref name="to"/>.
     /// <paramref name="fromName"/> and <paramref name="toName"/> appear in the file's comment.
+    /// <paramref name="variantKeys"/>, when given, keys the target's custom variants through that
+    /// type's members instead of the target theme's own <c>{x:Static}</c> expression.
     /// </summary>
-    public static CompatGeneration Generate(ThemeInventory from, ThemeInventory to, CompatMapping mapping, string fromName, string toName)
+    public static CompatGeneration Generate(ThemeInventory from, ThemeInventory to, CompatMapping mapping, string fromName, string toName,
+                                            VariantKeyStyle? variantKeys = null)
     {
         List<CompatEntry> entries = [];
         List<CompatSkipped> skipped = [];
@@ -104,6 +107,21 @@ public static class CompatGenerator
             {
                 generated[declared.DisplayName] = restored;
                 order.Add((declared.DisplayName, declared.Key, declared.KeyNamespaces));
+            }
+        }
+
+        // A custom variant key is an {x:Static} the compiling project must be able to resolve;
+        // re-key it through the caller's stand-in type when one is given.
+        if (variantKeys is not null)
+        {
+            Dictionary<string, string> standIn = new(StringComparer.Ordinal) { [variantKeys.Prefix] = variantKeys.Namespace };
+            for (int i = 0; i < order.Count; i++)
+            {
+                (string variant, string rawKey, _) = order[i];
+                if (rawKey.StartsWith('{'))
+                {
+                    order[i] = (variant, "{x:Static " + variantKeys.Prefix + ":" + variantKeys.Type + "." + variant + "}", standIn);
+                }
             }
         }
 
