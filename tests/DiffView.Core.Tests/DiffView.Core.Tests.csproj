@@ -1,4 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- xUnit1051 wants TestContext.Current.CancellationToken passed to every call that accepts a
+         token. Core's build and search take an optional token by design and the tests exercise the
+         default deliberately; the cancellation tests pass their own token. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="../../src/DiffView.Core/DiffView.Core.csproj" />
   </ItemGroup>

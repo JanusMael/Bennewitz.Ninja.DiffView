@@ -1,0 +1,27 @@
+using System;
+using System.Globalization;
+
+namespace Sample
+{
+    public sealed class Greeter
+    {
+        private readonly string _name;
+        private readonly CultureInfo _culture;
+
+        public Greeter(string name, CultureInfo culture)
+        {
+            _name = name;
+            _culture = culture;
+        }
+
+        public string Greet()
+        {
+            return "Hello, " + _name.ToUpper(_culture) + "!";
+        }
+
+        private static int Count(string text)
+        {
+            return text.Length;
+        }
+    }
+}
