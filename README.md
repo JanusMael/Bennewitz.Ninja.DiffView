@@ -7,7 +7,7 @@ not a rewrite. A second, standalone deliverable is `theme-audit`, a dotnet tool 
 resource keys an Avalonia theme leaves undefined (the invisible-control cases) and the tokens
 below a contrast floor, for any Avalonia project.
 
-Status: **Phase 1 — virtual-padding spike: go.** Next is Phase 2, the theme-key audit. The plan is [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
+Status: **Phase 2 — theme-key audit, in progress.** The audit's detection core is built and verified against the reference themes; the generation half (report, compat and token dictionaries) is next. The plan is [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
 progress is tracked in [PROGRESS.md](PROGRESS.md) and decisions in [DECISIONS.md](DECISIONS.md).
 
 ## Layout
