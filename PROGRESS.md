@@ -11,8 +11,8 @@ word-level pieces lazily into an LRU keyed by document version; `DiffSearch` fin
 either or both sides in row order. Every invariant, failure path and search case of plan
 §Phase 3 has a passing test and the `Perf` numbers are recorded below. Next is **Phase 4 —
 Pane presenter, padding, gutters** (plan §Phase 4), which lifts the Phase 1 spike's mechanism
-into the library and owes the caret-column normalisation after `Home` twice. Phase 2's
-ClaudeForge contribution is open as draft PR #38 awaiting the user's click-through (see
+into the library and owes the caret-column normalisation after `Home` twice. Both ClaudeForge
+contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the merge (see
 *Upstreamed to ClaudeForge*).
 
 The theme audit regenerates after a pin bump, in this order:
@@ -31,7 +31,7 @@ dotnet run --project src/ThemeAudit -- report
 |---|---|---|
 | 0 Bootstrap | done | 7 tests across three tiers; trim-check clean; manual dialog/F12 check passed |
 | 1 Virtual-padding spike | done — go | 6 headless tests, 1 of them `Perf`; priming batched at 256 |
-| 2 Theme-key audit and exhaustive dictionaries | done (ClaudeForge PR #38 draft) | `theme-audit` `report` and `compat` over a JSON configuration; inventories model Default fallback, `StyleInclude`, linked files, code providers and brush opacity; contrast scoring against each variant's own surface; reviewed Fluent→Semi and Simple→Semi mappings; `DiffView.Tokens.axaml` + colour-blind sibling; `docs/theme-audit.md` committed with drift tests; runtime resolution and rendering tests under all ten targets; tool packed as 1.1.0 |
+| 2 Theme-key audit and exhaustive dictionaries | done (ClaudeForge PR #38 merged) | `theme-audit` `report` and `compat` over a JSON configuration; inventories model Default fallback, `StyleInclude`, linked files, code providers and brush opacity; contrast scoring against each variant's own surface; reviewed Fluent→Semi and Simple→Semi mappings; `DiffView.Tokens.axaml` + colour-blind sibling; `docs/theme-audit.md` committed with drift tests; runtime resolution and rendering tests under all ten targets; tool packed as 1.1.0 |
 | 3 Core model, probing, search engine | done | `PaneSource`, `TextProbe`, `LineSplitter`, `DiffOptions`, `SimilarityGate`, `DiffDocumentBuilder`, `SideBySideDocument` + `Padding`, `WordDiffCache`, `DiffSearch`; 87 unit tests (seven invariants, every failure path, cache, search) and 4 `Perf` measurements |
 | 4 Pane presenter, padding, gutters | not started | lifts the spike's mechanism; normalises the caret column after `Home` |
 | 5 Composite control, scroll sync, headers, status strip, theming | not started | |
@@ -111,8 +111,8 @@ dotnet run --project src/ThemeAudit -- report
 
 | Change | Reference | State |
 |---|---|---|
-| Live-log window ignored F12 (toggle lived on the host's main window only); and `LayeredEditors.Avalonia.Diagnostics` named a `PackageReadmeFile` it did not ship, so `dotnet pack` failed | [JanusMael/ClaudeForge#37](https://github.com/JanusMael/ClaudeForge/pull/37) | PR open; consumed here as diagnostics 1.0.1, pin at branch head `f7980f2` |
-| Theme audit: the report for ClaudeForge's views (seven `SystemControl*` keys still referenced and undefined under Semi, one of them — `SystemAccentColorBrush` — defined by no theme at all), the generated `FluentKeys.Semi.axaml` / `SimpleKeys.Semi.axaml` merged in its `App.axaml`, the tool as a local dotnet tool, and the `docs/UI-STYLE-GUIDE.md` §2 update | [JanusMael/ClaudeForge#38](https://github.com/JanusMael/ClaudeForge/pull/38) | draft PR open from branch `feat/theme-audit-compat` (`7a6e015`); draft because the merge turns ~60 muted-text sites from the inherited primary colour to muted, a visible change on most pages, and the CONTRIBUTING click-through with screenshots is the user's to do; the ClaudeForge session was told first and confirmed no collision |
+| Live-log window ignored F12 (toggle lived on the host's main window only); and `LayeredEditors.Avalonia.Diagnostics` named a `PackageReadmeFile` it did not ship, so `dotnet pack` failed | [JanusMael/ClaudeForge#37](https://github.com/JanusMael/ClaudeForge/pull/37) | merged as `99c2963`; consumed here as diagnostics 1.0.1 — the merged source is identical to the packed branch head `f7980f2`, so the package did not change; the pin in `reference/sources.json` moved to `93065ba`, main's tip after both merges |
+| Theme audit: the report for ClaudeForge's views (seven `SystemControl*` keys still referenced and undefined under Semi, one of them — `SystemAccentColorBrush` — defined by no theme at all), the generated `FluentKeys.Semi.axaml` / `SimpleKeys.Semi.axaml` merged in its `App.axaml`, the tool as a local dotnet tool, and the `docs/UI-STYLE-GUIDE.md` §2 update | [JanusMael/ClaudeForge#38](https://github.com/JanusMael/ClaudeForge/pull/38) | merged as `93065ba` after the user's click-through; `docs/theme-audit.md` regenerated against the merged checkout — ClaudeForge's own copies of the compat dictionaries now count as consumer-defined keys, leaving `SystemAccentColorBrush` as its one undefined key under Semi |
 
 ## Measurements
 

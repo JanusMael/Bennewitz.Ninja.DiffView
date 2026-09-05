@@ -324,3 +324,14 @@ regex wraps the pattern in `\b(?:…)\b`, which both engines support. A pane tex
 the document (an editor snapshot a keystroke behind the rebuild) is tolerated, never thrown on.
 `DiffOptions.Default` is declared after `DefaultWordSeparators` because static initialisers run
 in textual order — the first cut had them reversed and the default separators were null.
+
+## ClaudeForge pin at the merge of #37 and #38; diagnostics stays 1.0.1
+
+Both pull requests merged into ClaudeForge's `main` (`99c2963` for #37, `93065ba` for #38), so
+the pin in `reference/sources.json` moved from the branch head `f7980f2` to `93065ba`, the tip
+that carries both. `git diff f7980f2 93065ba -- src/LayeredEditors.Avalonia.Diagnostics` is
+empty: the merged diagnostics source is byte-for-byte what 1.0.1 was packed from, so the package
+in the local feed and the version in `Directory.Packages.props` stay at 1.0.1 and the pack script
+keeps its constant — a repack would produce the same content under a new timestamp. The audit
+report was regenerated because the sibling checkout now carries ClaudeForge's own copies of the
+compat dictionaries, which the consumer scan counts as keys it defines itself.

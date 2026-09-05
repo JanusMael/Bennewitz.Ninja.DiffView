@@ -45,7 +45,7 @@ _none_
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `2ce29f295821` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `ce6e5435da8d` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d91a9d48208f` | Fluent, Semi, Semi + compat |
-| ClaudeForge | `../cl/ClaudeForge/src/ClaudeForge or reference/ClaudeForge/src/ClaudeForge`, `../cl/ClaudeForge/src/ClaudeForge.Avalonia or reference/ClaudeForge/src/ClaudeForge.Avalonia`, `../cl/ClaudeForge/src/LayeredEditors.Avalonia or reference/ClaudeForge/src/LayeredEditors.Avalonia` | 41 | 418 | 67 | 75 | `2046348f366d` | Semi, Semi + compat |
+| ClaudeForge | `../cl/ClaudeForge/src/ClaudeForge or reference/ClaudeForge/src/ClaudeForge`, `../cl/ClaudeForge/src/ClaudeForge.Avalonia or reference/ClaudeForge/src/ClaudeForge.Avalonia`, `../cl/ClaudeForge/src/LayeredEditors.Avalonia or reference/ClaudeForge/src/LayeredEditors.Avalonia` | 43 | 1850 | 207 | 1105 | `13bd4d61b8b6` | Semi, Semi + compat |
 
 ## Undefined keys
 
@@ -70,7 +70,7 @@ A key a consumer references that the theme does not define under a variant. A `D
 | Fluent controls | Fluent | 2 | 0 | 2 |
 | Fluent controls | Semi | 675 | 5 | 670 |
 | Fluent controls | Semi + compat | 2 | 0 | 2 |
-| ClaudeForge | Semi | 7 | 0 | 7 |
+| ClaudeForge | Semi | 1 | 0 | 1 |
 | ClaudeForge | Semi + compat | 1 | 0 | 1 |
 
 ### AvaloniaEdit Fluent theme under Semi
@@ -797,12 +797,6 @@ A key a consumer references that the theme does not define under a variant. A `D
 | Key | Reference | Variants |
 |---|---|---|
 | `SystemAccentColorBrush` | dynamic (invisible) | all |
-| `SystemControlBackgroundBaseLowBrush` | dynamic (invisible) | all |
-| `SystemControlBackgroundChromeMediumLowBrush` | dynamic (invisible) | all |
-| `SystemControlErrorTextForegroundBrush` | dynamic (invisible) | all |
-| `SystemControlForegroundBaseLowBrush` | dynamic (invisible) | all |
-| `SystemControlForegroundBaseMediumBrush` | dynamic (invisible) | all |
-| `SystemControlHighlightListLowBrush` | dynamic (invisible) | all |
 
 ### ClaudeForge under Semi + compat
 
