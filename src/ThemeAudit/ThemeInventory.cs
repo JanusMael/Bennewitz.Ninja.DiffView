@@ -184,6 +184,12 @@ public sealed class ThemeInventory
         return _byDisplayName.TryGetValue(DefaultVariant, out VariantInventory? fallback) ? fallback : _baseOnly!;
     }
 
+    /// <summary>The variant <paramref name="displayName"/> inherits from, per the inheritance map, or <c>null</c>.</summary>
+    public string? ParentOf(string displayName)
+    {
+        return _inheritance is not null && _inheritance.TryGetValue(displayName, out string? parent) ? parent : null;
+    }
+
     /// <summary>
     /// Builds the inventory for the theme rooted at <paramref name="entryFile"/>.
     /// <paramref name="baseDirectory"/> is the assembly's <c>avares</c> base and

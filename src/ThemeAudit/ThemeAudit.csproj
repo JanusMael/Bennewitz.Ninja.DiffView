@@ -22,6 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The reviewed mappings ship beside the executable, so a configuration can name one
+         without a path ("mapping": "FluentToSemi") and override it with a path of its own. -->
+    <None Include="Mappings/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>ThemeAudit.Tests</_Parameter1>
     </AssemblyAttribute>

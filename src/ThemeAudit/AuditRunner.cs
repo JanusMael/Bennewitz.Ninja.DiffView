@@ -27,12 +27,16 @@ public sealed record ConsumerThemeFindings(
     IReadOnlyList<UndefinedKeyFinding> Undefined,
     IReadOnlyList<ContrastFinding> Contrast);
 
+/// <summary>One compat dictionary as generated for the report (the <c>compat</c> command writes the file).</summary>
+public sealed record CompatOutcome(CompatConfig Config, CompatMapping Mapping, CompatGeneration Generation);
+
 /// <summary>Everything a run produced, in configuration order.</summary>
 public sealed record AuditResult(
     AuditConfig Config,
     IReadOnlyList<ThemeTarget> Themes,
     IReadOnlyList<ConsumerScan> Consumers,
-    IReadOnlyList<ConsumerThemeFindings> Findings);
+    IReadOnlyList<ConsumerThemeFindings> Findings,
+    IReadOnlyList<CompatOutcome> Compat);
 
 /// <summary>
 /// Runs an audit: inventories every configured theme, scans every consumer, and pairs them up —
@@ -77,7 +81,16 @@ public static class AuditRunner
             }
         }
 
-        return new AuditResult(config, themes, consumers, findings);
+        List<CompatOutcome> compat = [];
+        foreach (CompatConfig entry in config.Compat)
+        {
+            ThemeTarget from = themes.Single(t => t.Config.Name == entry.From);
+            ThemeTarget to = themes.Single(t => t.Config.Name == entry.To);
+            CompatMapping mapping = CompatMapping.Load(CompatMapping.Locate(config, entry.Mapping));
+            compat.Add(new CompatOutcome(entry, mapping, CompatGenerator.Generate(from.Inventory, to.Inventory, mapping, entry.From, entry.To)));
+        }
+
+        return new AuditResult(config, themes, consumers, findings, compat);
     }
 
     /// <summary>The walker's inputs for a configured theme, paths made absolute.</summary>

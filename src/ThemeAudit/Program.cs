@@ -40,7 +40,7 @@ inventory.SetAction(parseResult =>
 
 root.Subcommands.Add(inventory);
 
-// ---- report: the configured audit -----------------------------------------------------------
+// ---- shared options ---------------------------------------------------------------------------
 
 Option<FileInfo> configOption = new("--config", "-c")
 {
@@ -48,14 +48,86 @@ Option<FileInfo> configOption = new("--config", "-c")
     DefaultValueFactory = _ => new FileInfo("theme-audit.json"),
 };
 
+Option<bool> checkOption = new("--check")
+{
+    Description = "Write nothing; exit 1 when a committed output differs from a fresh run (the drift check).",
+};
+
+// ---- compat: the generated dictionaries -----------------------------------------------------
+
+Command compat = new("compat", "Generate the configured compat dictionaries: the keys one theme defines that another lacks, mapped onto the latter's tokens.");
+compat.Options.Add(configOption);
+compat.Options.Add(checkOption);
+compat.SetAction(parseResult =>
+{
+    FileInfo configFile = parseResult.GetValue(configOption)!;
+    bool check = parseResult.GetValue(checkOption);
+
+    try
+    {
+        AuditConfig config = AuditConfig.Load(configFile.FullName);
+        if (config.Compat.Count == 0)
+        {
+            Console.Error.WriteLine("theme-audit: the configuration declares no compat dictionaries.");
+            return 2;
+        }
+
+        Dictionary<string, ThemeTarget> themes = new(StringComparer.Ordinal);
+        int stale = 0;
+        foreach (CompatConfig entry in config.Compat)
+        {
+            ThemeTarget from = themes.TryGetValue(entry.From, out ThemeTarget? f) ? f : themes[entry.From] = AuditRunner.BuildTheme(config, config.Theme(entry.From));
+            ThemeTarget to = themes.TryGetValue(entry.To, out ThemeTarget? t) ? t : themes[entry.To] = AuditRunner.BuildTheme(config, config.Theme(entry.To));
+            CompatMapping mapping = CompatMapping.Load(CompatMapping.Locate(config, entry.Mapping));
+            CompatGeneration generation = CompatGenerator.Generate(from.Inventory, to.Inventory, mapping, entry.From, entry.To);
+            string output = config.Resolve(entry.Output);
+
+            string summary = Summarize(generation);
+            if (check)
+            {
+                if (!File.Exists(output) || Normalize(File.ReadAllText(output)) != Normalize(generation.Xml))
+                {
+                    Console.Error.WriteLine($"theme-audit: {config.Relative(output)} is stale or missing — {summary}; regenerate with `theme-audit compat`.");
+                    stale++;
+                }
+                else
+                {
+                    Console.WriteLine($"theme-audit: {config.Relative(output)} is up to date — {summary}.");
+                }
+
+                continue;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+            File.WriteAllText(output, generation.Xml);
+            Console.WriteLine($"theme-audit: wrote {config.Relative(output)} — {summary}.");
+            foreach (IGrouping<string, CompatSkipped> group in generation.Skipped.GroupBy(s => s.Reason, StringComparer.Ordinal).OrderBy(g => g.Key, StringComparer.Ordinal))
+            {
+                Console.WriteLine($"  skipped {group.Select(s => s.Key).Distinct(StringComparer.Ordinal).Count()} key(s): {group.Key}");
+            }
+        }
+
+        return stale == 0 ? 0 : 1;
+    }
+    catch (AuditConfigException ex)
+    {
+        Console.Error.WriteLine($"theme-audit: {ex.Message}");
+        return 2;
+    }
+    catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
+    {
+        Console.Error.WriteLine($"theme-audit: {ex.Message}");
+        return 1;
+    }
+});
+
+root.Subcommands.Add(compat);
+
+// ---- report: the configured audit -----------------------------------------------------------
+
 Option<string?> outputOption = new("--output", "-o")
 {
     Description = "Where to write the report; the configuration's 'report' path when omitted.",
-};
-
-Option<bool> checkOption = new("--check")
-{
-    Description = "Write nothing; exit 1 when the committed output differs from a fresh run (the drift check).",
 };
 
 Command report = new("report", "Inventory the configured themes, scan the consumers, and write the Markdown report.");
@@ -121,4 +193,10 @@ return root.Parse(args).Invoke();
 static string Normalize(string text)
 {
     return text.Replace("\r\n", "\n", StringComparison.Ordinal);
+}
+
+static string Summarize(CompatGeneration generation)
+{
+    int Count(CompatHow how) => generation.Entries.Count(e => e.How == how);
+    return $"{Count(CompatHow.Mapped)} mapped, {Count(CompatHow.Copied)} copied, {Count(CompatHow.Literal)} literal (review), {Count(CompatHow.Restored)} restored, {generation.Skipped.Count} skipped";
 }
