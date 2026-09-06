@@ -199,6 +199,105 @@ public static class DiffViewStrings
     /// <summary>Automation name of the connector gutter.</summary>
     public const string ConnectorGutterName = "ConnectorGutter.Name";
 
+    /// <summary>Automation name of the find bar.</summary>
+    public const string FindBarName = "Find.Name";
+
+    /// <summary>The query box's watermark.</summary>
+    public const string FindQueryPlaceholder = "Find.Query.Placeholder";
+
+    /// <summary>Automation name of the query box.</summary>
+    public const string FindQueryName = "Find.Query.Name";
+
+    /// <summary>The Match case toggle's label.</summary>
+    public const string FindMatchCase = "Find.MatchCase";
+
+    /// <summary>The Match case toggle's tooltip and automation name.</summary>
+    public const string FindMatchCaseName = "Find.MatchCase.Name";
+
+    /// <summary>The Whole word toggle's label.</summary>
+    public const string FindWholeWord = "Find.WholeWord";
+
+    /// <summary>The Whole word toggle's tooltip and automation name.</summary>
+    public const string FindWholeWordName = "Find.WholeWord.Name";
+
+    /// <summary>The regular-expression toggle's label.</summary>
+    public const string FindRegex = "Find.Regex";
+
+    /// <summary>The regular-expression toggle's tooltip and automation name.</summary>
+    public const string FindRegexName = "Find.Regex.Name";
+
+    /// <summary>The Changed rows only toggle's label.</summary>
+    public const string FindChangedRowsOnly = "Find.ChangedRowsOnly";
+
+    /// <summary>The Changed rows only toggle's tooltip and automation name.</summary>
+    public const string FindChangedRowsOnlyName = "Find.ChangedRowsOnly.Name";
+
+    /// <summary>The left-scope button's label.</summary>
+    public const string FindScopeLeft = "Find.Scope.Left";
+
+    /// <summary>The left-scope button's tooltip and automation name.</summary>
+    public const string FindScopeLeftName = "Find.Scope.Left.Name";
+
+    /// <summary>The right-scope button's label.</summary>
+    public const string FindScopeRight = "Find.Scope.Right";
+
+    /// <summary>The right-scope button's tooltip and automation name.</summary>
+    public const string FindScopeRightName = "Find.Scope.Right.Name";
+
+    /// <summary>The both-scope button's label.</summary>
+    public const string FindScopeBoth = "Find.Scope.Both";
+
+    /// <summary>The both-scope button's tooltip and automation name.</summary>
+    public const string FindScopeBothName = "Find.Scope.Both.Name";
+
+    /// <summary>The word for both sides, in the status strip.</summary>
+    public const string FindScopeBothWord = "Find.Scope.Both.Word";
+
+    /// <summary>The previous-match button's label.</summary>
+    public const string FindPrevious = "Find.Previous";
+
+    /// <summary>The previous-match button's tooltip and automation name.</summary>
+    public const string FindPreviousName = "Find.Previous.Name";
+
+    /// <summary>The next-match button's label.</summary>
+    public const string FindNext = "Find.Next";
+
+    /// <summary>The next-match button's tooltip and automation name.</summary>
+    public const string FindNextName = "Find.Next.Name";
+
+    /// <summary>The close button's label.</summary>
+    public const string FindClose = "Find.Close";
+
+    /// <summary>The close button's tooltip and automation name.</summary>
+    public const string FindCloseName = "Find.Close.Name";
+
+    /// <summary>The count with a current match: <c>{0}</c> current (1-based), <c>{1}</c> total, <c>{2}</c> left, <c>{3}</c> right.</summary>
+    public const string FindMatchOf = "Find.MatchOf";
+
+    /// <summary>The count without a current match: <c>{0}</c> total, <c>{1}</c> left, <c>{2}</c> right.</summary>
+    public const string FindMatches = "Find.Matches";
+
+    /// <summary>A query that matched nothing.</summary>
+    public const string FindNoMatches = "Find.NoMatches";
+
+    /// <summary>The cap was reached: <c>{0}</c> the cap.</summary>
+    public const string FindTruncated = "Find.Truncated";
+
+    /// <summary>The strip's find lane: <c>{0}</c> the count, <c>{1}</c> the scope.</summary>
+    public const string StatusFind = "Status.Find";
+
+    /// <summary>The strip's find lane with nothing searched for yet: <c>{0}</c> the scope.</summary>
+    public const string StatusFindScope = "Status.Find.Scope";
+
+    /// <summary>A search that could not run at all, shown inline in the find bar.</summary>
+    public const string FindFailedMessage = "Find.Failed";
+
+    /// <summary>The strip's count with a current match: <c>{0}</c> current (1-based), <c>{1}</c> total.</summary>
+    public const string StatusFindMatchOf = "Status.Find.MatchOf";
+
+    /// <summary>The strip's count without a current match: <c>{0}</c> total.</summary>
+    public const string StatusFindMatches = "Status.Find.Matches";
+
     /// <summary>An unchanged row's kind.</summary>
     public const string KindUnchanged = "Kind.Unchanged";
 
@@ -276,6 +375,39 @@ public static class DiffViewStrings
         [MinimapTooltip] = "Row {0} of {1} · {2}",
         [MinimapName] = "Overview",
         [ConnectorGutterName] = "Change connectors",
+        [FindBarName] = "Find",
+        [FindQueryPlaceholder] = "Find",
+        [FindQueryName] = "Find what",
+        [FindMatchCase] = "Aa",
+        [FindMatchCaseName] = "Match case",
+        [FindWholeWord] = "Word",
+        [FindWholeWordName] = "Whole word",
+        [FindRegex] = ".*",
+        [FindRegexName] = "Regular expression",
+        [FindChangedRowsOnly] = "Changed",
+        [FindChangedRowsOnlyName] = "Changed rows only",
+        [FindScopeLeft] = "L",
+        [FindScopeLeftName] = "Search the left pane",
+        [FindScopeRight] = "R",
+        [FindScopeRightName] = "Search the right pane",
+        [FindScopeBoth] = "Both",
+        [FindScopeBothName] = "Search both panes",
+        [FindScopeBothWord] = "both",
+        [FindPrevious] = "Prev",
+        [FindPreviousName] = "Previous match",
+        [FindNext] = "Next",
+        [FindNextName] = "Next match",
+        [FindClose] = "×",
+        [FindCloseName] = "Close the find bar",
+        [FindMatchOf] = "match {0} of {1} (L {2} · R {3})",
+        [FindMatches] = "{0} matches (L {1} · R {2})",
+        [FindNoMatches] = "no matches",
+        [FindTruncated] = "Showing the first {0} matches",
+        [FindFailedMessage] = "The search could not run.",
+        [StatusFind] = "find {0} · {1}",
+        [StatusFindScope] = "find · {0}",
+        [StatusFindMatchOf] = "{0} of {1}",
+        [StatusFindMatches] = "{0} matches",
         [KindUnchanged] = "unchanged",
         [KindInserted] = "inserted",
         [KindDeleted] = "deleted",

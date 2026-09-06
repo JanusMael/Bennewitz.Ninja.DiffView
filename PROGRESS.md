@@ -2,31 +2,39 @@
 
 ## Resume
 
-**Phase 7 — Navigation, minimap, connectors, tooltips** of
-[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`; phases 0 through 7
-are done, and what remains of the plan is find, syntax highlighting, the scale-and-accessibility
-pass and the optional inline view. `SideBySideDiffView` compares two `PaneSource`s: two
-`DiffPanePresenter`s over the sources' own documents, with rendered padding holding the rows
-level, row and word-level highlights, line-number and change-marker gutters, headers, a banner
-for what failed or was skipped, a status strip, a connector gutter between the panes and a
-minimap beside them, vertical scrolling coupled 1:1, change navigation on F7 / Shift+F7 with F6
-switching panes, and a tooltip on every gutter. Builds run latest-wins on a worker over text
-captured on the UI thread; a rebuild swaps the model and never a `TextDocument`; the control is
-always in one `DiffViewState`; every user-visible string goes through `DiffViewStrings` and every
-log line through `DiffViewLog`, which never carries document text. The demo hosts the control
-with file-open, option toggles and the colour-blind palette.
+**Phase 8 — Find** of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete on
+`main`; phases 0 through 8 are done, and what remains of the plan is syntax highlighting, the
+scale-and-accessibility pass and the optional inline view. `SideBySideDiffView` compares two
+`PaneSource`s: two `DiffPanePresenter`s over the sources' own documents, with rendered padding
+holding the rows level, row and word-level highlights, line-number and change-marker gutters,
+headers, a banner for what failed or was skipped, a status strip, a connector gutter between the
+panes and a minimap beside them, vertical scrolling coupled 1:1, change navigation on F7 /
+Shift+F7 with F6 switching panes, and a tooltip on every gutter. Above the panes sits the find
+bar: the query box, the Match case / Whole word / Regex / Changed rows only toggles, the
+L / R / Both scope, the match count, previous / next / close, and an inline line for a bad
+pattern or a truncated result. Matches are highlighted in both panes above the row fills and
+below the selection, the current one in its own brush, with ticks down the minimap and the count
+and scope in the strip; Ctrl+F opens the bar with the query pre-filled from the selection, F3 and
+Enter walk the matches, Escape closes it and hands focus back. Builds run latest-wins on a worker
+over text captured on the UI thread, and so do searches, over `TextDocument` snapshots with the
+line table copied on the UI thread; a rebuild swaps the model and never a `TextDocument`; the
+control is always in one `DiffViewState`; every user-visible string goes through `DiffViewStrings`
+and every log line through `DiffViewLog`, which never carries document text — not the query
+either, only its length. The demo hosts the control with file-open, option toggles, Find and the
+colour-blind palette.
 
-Next is **Phase 8 — Find** (plan §Phase 8): `DiffFindBar` (query box, Match case / Whole word /
-Regex / Changed rows only toggles, L / R / Both scope, "match i of n", next / previous / close,
-inline error line), `SearchMatchRenderer` per pane, incremental search over document snapshots
-through `DiffSearch` with debounce and cancellation, minimap match ticks, the strip's count and
-scope while the bar is open, the Ctrl+F / F3 / Esc key bindings, and the find leg of the sentinel
-log test that Phase 5 left owing.
+Next is **Phase 9 — Syntax highlighting** (plan §Phase 9): `AvaloniaEdit.TextMate` on both
+presenters with the grammar chosen from `FileName`'s extension and the theme following
+`ThemeVariant`; a `UseSyntaxHighlighting` toggle; a failed install falling back to plain text with
+`Degraded` and the grammar named; and the trim-check re-run with TextMateSharp on board, any
+IL2xxx handled through `TRIMMING.md`'s wiring and recorded in `DECISIONS.md`. Done-when tests in
+plan §Phase 9. Phase 10 is scale, visibility and accessibility; Phase 11 the optional inline view.
 
 Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the
 merge (see *Upstreamed to ClaudeForge*).
 
-The theme audit regenerates after a pin bump, in this order:
+The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
+this order:
 
 ```bash
 dotnet run --project src/ThemeAudit -- compat
@@ -48,10 +56,28 @@ dotnet run --project src/ThemeAudit -- report
 | 5 Composite control, scroll sync, headers, status strip, theming | done | `SideBySideDiffView`, `DiffPaneHeader`, `DiffStatusStrip`, the state machine and banners, the latest-wins worker, `ScrollSync`, `StatusController` on `TimeProvider`, `DiffViewLog`, `DiffViewStrings` over the new surface, compiled themes; the demo on the composite; 34 headless and snapshot test cases plus 5 status-controller unit tests |
 | 6 Word-level highlights and options | done | `WordDiffLookup` over the live documents, one per build bound to its options; piece rectangles in `DiffLineBackgroundRenderer` through the visual line's columns; the marker margin's long-line tooltip; 6 headless and snapshot test cases |
 | 7 Navigation, minimap, connectors, tooltips | done | `CurrentChangeIndex` + commands + F7 / Shift+F7 / F6, current-block border, "change i of n"; `DiffMinimap`; `ChangeConnectorGutter` with `SplitRatio`; tooltips on line numbers, markers, connectors and the minimap; 9 headless and snapshot test cases |
-| 8 Find | not started | |
+| 8 Find | done | `DiffFindBar` (query, Match case / Whole word / Regex / Changed rows only, L / R / Both scope, count, prev / next / close, inline error and truncation notice); `SearchMatchRenderer` per pane over `KnownLayer.Selection`; debounced, cancellable searches over `DocumentPaneText` snapshots, off the UI thread above 2,000 rows; minimap match ticks; the strip's find lane; Ctrl+F / F3 / Shift+F3 / Enter / Shift+Enter / Escape; 9 headless and snapshot test cases plus the sentinel log test's find leg |
 | 9 Syntax highlighting | not started | |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 8 verification
+
+| Done-when item | Result |
+|---|---|
+| Headless: Ctrl+F opens the bar with focus in the query box; Esc closes it and focus returns to the pane that had it | pass: `FindTests.Ctrl_F_opens_the_bar_with_focus_in_the_query_box_and_Escape_closes_it_and_returns_focus` — with the right pane focused and one line of it selected, Ctrl+F opens the bar, pre-fills "Greeter" from the selection and puts the caret in the query box; the strip reads "find · both" before the search and "find 4 matches · both" after it, the bar "4 matches (L 2 · R 2)", both panes carry their two matches and the minimap its rows; Escape closes the bar, drops every highlight and the result, and the right pane has focus again |
+| Headless: in `Both` scope with hits on both sides, F3 walks the matches in row-then-side order, and the presenter holding the current match has focus and the match selected | pass: `In_both_scope_F3_walks_the_matches_in_row_then_side_order_and_the_pane_holding_one_has_it_selected` — the four matches equal an independent walk of the alignment table (left line before right line within a row), a fresh result has no current match, and each F3 lands on the next one with its pane focused, the match selected, `CurrentSearchMatch` set on that pane and null on the other, the bar reading "match i of 4 (L 2 · R 2)", the strip "find i of 4 · both", and both panes at the same offset; the walk wraps at either end |
+| Headless: switching scope L → R → Both re-runs the search and the counts and highlights change accordingly | pass: `Switching_the_scope_re_runs_the_search_and_the_counts_and_highlights_follow` — through the bar's own properties, as a click drives them: Left leaves `RightCount` 0, the right pane with no matches and no drawn rectangles, and the strip "find 2 matches · left"; Right mirrors it; Both restores four; Match case with a lower-case query gives "no matches" |
+| Headless: an invalid regex shows the inline error, leaves no highlights, and the control state stays `Ready` | pass: `An_invalid_regular_expression_shows_the_error_inline_leaves_no_highlights_and_the_state_stays_ready` — `Greet(er` under Regex puts "Invalid regular expression…" in the bar, clears both panes' matches and the count, leaves `State` at `Ready` and the current match at -1, logs one `Warning` under `DiffView.Find`, and the pattern itself never reaches the log; `Greet(er)?` clears the error and the matches come back |
+| Headless: a query with more than `MaxMatches` hits on the 10k-line fixture shows the truncation notice and the UI stays responsive | pass: `More_hits_than_the_cap_truncate_with_a_notice_and_the_search_runs_off_the_UI_thread` — a generated 10,000-line pair (every line holding the needle, so 20,000 hits against the default 10,000 cap): the search runs off the UI thread, `Truncated` is set, exactly `MaxMatches` matches are kept, the bar and the transient lane both read "Showing the first 10,000 matches", the frame still renders with match rectangles, and the walk works over the capped matches |
+| Headless: the search worker never touches the live document — a search runs to completion while the UI thread holds the document in an update | pass: `The_search_completes_while_the_UI_thread_holds_a_document_in_an_update` — the searcher is held on a gate until the UI thread has opened `TextDocument.RunUpdate()`, and the worker then reads its `DocumentPaneText` snapshot and completes with the four matches; capturing on the worker instead makes it throw from `TextDocument.VerifyAccess` |
+| Snapshot: match highlights sit above the diff backgrounds and below the selection, current match distinct, in both theme variants | pass: `FindSnapshotTests.The_find_bar_and_the_match_highlights_render` Light and Dark — the bar over the panes with the scope segmented control and "match 2 of 7 (L 4 · R 3)", every `_name` highlighted (including over word-diff pieces on modified rows), the current match on the right pane in the current-match brush under its selection, ticks in the minimap, "find 2 of 7 · both" in the strip; reviewed and approved. `FindTests.Match_highlights_sit_above_the_row_fill_and_below_the_selection` asserts the composited pixels: the match brush over the pane background on an unchanged row, and the selection over the current-match brush once it is current |
+| The sentinel log test's find leg, owed since Phase 5 | pass: `SideBySideDiffViewTests.The_log_never_carries_document_text_and_each_state_transition_appears_exactly_once` now searches for the sentinel — which is document text, because Ctrl+F pre-fills the query from the selection — walks to a match, and asserts the `DiffView.Find` line reports "4 match(es)" while no record anywhere holds the sentinel |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 273 passed |
+| New headless tests proven able to fail | the Ctrl+F and F3 tests failed for real before the focus fix — a query box that has only just become visible has not been measured and cannot take focus, and with nothing inside the composite focused the ancestor key bindings never ran; disabling `SearchMatchRenderer.DrawCore` then failed the pixel, scope, truncation and both snapshot tests; dropping the truncation notice, the bar's error text, and the UI-thread capture failed the cap, regex and update tests respectively |
+| Trimmed publish (`linux-x64`, self-contained) | succeeds, 0 IL warnings, 51 MB |
+| Demo launched on this machine | boots, builds the bundled pair and logs its transitions with no fault or error; the find bar itself is exercised headlessly, and the demo's View menu now carries Find (Ctrl+F) |
 
 ## Phase 7 verification
 

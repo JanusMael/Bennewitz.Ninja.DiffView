@@ -49,6 +49,10 @@ public class DiffStatusStrip : TemplatedControl
     public static readonly StyledProperty<string?> BuildTimeTextProperty =
         AvaloniaProperty.Register<DiffStatusStrip, string?>(nameof(BuildTimeText));
 
+    /// <summary>Identifies the <see cref="FindText"/> property.</summary>
+    public static readonly StyledProperty<string?> FindTextProperty =
+        AvaloniaProperty.Register<DiffStatusStrip, string?>(nameof(FindText));
+
     /// <summary>Identifies the <see cref="OptionsText"/> property.</summary>
     public static readonly StyledProperty<string?> OptionsTextProperty =
         AvaloniaProperty.Register<DiffStatusStrip, string?>(nameof(OptionsText));
@@ -151,6 +155,13 @@ public class DiffStatusStrip : TemplatedControl
     {
         get => GetValue(BuildTimeTextProperty);
         set => SetValue(BuildTimeTextProperty, value);
+    }
+
+    /// <summary>The find count and scope while the find bar is open, or <c>null</c> when it is closed.</summary>
+    public string? FindText
+    {
+        get => GetValue(FindTextProperty);
+        set => SetValue(FindTextProperty, value);
     }
 
     /// <summary>The options in effect, or <c>null</c> when all are default.</summary>

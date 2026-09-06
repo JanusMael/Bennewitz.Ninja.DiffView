@@ -102,6 +102,22 @@ All notable changes to DiffView are recorded here. The format follows
 - Headless tests for navigation and the keys, the minimap's mapping on a 200k-line fixture and
   its click, the connector polygons with click and drag, and the tooltips; a snapshot of the
   minimap, connectors and the current-block border in both variants.
+- Phase 8, find: `DiffFindBar` (query box, Match case / Whole word / Regex / Changed rows only
+  toggles, L / R / Both scope, "match i of n (L a · R b)", previous / next / close, and an
+  inline line for a bad pattern or a truncated result); `SearchMatchRenderer` per pane on
+  `KnownLayer.Selection`, above the row fills and below the selection, with the current match in
+  its own brush; `IsFindBarOpen`, `FindQuery`, `FindOptions`, `FindResult`,
+  `CurrentFindMatchIndex`, the `OpenFind` / `CloseFind` / `FindNext` / `FindPrevious` commands
+  and the `FindCompleted` event on the composite; Ctrl+F (pre-filled from the selection), F3 /
+  Shift+F3, Enter / Shift+Enter and Escape; searches debounced on `TimeProvider`, latest-wins,
+  cancelled by every change and run off the UI thread above 2,000 rows over `DocumentPaneText`
+  snapshots; match ticks in the minimap; the find count and scope in the status strip;
+  `DiffView.Find` logging that carries counts and the query's length but never the query.
+- Headless tests for the find keys and focus, the row-then-side walk, the scope, a bad pattern,
+  the `MaxMatches` cap on a 10k-line fixture, a search completing while the UI thread holds a
+  document in an update, and the highlight layering; a snapshot of the bar and the highlights in
+  both variants; the sentinel log test gained the find leg Phase 5 left owing.
+- The demo's View menu opens the find bar (Ctrl+F).
 
 ### Changed
 

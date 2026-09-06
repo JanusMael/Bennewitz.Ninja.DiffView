@@ -1,7 +1,7 @@
 <!--
-    The control themes of SideBySideDiffView, DiffPaneHeader and DiffStatusStrip, compiled as
-    SideBySideDiffViewTheme (the x:Class below) and merged by each control into its own
-    resources, so the structure never depends on a host include and the merge is trim-safe.
+    The control themes of SideBySideDiffView, DiffFindBar, DiffPaneHeader and DiffStatusStrip,
+    compiled as SideBySideDiffViewTheme (the x:Class below) and merged by each control into its
+    own resources, so the structure never depends on a host include and the merge is trim-safe.
     Every brush is a DiffView.* token from the host's DiffView.axaml include; no host theme key
     is referenced. Pills follow ClaudeForge's status-bar family: corner radius 10, padding 6,2,
     11 px text, each carrying its text as tooltip and automation name so nothing is colour alone.
@@ -17,7 +17,7 @@
     <Setter Property="Foreground" Value="{DynamicResource DiffView.PaneForegroundBrush}" />
     <Setter Property="Template">
       <ControlTemplate>
-        <Grid RowDefinitions="Auto,Auto,*,Auto" Background="{TemplateBinding Background}">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Background="{TemplateBinding Background}">
           <Grid Name="PART_Headers" ColumnDefinitions="*,24,*,14">
             <dv:DiffPaneHeader Name="PART_LeftHeader" />
             <Border Grid.Column="1" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
@@ -42,14 +42,17 @@
             </DockPanel>
           </Border>
 
-          <Grid Name="PART_Panes" Grid.Row="2" ColumnDefinitions="*,24,*,14">
+          <!-- The find bar collapses when it is closed, so its Auto row takes no height. -->
+          <dv:DiffFindBar Name="PART_FindBar" Grid.Row="2" IsVisible="False" />
+
+          <Grid Name="PART_Panes" Grid.Row="3" ColumnDefinitions="*,24,*,14">
             <dv:DiffPanePresenter Name="PART_LeftPane" AutomationProperties.Name="{TemplateBinding LeftPaneName}" />
             <dv:ChangeConnectorGutter Name="PART_Gutter" Grid.Column="1" AutomationProperties.Name="{TemplateBinding GutterName}" />
             <dv:DiffPanePresenter Name="PART_RightPane" Grid.Column="2" AutomationProperties.Name="{TemplateBinding RightPaneName}" />
             <dv:DiffMinimap Name="PART_Minimap" Grid.Column="3" AutomationProperties.Name="{TemplateBinding MinimapName}" />
           </Grid>
 
-          <dv:DiffStatusStrip Name="PART_StatusStrip" Grid.Row="3" AutomationProperties.Name="{TemplateBinding StatusStripName}" />
+          <dv:DiffStatusStrip Name="PART_StatusStrip" Grid.Row="4" AutomationProperties.Name="{TemplateBinding StatusStripName}" />
         </Grid>
       </ControlTemplate>
     </Setter>
@@ -75,6 +78,133 @@
     <Style Selector="^:banner-identical /template/ TextBlock#PART_BannerText">
       <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusSuccessForegroundBrush}" />
     </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type dv:DiffFindBar}" TargetType="dv:DiffFindBar">
+    <Setter Property="Background" Value="{DynamicResource DiffView.HeaderBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource DiffView.HeaderForegroundBrush}" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+          <StackPanel Orientation="Vertical" Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBox Name="PART_Query"
+                       Width="220"
+                       MinHeight="0"
+                       Padding="6,2"
+                       VerticalAlignment="Center"
+                       PlaceholderText="{TemplateBinding QueryPlaceholder}"
+                       ToolTip.Tip="{TemplateBinding QueryName}"
+                       AutomationProperties.Name="{TemplateBinding QueryName}" />
+              <ToggleButton Name="PART_MatchCase"
+                            Content="{TemplateBinding MatchCaseText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding MatchCaseName}"
+                            AutomationProperties.Name="{TemplateBinding MatchCaseName}" />
+              <ToggleButton Name="PART_WholeWord"
+                            Content="{TemplateBinding WholeWordText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding WholeWordName}"
+                            AutomationProperties.Name="{TemplateBinding WholeWordName}" />
+              <ToggleButton Name="PART_Regex"
+                            Content="{TemplateBinding RegexText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding RegexName}"
+                            AutomationProperties.Name="{TemplateBinding RegexName}" />
+              <ToggleButton Name="PART_ChangedRowsOnly"
+                            Content="{TemplateBinding ChangedRowsOnlyText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ChangedRowsOnlyName}"
+                            AutomationProperties.Name="{TemplateBinding ChangedRowsOnlyName}" />
+
+              <!-- The scope segmented control: exactly one of the three is checked. -->
+              <Border Width="1" Margin="2,3" Background="{DynamicResource DiffView.ConnectorBrush}" />
+              <ToggleButton Name="PART_ScopeLeft"
+                            Content="{TemplateBinding ScopeLeftText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ScopeLeftName}"
+                            AutomationProperties.Name="{TemplateBinding ScopeLeftName}" />
+              <ToggleButton Name="PART_ScopeRight"
+                            Content="{TemplateBinding ScopeRightText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ScopeRightName}"
+                            AutomationProperties.Name="{TemplateBinding ScopeRightName}" />
+              <ToggleButton Name="PART_ScopeBoth"
+                            Content="{TemplateBinding ScopeBothText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ScopeBothName}"
+                            AutomationProperties.Name="{TemplateBinding ScopeBothName}" />
+
+              <TextBlock Name="PART_Count"
+                         Text="{TemplateBinding CountText}"
+                         Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                         IsVisible="{TemplateBinding CountText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+
+              <Button Name="PART_Previous"
+                      Content="{TemplateBinding PreviousText}"
+                      Padding="6,2"
+                      MinHeight="0"
+                      MinWidth="0"
+                      VerticalAlignment="Center"
+                      ToolTip.Tip="{TemplateBinding PreviousName}"
+                      AutomationProperties.Name="{TemplateBinding PreviousName}" />
+              <Button Name="PART_Next"
+                      Content="{TemplateBinding NextText}"
+                      Padding="6,2"
+                      MinHeight="0"
+                      MinWidth="0"
+                      VerticalAlignment="Center"
+                      ToolTip.Tip="{TemplateBinding NextName}"
+                      AutomationProperties.Name="{TemplateBinding NextName}" />
+              <Button Name="PART_Close"
+                      Content="{TemplateBinding CloseText}"
+                      Padding="6,2"
+                      MinHeight="0"
+                      MinWidth="0"
+                      VerticalAlignment="Center"
+                      ToolTip.Tip="{TemplateBinding CloseName}"
+                      AutomationProperties.Name="{TemplateBinding CloseName}" />
+            </StackPanel>
+
+            <!-- A bad pattern and a truncated result each say so in place, under the query. -->
+            <TextBlock Name="PART_Error"
+                       Text="{TemplateBinding ErrorText}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource DiffView.StatusFailureForegroundBrush}"
+                       IsVisible="{TemplateBinding ErrorText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <TextBlock Name="PART_Notice"
+                       Text="{TemplateBinding NoticeText}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource DiffView.StatusWarningForegroundBrush}"
+                       IsVisible="{TemplateBinding NoticeText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
   </ControlTheme>
 
   <ControlTheme x:Key="{x:Type dv:DiffPaneHeader}" TargetType="dv:DiffPaneHeader">
@@ -196,6 +326,11 @@
                          Text="{TemplateBinding OptionsText}"
                          Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
                          IsVisible="{TemplateBinding OptionsText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+              <TextBlock Name="PART_Find"
+                         Text="{TemplateBinding FindText}"
+                         Foreground="{TemplateBinding Foreground}"
+                         IsVisible="{TemplateBinding FindText, Converter={x:Static ObjectConverters.IsNotNull}}"
                          VerticalAlignment="Center" />
               <Border Name="PART_Transient"
                       CornerRadius="10"

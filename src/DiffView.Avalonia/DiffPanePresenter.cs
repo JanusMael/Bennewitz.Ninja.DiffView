@@ -46,6 +46,7 @@ public class DiffPanePresenter : TextEditor
     private readonly PaddingElementGenerator _generator;
     private readonly PaddingHeightPrimer _primer = new();
     private readonly DiffLineBackgroundRenderer _backgroundRenderer;
+    private readonly SearchMatchRenderer _searchRenderer;
     private readonly DiffSelectionRenderer _selectionRenderer;
     private readonly DiffCaretRenderer _caretRenderer;
     private readonly DiffLineNumberMargin _lineNumberMargin;
@@ -53,6 +54,8 @@ public class DiffPanePresenter : TextEditor
     private readonly List<RenderFaultEventArgs> _faults = [];
     private WordDiffLookup? _wordDiffLookup;
     private ChangeBlock? _currentBlock;
+    private IReadOnlyList<FindMatch> _searchMatches = [];
+    private FindMatch? _currentSearchMatch;
     private bool _primePending;
     private bool _caretNormalisationDisabled;
 
@@ -98,9 +101,13 @@ public class DiffPanePresenter : TextEditor
         TextArea.TextView.ElementGenerators.Add(_generator);
 
         _backgroundRenderer = new DiffLineBackgroundRenderer(this);
+        _searchRenderer = new SearchMatchRenderer(this);
         _selectionRenderer = new DiffSelectionRenderer(this);
         _caretRenderer = new DiffCaretRenderer(this);
         TextArea.TextView.BackgroundRenderers.Add(_backgroundRenderer);
+        // The search and selection renderers share KnownLayer.Selection and are drawn in list
+        // order: matches first, so a selected match still reads as selected.
+        TextArea.TextView.BackgroundRenderers.Add(_searchRenderer);
         TextArea.TextView.BackgroundRenderers.Add(_selectionRenderer);
         TextArea.TextView.BackgroundRenderers.Add(_caretRenderer);
 
@@ -182,6 +189,43 @@ public class DiffPanePresenter : TextEditor
         }
     }
 
+    /// <summary>
+    /// This pane's find matches, ordered by line then column, which the search renderer
+    /// highlights. The composite assigns the side's share of a <see cref="FindResult"/>; a host
+    /// of two bare presenters runs <see cref="DiffSearch"/> itself.
+    /// </summary>
+    public IReadOnlyList<FindMatch> SearchMatches
+    {
+        get => _searchMatches;
+        set
+        {
+            IReadOnlyList<FindMatch> matches = value ?? [];
+            if (ReferenceEquals(_searchMatches, matches))
+            {
+                return;
+            }
+
+            _searchMatches = matches;
+            TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
+        }
+    }
+
+    /// <summary>The match drawn in the current-match brush, or <c>null</c> when the current match is on the other side.</summary>
+    public FindMatch? CurrentSearchMatch
+    {
+        get => _currentSearchMatch;
+        set
+        {
+            if (_currentSearchMatch == value)
+            {
+                return;
+            }
+
+            _currentSearchMatch = value;
+            TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
+        }
+    }
+
     /// <summary>Whether a decorator has faulted since the last model was assigned.</summary>
     public bool IsDegraded => _faults.Count > 0;
 
@@ -201,6 +245,8 @@ public class DiffPanePresenter : TextEditor
     internal PaddingElementGenerator PaddingGenerator => _generator;
 
     internal DiffLineBackgroundRenderer BackgroundRenderer => _backgroundRenderer;
+
+    internal SearchMatchRenderer SearchRenderer => _searchRenderer;
 
     internal DiffCaretRenderer CaretRenderer => _caretRenderer;
 
@@ -247,6 +293,7 @@ public class DiffPanePresenter : TextEditor
         _caretNormalisationDisabled = false;
         _generator.Reset();
         _backgroundRenderer.Reset();
+        _searchRenderer.Reset();
         _selectionRenderer.Reset();
         _caretRenderer.Reset();
         _lineNumberMargin.Reset();

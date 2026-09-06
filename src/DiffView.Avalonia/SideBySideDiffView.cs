@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 using Avalonia;
@@ -55,8 +56,14 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>The template part hosting the minimap.</summary>
     public const string MinimapPart = "PART_Minimap";
 
+    /// <summary>The template part hosting the find bar.</summary>
+    public const string FindBarPart = "PART_FindBar";
+
     /// <summary>How long a build runs before the strip shows progress.</summary>
     public static readonly TimeSpan SlowBuildThreshold = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>How long the query and the find options rest before the search runs.</summary>
+    public static readonly TimeSpan FindDebounce = TimeSpan.FromMilliseconds(150);
 
     /// <summary>Identifies the <see cref="LeftSource"/> property.</summary>
     public static readonly StyledProperty<PaneSource?> LeftSourceProperty =
@@ -130,6 +137,26 @@ public class SideBySideDiffView : TemplatedControl
     public static readonly DirectProperty<SideBySideDiffView, double> SplitRatioProperty =
         AvaloniaProperty.RegisterDirect<SideBySideDiffView, double>(nameof(SplitRatio), o => o.SplitRatio, (o, v) => o.SplitRatio = v, unsetValue: 0.5);
 
+    /// <summary>Identifies the <see cref="IsFindBarOpen"/> property.</summary>
+    public static readonly DirectProperty<SideBySideDiffView, bool> IsFindBarOpenProperty =
+        AvaloniaProperty.RegisterDirect<SideBySideDiffView, bool>(nameof(IsFindBarOpen), o => o.IsFindBarOpen, (o, v) => o.IsFindBarOpen = v);
+
+    /// <summary>Identifies the <see cref="FindQuery"/> property.</summary>
+    public static readonly DirectProperty<SideBySideDiffView, string> FindQueryProperty =
+        AvaloniaProperty.RegisterDirect<SideBySideDiffView, string>(nameof(FindQuery), o => o.FindQuery, (o, v) => o.FindQuery = v, unsetValue: "");
+
+    /// <summary>Identifies the <see cref="FindOptions"/> property.</summary>
+    public static readonly DirectProperty<SideBySideDiffView, FindOptions> FindOptionsProperty =
+        AvaloniaProperty.RegisterDirect<SideBySideDiffView, FindOptions>(nameof(FindOptions), o => o.FindOptions, (o, v) => o.FindOptions = v);
+
+    /// <summary>Identifies the <see cref="FindResult"/> property.</summary>
+    public static readonly DirectProperty<SideBySideDiffView, FindResult?> FindResultProperty =
+        AvaloniaProperty.RegisterDirect<SideBySideDiffView, FindResult?>(nameof(FindResult), o => o.FindResult);
+
+    /// <summary>Identifies the <see cref="CurrentFindMatchIndex"/> property.</summary>
+    public static readonly DirectProperty<SideBySideDiffView, int> CurrentFindMatchIndexProperty =
+        AvaloniaProperty.RegisterDirect<SideBySideDiffView, int>(nameof(CurrentFindMatchIndex), o => o.CurrentFindMatchIndex, (o, v) => o.CurrentFindMatchIndex = v, unsetValue: -1);
+
     /// <summary>Identifies the <see cref="State"/> property.</summary>
     public static readonly DirectProperty<SideBySideDiffView, DiffViewState> StateProperty =
         AvaloniaProperty.RegisterDirect<SideBySideDiffView, DiffViewState>(nameof(State), o => o.State);
@@ -201,6 +228,15 @@ public class SideBySideDiffView : TemplatedControl
     private readonly DelegateCommand _firstChange;
     private readonly DelegateCommand _lastChange;
     private readonly DelegateCommand _switchPane;
+    private readonly DelegateCommand _openFind;
+    private readonly DelegateCommand _closeFind;
+    private readonly DelegateCommand _findNext;
+    private readonly DelegateCommand _findPrevious;
+    private bool _isFindBarOpen;
+    private string _findQuery = string.Empty;
+    private FindOptions _findOptions = FindOptions.Default;
+    private FindResult? _findResult;
+    private int _currentFindMatchIndex = -1;
     private int _currentChangeIndex = -1;
     private double _splitRatio = 0.5;
     private Grid? _headersGrid;
@@ -230,9 +266,17 @@ public class SideBySideDiffView : TemplatedControl
     private ILoggerFactory? _loggerFactory;
     private ILogger? _buildLogger;
     private ILogger? _renderLogger;
+    private ILogger? _findLogger;
     private int _generation;
     private CancellationTokenSource? _buildCts;
     private ITimer? _slowTimer;
+
+    private DiffFindBar? _findBar;
+    private DiffSide _findReturnSide = DiffSide.Left;
+    private int _findGeneration;
+    private CancellationTokenSource? _findCts;
+    private ITimer? _findTimer;
+    private bool _syncingFindBar;
 
     private DiffPanePresenter? _leftPane;
     private DiffPanePresenter? _rightPane;
@@ -253,12 +297,23 @@ public class SideBySideDiffView : TemplatedControl
         _firstChange = new DelegateCommand(FirstChange, () => ChangeCount > 0);
         _lastChange = new DelegateCommand(LastChange, () => ChangeCount > 0);
         _switchPane = new DelegateCommand(SwitchPane);
+        _openFind = new DelegateCommand(OpenFind);
+        _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
+        _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
+        _findPrevious = new DelegateCommand(FindPrevious, () => IsFindBarOpen);
         Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
+        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, options, token);
 
-        // The default key bindings; a host clears or replaces them.
+        // The default key bindings; a host clears or replaces them. Escape and F3 execute only
+        // while the find bar is open, and a binding that does not execute leaves the key
+        // unhandled, so Escape still reaches the rest of the application.
         KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7), Command = _nextChange });
         KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7, KeyModifiers.Shift), Command = _previousChange });
         KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F6), Command = _switchPane });
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F, KeyModifiers.Control), Command = _openFind });
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3), Command = _findNext });
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3, KeyModifiers.Shift), Command = _findPrevious });
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Escape), Command = _closeFind });
 
         LayoutUpdated += OnLayoutUpdated;
         RefreshStrings();
@@ -274,6 +329,9 @@ public class SideBySideDiffView : TemplatedControl
 
     /// <summary>A pane's decorator threw and disabled itself; the control is <see cref="DiffViewState.Degraded"/>.</summary>
     public event EventHandler<RenderFaultEventArgs>? RenderFault;
+
+    /// <summary>A search finished and its matches are on screen; a bad pattern arrives here too, as <see cref="Core.FindResult.Error"/>.</summary>
+    public event EventHandler<DiffFindCompletedEventArgs>? FindCompleted;
 
     /// <summary>The left side's input; assigning it replaces the left document and builds.</summary>
     public PaneSource? LeftSource
@@ -412,6 +470,74 @@ public class SideBySideDiffView : TemplatedControl
         }
     }
 
+    /// <summary>
+    /// Whether the find bar is open. Opening it pre-fills the query from the focused pane's
+    /// selection and puts the caret in the query box; closing it drops the highlights and
+    /// returns focus to the pane that had it.
+    /// </summary>
+    public bool IsFindBarOpen
+    {
+        get => _isFindBarOpen;
+        set
+        {
+            if (value)
+            {
+                OpenFind();
+            }
+            else
+            {
+                CloseFind();
+            }
+        }
+    }
+
+    /// <summary>What to search for; the search runs after <see cref="FindDebounce"/>, cancelling the one in flight.</summary>
+    public string FindQuery
+    {
+        get => _findQuery;
+        set
+        {
+            if (SetAndRaise(FindQueryProperty, ref _findQuery, value ?? string.Empty))
+            {
+                UpdateFindBar();
+                RequestFind();
+            }
+        }
+    }
+
+    /// <summary>How the search runs: the scope, the toggles and the cap. Changing it re-runs the search.</summary>
+    public FindOptions FindOptions
+    {
+        get => _findOptions;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (SetAndRaise(FindOptionsProperty, ref _findOptions, value))
+            {
+                UpdateFindBar();
+                RequestFind();
+            }
+        }
+    }
+
+    /// <summary>The last search's outcome, or <c>null</c> when nothing has been searched for.</summary>
+    public FindResult? FindResult
+    {
+        get => _findResult;
+        private set => SetAndRaise(FindResultProperty, ref _findResult, value);
+    }
+
+    /// <summary>
+    /// The current match, -1 for none. Setting it scrolls both panes to the match's row, selects
+    /// it in its own pane and gives that pane focus. A fresh result leaves it at -1: typing must
+    /// not take focus out of the query box, so the first <see cref="FindNext"/> lands on match 1.
+    /// </summary>
+    public int CurrentFindMatchIndex
+    {
+        get => _currentFindMatchIndex;
+        set => SetCurrentFindMatch(value, scroll: true);
+    }
+
     /// <summary>The one state the control is in.</summary>
     public DiffViewState State
     {
@@ -537,6 +663,7 @@ public class SideBySideDiffView : TemplatedControl
             _loggerFactory = value;
             _buildLogger = value?.CreateLogger(DiffViewLogCategories.Build);
             _renderLogger = value?.CreateLogger(DiffViewLogCategories.Render);
+            _findLogger = value?.CreateLogger(DiffViewLogCategories.Find);
             if (_leftPane is not null)
             {
                 _leftPane.Logger = _renderLogger;
@@ -588,11 +715,34 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Moves keyboard focus to the other pane; F6 by default.</summary>
     public ICommand SwitchPaneCommand => _switchPane;
 
+    /// <summary>Opens the find bar; Ctrl+F by default.</summary>
+    public ICommand OpenFindCommand => _openFind;
+
+    /// <summary>Closes the find bar; Escape by default.</summary>
+    public ICommand CloseFindCommand => _closeFind;
+
+    /// <summary>Moves to the next match; F3 or Enter by default.</summary>
+    public ICommand FindNextCommand => _findNext;
+
+    /// <summary>Moves to the previous match; Shift+F3 or Shift+Enter by default.</summary>
+    public ICommand FindPreviousCommand => _findPrevious;
+
     /// <summary>The build routine; tests replace it to make a build slow or throw.</summary>
     internal Func<PaneSource, PaneSource, DiffOptions, CancellationToken, DiffBuildResult> Builder { get; set; }
 
+    /// <summary>The search routine; tests replace it to hold a search open or watch its thread.</summary>
+    internal Func<SideBySideDocument, IPaneText, IPaneText, string, FindOptions, CancellationToken, FindResult> Searcher { get; set; }
+
+    /// <summary>Above this many rows the search runs on a worker; at or below it, inline.</summary>
+    internal int FindWorkerRowThreshold { get; set; } = 2_000;
+
     /// <summary>The in-flight build, completing when its outcome has been applied or discarded; <c>null</c> when idle.</summary>
     internal Task? CurrentBuild { get; private set; }
+
+    /// <summary>The in-flight search, completing when its outcome has been applied or discarded; <c>null</c> when idle.</summary>
+    internal Task? CurrentFind { get; private set; }
+
+    internal DiffFindBar? FindBar => _findBar;
 
     /// <summary>The word-level lookup of the current model, bound to the options its build ran under; <c>null</c> without a model.</summary>
     public WordDiffLookup? WordDiffLookup { get; private set; }
@@ -700,6 +850,67 @@ public class SideBySideDiffView : TemplatedControl
         ScrollToRows(row, 1);
     }
 
+    /// <summary>
+    /// Opens the find bar, pre-fills the query from the focused pane's selection when it is a
+    /// single line, and puts the caret in the query box. Already open, it re-focuses and
+    /// re-selects the query, so Ctrl+F twice is a way back to the box.
+    /// </summary>
+    public void OpenFind()
+    {
+        if (!IsFindBarOpen)
+        {
+            // Escape hands focus back to whichever pane had it when the bar opened.
+            _findReturnSide = FocusedSide ?? DiffSide.Left;
+            SetAndRaise(IsFindBarOpenProperty, ref _isFindBarOpen, true);
+            RaiseFindCanExecuteChanged();
+        }
+
+        if (SelectionOfFocusedPane() is { } selection)
+        {
+            FindQuery = selection;
+        }
+
+        UpdateFindBar();
+        UpdateStrip();
+
+        // The bar has only just become visible; an unmeasured control cannot take focus, so a
+        // failed attempt is retried below the layout pass's priority.
+        if (_findBar is { } bar && !bar.FocusQuery())
+        {
+            Dispatcher.UIThread.Post(() => _findBar?.FocusQuery(), DispatcherPriority.Input);
+        }
+
+        RequestFind();
+    }
+
+    /// <summary>Closes the find bar, drops the highlights and returns focus to the pane that had it.</summary>
+    public void CloseFind()
+    {
+        if (!IsFindBarOpen)
+        {
+            return;
+        }
+
+        CancelFind();
+        SetAndRaise(IsFindBarOpenProperty, ref _isFindBarOpen, false);
+        ApplyFindResult(null);
+        UpdateFindBar();
+        UpdateStrip();
+        Pane(_findReturnSide)?.TextArea.Focus();
+    }
+
+    /// <summary>Moves to the next match, wrapping at the end; with no matches the strip says so.</summary>
+    public void FindNext()
+    {
+        MoveFindMatch(1);
+    }
+
+    /// <summary>Moves to the previous match, wrapping at the start; with no matches the strip says so.</summary>
+    public void FindPrevious()
+    {
+        MoveFindMatch(-1);
+    }
+
     /// <summary>The pane for <paramref name="side"/>, once the template has applied.</summary>
     internal DiffPanePresenter? Pane(DiffSide side)
     {
@@ -722,6 +933,7 @@ public class SideBySideDiffView : TemplatedControl
         _panesGrid = e.NameScope.Find<Grid>(PanesPart);
         _gutter = e.NameScope.Find<ChangeConnectorGutter>(GutterPart);
         _minimap = e.NameScope.Find<DiffMinimap>(MinimapPart);
+        _findBar = e.NameScope.Find<DiffFindBar>(FindBarPart);
 
         AttachPane(_leftPane, DiffSide.Left);
         AttachPane(_rightPane, DiffSide.Right);
@@ -750,9 +962,19 @@ public class SideBySideDiffView : TemplatedControl
             _minimap.JumpRequested += OnMinimapJumpRequested;
         }
 
+        if (_findBar is not null)
+        {
+            _findBar.QueryChanged += OnFindBarQueryChanged;
+            _findBar.OptionsChanged += OnFindBarOptionsChanged;
+            _findBar.NextRequested += OnFindBarNextRequested;
+            _findBar.PreviousRequested += OnFindBarPreviousRequested;
+            _findBar.CloseRequested += OnFindBarCloseRequested;
+        }
+
         ApplySplit();
         TryWireScrollSync();
         UpdateHeaders();
+        UpdateFindBar();
         UpdateStrip();
         UpdateBanner();
         UpdateOverview();
@@ -1037,6 +1259,11 @@ public class SideBySideDiffView : TemplatedControl
             _minimap.Document = document;
         }
 
+        // The matches were found over rows the old model defined; the search runs again against
+        // the new one while the bar is open.
+        ApplyFindResult(null);
+        RequestFind();
+
         // The blocks are new: no current change until the user picks one.
         SetCurrentChange(-1, scroll: false);
         UpdateOverview();
@@ -1282,6 +1509,7 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         strip.OptionsText = options.Count == 0 ? null : string.Join(" · ", options);
+        strip.FindText = FindStripText();
         strip.CaretText = FocusedSide is null ? null : DiffViewStrings.Format(DiffViewStrings.StatusCaret, CaretLine, CaretColumn);
 
         StatusController status = Status;
@@ -1376,6 +1604,15 @@ public class SideBySideDiffView : TemplatedControl
         if (_minimap is not null)
         {
             _minimap.JumpRequested -= OnMinimapJumpRequested;
+        }
+
+        if (_findBar is not null)
+        {
+            _findBar.QueryChanged -= OnFindBarQueryChanged;
+            _findBar.OptionsChanged -= OnFindBarOptionsChanged;
+            _findBar.NextRequested -= OnFindBarNextRequested;
+            _findBar.PreviousRequested -= OnFindBarPreviousRequested;
+            _findBar.CloseRequested -= OnFindBarCloseRequested;
         }
 
         _sync?.Dispose();
@@ -1539,6 +1776,402 @@ public class SideBySideDiffView : TemplatedControl
         _previousChange.RaiseCanExecuteChanged();
         _firstChange.RaiseCanExecuteChanged();
         _lastChange.RaiseCanExecuteChanged();
+    }
+
+    // ── Find ───────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>The focused pane's selection when it is one line of text; <c>null</c> otherwise.</summary>
+    private string? SelectionOfFocusedPane()
+    {
+        if (FocusedSide is not { } side || Pane(side) is not { } pane)
+        {
+            return null;
+        }
+
+        string text = pane.SelectedText;
+        return string.IsNullOrEmpty(text) || text.Contains('\n') || text.Contains('\r') ? null : text;
+    }
+
+    /// <summary>Walks the matches by <paramref name="delta"/>, wrapping at either end.</summary>
+    private void MoveFindMatch(int delta)
+    {
+        IReadOnlyList<FindMatch> matches = FindResult?.Matches ?? [];
+        if (matches.Count == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.FindNoMatches));
+            return;
+        }
+
+        // The walk wraps: stopping at the end would cost a second key to start over, and the
+        // matches are in row order, so wrapping is the only backwards jump on screen.
+        int index = CurrentFindMatchIndex < 0
+            ? (delta > 0 ? 0 : matches.Count - 1)
+            : (((CurrentFindMatchIndex + delta) % matches.Count) + matches.Count) % matches.Count;
+        SetCurrentFindMatch(index, scroll: true);
+    }
+
+    private void SetCurrentFindMatch(int index, bool scroll)
+    {
+        IReadOnlyList<FindMatch> matches = FindResult?.Matches ?? [];
+        int clamped = matches.Count == 0 ? -1 : Math.Clamp(index, -1, matches.Count - 1);
+        SetAndRaise(CurrentFindMatchIndexProperty, ref _currentFindMatchIndex, clamped);
+
+        FindMatch? current = clamped < 0 ? null : matches[clamped];
+        foreach (DiffSide side in new[] { DiffSide.Left, DiffSide.Right })
+        {
+            if (Pane(side) is { } pane)
+            {
+                // A match belongs to one pane; the other draws no current match.
+                pane.CurrentSearchMatch = current is { } match && match.Side == side ? match : null;
+            }
+        }
+
+        if (scroll && current is { } chosen)
+        {
+            RevealMatch(chosen);
+        }
+
+        UpdateFindBar();
+        UpdateStrip();
+    }
+
+    /// <summary>Selects the match in its own pane, focuses that pane, and centres its row in both.</summary>
+    private void RevealMatch(FindMatch match)
+    {
+        if (Pane(match.Side) is not { } pane)
+        {
+            return;
+        }
+
+        TextDocument text = match.Side == DiffSide.Left ? LeftDocument : RightDocument;
+        if (match.Line >= 0 && match.Line < text.LineCount)
+        {
+            DocumentLine line = text.GetLineByNumber(match.Line + 1);
+            int start = Math.Min(line.Offset + match.Column, line.EndOffset);
+            pane.Select(start, Math.Min(match.Length, line.EndOffset - start));
+        }
+
+        pane.TextArea.Focus();
+
+        // Last, so the centring wins over any scroll the caret brought about; both panes move
+        // because the rows are aligned.
+        if (Document is { } document)
+        {
+            IReadOnlyList<DiffLine> lines = document.Pane(match.Side).Lines;
+            if (match.Line >= 0 && match.Line < lines.Count)
+            {
+                ScrollToRows(lines[match.Line].Row, 1);
+            }
+        }
+    }
+
+    /// <summary>Schedules a search: the one in flight is cancelled and the query rests for <see cref="FindDebounce"/>.</summary>
+    private void RequestFind()
+    {
+        _findTimer?.Dispose();
+        _findTimer = null;
+        CancelFind();
+
+        if (!IsFindBarOpen || Document is null || string.IsNullOrEmpty(FindQuery))
+        {
+            ApplyFindResult(null);
+            return;
+        }
+
+        _findTimer = TimeProvider.CreateTimer(
+            _ => Dispatcher.UIThread.Post(RunFind),
+            state: null,
+            FindDebounce,
+            Timeout.InfiniteTimeSpan);
+    }
+
+    private void RunFind()
+    {
+        if (!IsFindBarOpen || Document is not { } document || string.IsNullOrEmpty(FindQuery))
+        {
+            return;
+        }
+
+        int generation = ++_findGeneration;
+        CancellationTokenSource cts = new();
+        _findCts = cts;
+        string query = FindQuery;
+        FindOptions options = FindOptions;
+        // Captured here, on the UI thread: the worker sees an immutable snapshot and a copy of
+        // the line table, never a TextDocument.
+        DocumentPaneText left = DocumentPaneText.Capture(LeftDocument);
+        DocumentPaneText right = DocumentPaneText.Capture(RightDocument);
+        DiffViewLog.FindStarted(_findLogger, generation, query.Length, options);
+        CurrentFind = RunFindAsync(generation, document, left, right, query, options, cts.Token);
+    }
+
+    private async Task RunFindAsync(
+        int generation,
+        SideBySideDocument document,
+        IPaneText left,
+        IPaneText right,
+        string query,
+        FindOptions options,
+        CancellationToken token)
+    {
+        long started = Stopwatch.GetTimestamp();
+        FindResult? result = null;
+        Exception? failure = null;
+        bool cancelled = false;
+        try
+        {
+            result = document.Rows.Count > FindWorkerRowThreshold
+                ? await Task.Run(() => Searcher(document, left, right, query, options, token), token).ConfigureAwait(false)
+                : Searcher(document, left, right, query, options, token);
+        }
+        catch (OperationCanceledException)
+        {
+            cancelled = true;
+        }
+        catch (Exception ex)
+        {
+            // DiffSearch reports a bad query as FindResult.Error; anything else is a bug, and it
+            // must not take the control down or leave the task faulted.
+            failure = ex;
+        }
+
+        TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            CompleteFind(generation, result, failure, cancelled, elapsed);
+        }
+        else
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => CompleteFind(generation, result, failure, cancelled, elapsed));
+        }
+    }
+
+    private void CompleteFind(int generation, FindResult? result, Exception? failure, bool cancelled, TimeSpan elapsed)
+    {
+        if (generation != _findGeneration)
+        {
+            // Latest wins, as builds do: a newer search superseded this one.
+            DiffViewLog.FindSuperseded(_findLogger, generation, _findGeneration);
+            return;
+        }
+
+        CurrentFind = null;
+        if (cancelled)
+        {
+            DiffViewLog.FindCancelled(_findLogger, generation);
+            return;
+        }
+
+        FindResult found;
+        if (failure is not null)
+        {
+            DiffViewLog.FindFailed(_findLogger, generation, failure);
+            found = Core.FindResult.Failed(DiffViewStrings.Get(DiffViewStrings.FindFailedMessage));
+        }
+        else
+        {
+            found = result!;
+            if (found.Error is null)
+            {
+                DiffViewLog.FindCompleted(_findLogger, generation, found, elapsed);
+            }
+            else
+            {
+                DiffViewLog.FindFailed(_findLogger, generation, null);
+            }
+        }
+
+        ApplyFindResult(found);
+        if (found.Truncated)
+        {
+            Status.SetWarning(DiffViewStrings.Format(DiffViewStrings.FindTruncated, found.Matches.Count.ToString("N0", CultureInfo.CurrentCulture)));
+        }
+
+        FindCompleted?.Invoke(this, new DiffFindCompletedEventArgs(found));
+    }
+
+    /// <summary>Puts a result — or no result — on the panes, the minimap, the bar and the strip.</summary>
+    private void ApplyFindResult(FindResult? result)
+    {
+        FindResult = result;
+        // A fresh result has no current match: typing must not pull focus out of the query box,
+        // so the first Next or Enter is what lands on a match.
+        SetAndRaise(CurrentFindMatchIndexProperty, ref _currentFindMatchIndex, -1);
+
+        List<FindMatch> left = [];
+        List<FindMatch> right = [];
+        List<int> rows = [];
+        SideBySideDocument? document = Document;
+        // A failed query highlights nothing; its matches are empty anyway.
+        foreach (FindMatch match in result?.Matches ?? [])
+        {
+            (match.Side == DiffSide.Left ? left : right).Add(match);
+            IReadOnlyList<DiffLine> lines = document?.Pane(match.Side).Lines ?? [];
+            if (match.Line >= 0 && match.Line < lines.Count)
+            {
+                rows.Add(lines[match.Line].Row);
+            }
+        }
+
+        if (_leftPane is not null)
+        {
+            _leftPane.SearchMatches = left;
+            _leftPane.CurrentSearchMatch = null;
+        }
+
+        if (_rightPane is not null)
+        {
+            _rightPane.SearchMatches = right;
+            _rightPane.CurrentSearchMatch = null;
+        }
+
+        if (_minimap is not null)
+        {
+            _minimap.MatchRows = rows.Count == 0 ? null : rows;
+        }
+
+        UpdateFindBar();
+        UpdateStrip();
+        RaiseFindCanExecuteChanged();
+    }
+
+    private void CancelFind()
+    {
+        if (_findCts is { } cts)
+        {
+            _findCts = null;
+            cts.Cancel();
+            cts.Dispose();
+        }
+    }
+
+    private void UpdateFindBar()
+    {
+        if (_findBar is not { } bar)
+        {
+            return;
+        }
+
+        // A collapsed bar takes no height, which is why the template's find row is Auto.
+        bar.IsVisible = IsFindBarOpen;
+        _syncingFindBar = true;
+        try
+        {
+            FindOptions options = FindOptions;
+            bar.Query = FindQuery;
+            bar.MatchCase = options.MatchCase;
+            bar.WholeWord = options.WholeWord;
+            bar.UseRegex = options.UseRegex;
+            bar.ChangedRowsOnly = options.ChangedRowsOnly;
+            bar.Scope = options.Scope;
+            bar.CountText = FindCountText();
+            bar.ErrorText = FindResult?.Error;
+            bar.NoticeText = FindResult is { Truncated: true } truncated
+                ? DiffViewStrings.Format(DiffViewStrings.FindTruncated, truncated.Matches.Count.ToString("N0", CultureInfo.CurrentCulture))
+                : null;
+        }
+        finally
+        {
+            _syncingFindBar = false;
+        }
+    }
+
+    private string? FindCountText()
+    {
+        if (FindResult is not { Error: null } result || string.IsNullOrEmpty(FindQuery))
+        {
+            return null;
+        }
+
+        if (result.Matches.Count == 0)
+        {
+            return DiffViewStrings.Get(DiffViewStrings.FindNoMatches);
+        }
+
+        string total = result.Matches.Count.ToString("N0", CultureInfo.CurrentCulture);
+        string leftCount = result.LeftCount.ToString("N0", CultureInfo.CurrentCulture);
+        string rightCount = result.RightCount.ToString("N0", CultureInfo.CurrentCulture);
+        return CurrentFindMatchIndex >= 0
+            ? DiffViewStrings.Format(DiffViewStrings.FindMatchOf, (CurrentFindMatchIndex + 1).ToString("N0", CultureInfo.CurrentCulture), total, leftCount, rightCount)
+            : DiffViewStrings.Format(DiffViewStrings.FindMatches, total, leftCount, rightCount);
+    }
+
+    /// <summary>The strip's find lane: the count and the scope, only while the bar is open.</summary>
+    private string? FindStripText()
+    {
+        if (!IsFindBarOpen)
+        {
+            return null;
+        }
+
+        string scope = DiffViewStrings.Get(FindOptions.Scope switch
+        {
+            FindScope.Left => DiffViewStrings.SideLeft,
+            FindScope.Right => DiffViewStrings.SideRight,
+            _ => DiffViewStrings.FindScopeBothWord,
+        });
+
+        if (FindResult is not { Error: null } result || string.IsNullOrEmpty(FindQuery))
+        {
+            return DiffViewStrings.Format(DiffViewStrings.StatusFindScope, scope);
+        }
+
+        string total = result.Matches.Count.ToString("N0", CultureInfo.CurrentCulture);
+        string count = result.Matches.Count == 0
+            ? DiffViewStrings.Get(DiffViewStrings.FindNoMatches)
+            : CurrentFindMatchIndex >= 0
+                ? DiffViewStrings.Format(DiffViewStrings.StatusFindMatchOf, (CurrentFindMatchIndex + 1).ToString("N0", CultureInfo.CurrentCulture), total)
+                : DiffViewStrings.Format(DiffViewStrings.StatusFindMatches, total);
+        return DiffViewStrings.Format(DiffViewStrings.StatusFind, count, scope);
+    }
+
+    private void RaiseFindCanExecuteChanged()
+    {
+        _closeFind.RaiseCanExecuteChanged();
+        _findNext.RaiseCanExecuteChanged();
+        _findPrevious.RaiseCanExecuteChanged();
+    }
+
+    private void OnFindBarQueryChanged(object? sender, EventArgs e)
+    {
+        if (_syncingFindBar || _findBar is not { } bar)
+        {
+            return;
+        }
+
+        FindQuery = bar.Query;
+    }
+
+    private void OnFindBarOptionsChanged(object? sender, EventArgs e)
+    {
+        if (_syncingFindBar || _findBar is not { } bar)
+        {
+            return;
+        }
+
+        FindOptions = FindOptions with
+        {
+            MatchCase = bar.MatchCase,
+            WholeWord = bar.WholeWord,
+            UseRegex = bar.UseRegex,
+            ChangedRowsOnly = bar.ChangedRowsOnly,
+            Scope = bar.Scope,
+        };
+    }
+
+    private void OnFindBarNextRequested(object? sender, EventArgs e)
+    {
+        FindNext();
+    }
+
+    private void OnFindBarPreviousRequested(object? sender, EventArgs e)
+    {
+        FindPrevious();
+    }
+
+    private void OnFindBarCloseRequested(object? sender, EventArgs e)
+    {
+        CloseFind();
     }
 
     /// <summary>

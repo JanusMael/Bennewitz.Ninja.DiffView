@@ -32,14 +32,23 @@ public class DiffMinimap : Control
     public static readonly StyledProperty<int> CurrentChangeIndexProperty =
         AvaloniaProperty.Register<DiffMinimap, int>(nameof(CurrentChangeIndex), defaultValue: -1);
 
+    /// <summary>Identifies the <see cref="MatchRows"/> property.</summary>
+    public static readonly StyledProperty<IReadOnlyList<int>?> MatchRowsProperty =
+        AvaloniaProperty.Register<DiffMinimap, IReadOnlyList<int>?>(nameof(MatchRows));
+
+    private const double TickWidth = 4;
+
     private readonly DiffBrushes _palette = new();
     private DiffLineKind[]? _bucketKinds;
     private SideBySideDocument? _bucketDocument;
     private int _bucketCountCached;
+    private bool[]? _matchBuckets;
+    private IReadOnlyList<int>? _matchRowsCached;
+    private int _matchBucketCountCached;
 
     static DiffMinimap()
     {
-        AffectsRender<DiffMinimap>(DocumentProperty, ViewportStartRowProperty, ViewportRowCountProperty, CurrentChangeIndexProperty);
+        AffectsRender<DiffMinimap>(DocumentProperty, ViewportStartRowProperty, ViewportRowCountProperty, CurrentChangeIndexProperty, MatchRowsProperty);
     }
 
     /// <summary>Creates the overview; the composite sets its width and name.</summary>
@@ -78,6 +87,13 @@ public class DiffMinimap : Control
     {
         get => GetValue(CurrentChangeIndexProperty);
         set => SetValue(CurrentChangeIndexProperty, value);
+    }
+
+    /// <summary>The rows holding a find match, marked as ticks down the right edge; <c>null</c> for none.</summary>
+    public IReadOnlyList<int>? MatchRows
+    {
+        get => GetValue(MatchRowsProperty);
+        set => SetValue(MatchRowsProperty, value);
     }
 
     /// <summary>Rows in the model.</summary>
@@ -123,6 +139,13 @@ public class DiffMinimap : Control
     public int RowAtPixel(double y)
     {
         return FirstRowOfBucket((int)Math.Floor(y));
+    }
+
+    /// <summary>Whether <paramref name="bucket"/> holds a find match.</summary>
+    public bool HasMatchInBucket(int bucket)
+    {
+        bool[] buckets = MatchBuckets();
+        return bucket >= 0 && bucket < buckets.Length && buckets[bucket];
     }
 
     /// <summary>The strongest kind in <paramref name="bucket"/>: deleted over inserted over modified over unchanged.</summary>
@@ -194,6 +217,16 @@ public class DiffMinimap : Control
             }
         }
 
+        // Find ticks down the right edge, so they read against the kind stripes on the left.
+        bool[] matchBuckets = MatchBuckets();
+        for (int bucket = 0; bucket < matchBuckets.Length; bucket++)
+        {
+            if (matchBuckets[bucket])
+            {
+                context.FillRectangle(_palette[DiffBrush.FindMatch], new Rect(Math.Max(0, width - TickWidth), bucket, Math.Min(TickWidth, width), 1));
+            }
+        }
+
         if (CurrentChangeIndex >= 0 && CurrentChangeIndex < document.Blocks.Count)
         {
             ChangeBlock block = document.Blocks[CurrentChangeIndex];
@@ -219,6 +252,11 @@ public class DiffMinimap : Control
         if (change.Property == DocumentProperty || change.Property == BoundsProperty)
         {
             _bucketKinds = null;
+            _matchBuckets = null;
+        }
+        else if (change.Property == MatchRowsProperty)
+        {
+            _matchBuckets = null;
         }
     }
 
@@ -318,6 +356,31 @@ public class DiffMinimap : Control
         _bucketDocument = document;
         _bucketCountCached = buckets;
         return kinds;
+    }
+
+    /// <summary>The buckets holding a find match, computed once per match set and height.</summary>
+    private bool[] MatchBuckets()
+    {
+        IReadOnlyList<int>? rows = MatchRows;
+        int buckets = BucketCount;
+        if (_matchBuckets is not null && ReferenceEquals(_matchRowsCached, rows) && _matchBucketCountCached == buckets)
+        {
+            return _matchBuckets;
+        }
+
+        bool[] marked = new bool[buckets];
+        if (rows is not null && RowCount > 0)
+        {
+            foreach (int row in rows)
+            {
+                marked[BucketOfRow(row)] = true;
+            }
+        }
+
+        _matchBuckets = marked;
+        _matchRowsCached = rows;
+        _matchBucketCountCached = buckets;
+        return marked;
     }
 
     private static int Strength(DiffLineKind kind)

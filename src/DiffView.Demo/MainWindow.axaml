@@ -24,6 +24,9 @@
         <MenuItem x:Name="ColourBlindPalette" Header="Colour-_blind palette" ToggleType="CheckBox"
                   Click="OnToggleColourBlindPalette" AutomationProperties.Name="Use the colour-blind-safe palette" />
         <Separator />
+        <MenuItem Header="_Find…" InputGesture="Ctrl+F" Click="OnFind"
+                  AutomationProperties.Name="Open the find bar" />
+        <Separator />
         <MenuItem x:Name="IgnoreWhitespace" Header="Ignore _whitespace" ToggleType="CheckBox"
                   Click="OnToggleIgnoreWhitespace" AutomationProperties.Name="Ignore whitespace differences" />
         <MenuItem x:Name="IgnoreCase" Header="Ignore _case" ToggleType="CheckBox"

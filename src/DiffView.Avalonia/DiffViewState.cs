@@ -51,6 +51,20 @@ public sealed class DiffBuildCompletedEventArgs : EventArgs
     public DiffBuildResult Result { get; }
 }
 
+/// <summary>A search finished: matches, counts, truncation, or a query that could not run.</summary>
+public sealed class DiffFindCompletedEventArgs : EventArgs
+{
+    /// <param name="result">What the search found.</param>
+    public DiffFindCompletedEventArgs(FindResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        Result = result;
+    }
+
+    /// <summary>What the search found; <see cref="FindResult.Error"/> is set for a query that could not run.</summary>
+    public FindResult Result { get; }
+}
+
 /// <summary>A build failed outright.</summary>
 public sealed class DiffBuildFailedEventArgs : EventArgs
 {

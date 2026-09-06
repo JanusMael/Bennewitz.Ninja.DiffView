@@ -183,6 +183,12 @@ public sealed partial class MainWindow : Window
         Diff.SyncHorizontalScroll = SyncHorizontal.IsChecked;
     }
 
+    private void OnFind(object? sender, RoutedEventArgs e)
+    {
+        // The control's own Ctrl+F does this too; the item is here so the feature is findable.
+        Diff.OpenFind();
+    }
+
     private void OnToggleLiveLog(object? sender, RoutedEventArgs e)
     {
         AvaloniaDiagnostics.ToggleLiveLogWindow();

@@ -308,6 +308,15 @@ public sealed class SideBySideDiffViewTests
         {
         }
 
+        // A find over the sentinel: the query is a piece of the document — Ctrl+F pre-fills it
+        // from the selection — so nothing of it but its length may reach the log.
+        host.View.OpenFind();
+        await host.FindAsync(sentinel);
+        Assert.Equal(4, host.View.FindResult!.Matches.Count);
+        host.View.FindNext();
+        CompositeHost.Layout();
+        host.View.CloseFind();
+
         // A forced render fault, logged under the Render category with its exception.
         List<RenderFaultEventArgs> faults = [];
         host.View.RenderFault += (_, e) => faults.Add(e);
@@ -334,6 +343,8 @@ public sealed class SideBySideDiffViewTests
         LogRecord fault = Assert.Single(records, r => r.Level == LogLevel.Error && r.Category == DiffViewLogCategories.Render);
         Assert.NotNull(fault.Exception);
         Assert.Contains("ThrowingRenderer", fault.Message, StringComparison.Ordinal);
+        LogRecord find = Assert.Single(records, r => r.Category == DiffViewLogCategories.Find && r.Level == LogLevel.Information);
+        Assert.Contains("4 match(es)", find.Message, StringComparison.Ordinal);
         Assert.Contains(records, r => r.Level == LogLevel.Information && r.Message.Contains("completed in", StringComparison.Ordinal));
     }
 

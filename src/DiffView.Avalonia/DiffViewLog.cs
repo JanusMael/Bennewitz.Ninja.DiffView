@@ -71,6 +71,48 @@ internal static class DiffViewLog
         logger?.LogDebug("Build {Generation} superseded by build {By}; its result is discarded", generation, by);
     }
 
+    public static void FindStarted(ILogger? logger, int generation, int queryLength, FindOptions options)
+    {
+        // The query is not logged, only its length: Ctrl+F pre-fills it from the pane's selection,
+        // so it may be a piece of the document under comparison.
+        logger?.LogDebug(
+            "Find {Generation} started: {Length} characters, scope={Scope}, matchCase={MatchCase}, wholeWord={WholeWord}, regex={Regex}, changedRowsOnly={ChangedRowsOnly}",
+            generation, queryLength, options.Scope, options.MatchCase, options.WholeWord, options.UseRegex, options.ChangedRowsOnly);
+    }
+
+    public static void FindCompleted(ILogger? logger, int generation, FindResult result, TimeSpan elapsed)
+    {
+        logger?.LogInformation(
+            "Find {Generation} completed in {Elapsed} ms: {Matches} match(es), {Left} left, {Right} right, truncated={Truncated}",
+            generation,
+            elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture),
+            result.Matches.Count, result.LeftCount, result.RightCount, result.Truncated);
+    }
+
+    public static void FindFailed(ILogger? logger, int generation, Exception? exception)
+    {
+        // The engine's own message quotes the pattern, which is why only the fact is logged.
+        if (exception is null)
+        {
+            logger?.LogWarning("Find {Generation} could not run: the query is not a valid pattern, or matching timed out", generation);
+        }
+        else
+        {
+            // The type, not the exception: a message from the matcher can quote the pattern.
+            logger?.LogError("Find {Generation} threw {Exception} and was abandoned", generation, exception.GetType().FullName);
+        }
+    }
+
+    public static void FindCancelled(ILogger? logger, int generation)
+    {
+        logger?.LogDebug("Find {Generation} cancelled", generation);
+    }
+
+    public static void FindSuperseded(ILogger? logger, int generation, int by)
+    {
+        logger?.LogDebug("Find {Generation} superseded by find {By}; its result is discarded", generation, by);
+    }
+
     public static void RenderFault(ILogger? logger, DiffSide side, RenderFaultEventArgs fault)
     {
         logger?.LogError(

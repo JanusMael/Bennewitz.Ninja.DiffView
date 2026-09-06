@@ -85,6 +85,27 @@ internal sealed class CompositeHost : IDisposable
         Layout();
     }
 
+    /// <summary>Sets the query, then lets the debounce fire and the search it starts land.</summary>
+    public async Task FindAsync(string query)
+    {
+        View.FindQuery = query;
+        await WaitForFindAsync();
+    }
+
+    /// <summary>Fires the find debounce, runs the search it posts, and waits for its outcome.</summary>
+    public async Task WaitForFindAsync()
+    {
+        Time.Advance(SideBySideDiffView.FindDebounce);
+        Layout();
+        Task? find = View.CurrentFind;
+        if (find is not null)
+        {
+            await find;
+        }
+
+        Layout();
+    }
+
     public WriteableBitmap Capture()
     {
         Layout();

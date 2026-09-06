@@ -598,3 +598,78 @@ block with its counts and, on a long line, why it has no word highlights; the co
 gutter and the minimap carry the same block and row texts. The tooltips are on the model's
 metadata (`PaneMetadata.OtherLine`, `PaneMetadata.BlockAt`), bounds-checked like everything
 else the presenter reads from it.
+
+## The find bar is chrome; the search state lives on the composite
+
+`DiffFindBar` holds a query, four toggles, a scope and three pieces of text, and it runs
+nothing. It raises `QueryChanged` and `OptionsChanged` from `OnPropertyChanged`, not from its
+click handlers, so a host — or a test — can drive it by setting properties and get the same
+behaviour a click gives. The composite pushes its own state back into the bar inside a
+`_syncingFindBar` guard and ignores the events that come back, which is the same shape the
+status strip uses for its dismiss control.
+
+The three scope buttons are one segmented control made of `ToggleButton`s whose checked state
+the bar owns: clicking the one already checked would otherwise uncheck it and leave no scope
+selected, so the handler sets `Scope` from the sender and re-applies the checked states.
+
+## A fresh result has no current match
+
+`ApplyFindResult` leaves `CurrentFindMatchIndex` at -1 and highlights every match. Only
+`FindNext`, `FindPrevious` and the property setter make a match current, and only that reveals
+it — selects it in its pane, focuses that pane and centres its row in both. The reason is
+focus: the search re-runs on every keystroke, and a current match that revealed itself would
+pull focus out of the query box before the next character arrived. It also means the first F3
+or Enter lands on match 1 rather than skipping it.
+
+The walk wraps at either end, unlike change navigation, which stops and says so. A find bar
+that stopped at the last match would cost a second key to start over, and the matches are in
+row order, so the wrap is the only backwards jump on screen.
+
+## The search worker reads a snapshot and a copy of the line table
+
+`DocumentPaneText.Capture` runs on the UI thread: it takes `TextDocument.CreateSnapshot()` —
+immutable and free to read from any thread — and copies each line's offset and length into two
+arrays, because `TextDocument.Lines` is owner-thread only. The worker then answers
+`IPaneText.GetLine` out of the snapshot. A test holds a document open in `RunUpdate()` while a
+gated search completes; capturing on the worker instead makes it throw from
+`TextDocument.VerifyAccess`, which is how that test was proven able to fail.
+
+Searches run inline at or below `FindWorkerRowThreshold` (2,000 rows) and on `Task.Run` above
+it, debounced by `FindDebounce` (150 ms) on the composite's `TimeProvider`, latest-wins by
+generation exactly as builds are.
+
+## Escape and F3 are the composite's key bindings, gated on the bar being open
+
+`CloseFindCommand`, `FindNextCommand` and `FindPreviousCommand` all report `CanExecute` false
+while the bar is closed. Avalonia marks a key handled only when a binding actually executes, so
+Escape with the bar closed still reaches whatever else the host wants it for. Enter and
+Shift+Enter are not bindings at all: they are handled in `DiffFindBar.OnKeyDown`, so they walk
+the matches only while the bar has focus and an editable pane keeps its own Enter.
+
+## The find bar's row is `Auto` and the bar collapses
+
+The composite's template grew a third `Auto` row between the banner and the panes. A closed bar
+is `IsVisible="False"`, so the row measures zero and the layout is byte-identical to Phase 7's —
+which is why every snapshot from earlier phases still matches without being re-approved.
+
+## Focus waits for the layout pass
+
+A control that has only just become visible has not been measured, and an unmeasured control
+cannot take focus: `DiffFindBar.FocusQuery` returns whether the box took it, and `OpenFind`
+retries once through the dispatcher at `DispatcherPriority.Input`, below the layout pass. The
+first headless run of the Ctrl+F test caught this — and, through it, that a composite whose key
+bindings never see a key press is a composite with nothing focused inside it.
+
+## `TextBox.Watermark` is obsolete in Avalonia 12
+
+It is `PlaceholderText` now, and the obsoletion is an error under `-warnaserror` from the XAML
+compiler (`AVLN5001`), not a warning at the C# layer. The find bar's property is
+`QueryPlaceholder` to match.
+
+## The query is never logged, only its length
+
+`DiffViewLog.FindStarted` records the query's length and the options; `FindCompleted` records
+counts, timings and truncation; `FindFailed` records that the query would not compile or timed
+out, and never the engine's own message, which quotes the pattern. Ctrl+F pre-fills the query
+from the pane's selection, so the query is document text as often as not, and the sentinel test
+now searches for the sentinel to prove it does not reach the log.
