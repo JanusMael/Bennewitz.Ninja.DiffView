@@ -18,10 +18,11 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Grid RowDefinitions="Auto,Auto,*,Auto" Background="{TemplateBinding Background}">
-          <Grid ColumnDefinitions="*,8,*">
+          <Grid Name="PART_Headers" ColumnDefinitions="*,24,*,14">
             <dv:DiffPaneHeader Name="PART_LeftHeader" />
             <Border Grid.Column="1" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
             <dv:DiffPaneHeader Name="PART_RightHeader" Grid.Column="2" />
+            <Border Grid.Column="3" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
           </Grid>
 
           <Border Name="PART_Banner" Grid.Row="1" Padding="10,6">
@@ -41,10 +42,11 @@
             </DockPanel>
           </Border>
 
-          <Grid Grid.Row="2" ColumnDefinitions="*,8,*">
+          <Grid Name="PART_Panes" Grid.Row="2" ColumnDefinitions="*,24,*,14">
             <dv:DiffPanePresenter Name="PART_LeftPane" AutomationProperties.Name="{TemplateBinding LeftPaneName}" />
-            <Border Name="PART_Gutter" Grid.Column="1" Background="{DynamicResource DiffView.GutterBackgroundBrush}" />
+            <dv:ChangeConnectorGutter Name="PART_Gutter" Grid.Column="1" AutomationProperties.Name="{TemplateBinding GutterName}" />
             <dv:DiffPanePresenter Name="PART_RightPane" Grid.Column="2" AutomationProperties.Name="{TemplateBinding RightPaneName}" />
+            <dv:DiffMinimap Name="PART_Minimap" Grid.Column="3" AutomationProperties.Name="{TemplateBinding MinimapName}" />
           </Grid>
 
           <dv:DiffStatusStrip Name="PART_StatusStrip" Grid.Row="3" AutomationProperties.Name="{TemplateBinding StatusStripName}" />

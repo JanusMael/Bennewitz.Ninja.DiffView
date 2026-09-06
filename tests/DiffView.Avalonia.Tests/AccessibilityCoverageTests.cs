@@ -39,6 +39,9 @@ public sealed class AccessibilityCoverageTests
         "TextEditor",
         "DiffPanePresenter",
         "SideBySideDiffView",
+        // Clicked and dragged, so named.
+        "ChangeConnectorGutter",
+        "DiffMinimap",
     };
 
     /// <summary>

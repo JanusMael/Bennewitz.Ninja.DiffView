@@ -24,6 +24,8 @@ internal enum DiffBrush
     MarkerModified,
     WordInserted,
     WordDeleted,
+    CurrentBlockBorder,
+    Connector,
 }
 
 /// <summary>
@@ -51,6 +53,8 @@ internal sealed class DiffBrushes
         ("DiffView.MarkerModifiedBrush", Color.Parse("#D96A00")),
         ("DiffView.WordInsertedBrush", Color.Parse("#592E7D32")),
         ("DiffView.WordDeletedBrush", Color.Parse("#59C62828")),
+        ("DiffView.CurrentBlockBorderBrush", Color.Parse("#1565C0")),
+        ("DiffView.ConnectorBrush", Color.Parse("#757575")),
     ];
 
     private readonly IBrush[] _brushes;

@@ -24,9 +24,11 @@ internal readonly record struct WordRectangle(int LineNumber, PieceRange Piece, 
 internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
 {
     private const double HatchSpacing = 6;
+    private const double CurrentBlockBorderThickness = 2;
 
     private readonly List<DrawnLine> _lastDrawn = [];
     private readonly List<WordRectangle> _lastWordRectangles = [];
+    private Rect? _lastCurrentBlockBorder;
 
     public DiffLineBackgroundRenderer(DiffPanePresenter owner)
         : base(owner, KnownLayer.Background, nameof(DiffLineBackgroundRenderer))
@@ -38,6 +40,9 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
 
     /// <summary>The word-level rectangles of the last frame, in line and piece order.</summary>
     public IReadOnlyList<WordRectangle> LastWordRectangles => _lastWordRectangles;
+
+    /// <summary>The current block's border of the last frame, in text-view coordinates, when one was in view.</summary>
+    public Rect? LastCurrentBlockBorder => _lastCurrentBlockBorder;
 
     /// <summary>The padding the visual line carries, from its element; none when the generator emitted nothing.</summary>
     public static PaddingSpec PaddingOf(VisualLine line)
@@ -57,6 +62,7 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
     {
         _lastDrawn.Clear();
         _lastWordRectangles.Clear();
+        _lastCurrentBlockBorder = null;
         double width = textView.Bounds.Width;
         if (width <= 0)
         {
@@ -99,6 +105,19 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
             }
 
             _lastDrawn.Add(new DrawnLine(lineNumber, kind, padding));
+        }
+
+        // The current block's border: rows are uniform once primed, so a row's top is its index
+        // times the line height, and the border spans the block's rows across the viewport.
+        if (Owner.CurrentBlock is { } block)
+        {
+            Rect border = new(0, block.FirstRow * lineHeight - scroll.Y, width, block.RowCount * lineHeight);
+            if (border.Bottom > 0 && border.Top < textView.Bounds.Height)
+            {
+                Pen pen = new(palette[DiffBrush.CurrentBlockBorder], CurrentBlockBorderThickness);
+                drawingContext.DrawRectangle(null, pen, border.Deflate(CurrentBlockBorderThickness / 2));
+                _lastCurrentBlockBorder = border;
+            }
         }
     }
 

@@ -2,7 +2,9 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
+using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 
@@ -60,8 +62,32 @@ internal abstract class DiffMargin : AbstractMargin
         }
     }
 
+    /// <summary>The tooltip for <paramref name="lineNumber"/>, or <c>null</c> for none; shown under the pointer.</summary>
+    public abstract string? TooltipFor(int lineNumber);
+
     /// <summary>Draws the content; the visual lines are valid when this runs.</summary>
     protected abstract void RenderCore(DrawingContext context, TextView textView);
+
+    /// <inheritdoc/>
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (TextView is not { } view || Document is null)
+        {
+            ToolTip.SetTip(this, null);
+            return;
+        }
+
+        DocumentLine? line = view.GetDocumentLineByVisualTop(e.GetPosition(this).Y + view.VerticalOffset);
+        ToolTip.SetTip(this, line is null ? null : TooltipFor(line.LineNumber));
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        ToolTip.SetTip(this, null);
+    }
 
     /// <summary>Text in the margin's inherited font, in <paramref name="brush"/>.</summary>
     protected FormattedText Format(string text, IBrush brush)

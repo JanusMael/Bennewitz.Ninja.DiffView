@@ -90,10 +90,26 @@ All notable changes to DiffView are recorded here. The format follows
   line without pieces and its tooltip, the ignore-whitespace toggle and the word-diff modes;
   a snapshot of modified rows with only their changed words highlighted, in both variants.
 
+- Phase 7, navigation and overview: `CurrentChangeIndex` with `NextChange` / `PreviousChange` /
+  `FirstChange` / `LastChange` and `SwitchPane` commands, F7 / Shift+F7 / F6 default key
+  bindings, the current-block border in both panes, "change i of n" in the strip and the
+  end-of-changes notices; `DiffMinimap` (pixel buckets by strongest kind, viewport rectangle,
+  current-change mark, click-to-jump, row tooltip); `ChangeConnectorGutter` (a polygon per
+  visible block joining the sides' extents, the current block outlined, click selects, drag
+  resizes through `SplitRatio`, block tooltip); tooltips on line numbers (the counterpart line)
+  and markers (the block summary); `PaneMetadata.OtherLine` / `BlockAt`;
+  `DiffPanePresenter.CurrentBlock`; `ScrollToRow`; the navigation, side, kind and tooltip strings.
+- Headless tests for navigation and the keys, the minimap's mapping on a 200k-line fixture and
+  its click, the connector polygons with click and drag, and the tooltips; a snapshot of the
+  minimap, connectors and the current-block border in both variants.
+
 ### Changed
 
 - The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and
   `DiffPanePresenter` as interactive controls.
+- The composite's gutter is the connector gutter and a minimap column sits beside the right
+  pane; every composite and demo snapshot shows both; the accessibility guard counts
+  `ChangeConnectorGutter` and `DiffMinimap` as interactive.
 - The composite and demo snapshots show word-level highlights on their modified rows.
 - `RenderFault` on the presenter is raised after the render pass that caught the fault.
 - The demo smoke snapshot shows the composite; the accessibility guard counts

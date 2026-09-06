@@ -1,9 +1,6 @@
 using System.Globalization;
 using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Media;
-using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
@@ -43,44 +40,39 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     }
 
     /// <summary>
-    /// The tooltip for <paramref name="lineNumber"/>: on a modified row whose line exceeds the
-    /// word-level limit, why it carries no word highlights; otherwise none.
+    /// The tooltip for <paramref name="lineNumber"/>: the change block the line belongs to —
+    /// "Change 3 of 5 · +1 −0 ~2" — and, on a modified row whose line exceeds the word-level
+    /// limit, why it carries no word highlights; none for an unchanged line.
     /// </summary>
-    public string? TooltipFor(int lineNumber)
+    public override string? TooltipFor(int lineNumber)
     {
-        if (Owner.Metadata.KindOf(lineNumber) != DiffLineKind.Modified
-            || Owner.Metadata.RowOf(lineNumber) is not { } row
-            || Owner.WordDiffLookup is not { } lookup
-            || !lookup.IsLongLine(row))
+        PaneMetadata metadata = Owner.Metadata;
+        if (metadata.BlockAt(lineNumber) is not { } block || metadata.Document is not { } document)
         {
             return null;
         }
 
-        return DiffViewStrings.Format(DiffViewStrings.WordDiffSkipped, lookup.MaxLineLength.ToString("N0", CultureInfo.CurrentCulture));
+        string summary = DiffViewStrings.Format(
+            DiffViewStrings.MarkerTooltip,
+            (block.Index + 1).ToString("N0", CultureInfo.CurrentCulture),
+            document.Blocks.Count.ToString("N0", CultureInfo.CurrentCulture),
+            DiffViewStrings.Format(DiffViewStrings.StatusCounts, block.InsertedCount, block.DeletedCount, block.ModifiedCount));
+
+        if (metadata.KindOf(lineNumber) == DiffLineKind.Modified
+            && metadata.RowOf(lineNumber) is { } row
+            && Owner.WordDiffLookup is { } lookup
+            && lookup.IsLongLine(row))
+        {
+            summary += Environment.NewLine + DiffViewStrings.Format(DiffViewStrings.WordDiffSkipped, lookup.MaxLineLength.ToString("N0", CultureInfo.CurrentCulture));
+        }
+
+        return summary;
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
         FormattedText widest = Format("~", Owner.Palette[DiffBrush.MarkerModified]);
         return new Size(widest.Width + 2 * HorizontalPadding, 0);
-    }
-
-    protected override void OnPointerMoved(PointerEventArgs e)
-    {
-        base.OnPointerMoved(e);
-        if (TextView is not { } view || Document is null)
-        {
-            return;
-        }
-
-        DocumentLine? line = view.GetDocumentLineByVisualTop(e.GetPosition(this).Y + view.VerticalOffset);
-        ToolTip.SetTip(this, line is null ? null : TooltipFor(line.LineNumber));
-    }
-
-    protected override void OnPointerExited(PointerEventArgs e)
-    {
-        base.OnPointerExited(e);
-        ToolTip.SetTip(this, null);
     }
 
     protected override void RenderCore(DrawingContext context, TextView textView)

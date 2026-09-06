@@ -17,13 +17,17 @@ complete on top of it: `WordDiffLookup` reads a modified row's two lines from th
 documents and asks `WordDiffCache` on the row's first frame, the background renderer draws a
 rectangle per changed piece through the visual line's column mapping, the composite binds one
 lookup per build to that build's options, and the marker margin's tooltip names a line too
-long for pieces. Next is **Phase 7 — Navigation, minimap, connectors, tooltips** (plan
-§Phase 7): `NextChange` / `PreviousChange` / `FirstChange` / `LastChange` with
-`CurrentChangeIndex` and the current-block border, F7 / Shift+F7 / F6, `DiffMinimap`,
-`ChangeConnectorGutter` owning the gutter column, and the tooltips on line numbers and markers
-(the marker margin's per-line tooltip hook is in place). Both ClaudeForge contributions (PR #37
-and PR #38) are merged and the ClaudeForge pin follows the merge (see *Upstreamed to
-ClaudeForge*).
+long for pieces. **Phase 7 — Navigation, minimap, connectors, tooltips** is complete on top:
+`CurrentChangeIndex` with next / previous / first / last and F7 / Shift+F7 / F6, the
+current-block border in the panes, `DiffMinimap` beside the right pane, `ChangeConnectorGutter`
+owning the column between the panes with click-to-select and drag-to-resize, and tooltips on
+line numbers, markers, connectors and the minimap. Next is **Phase 8 — Find** (plan §Phase 8):
+`DiffFindBar` (query, toggles, L / R / Both scope, count, next / previous / close, inline
+error), `SearchMatchRenderer` per pane, incremental search over document snapshots through
+`DiffSearch` with debounce and cancellation, minimap match ticks, the strip's count and scope,
+the Ctrl+F / F3 / Esc bindings, and the find leg of the sentinel log test. Both ClaudeForge
+contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the merge (see
+*Upstreamed to ClaudeForge*).
 
 The theme audit regenerates after a pin bump, in this order:
 
@@ -46,11 +50,28 @@ dotnet run --project src/ThemeAudit -- report
 | 4 Pane presenter, padding, gutters | done | `DiffPanePresenter` over the source document; `PaddingRun` / `PaddingElement` / `PaddingElementGenerator` / `PaddingHeightPrimer` lifted from the spike; `PaneMetadata` bounds-checked and version-stamped; `DiffLineBackgroundRenderer`, `DiffSelectionRenderer`, `DiffCaretRenderer`, `DiffLineNumberMargin`, `ChangeMarkerMargin`, `DiffBrushes`; the fault boundary with `RenderFault`; caret column normalised after `Home` twice; control themes in `Themes/DiffPanePresenter.axaml`; `AGENTS.md`; 26 headless, pixel and snapshot test cases |
 | 5 Composite control, scroll sync, headers, status strip, theming | done | `SideBySideDiffView`, `DiffPaneHeader`, `DiffStatusStrip`, the state machine and banners, the latest-wins worker, `ScrollSync`, `StatusController` on `TimeProvider`, `DiffViewLog`, `DiffViewStrings` over the new surface, compiled themes; the demo on the composite; 34 headless and snapshot test cases plus 5 status-controller unit tests |
 | 6 Word-level highlights and options | done | `WordDiffLookup` over the live documents, one per build bound to its options; piece rectangles in `DiffLineBackgroundRenderer` through the visual line's columns; the marker margin's long-line tooltip; 6 headless and snapshot test cases |
-| 7 Navigation, minimap, connectors, tooltips | not started | |
+| 7 Navigation, minimap, connectors, tooltips | done | `CurrentChangeIndex` + commands + F7 / Shift+F7 / F6, current-block border, "change i of n"; `DiffMinimap`; `ChangeConnectorGutter` with `SplitRatio`; tooltips on line numbers, markers, connectors and the minimap; 9 headless and snapshot test cases |
 | 8 Find | not started | |
 | 9 Syntax highlighting | not started | |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 7 verification
+
+| Done-when item | Result |
+|---|---|
+| Headless: `NextChange` from the top lands on `Blocks[0].FirstRow`; at the last block it stops and the status strip says so | pass: `NavigationTests.NextChange_from_the_top_lands_on_the_first_block_and_stops_at_the_last_with_the_strip_saying_so` — the first block is the current one in both panes with its border drawn in the token colour over its rows, the strip reads "change 1 of 5", every subsequent block lands in view with both panes at the same offset, the sixth press stays at 5 with "No next change" in the lane; first, previous at the first, last, and the clamping setter are covered too |
+| Headless: minimap pixel → bucket → row mapping is correct at top, middle, bottom on the 200k-line fixture | pass: `OverviewTests.The_minimap_maps_pixels_to_buckets_to_rows_at_top_middle_and_bottom_on_the_200k_line_fixture` — a generated 200,000-line pair (204,001 rows) in a 400 px minimap; at buckets 0, 200 and 399 the first row, the end row, the round trip through `BucketOfRow`, the strongest kind and the click's first changed row all match an independent computation; `A_minimap_click_in_the_composite_jumps_both_panes_and_the_viewport_tracks_the_scroll` covers the click and the viewport rectangle in the composite |
+| Headless: connector polygons for visible blocks have the expected left and right extents; a headless click on a polygon makes that block the current change; a headless drag on empty gutter space resizes the panes | pass: `Connector_polygons_have_the_expected_extents_a_click_selects_the_block_and_a_drag_resizes_the_panes` — one polygon per block, tops at the block's first row, the left bottom after its modified plus deleted rows and the right bottom after its modified plus inserted rows, the gutter's row tops agreeing with the pane's; a click inside the tallest polygon selects its block; a drag on the unchanged first row widens the left pane and raises `SplitRatio` |
+| Headless: F6 moves focus between the panes | pass: `F7_and_Shift_F7_navigate_and_F6_switches_panes` — F7 and Shift+F7 walk the changes from a focused pane, F6 alternates the focused pane both ways, and clearing `KeyBindings` disarms them |
+| Tooltips on line numbers and markers | pass: `TooltipTests.Line_numbers_name_the_counterpart_and_markers_name_the_block` — "Line 2 · right line 3", "Line 17 · no right line", "Line 2 · no left line" for the inserted using, "Change 5 of 5 · +0 −5 ~1" for the block holding the deleted and modified lines, the pointer over the line-number margin bringing the text up and leaving clearing it; the connector and minimap tooltips are asserted in `OverviewTests` |
+| Snapshot: minimap, connectors and the current-block border on the small fixture in both theme variants | pass: `NavigationSnapshotTests.Minimap_connectors_and_the_current_block_render` Light and Dark with change 3 current, reviewed and approved; the ten composite and demo baselines re-approved with the gutter and minimap columns |
+| Navigation with no changes, and a new model clearing the current change | pass: `Navigation_without_changes_says_so_and_a_new_model_clears_the_current_change` |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 264 passed |
+| New headless tests proven able to fail | the minimap's round trip failed at the middle bucket until `BucketOfRow` became the exact inverse of `FirstRowOfBucket`; the marker tooltip test expected `~0` for a block that holds a modified line above its deletions and the line-number test expected a counterpart for the inserted using — both expectations were wrong and were corrected against the model |
+| Trimmed publish (`linux-x64`, self-contained) | succeeds, 0 IL warnings, 51 MB |
+| Demo launched on this machine | boots with the connector gutter and the minimap beside the panes, builds the bundled pair, logs its transitions; no fault or error in the log |
 
 ## Phase 6 verification
 

@@ -45,6 +45,53 @@ internal sealed class PaneMetadata
     /// <summary>Whether there is no model behind this metadata.</summary>
     public bool IsEmpty => _document is null;
 
+    /// <summary>The model, when there is one.</summary>
+    public SideBySideDocument? Document => _document;
+
+    /// <summary>The 1-based line on the other side that shares <paramref name="lineNumber"/>'s row, or <c>null</c> when that side has padding there or the line is unknown.</summary>
+    public int? OtherLine(int lineNumber)
+    {
+        if (RowOf(lineNumber) is not { } row)
+        {
+            return null;
+        }
+
+        DiffSide other = Side == DiffSide.Left ? DiffSide.Right : DiffSide.Left;
+        return SideBySideDocument.LineOf(_document!.Rows[row], other) + 1;
+    }
+
+    /// <summary>The change block containing <paramref name="lineNumber"/>'s row, or <c>null</c> for an unchanged or unknown line.</summary>
+    public ChangeBlock? BlockAt(int lineNumber)
+    {
+        if (RowOf(lineNumber) is not { } row || _document is null)
+        {
+            return null;
+        }
+
+        IReadOnlyList<ChangeBlock> blocks = _document.Blocks;
+        int low = 0;
+        int high = blocks.Count - 1;
+        while (low <= high)
+        {
+            int middle = (low + high) / 2;
+            ChangeBlock block = blocks[middle];
+            if (row < block.FirstRow)
+            {
+                high = middle - 1;
+            }
+            else if (row > block.LastRow)
+            {
+                low = middle + 1;
+            }
+            else
+            {
+                return block;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Padding rows after the last line, when the model knows the side.</summary>
     public int TrailingPadding => _document is null ? 0 : Padding.Trailing(_document, Side);
 

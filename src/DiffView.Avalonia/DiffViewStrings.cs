@@ -163,6 +163,54 @@ public static class DiffViewStrings
     /// <summary>The marker tooltip on a modified row whose line is too long for word-level pieces: <c>{0}</c> the limit.</summary>
     public const string WordDiffSkipped = "WordDiff.Skipped";
 
+    /// <summary>The change count with a current change: <c>{0}</c> current (1-based), <c>{1}</c> total.</summary>
+    public const string StatusChangeOf = "Status.Changes.Of";
+
+    /// <summary>Next change at the last block.</summary>
+    public const string NavigationNoNext = "Navigation.NoNext";
+
+    /// <summary>Previous change at the first block.</summary>
+    public const string NavigationNoPrevious = "Navigation.NoPrevious";
+
+    /// <summary>Navigation with no changes.</summary>
+    public const string NavigationNoChanges = "Navigation.NoChanges";
+
+    /// <summary>The left side, in a tooltip.</summary>
+    public const string SideLeft = "Side.Left";
+
+    /// <summary>The right side, in a tooltip.</summary>
+    public const string SideRight = "Side.Right";
+
+    /// <summary>A line-number tooltip with a counterpart: <c>{0}</c> line, <c>{1}</c> other side, <c>{2}</c> other line.</summary>
+    public const string LineTooltipAligned = "LineTooltip.Aligned";
+
+    /// <summary>A line-number tooltip without a counterpart: <c>{0}</c> line, <c>{1}</c> other side.</summary>
+    public const string LineTooltipAlone = "LineTooltip.Alone";
+
+    /// <summary>A marker or connector tooltip: <c>{0}</c> change (1-based), <c>{1}</c> total, <c>{2}</c> the block's counts.</summary>
+    public const string MarkerTooltip = "Marker.Tooltip";
+
+    /// <summary>A minimap tooltip: <c>{0}</c> row (1-based), <c>{1}</c> rows, <c>{2}</c> kind.</summary>
+    public const string MinimapTooltip = "Minimap.Tooltip";
+
+    /// <summary>Automation name of the minimap.</summary>
+    public const string MinimapName = "Minimap.Name";
+
+    /// <summary>Automation name of the connector gutter.</summary>
+    public const string ConnectorGutterName = "ConnectorGutter.Name";
+
+    /// <summary>An unchanged row's kind.</summary>
+    public const string KindUnchanged = "Kind.Unchanged";
+
+    /// <summary>An inserted row's kind.</summary>
+    public const string KindInserted = "Kind.Inserted";
+
+    /// <summary>A deleted row's kind.</summary>
+    public const string KindDeleted = "Kind.Deleted";
+
+    /// <summary>A modified row's kind.</summary>
+    public const string KindModified = "Kind.Modified";
+
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         [DiffViewName] = "Side-by-side diff",
@@ -216,7 +264,41 @@ public static class DiffViewStrings
         [BuildIdentical] = "Files are identical",
         [BuildRunning] = "Comparing…",
         [WordDiffSkipped] = "Word-level highlighting skipped: a line is longer than {0} characters",
+        [StatusChangeOf] = "change {0} of {1}",
+        [NavigationNoNext] = "No next change",
+        [NavigationNoPrevious] = "No previous change",
+        [NavigationNoChanges] = "No changes to navigate",
+        [SideLeft] = "left",
+        [SideRight] = "right",
+        [LineTooltipAligned] = "Line {0} · {1} line {2}",
+        [LineTooltipAlone] = "Line {0} · no {1} line",
+        [MarkerTooltip] = "Change {0} of {1} · {2}",
+        [MinimapTooltip] = "Row {0} of {1} · {2}",
+        [MinimapName] = "Overview",
+        [ConnectorGutterName] = "Change connectors",
+        [KindUnchanged] = "unchanged",
+        [KindInserted] = "inserted",
+        [KindDeleted] = "deleted",
+        [KindModified] = "modified",
     };
+
+    /// <summary>The name of <paramref name="kind"/> for a tooltip.</summary>
+    public static string KindName(Core.DiffLineKind kind)
+    {
+        return Get(kind switch
+        {
+            Core.DiffLineKind.Inserted => KindInserted,
+            Core.DiffLineKind.Deleted => KindDeleted,
+            Core.DiffLineKind.Modified => KindModified,
+            _ => KindUnchanged,
+        });
+    }
+
+    /// <summary>The name of <paramref name="side"/> for a tooltip.</summary>
+    public static string SideName(Core.DiffSide side)
+    {
+        return Get(side == Core.DiffSide.Left ? SideLeft : SideRight);
+    }
 
     /// <summary>The active resolver; <c>null</c> for English.</summary>
     public static Func<string, string?>? Resolver { get; set; }

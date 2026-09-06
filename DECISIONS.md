@@ -549,3 +549,52 @@ its tooltip as the pointer moves and clears it when the pointer leaves; the bloc
 tooltips of Phase 7 will use the same hook. The one-megabyte single-line fixture is generated
 in the test rather than committed, and the test records how long its build, priming and first
 frame took.
+
+## Row geometry is uniform once primed, and navigation and the overview rely on it
+
+After priming every row is exactly one line height tall on both sides, so a row's document
+top is its index times the line height. The current-block border, the centring scroll of
+`CurrentChangeIndex`, the connector polygons and the minimap's viewport all compute from that
+product rather than asking the height tree, which keeps them cheap and identical on both
+sides; the presenter's priming invariant (union of padded sets, re-prime on a font change) is
+what makes the product true. A connector's left extent is the block's first
+`ModifiedCount + DeletedCount` rows and its right extent the first `ModifiedCount + InsertedCount`,
+because the row builder pairs modified rows first and then lays a side's own rows — a band
+where both sides have lines, a wedge where one has none.
+
+## The current change is state on the composite, cleared by every new model
+
+`CurrentChangeIndex` clamps to the blocks, scrolls both panes so the block is centred, and
+pushes the block to the presenters (border), the gutter (outline) and the minimap (edge mark);
+a new model resets it to none, because its blocks are new. Next at the last block and
+previous at the first stay where they are and say so through the status lane as a warning,
+which clears itself; with no changes at all every command says that instead. The default key
+bindings live in the composite's `KeyBindings` — F7, Shift+F7, F6 — where a host clears or
+replaces them; Avalonia tries an ancestor's bindings before raising the key event, so they
+fire while a pane has focus.
+
+## The minimap buckets rows into pixel rows and jumps to the first changed row of a bucket
+
+One bucket per pixel row of the control's height; a bucket's kind is the strongest of its
+rows, deleted over inserted over modified, computed once per document and height. A click
+jumps to the bucket's first changed row, or its first row when nothing in it changed, and the
+composite centres that row; the viewport rectangle follows the panes' offset through the
+composite's overview update on every scroll and layout. The 200k-line test builds its fixture
+from a generator rather than a committed file, as the Core tests do.
+
+## The gutter resizes the panes through a split ratio applied to two grids
+
+The headers and the panes are two grids with the same star columns, and `SplitRatio` sets
+both, so the headers stay over their panes when the gutter is dragged. A drag on empty gutter
+space reports horizontal deltas; a press on a polygon selects its block instead. The gutter
+tests its polygons by point-in-convex-quad, which the wedge shapes are.
+
+## Tooltips are resolved per line under the pointer, in the margin base class
+
+Both gutters resolve a tooltip for the line under the pointer as it moves and clear it as it
+leaves; the base margin owns that mechanism and each margin supplies its text. Line numbers
+name the counterpart line on the other side or say there is none; markers name the change
+block with its counts and, on a long line, why it has no word highlights; the connector
+gutter and the minimap carry the same block and row texts. The tooltips are on the model's
+metadata (`PaneMetadata.OtherLine`, `PaneMetadata.BlockAt`), bounds-checked like everything
+else the presenter reads from it.

@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
+using Bennewitz.Ninja.DiffView.Core;
 
 namespace Bennewitz.Ninja.DiffView.Avalonia;
 
@@ -27,6 +28,22 @@ internal sealed class DiffLineNumberMargin : DiffMargin
 
     /// <summary>The numbers of the last frame and the y each was drawn at, in order.</summary>
     public IReadOnlyList<(int LineNumber, double Y)> LastRendered => _lastRendered;
+
+    /// <summary>The tooltip for <paramref name="lineNumber"/>: the line on the other side that shares its row, or that there is none.</summary>
+    public override string? TooltipFor(int lineNumber)
+    {
+        PaneMetadata metadata = Owner.Metadata;
+        if (!metadata.Knows(lineNumber))
+        {
+            return null;
+        }
+
+        string other = DiffViewStrings.SideName(Owner.Side == DiffSide.Left ? DiffSide.Right : DiffSide.Left);
+        string line = lineNumber.ToString("N0", CultureInfo.CurrentCulture);
+        return metadata.OtherLine(lineNumber) is { } otherLine
+            ? DiffViewStrings.Format(DiffViewStrings.LineTooltipAligned, line, other, otherLine.ToString("N0", CultureInfo.CurrentCulture))
+            : DiffViewStrings.Format(DiffViewStrings.LineTooltipAlone, line, other);
+    }
 
     protected override void OnDocumentChanged(TextDocument? oldDocument, TextDocument? newDocument)
     {

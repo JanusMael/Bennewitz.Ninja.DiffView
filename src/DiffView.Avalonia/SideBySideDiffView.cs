@@ -43,6 +43,18 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>The template part hosting the banner's action button.</summary>
     public const string BannerActionPart = "PART_BannerAction";
 
+    /// <summary>The template part holding the two headers, whose star columns follow <see cref="SplitRatio"/>.</summary>
+    public const string HeadersPart = "PART_Headers";
+
+    /// <summary>The template part holding the panes, gutter and minimap, whose star columns follow <see cref="SplitRatio"/>.</summary>
+    public const string PanesPart = "PART_Panes";
+
+    /// <summary>The template part hosting the connector gutter.</summary>
+    public const string GutterPart = "PART_Gutter";
+
+    /// <summary>The template part hosting the minimap.</summary>
+    public const string MinimapPart = "PART_Minimap";
+
     /// <summary>How long a build runs before the strip shows progress.</summary>
     public static readonly TimeSpan SlowBuildThreshold = TimeSpan.FromMilliseconds(100);
 
@@ -101,6 +113,22 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Identifies the <see cref="StatusStripName"/> property.</summary>
     public static readonly StyledProperty<string> StatusStripNameProperty =
         AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(StatusStripName), string.Empty);
+
+    /// <summary>Identifies the <see cref="GutterName"/> property.</summary>
+    public static readonly StyledProperty<string> GutterNameProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(GutterName), string.Empty);
+
+    /// <summary>Identifies the <see cref="MinimapName"/> property.</summary>
+    public static readonly StyledProperty<string> MinimapNameProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(MinimapName), string.Empty);
+
+    /// <summary>Identifies the <see cref="CurrentChangeIndex"/> property.</summary>
+    public static readonly DirectProperty<SideBySideDiffView, int> CurrentChangeIndexProperty =
+        AvaloniaProperty.RegisterDirect<SideBySideDiffView, int>(nameof(CurrentChangeIndex), o => o.CurrentChangeIndex, (o, v) => o.CurrentChangeIndex = v, unsetValue: -1);
+
+    /// <summary>Identifies the <see cref="SplitRatio"/> property.</summary>
+    public static readonly DirectProperty<SideBySideDiffView, double> SplitRatioProperty =
+        AvaloniaProperty.RegisterDirect<SideBySideDiffView, double>(nameof(SplitRatio), o => o.SplitRatio, (o, v) => o.SplitRatio = v, unsetValue: 0.5);
 
     /// <summary>Identifies the <see cref="State"/> property.</summary>
     public static readonly DirectProperty<SideBySideDiffView, DiffViewState> StateProperty =
@@ -168,6 +196,17 @@ public class SideBySideDiffView : TemplatedControl
 
     private readonly DelegateCommand _retry;
     private readonly DelegateCommand _force;
+    private readonly DelegateCommand _nextChange;
+    private readonly DelegateCommand _previousChange;
+    private readonly DelegateCommand _firstChange;
+    private readonly DelegateCommand _lastChange;
+    private readonly DelegateCommand _switchPane;
+    private int _currentChangeIndex = -1;
+    private double _splitRatio = 0.5;
+    private Grid? _headersGrid;
+    private Grid? _panesGrid;
+    private ChangeConnectorGutter? _gutter;
+    private DiffMinimap? _minimap;
     private DiffViewState _state = DiffViewState.Empty;
     private string? _stateMessage;
     private SideBySideDocument? _document;
@@ -209,7 +248,19 @@ public class SideBySideDiffView : TemplatedControl
         Resources.MergedDictionaries.Add(new SideBySideDiffViewTheme());
         _retry = new DelegateCommand(Retry, () => State == DiffViewState.Failed);
         _force = new DelegateCommand(ForceAlign, () => BannerKind == DiffBannerKind.TooDifferentToAlign);
+        _nextChange = new DelegateCommand(NextChange, () => ChangeCount > 0);
+        _previousChange = new DelegateCommand(PreviousChange, () => ChangeCount > 0);
+        _firstChange = new DelegateCommand(FirstChange, () => ChangeCount > 0);
+        _lastChange = new DelegateCommand(LastChange, () => ChangeCount > 0);
+        _switchPane = new DelegateCommand(SwitchPane);
         Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
+
+        // The default key bindings; a host clears or replaces them.
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7), Command = _nextChange });
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7, KeyModifiers.Shift), Command = _previousChange });
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F6), Command = _switchPane });
+
+        LayoutUpdated += OnLayoutUpdated;
         RefreshStrings();
         UpdatePseudoClasses();
         SetStateCore(DiffViewState.Empty, DiffViewStrings.Get(DiffViewStrings.StateEmptyMessage), log: false);
@@ -320,6 +371,45 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(StatusStripNameProperty);
         set => SetValue(StatusStripNameProperty, value);
+    }
+
+    /// <summary>The connector gutter's automation name, from <see cref="DiffViewStrings"/>.</summary>
+    public string GutterName
+    {
+        get => GetValue(GutterNameProperty);
+        set => SetValue(GutterNameProperty, value);
+    }
+
+    /// <summary>The minimap's automation name, from <see cref="DiffViewStrings"/>.</summary>
+    public string MinimapName
+    {
+        get => GetValue(MinimapNameProperty);
+        set => SetValue(MinimapNameProperty, value);
+    }
+
+    /// <summary>
+    /// The current change block, -1 for none. Setting it clamps to the blocks, scrolls both
+    /// panes so the block is centred, outlines it in the panes, the gutter and the minimap, and
+    /// puts "change i of n" in the strip.
+    /// </summary>
+    public int CurrentChangeIndex
+    {
+        get => _currentChangeIndex;
+        set => SetCurrentChange(value, scroll: true);
+    }
+
+    /// <summary>The left pane's share of the panes' width, 0.1 to 0.9; a drag on the gutter changes it.</summary>
+    public double SplitRatio
+    {
+        get => _splitRatio;
+        set
+        {
+            double clamped = Math.Clamp(value, 0.1, 0.9);
+            if (SetAndRaise(SplitRatioProperty, ref _splitRatio, clamped))
+            {
+                ApplySplit();
+            }
+        }
     }
 
     /// <summary>The one state the control is in.</summary>
@@ -483,6 +573,21 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Sets <see cref="ForceAlignment"/> from the too-different banner.</summary>
     public ICommand ForceAlignmentCommand => _force;
 
+    /// <summary>Moves to the next change; F7 by default.</summary>
+    public ICommand NextChangeCommand => _nextChange;
+
+    /// <summary>Moves to the previous change; Shift+F7 by default.</summary>
+    public ICommand PreviousChangeCommand => _previousChange;
+
+    /// <summary>Moves to the first change.</summary>
+    public ICommand FirstChangeCommand => _firstChange;
+
+    /// <summary>Moves to the last change.</summary>
+    public ICommand LastChangeCommand => _lastChange;
+
+    /// <summary>Moves keyboard focus to the other pane; F6 by default.</summary>
+    public ICommand SwitchPaneCommand => _switchPane;
+
     /// <summary>The build routine; tests replace it to make a build slow or throw.</summary>
     internal Func<PaneSource, PaneSource, DiffOptions, CancellationToken, DiffBuildResult> Builder { get; set; }
 
@@ -491,6 +596,10 @@ public class SideBySideDiffView : TemplatedControl
 
     /// <summary>The word-level lookup of the current model, bound to the options its build ran under; <c>null</c> without a model.</summary>
     public WordDiffLookup? WordDiffLookup { get; private set; }
+
+    internal ChangeConnectorGutter? Gutter => _gutter;
+
+    internal DiffMinimap? Minimap => _minimap;
 
     internal DiffPanePresenter? LeftPane => _leftPane;
 
@@ -518,6 +627,79 @@ public class SideBySideDiffView : TemplatedControl
         ForceAlignment = true;
     }
 
+    /// <summary>Moves to the next change; at the last one it stays and the strip says so.</summary>
+    public void NextChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        if (CurrentChangeIndex >= ChangeCount - 1)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoNext));
+            return;
+        }
+
+        SetCurrentChange(CurrentChangeIndex + 1, scroll: true);
+    }
+
+    /// <summary>Moves to the previous change; at the first one, or before any, it stays and the strip says so.</summary>
+    public void PreviousChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        if (CurrentChangeIndex <= 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoPrevious));
+            return;
+        }
+
+        SetCurrentChange(CurrentChangeIndex - 1, scroll: true);
+    }
+
+    /// <summary>Moves to the first change.</summary>
+    public void FirstChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        SetCurrentChange(0, scroll: true);
+    }
+
+    /// <summary>Moves to the last change.</summary>
+    public void LastChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        SetCurrentChange(ChangeCount - 1, scroll: true);
+    }
+
+    /// <summary>Moves keyboard focus to the other pane; to the left one when neither has it.</summary>
+    public void SwitchPane()
+    {
+        DiffSide target = FocusedSide == DiffSide.Left ? DiffSide.Right : DiffSide.Left;
+        Pane(target)?.TextArea.Focus();
+    }
+
+    /// <summary>Scrolls both panes so <paramref name="row"/> sits at the centre of the viewport.</summary>
+    public void ScrollToRow(int row)
+    {
+        ScrollToRows(row, 1);
+    }
+
     /// <summary>The pane for <paramref name="side"/>, once the template has applied.</summary>
     internal DiffPanePresenter? Pane(DiffSide side)
     {
@@ -536,6 +718,10 @@ public class SideBySideDiffView : TemplatedControl
         _rightHeader = e.NameScope.Find<DiffPaneHeader>(RightHeaderPart);
         _statusStrip = e.NameScope.Find<DiffStatusStrip>(StatusStripPart);
         _bannerAction = e.NameScope.Find<Button>(BannerActionPart);
+        _headersGrid = e.NameScope.Find<Grid>(HeadersPart);
+        _panesGrid = e.NameScope.Find<Grid>(PanesPart);
+        _gutter = e.NameScope.Find<ChangeConnectorGutter>(GutterPart);
+        _minimap = e.NameScope.Find<DiffMinimap>(MinimapPart);
 
         AttachPane(_leftPane, DiffSide.Left);
         AttachPane(_rightPane, DiffSide.Right);
@@ -549,10 +735,27 @@ public class SideBySideDiffView : TemplatedControl
             _bannerAction.Click += OnBannerActionClicked;
         }
 
+        if (_gutter is not null)
+        {
+            _gutter.Document = Document;
+            _gutter.CurrentChangeIndex = CurrentChangeIndex;
+            _gutter.BlockClicked += OnGutterBlockClicked;
+            _gutter.ResizeDragged += OnGutterResizeDragged;
+        }
+
+        if (_minimap is not null)
+        {
+            _minimap.Document = Document;
+            _minimap.CurrentChangeIndex = CurrentChangeIndex;
+            _minimap.JumpRequested += OnMinimapJumpRequested;
+        }
+
+        ApplySplit();
         TryWireScrollSync();
         UpdateHeaders();
         UpdateStrip();
         UpdateBanner();
+        UpdateOverview();
     }
 
     /// <inheritdoc/>
@@ -605,6 +808,10 @@ public class SideBySideDiffView : TemplatedControl
             UpdatePseudoClasses();
             _retry.RaiseCanExecuteChanged();
             _force.RaiseCanExecuteChanged();
+        }
+        else if (change.Property == ChangeCountProperty)
+        {
+            RaiseNavigationCanExecuteChanged();
         }
     }
 
@@ -819,6 +1026,20 @@ public class SideBySideDiffView : TemplatedControl
             pane.DiffDocument = document;
             pane.WordDiffLookup = WordDiffLookup;
         }
+
+        if (_gutter is not null)
+        {
+            _gutter.Document = document;
+        }
+
+        if (_minimap is not null)
+        {
+            _minimap.Document = document;
+        }
+
+        // The blocks are new: no current change until the user picks one.
+        SetCurrentChange(-1, scroll: false);
+        UpdateOverview();
     }
 
     private void CancelBuild()
@@ -922,6 +1143,8 @@ public class SideBySideDiffView : TemplatedControl
         SetCurrentValue(LeftPaneNameProperty, DiffViewStrings.Get(DiffViewStrings.LeftPaneName));
         SetCurrentValue(RightPaneNameProperty, DiffViewStrings.Get(DiffViewStrings.RightPaneName));
         SetCurrentValue(StatusStripNameProperty, DiffViewStrings.Get(DiffViewStrings.StatusStripName));
+        SetCurrentValue(GutterNameProperty, DiffViewStrings.Get(DiffViewStrings.ConnectorGutterName));
+        SetCurrentValue(MinimapNameProperty, DiffViewStrings.Get(DiffViewStrings.MinimapName));
     }
 
     private void UpdateHeaders()
@@ -1016,12 +1239,14 @@ public class SideBySideDiffView : TemplatedControl
         if (Diagnostics is { } diagnostics)
         {
             strip.CountsText = DiffViewStrings.Format(DiffViewStrings.StatusCounts, diagnostics.Inserted, diagnostics.Deleted, diagnostics.Modified);
-            strip.ChangesText = ChangeCount switch
-            {
-                0 => DiffViewStrings.Get(DiffViewStrings.StatusNoChanges),
-                1 => DiffViewStrings.Get(DiffViewStrings.StatusChangeOne),
-                _ => DiffViewStrings.Format(DiffViewStrings.StatusChanges, ChangeCount.ToString("N0", CultureInfo.CurrentCulture)),
-            };
+            strip.ChangesText = CurrentChangeIndex >= 0
+                ? DiffViewStrings.Format(DiffViewStrings.StatusChangeOf, (CurrentChangeIndex + 1).ToString("N0", CultureInfo.CurrentCulture), ChangeCount.ToString("N0", CultureInfo.CurrentCulture))
+                : ChangeCount switch
+                {
+                    0 => DiffViewStrings.Get(DiffViewStrings.StatusNoChanges),
+                    1 => DiffViewStrings.Get(DiffViewStrings.StatusChangeOne),
+                    _ => DiffViewStrings.Format(DiffViewStrings.StatusChanges, ChangeCount.ToString("N0", CultureInfo.CurrentCulture)),
+                };
             strip.BuildTimeText = DiffViewStrings.Format(DiffViewStrings.StatusBuildTime, diagnostics.BuildTime.TotalMilliseconds.ToString("F0", CultureInfo.CurrentCulture));
         }
         else
@@ -1142,6 +1367,17 @@ public class SideBySideDiffView : TemplatedControl
             _bannerAction.Click -= OnBannerActionClicked;
         }
 
+        if (_gutter is not null)
+        {
+            _gutter.BlockClicked -= OnGutterBlockClicked;
+            _gutter.ResizeDragged -= OnGutterResizeDragged;
+        }
+
+        if (_minimap is not null)
+        {
+            _minimap.JumpRequested -= OnMinimapJumpRequested;
+        }
+
         _sync?.Dispose();
         _sync = null;
     }
@@ -1170,6 +1406,139 @@ public class SideBySideDiffView : TemplatedControl
         {
             UpdateHorizontalScrollBars();
         }
+
+        UpdateOverview();
+    }
+
+    private void OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        UpdateOverview();
+    }
+
+    /// <summary>Feeds the gutter and the minimap the panes' row geometry and scroll position.</summary>
+    private void UpdateOverview()
+    {
+        if (_leftPane is null)
+        {
+            return;
+        }
+
+        double lineHeight = _leftPane.TextArea.TextView.DefaultLineHeight;
+        if (lineHeight <= 0)
+        {
+            return;
+        }
+
+        if (_gutter is not null)
+        {
+            _gutter.RowHeight = lineHeight;
+            _gutter.VerticalOffset = _leftPane.VerticalOffset;
+            _gutter.ContentOffset = _leftPane.TextArea.TextView.TranslatePoint(new Point(0, 0), _gutter)?.Y ?? 0;
+        }
+
+        if (_minimap is not null)
+        {
+            _minimap.ViewportStartRow = _leftPane.VerticalOffset / lineHeight;
+            _minimap.ViewportRowCount = _leftPane.ViewportHeight / lineHeight;
+        }
+    }
+
+    private void OnGutterBlockClicked(object? sender, int blockIndex)
+    {
+        SetCurrentChange(blockIndex, scroll: true);
+    }
+
+    private void OnGutterResizeDragged(object? sender, double delta)
+    {
+        if (_leftPane is null || _rightPane is null)
+        {
+            return;
+        }
+
+        double panes = _leftPane.Bounds.Width + _rightPane.Bounds.Width;
+        if (panes <= 0)
+        {
+            return;
+        }
+
+        SplitRatio = (_leftPane.Bounds.Width + delta) / panes;
+    }
+
+    private void OnMinimapJumpRequested(object? sender, int row)
+    {
+        ScrollToRow(row);
+    }
+
+    private void ApplySplit()
+    {
+        foreach (Grid? grid in new[] { _headersGrid, _panesGrid })
+        {
+            if (grid is null || grid.ColumnDefinitions.Count < 3)
+            {
+                continue;
+            }
+
+            grid.ColumnDefinitions[0].Width = new GridLength(SplitRatio, GridUnitType.Star);
+            grid.ColumnDefinitions[2].Width = new GridLength(1 - SplitRatio, GridUnitType.Star);
+        }
+    }
+
+    private void SetCurrentChange(int index, bool scroll)
+    {
+        int clamped = ChangeCount == 0 ? -1 : Math.Clamp(index, -1, ChangeCount - 1);
+        SetAndRaise(CurrentChangeIndexProperty, ref _currentChangeIndex, clamped);
+        ChangeBlock? block = clamped < 0 || Document is null ? null : Document.Blocks[clamped];
+        foreach (DiffPanePresenter? pane in new[] { _leftPane, _rightPane })
+        {
+            if (pane is not null)
+            {
+                pane.CurrentBlock = block;
+            }
+        }
+
+        if (_gutter is not null)
+        {
+            _gutter.CurrentChangeIndex = clamped;
+        }
+
+        if (_minimap is not null)
+        {
+            _minimap.CurrentChangeIndex = clamped;
+        }
+
+        if (scroll && block is not null)
+        {
+            ScrollToRows(block.FirstRow, block.RowCount);
+        }
+
+        UpdateStrip();
+        RaiseNavigationCanExecuteChanged();
+    }
+
+    /// <summary>Scrolls both panes so the rows sit at the centre of the viewport; rows are uniform once primed.</summary>
+    private void ScrollToRows(int firstRow, int rowCount)
+    {
+        if (_leftPane?.PaneScrollViewer is not { } viewer)
+        {
+            return;
+        }
+
+        double lineHeight = _leftPane.TextArea.TextView.DefaultLineHeight;
+        double viewport = viewer.Viewport.Height;
+        double extent = viewer.Extent.Height;
+        double top = firstRow * lineHeight;
+        double height = rowCount * lineHeight;
+        double target = top - Math.Max(0, (viewport - height) / 2);
+        target = Math.Clamp(target, 0, Math.Max(0, extent - viewport));
+        viewer.Offset = new Vector(viewer.Offset.X, target);
+    }
+
+    private void RaiseNavigationCanExecuteChanged()
+    {
+        _nextChange.RaiseCanExecuteChanged();
+        _previousChange.RaiseCanExecuteChanged();
+        _firstChange.RaiseCanExecuteChanged();
+        _lastChange.RaiseCanExecuteChanged();
     }
 
     /// <summary>

@@ -52,6 +52,7 @@ public class DiffPanePresenter : TextEditor
     private readonly ChangeMarkerMargin _changeMarkerMargin;
     private readonly List<RenderFaultEventArgs> _faults = [];
     private WordDiffLookup? _wordDiffLookup;
+    private ChangeBlock? _currentBlock;
     private bool _primePending;
     private bool _caretNormalisationDisabled;
 
@@ -144,6 +145,22 @@ public class DiffPanePresenter : TextEditor
 
     /// <summary>Receives faults at <c>Error</c> with the exception attached; never document text.</summary>
     public ILogger? Logger { get; set; }
+
+    /// <summary>The current change block, which the background renderer outlines; <c>null</c> for none.</summary>
+    public ChangeBlock? CurrentBlock
+    {
+        get => _currentBlock;
+        set
+        {
+            if (Equals(_currentBlock, value))
+            {
+                return;
+            }
+
+            _currentBlock = value;
+            TextArea.TextView.InvalidateLayer(KnownLayer.Background);
+        }
+    }
 
     /// <summary>
     /// The word-level pieces the background renderer draws over modified rows, or <c>null</c>
