@@ -518,3 +518,34 @@ drags the thumb when it finds one with a size and otherwise scrolls with the whe
 it asserts that both offsets moved together and every shared row sits at the same
 document-relative top. The first visual line's top is not the comparison: a padding block
 straddling the viewport edge starts above it on one side only.
+
+## Word-level pieces are looked up through the live documents, one lookup per build
+
+`WordDiffCache` computes a row's pieces from two line texts and the model holds no text, so
+`WordDiffLookup` sits between: given a row it finds the line on each side, reads it from that
+side's `TextDocument` and asks the cache, which computes on the first request and keeps the
+answer keyed by the model's version. The composite creates one lookup per build result, bound
+to the options that build ran under, and hands it to both presenters; a host of two bare
+presenters can build one over its own documents. The lookup is bounds-checked like
+`PaneMetadata`: a row that is not modified, or whose line lies beyond its document between a
+keystroke and the next build, gets no pieces and nothing throws. It runs on the UI thread,
+like the documents it reads; the plan's "computed on the UI thread on demand from the visible
+rows" is what the renderer's first frame of a row does.
+
+## Word rectangles are the full row, through the visual line's column mapping
+
+The rectangle for a piece runs from the piece's start column to its end column as the visual
+line maps them — `VisualLine.GetVisualColumn` accounts for the padding element and for tabs —
+and spans the full row height, the same band as the row tint it sits on, so the two read as
+one highlight. Ranges are clamped to the line's current length. The renderer records every
+rectangle it draws, which is how the test checks the geometry against the pieces and the visual
+line rather than against pixels alone.
+
+## The long-line tooltip lives on the marker margin, following the pointer
+
+A modified row whose line exceeds `MaxWordDiffLineLength` gets no pieces; the change-marker
+margin's tooltip, resolved per line under the pointer, says so with the limit. The margin sets
+its tooltip as the pointer moves and clears it when the pointer leaves; the block-summary
+tooltips of Phase 7 will use the same hook. The one-megabyte single-line fixture is generated
+in the test rather than committed, and the test records how long its build, priming and first
+frame took.

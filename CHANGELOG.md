@@ -79,10 +79,22 @@ All notable changes to DiffView are recorded here. The format follows
   snapshots of the headers and strip in both variants and both palettes plus the identical and
   error banners; `CompositeHost`, `FakeTimeProvider` and `CapturingLoggerFactory` as fixtures.
 
+- Phase 6, word-level highlights: `WordDiffLookup` reads a modified row's two lines from the
+  live documents and asks `WordDiffCache` on the row's first frame; `DiffLineBackgroundRenderer`
+  draws a rectangle per changed piece over the row through the visual line's column mapping,
+  in `DiffView.WordInsertedBrush` / `WordDeletedBrush`; the composite creates one lookup per
+  build result, bound to that build's options, and `DiffPanePresenter.WordDiffLookup` takes it;
+  the change-marker margin's tooltip names a line too long for word-level pieces; the
+  `WordDiff.Skipped` string.
+- Headless tests for the rectangle geometry and the render-only cache, the one-megabyte single
+  line without pieces and its tooltip, the ignore-whitespace toggle and the word-diff modes;
+  a snapshot of modified rows with only their changed words highlighted, in both variants.
+
 ### Changed
 
 - The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and
   `DiffPanePresenter` as interactive controls.
+- The composite and demo snapshots show word-level highlights on their modified rows.
 - `RenderFault` on the presenter is raised after the render pass that caught the fault.
 - The demo smoke snapshot shows the composite; the accessibility guard counts
   `SideBySideDiffView` as interactive.

@@ -51,6 +51,7 @@ public class DiffPanePresenter : TextEditor
     private readonly DiffLineNumberMargin _lineNumberMargin;
     private readonly ChangeMarkerMargin _changeMarkerMargin;
     private readonly List<RenderFaultEventArgs> _faults = [];
+    private WordDiffLookup? _wordDiffLookup;
     private bool _primePending;
     private bool _caretNormalisationDisabled;
 
@@ -143,6 +144,26 @@ public class DiffPanePresenter : TextEditor
 
     /// <summary>Receives faults at <c>Error</c> with the exception attached; never document text.</summary>
     public ILogger? Logger { get; set; }
+
+    /// <summary>
+    /// The word-level pieces the background renderer draws over modified rows, or <c>null</c>
+    /// for none. The composite assigns one per build; a host of two bare presenters builds one
+    /// over their documents itself.
+    /// </summary>
+    public WordDiffLookup? WordDiffLookup
+    {
+        get => _wordDiffLookup;
+        set
+        {
+            if (ReferenceEquals(_wordDiffLookup, value))
+            {
+                return;
+            }
+
+            _wordDiffLookup = value;
+            TextArea.TextView.InvalidateLayer(KnownLayer.Background);
+        }
+    }
 
     /// <summary>Whether a decorator has faulted since the last model was assigned.</summary>
     public bool IsDegraded => _faults.Count > 0;

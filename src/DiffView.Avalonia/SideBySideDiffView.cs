@@ -489,6 +489,9 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>The in-flight build, completing when its outcome has been applied or discarded; <c>null</c> when idle.</summary>
     internal Task? CurrentBuild { get; private set; }
 
+    /// <summary>The word-level lookup of the current model, bound to the options its build ran under; <c>null</c> without a model.</summary>
+    public WordDiffLookup? WordDiffLookup { get; private set; }
+
     internal DiffPanePresenter? LeftPane => _leftPane;
 
     internal DiffPanePresenter? RightPane => _rightPane;
@@ -640,7 +643,7 @@ public class SideBySideDiffView : TemplatedControl
         if (left is null || right is null)
         {
             CancelBuild();
-            ApplyModel(null, [], null);
+            ApplyModel(null, [], null, null);
             SetState(DiffViewState.Empty, DiffViewStrings.Get(DiffViewStrings.StateEmptyMessage));
             SetBanner(DiffBannerKind.None, null, null);
             IsStale = false;
@@ -658,7 +661,7 @@ public class SideBySideDiffView : TemplatedControl
 
         if (!keepModel)
         {
-            ApplyModel(null, [], null);
+            ApplyModel(null, [], null, null);
         }
 
         _leftPane?.ResetFaults();
@@ -700,15 +703,15 @@ public class SideBySideDiffView : TemplatedControl
 
         if (Dispatcher.UIThread.CheckAccess())
         {
-            Complete(generation, result, failure, cancelled);
+            Complete(generation, result, failure, cancelled, options);
         }
         else
         {
-            await Dispatcher.UIThread.InvokeAsync(() => Complete(generation, result, failure, cancelled));
+            await Dispatcher.UIThread.InvokeAsync(() => Complete(generation, result, failure, cancelled, options));
         }
     }
 
-    private void Complete(int generation, DiffBuildResult? result, DiffBuildException? failure, bool cancelled)
+    private void Complete(int generation, DiffBuildResult? result, DiffBuildException? failure, bool cancelled, DiffOptions options)
     {
         if (generation != _generation)
         {
@@ -731,13 +734,13 @@ public class SideBySideDiffView : TemplatedControl
         }
         else
         {
-            ApplyResult(generation, result!);
+            ApplyResult(generation, result!, options);
         }
     }
 
-    private void ApplyResult(int generation, DiffBuildResult result)
+    private void ApplyResult(int generation, DiffBuildResult result, DiffOptions options)
     {
-        ApplyModel(result.Document, result.Warnings, result.Diagnostics);
+        ApplyModel(result.Document, result.Warnings, result.Diagnostics, options);
         IsStale = false;
         foreach (DiffWarning warning in result.Warnings)
         {
@@ -796,20 +799,25 @@ public class SideBySideDiffView : TemplatedControl
         BuildFailed?.Invoke(this, new DiffBuildFailedEventArgs(failure));
     }
 
-    private void ApplyModel(SideBySideDocument? document, IReadOnlyList<DiffWarning> warnings, DiffDiagnostics? diagnostics)
+    private void ApplyModel(SideBySideDocument? document, IReadOnlyList<DiffWarning> warnings, DiffDiagnostics? diagnostics, DiffOptions? options)
     {
         Document = document;
         Warnings = warnings;
         Diagnostics = diagnostics;
         ChangeCount = document?.Blocks.Count ?? 0;
-        if (_leftPane is not null)
+        // One lookup per result, bound to the options the build ran under, over the live documents.
+        WordDiffLookup = document is null || options is null
+            ? null
+            : new WordDiffLookup(new WordDiffCache(options), LeftDocument, RightDocument, document);
+        foreach (DiffPanePresenter? pane in new[] { _leftPane, _rightPane })
         {
-            _leftPane.DiffDocument = document;
-        }
+            if (pane is null)
+            {
+                continue;
+            }
 
-        if (_rightPane is not null)
-        {
-            _rightPane.DiffDocument = document;
+            pane.DiffDocument = document;
+            pane.WordDiffLookup = WordDiffLookup;
         }
     }
 
@@ -1094,6 +1102,7 @@ public class SideBySideDiffView : TemplatedControl
         pane.Side = side;
         pane.Document = side == DiffSide.Left ? LeftDocument : RightDocument;
         pane.DiffDocument = Document;
+        pane.WordDiffLookup = WordDiffLookup;
         pane.IsReadOnly = side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
         pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
         pane.Logger = _renderLogger;

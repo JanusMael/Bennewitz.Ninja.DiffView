@@ -12,11 +12,17 @@ caret, selection, scroll and undo survive. The control is always in one `DiffVie
 strip renders it with `StatusController`'s transient lane on `TimeProvider`, every string goes
 through `DiffViewStrings`, and every log line through `DiffViewLog` under the four categories
 without a character of document text. The demo hosts the composite with file-open, option
-toggles and the colour-blind palette. Next is **Phase 6 — Word-level highlights and options**
-(plan §Phase 6): `PieceRange` rectangles from `WordDiffCache` in the background renderer,
-computed on first render of a modified row; the option properties already rebuild, the status
-strip already shows them, and the long-line tooltip is owed. Both ClaudeForge contributions
-(PR #37 and PR #38) are merged and the ClaudeForge pin follows the merge (see *Upstreamed to
+toggles and the colour-blind palette. **Phase 6 — Word-level highlights and options** is
+complete on top of it: `WordDiffLookup` reads a modified row's two lines from the live
+documents and asks `WordDiffCache` on the row's first frame, the background renderer draws a
+rectangle per changed piece through the visual line's column mapping, the composite binds one
+lookup per build to that build's options, and the marker margin's tooltip names a line too
+long for pieces. Next is **Phase 7 — Navigation, minimap, connectors, tooltips** (plan
+§Phase 7): `NextChange` / `PreviousChange` / `FirstChange` / `LastChange` with
+`CurrentChangeIndex` and the current-block border, F7 / Shift+F7 / F6, `DiffMinimap`,
+`ChangeConnectorGutter` owning the gutter column, and the tooltips on line numbers and markers
+(the marker margin's per-line tooltip hook is in place). Both ClaudeForge contributions (PR #37
+and PR #38) are merged and the ClaudeForge pin follows the merge (see *Upstreamed to
 ClaudeForge*).
 
 The theme audit regenerates after a pin bump, in this order:
@@ -39,12 +45,27 @@ dotnet run --project src/ThemeAudit -- report
 | 3 Core model, probing, search engine | done | `PaneSource`, `TextProbe`, `LineSplitter`, `DiffOptions`, `SimilarityGate`, `DiffDocumentBuilder`, `SideBySideDocument` + `Padding`, `WordDiffCache`, `DiffSearch`; 87 unit tests (seven invariants, every failure path, cache, search) and 4 `Perf` measurements |
 | 4 Pane presenter, padding, gutters | done | `DiffPanePresenter` over the source document; `PaddingRun` / `PaddingElement` / `PaddingElementGenerator` / `PaddingHeightPrimer` lifted from the spike; `PaneMetadata` bounds-checked and version-stamped; `DiffLineBackgroundRenderer`, `DiffSelectionRenderer`, `DiffCaretRenderer`, `DiffLineNumberMargin`, `ChangeMarkerMargin`, `DiffBrushes`; the fault boundary with `RenderFault`; caret column normalised after `Home` twice; control themes in `Themes/DiffPanePresenter.axaml`; `AGENTS.md`; 26 headless, pixel and snapshot test cases |
 | 5 Composite control, scroll sync, headers, status strip, theming | done | `SideBySideDiffView`, `DiffPaneHeader`, `DiffStatusStrip`, the state machine and banners, the latest-wins worker, `ScrollSync`, `StatusController` on `TimeProvider`, `DiffViewLog`, `DiffViewStrings` over the new surface, compiled themes; the demo on the composite; 34 headless and snapshot test cases plus 5 status-controller unit tests |
-| 6 Word-level highlights and options | not started | |
+| 6 Word-level highlights and options | done | `WordDiffLookup` over the live documents, one per build bound to its options; piece rectangles in `DiffLineBackgroundRenderer` through the visual line's columns; the marker margin's long-line tooltip; 6 headless and snapshot test cases |
 | 7 Navigation, minimap, connectors, tooltips | not started | |
 | 8 Find | not started | |
 | 9 Syntax highlighting | not started | |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 6 verification
+
+| Done-when item | Result |
+|---|---|
+| Headless: the renderer's word rectangles for a `Modified` row cover exactly the `PieceRange` columns, in both panes, and the cache is populated only for rows that were rendered | pass: `WordDiffTests.Word_rectangles_cover_exactly_the_piece_columns_in_both_panes_and_the_cache_holds_only_rendered_rows` — with the modified row below a 180 px viewport the cache is empty and nothing is drawn; scrolled into view, the cache holds that one row, each drawn rectangle's left and right equal the visual line's x at the piece's start and end columns over the full row height, the pieces name exactly the changed words on each side and concatenate to the line, and the pixels inside the first rectangle carry the composited word brush while those just outside carry the plain row tint |
+| Headless: the 1 MB single-line fixture renders without word-level pieces and the tooltip says so | pass: `The_one_megabyte_single_line_renders_without_pieces_and_the_marker_tooltip_says_so` — a generated 1,000,000-character line against a copy with its tail changed: `Degraded` with `LongLinesSkipped`, no pieces and no rectangles on either side, the row still drawn as modified; the marker margin's tooltip under the pointer names the limit and clears when the pointer leaves. Timing in *Measurements* |
+| Snapshot: a `Modified` row shows only the changed words highlighted, in both theme variants | pass: `WordDiffSnapshotTests.A_modified_row_shows_only_the_changed_words` Light and Dark — two modified rows with two and three highlighted pieces each, reviewed and approved; the composite and demo snapshots re-approved with the highlights on their modified rows |
+| Headless: toggling `IgnoreWhitespace` removes whitespace-only diffs and the status strip reflects the option | pass: `Toggling_IgnoreWhitespace_removes_whitespace_only_diffs_and_the_strip_reflects_the_option` — one modified row becomes none, the identical banner appears, the strip reads "ignore whitespace", and the option reaches the cache; off again restores the change |
+| `WordDiff` and `MaxWordDiffLineLength` wired through with a rebuild on change | pass: `Word_diff_off_draws_nothing_and_character_mode_reaches_the_cache`; the limit rides in the same options record and the long-line test exercises it |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 255 passed |
+| New headless tests proven able to fail | the geometry test's first run under the earlier nullable-flow draft did not compile until the lookup carried `NotNullWhen`; the snapshot and composite baselines mismatched on the highlights before review, as they must |
+| Trimmed publish (`linux-x64`, self-contained) | succeeds, 0 IL warnings, 51 MB |
+| Demo launched on this machine | boots, builds the bundled pair, shows the highlights on its modified rows; no fault or error in the log |
 
 ## Phase 5 verification
 
@@ -184,3 +205,4 @@ dotnet run --project src/ThemeAudit -- report
 | `DiffDocumentBuilder.Build`, generated similar pair, 200,000 lines (8,000 blocks, 204,001 rows) | 459 ms | same |
 | `SimilarityGate.Measure`, 2 × 200,000 unrelated lines | 16 ms (similarity 0.000) | `PerfTests.The_similarity_gate_on_the_unrelated_pair`; the gated, unaligned build of the same pair takes 109 ms |
 | `DiffSearch.Find` over the 10,000-line pair | literal 3 ms (1,995 matches); regex `\b(alpha\|beta)\b` 54 ms (3,940 matches) | `PerfTests.Search_on_the_10k_pair` |
+| A 1,000,000-character single line against a copy with its tail changed: build, priming and the first frame in the composite | about 2 s for the whole test on this machine, headless, Debug (the test writes the exact figure to its output) | `WordDiffTests.The_one_megabyte_single_line_renders_without_pieces_and_the_marker_tooltip_says_so`; Phase 10 measures scrolling |

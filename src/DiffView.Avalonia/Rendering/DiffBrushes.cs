@@ -22,6 +22,8 @@ internal enum DiffBrush
     MarkerInserted,
     MarkerDeleted,
     MarkerModified,
+    WordInserted,
+    WordDeleted,
 }
 
 /// <summary>
@@ -47,6 +49,8 @@ internal sealed class DiffBrushes
         ("DiffView.MarkerInsertedBrush", Color.Parse("#2E7D32")),
         ("DiffView.MarkerDeletedBrush", Color.Parse("#C62828")),
         ("DiffView.MarkerModifiedBrush", Color.Parse("#D96A00")),
+        ("DiffView.WordInsertedBrush", Color.Parse("#592E7D32")),
+        ("DiffView.WordDeletedBrush", Color.Parse("#59C62828")),
     ];
 
     private readonly IBrush[] _brushes;
@@ -74,6 +78,17 @@ internal sealed class DiffBrushes
             DiffLineKind.Inserted => this[DiffBrush.Inserted],
             DiffLineKind.Deleted => this[DiffBrush.Deleted],
             DiffLineKind.Modified => this[DiffBrush.Modified],
+            _ => Brushes.Transparent,
+        };
+    }
+
+    /// <summary>The word-level highlight for a piece of <paramref name="kind"/>; transparent for an unchanged piece.</summary>
+    public IBrush ForPiece(PieceKind kind)
+    {
+        return kind switch
+        {
+            PieceKind.Inserted => this[DiffBrush.WordInserted],
+            PieceKind.Deleted => this[DiffBrush.WordDeleted],
             _ => Brushes.Transparent,
         };
     }

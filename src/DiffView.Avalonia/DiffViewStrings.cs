@@ -160,6 +160,9 @@ public static class DiffViewStrings
     /// <summary>The active message while a build runs.</summary>
     public const string BuildRunning = "Build.Running";
 
+    /// <summary>The marker tooltip on a modified row whose line is too long for word-level pieces: <c>{0}</c> the limit.</summary>
+    public const string WordDiffSkipped = "WordDiff.Skipped";
+
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         [DiffViewName] = "Side-by-side diff",
@@ -212,6 +215,7 @@ public static class DiffViewStrings
         [BuildCompleted] = "Compared {0} rows in {1} ms",
         [BuildIdentical] = "Files are identical",
         [BuildRunning] = "Comparing…",
+        [WordDiffSkipped] = "Word-level highlighting skipped: a line is longer than {0} characters",
     };
 
     /// <summary>The active resolver; <c>null</c> for English.</summary>
