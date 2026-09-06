@@ -2,32 +2,29 @@
 
 ## Resume
 
-**Phase 5 — Composite control, scroll sync, headers, status strip, theming** of
-[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`:
-`SideBySideDiffView` hosts two `DiffPanePresenter`s over the sources' own documents with
-headers above, a banner for what failed or was skipped, a status strip below and vertical
-scrolling coupled 1:1 by `ScrollSync`. Assigning a source replaces that side's document and
-builds on the latest-wins worker; changing an option rebuilds and swaps the model only, so
-caret, selection, scroll and undo survive. The control is always in one `DiffViewState`, the
-strip renders it with `StatusController`'s transient lane on `TimeProvider`, every string goes
-through `DiffViewStrings`, and every log line through `DiffViewLog` under the four categories
-without a character of document text. The demo hosts the composite with file-open, option
-toggles and the colour-blind palette. **Phase 6 — Word-level highlights and options** is
-complete on top of it: `WordDiffLookup` reads a modified row's two lines from the live
-documents and asks `WordDiffCache` on the row's first frame, the background renderer draws a
-rectangle per changed piece through the visual line's column mapping, the composite binds one
-lookup per build to that build's options, and the marker margin's tooltip names a line too
-long for pieces. **Phase 7 — Navigation, minimap, connectors, tooltips** is complete on top:
-`CurrentChangeIndex` with next / previous / first / last and F7 / Shift+F7 / F6, the
-current-block border in the panes, `DiffMinimap` beside the right pane, `ChangeConnectorGutter`
-owning the column between the panes with click-to-select and drag-to-resize, and tooltips on
-line numbers, markers, connectors and the minimap. Next is **Phase 8 — Find** (plan §Phase 8):
-`DiffFindBar` (query, toggles, L / R / Both scope, count, next / previous / close, inline
-error), `SearchMatchRenderer` per pane, incremental search over document snapshots through
-`DiffSearch` with debounce and cancellation, minimap match ticks, the strip's count and scope,
-the Ctrl+F / F3 / Esc bindings, and the find leg of the sentinel log test. Both ClaudeForge
-contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the merge (see
-*Upstreamed to ClaudeForge*).
+**Phase 7 — Navigation, minimap, connectors, tooltips** of
+[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`; phases 0 through 7
+are done, and what remains of the plan is find, syntax highlighting, the scale-and-accessibility
+pass and the optional inline view. `SideBySideDiffView` compares two `PaneSource`s: two
+`DiffPanePresenter`s over the sources' own documents, with rendered padding holding the rows
+level, row and word-level highlights, line-number and change-marker gutters, headers, a banner
+for what failed or was skipped, a status strip, a connector gutter between the panes and a
+minimap beside them, vertical scrolling coupled 1:1, change navigation on F7 / Shift+F7 with F6
+switching panes, and a tooltip on every gutter. Builds run latest-wins on a worker over text
+captured on the UI thread; a rebuild swaps the model and never a `TextDocument`; the control is
+always in one `DiffViewState`; every user-visible string goes through `DiffViewStrings` and every
+log line through `DiffViewLog`, which never carries document text. The demo hosts the control
+with file-open, option toggles and the colour-blind palette.
+
+Next is **Phase 8 — Find** (plan §Phase 8): `DiffFindBar` (query box, Match case / Whole word /
+Regex / Changed rows only toggles, L / R / Both scope, "match i of n", next / previous / close,
+inline error line), `SearchMatchRenderer` per pane, incremental search over document snapshots
+through `DiffSearch` with debounce and cancellation, minimap match ticks, the strip's count and
+scope while the bar is open, the Ctrl+F / F3 / Esc key bindings, and the find leg of the sentinel
+log test that Phase 5 left owing.
+
+Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the
+merge (see *Upstreamed to ClaudeForge*).
 
 The theme audit regenerates after a pin bump, in this order:
 
