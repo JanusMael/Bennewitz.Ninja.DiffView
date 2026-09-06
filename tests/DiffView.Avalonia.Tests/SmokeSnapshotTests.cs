@@ -5,6 +5,7 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 using Bennewitz.Ninja.DiffView.Demo;
 
 namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
@@ -26,7 +27,16 @@ public sealed class SmokeSnapshotTests
         Application.Current!.RequestedThemeVariant = variant == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
 
         MainWindow window = new() { Width = 800, Height = 500 };
+        // The window loads its sides on Opened; the zero-time builder keeps the strip's timings
+        // machine-independent, as every rendered frame must be.
+        window.Diff.Builder = CompositeHost.ZeroTimeBuilder;
         window.Show();
+        Dispatcher.UIThread.RunJobs();
+        if (window.Diff.CurrentBuild is { } build)
+        {
+            await build;
+        }
+
         Dispatcher.UIThread.RunJobs();
 
         using WriteableBitmap? frame = window.CaptureRenderedFrame();

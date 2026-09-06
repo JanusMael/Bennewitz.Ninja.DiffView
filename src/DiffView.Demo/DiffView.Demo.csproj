@@ -35,6 +35,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>DiffView.Avalonia.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The committed small pair, shown when the left and right flags name no files. -->
     <AvaloniaResource Include="../../fixtures/small/left.txt" Link="Fixtures/small/left.txt" />
     <AvaloniaResource Include="../../fixtures/small/right.txt" Link="Fixtures/small/right.txt" />

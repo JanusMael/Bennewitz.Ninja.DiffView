@@ -8,6 +8,9 @@
   <DockPanel>
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File" AutomationProperties.Name="File menu">
+        <MenuItem Header="Open _left…" Click="OnOpenLeft" AutomationProperties.Name="Open a file in the left pane" />
+        <MenuItem Header="Open _right…" Click="OnOpenRight" AutomationProperties.Name="Open a file in the right pane" />
+        <Separator />
         <MenuItem Header="E_xit" Click="OnExit" AutomationProperties.Name="Exit" />
       </MenuItem>
       <MenuItem Header="_View" AutomationProperties.Name="View menu">
@@ -17,6 +20,16 @@
                   Click="OnVariantDark" AutomationProperties.Name="Dark theme variant" />
         <MenuItem x:Name="VariantSystem" Header="_System" ToggleType="Radio" GroupName="variant"
                   Click="OnVariantSystem" AutomationProperties.Name="Follow the system theme variant" />
+        <Separator />
+        <MenuItem x:Name="ColourBlindPalette" Header="Colour-_blind palette" ToggleType="CheckBox"
+                  Click="OnToggleColourBlindPalette" AutomationProperties.Name="Use the colour-blind-safe palette" />
+        <Separator />
+        <MenuItem x:Name="IgnoreWhitespace" Header="Ignore _whitespace" ToggleType="CheckBox"
+                  Click="OnToggleIgnoreWhitespace" AutomationProperties.Name="Ignore whitespace differences" />
+        <MenuItem x:Name="IgnoreCase" Header="Ignore _case" ToggleType="CheckBox"
+                  Click="OnToggleIgnoreCase" AutomationProperties.Name="Ignore case differences" />
+        <MenuItem x:Name="SyncHorizontal" Header="Sync _horizontal scroll" ToggleType="CheckBox"
+                  Click="OnToggleSyncHorizontal" AutomationProperties.Name="Couple horizontal scrolling of the panes" />
       </MenuItem>
       <MenuItem Header="_Debug" AutomationProperties.Name="Debug menu">
         <MenuItem Header="Show live _log (F12)" Click="OnToggleLiveLog" AutomationProperties.Name="Show live log window" />
@@ -31,12 +44,6 @@
       <TextBlock x:Name="StatusText" FontSize="12" />
     </Border>
 
-    <!-- Phase 4: two presenters fed from one Core build, no scroll sync yet; the composite
-         control of Phase 5 replaces this grid. -->
-    <Grid ColumnDefinitions="*,1,*">
-      <dv:DiffPanePresenter x:Name="LeftPane" Side="Left" AutomationProperties.Name="Left pane" />
-      <Border Grid.Column="1" Background="{DynamicResource DiffView.GutterBackgroundBrush}" />
-      <dv:DiffPanePresenter x:Name="RightPane" Grid.Column="2" Side="Right" AutomationProperties.Name="Right pane" />
-    </Grid>
+    <dv:SideBySideDiffView x:Name="Diff" AutomationProperties.Name="Side-by-side diff" />
   </DockPanel>
 </Window>

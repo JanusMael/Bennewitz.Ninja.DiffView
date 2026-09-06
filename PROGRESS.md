@@ -2,22 +2,22 @@
 
 ## Resume
 
-**Phase 4 — Pane presenter, padding, gutters** of
+**Phase 5 — Composite control, scroll sync, headers, status strip, theming** of
 [plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`:
-`DiffPanePresenter` hosts the pane's source document and renders a `SideBySideDocument`'s
-padding as empty space over it — the Phase 1 spike's mechanism lifted into
-`src/DiffView.Avalonia/Padding` — fills rows by kind, draws its own text-band selection and
-caret, carries line-number and change-marker gutters, primes the padded heights so two panes
-report equal extents before any scrolling, normalises the caret column after `Home` twice, and
-treats every decorator as a fault boundary that reports once through `RenderFault` and disables
-itself. Its control themes travel with the control; the `DiffView.*` tokens come from the host
-include. The demo shows two presenters over the small fixture (or the `--left` / `--right`
-files) fed from one Core build, with no scroll sync yet. `AGENTS.md` records the cross-file
-contracts. Next is **Phase 5 — Composite control, scroll sync, headers, status strip, theming**
-(plan §Phase 5): `SideBySideDiffView`, `ScrollSync`, `DiffPaneHeader`, `DiffStatusStrip` on
-`StatusController` lifted from ClaudeForge, the latest-wins build worker, `DiffViewStrings`
-behind every string, and the library logging rules. Both ClaudeForge contributions (PR #37 and
-PR #38) are merged and the ClaudeForge pin follows the merge (see *Upstreamed to ClaudeForge*).
+`SideBySideDiffView` hosts two `DiffPanePresenter`s over the sources' own documents with
+headers above, a banner for what failed or was skipped, a status strip below and vertical
+scrolling coupled 1:1 by `ScrollSync`. Assigning a source replaces that side's document and
+builds on the latest-wins worker; changing an option rebuilds and swaps the model only, so
+caret, selection, scroll and undo survive. The control is always in one `DiffViewState`, the
+strip renders it with `StatusController`'s transient lane on `TimeProvider`, every string goes
+through `DiffViewStrings`, and every log line through `DiffViewLog` under the four categories
+without a character of document text. The demo hosts the composite with file-open, option
+toggles and the colour-blind palette. Next is **Phase 6 — Word-level highlights and options**
+(plan §Phase 6): `PieceRange` rectangles from `WordDiffCache` in the background renderer,
+computed on first render of a modified row; the option properties already rebuild, the status
+strip already shows them, and the long-line tooltip is owed. Both ClaudeForge contributions
+(PR #37 and PR #38) are merged and the ClaudeForge pin follows the merge (see *Upstreamed to
+ClaudeForge*).
 
 The theme audit regenerates after a pin bump, in this order:
 
@@ -38,13 +38,39 @@ dotnet run --project src/ThemeAudit -- report
 | 2 Theme-key audit and exhaustive dictionaries | done (ClaudeForge PR #38 merged) | `theme-audit` `report` and `compat` over a JSON configuration; inventories model Default fallback, `StyleInclude`, linked files, code providers and brush opacity; contrast scoring against each variant's own surface; reviewed Fluent→Semi and Simple→Semi mappings; `DiffView.Tokens.axaml` + colour-blind sibling; `docs/theme-audit.md` committed with drift tests; runtime resolution and rendering tests under all ten targets; tool packed as 1.1.0 |
 | 3 Core model, probing, search engine | done | `PaneSource`, `TextProbe`, `LineSplitter`, `DiffOptions`, `SimilarityGate`, `DiffDocumentBuilder`, `SideBySideDocument` + `Padding`, `WordDiffCache`, `DiffSearch`; 87 unit tests (seven invariants, every failure path, cache, search) and 4 `Perf` measurements |
 | 4 Pane presenter, padding, gutters | done | `DiffPanePresenter` over the source document; `PaddingRun` / `PaddingElement` / `PaddingElementGenerator` / `PaddingHeightPrimer` lifted from the spike; `PaneMetadata` bounds-checked and version-stamped; `DiffLineBackgroundRenderer`, `DiffSelectionRenderer`, `DiffCaretRenderer`, `DiffLineNumberMargin`, `ChangeMarkerMargin`, `DiffBrushes`; the fault boundary with `RenderFault`; caret column normalised after `Home` twice; control themes in `Themes/DiffPanePresenter.axaml`; `AGENTS.md`; 26 headless, pixel and snapshot test cases |
-| 5 Composite control, scroll sync, headers, status strip, theming | not started | |
+| 5 Composite control, scroll sync, headers, status strip, theming | done | `SideBySideDiffView`, `DiffPaneHeader`, `DiffStatusStrip`, the state machine and banners, the latest-wins worker, `ScrollSync`, `StatusController` on `TimeProvider`, `DiffViewLog`, `DiffViewStrings` over the new surface, compiled themes; the demo on the composite; 34 headless and snapshot test cases plus 5 status-controller unit tests |
 | 6 Word-level highlights and options | not started | |
 | 7 Navigation, minimap, connectors, tooltips | not started | |
 | 8 Find | not started | |
 | 9 Syntax highlighting | not started | |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 5 verification
+
+| Done-when item | Result |
+|---|---|
+| Headless: with a sentinel string in both sources, the captured log after build, render and a forced `RenderFault` never contains it, and each state transition appears exactly once at `Information` | pass: `SideBySideDiffViewTests.The_log_never_carries_document_text_and_each_state_transition_appears_exactly_once` — no record's message or exception text carries the sentinel or a fixture word; `Empty → Building`, `Building → Ready`, `Ready → Degraded` each once under `DiffView.Build`; the fault once at `Error` under `DiffView.Render` with its exception. The find leg waits for Phase 8 |
+| Headless: the composite renders under all ten theme targets with zero binding and resource warnings | pass: `Renders_under_every_theme_target_with_no_binding_or_resource_warnings` — Ready under each target, the header painting its own token, the bridge silent in every area |
+| Unit: every `DiffView.*` pair meets its floor under all ten targets — status pills ≥ 4.5:1 on their fill and ≥ 7:1 on the page | pass: four page pairs added at floor 7.0 to `contrast-pairs.json`; the Dark status foregrounds brightened one step to clear Semi Dusk and Simple Dark (see `DECISIONS.md`); `theme-audit report` shows 0 low-contrast findings over 34 pairs × 10 targets × 2 palettes, held by `ReferenceAuditTests` |
+| Headless: a `Success` message clears after its delay under a test `TimeProvider`; a `Failure` sticks until dismissed; a new message cancels the pending clear | pass: `StatusControllerTests` on `FakeTimeProvider` (five cases, including active and state sticking and disposal), and `The_status_strip_shows_the_focused_panes_caret_and_a_failure_can_be_dismissed` through the strip |
+| Headless: swapping `DiffViewStrings.Resolver` before load changes the rendered strings | pass: `Swapping_the_string_resolver_before_load_changes_the_rendered_strings` — state pill, header title and change count in German |
+| Headless: setting the left offset moves the right offset to the same value and back, with no feedback loop, at top, middle and bottom | pass: `Scroll_sync_is_one_to_one_at_top_middle_and_bottom_with_no_feedback_loop` — both directions at three offsets, at most four scroll events per change and none once settled, every shared row at the same top |
+| Headless: `LeftSource` / `RightSource` changes rebuild the document; a change during a build supersedes it and the final state reflects the last input | pass: `Sources_build_the_document_and_the_state_moves_from_Empty_through_Building_to_Ready`, `A_change_during_a_build_supersedes_it_and_the_final_state_reflects_the_last_input` — the gated first build lands late and is discarded with a `Debug` line, one `BuildCompleted` |
+| Headless: changing an option property re-runs the diff and preserves caret, selection, scroll offset and the undo stack in both panes; the `TextDocument` instances are the same objects | pass: `Changing_an_option_rebuilds_and_preserves_caret_selection_scroll_and_undo_in_both_panes` |
+| Headless: a throwing builder puts the control in `Failed` with the message shown and `Retry` rebuilds | pass: `A_throwing_builder_puts_the_control_in_Failed_with_the_message_and_Retry_rebuilds` — banner, strip, status lane and `BuildFailed` all carry the message; the command re-enables and disables with the state |
+| Headless: binary input → `Failed` with `BinaryInput`; the unrelated pair → `Degraded` with the banner, and Force aligns it; identical input → `Ready` with the identical banner | pass: `Binary_input_fails_the_unrelated_pair_degrades_until_forced_and_identical_input_is_Ready_with_the_banner` — the binary header badge, the too-different banner over a 12,000-line unrelated pair, Force aligning it, the identical banner and badges |
+| Headless: state transitions are logged when a logger is set | pass: the sentinel test above; `LoggerFactory` replaces the plan's `Logger` (see `DECISIONS.md`) |
+| Headless: dragging the gutter with headless pointer input leaves both vertical offsets equal and both panes at the same first visible row | pass: `Scrolling_the_right_pane_with_headless_pointer_input_keeps_both_panes_on_the_same_first_row` — the right scrollbar's thumb when the theme exposes one, else the wheel; offsets equal and every shared row aligned |
+| Snapshot: headers, status strip, error banner and identical banner in both theme variants and both palettes | pass: `CompositeSnapshotTests` — headers and strip in Light and Dark under both palettes (four frames), the identical banner and the error banner (two), all reviewed and approved; the demo smoke snapshot re-approved with the composite in it |
+| Latest-wins worker, progress after 100 ms, stale marking | pass: `A_slow_build_shows_progress_after_the_threshold_and_the_previous_result_is_marked_stale` — the previous model stays on both panes marked stale; progress appears once the fake clock passes the threshold |
+| Equal horizontal scrollbar visibility; `SyncHorizontalScroll`; `LeftReadOnly` / `RightReadOnly` | pass: `Horizontal_sync_is_optional_and_both_panes_show_the_same_horizontal_bar`; the read-only flags reach the panes in the options test |
+| Demo on the composite with file-open and error reporting | done: `MainWindow` hosts `SideBySideDiffView`, opens files into either side through the picker with failures in the status lane and the log, toggles the options and the palette |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 249 passed |
+| New headless tests proven able to fail | the caret test pointed at a blank line and reported line 4 for 3; the scroll test counted three events where it expected two and now asserts quiescence; the sentinel test tripped "visual invalidated during the render pass" before the fault event was deferred; each failed for a real reason before its fixture or the code was corrected |
+| Trimmed publish (`linux-x64`, self-contained) | succeeds, 0 IL warnings, 51 MB; the palette toggle and the three control themes are compiled dictionary classes |
+| Demo launched on this machine | boots, logs `Empty → Building`, the build's counts and `Building → Ready`; no fault or error in the log |
 
 ## Phase 4 verification
 
@@ -146,8 +172,8 @@ dotnet run --project src/ThemeAudit -- report
 
 | What | Value | Where |
 |---|---|---|
-| Test run, all three projects | ~5 s | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter tests render under all ten theme targets |
-| Trimmed self-contained publish of the demo, linux-x64 | 50 MB after Phase 4 (48 MB through Phase 3) | `dotnet publish -c Release -r linux-x64 --self-contained true` |
+| Test run, all three projects | ~8 s | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter and composite tests render under all ten theme targets |
+| Trimmed self-contained publish of the demo, linux-x64 | 51 MB after Phase 5 (50 MB after Phase 4, 48 MB through Phase 3) | `dotnet publish -c Release -r linux-x64 --self-contained true` |
 | Priming 10,000 padding gaps in one pass | 10.3–10.5 s (two runs) | `Item6_priming_cost_for_ten_thousand_gaps`, this machine, Debug; quadratic in the text view's built-line list |
 | Priming 10,000 padding gaps in batches of 256 with `Redraw()` between batches | 200–240 ms (two runs) | same test, including the layout pass that republishes the extent |
 | Fluent 12.1.2 inventory | 1153 keys, 85 files per variant | `docs/theme-audit.md` |

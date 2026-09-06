@@ -99,7 +99,23 @@ no dates, no counts.
 - `AccessibilityCoverageTests` counts `DiffPanePresenter` and `TextEditor` as interactive, so
   every pane in a view carries `AutomationProperties.Name`.
 
-## 6. Contributing back
+## 6. The composite
+
+| Invariant | Failure signature if broken | Canonical source |
+|---|---|---|
+| Assigning `LeftSource` / `RightSource` replaces that side's `TextDocument` and clears the model until the build lands; changing an option rebuilds over the same documents and keeps the model, marked stale | The old kinds paint over new text, or caret, selection, scroll and undo are lost on an option change | `SideBySideDiffView.OnSourceChanged`, `SideBySideDiffView.RequestBuild`; tests `Changing_an_option_rebuilds_and_preserves_caret_selection_scroll_and_undo_in_both_panes`, `A_slow_build_shows_progress_after_the_threshold_and_the_previous_result_is_marked_stale` |
+| Latest wins: a build's outcome is applied only while its generation is the latest, on the UI thread; the worker sees captured text, never a `TextDocument` | A stale result overwrites a newer one, or `TextDocument.VerifyAccess` throws off-thread | `SideBySideDiffView.RunBuildAsync`, `SideBySideDiffView.Complete`; test `A_change_during_a_build_supersedes_it_and_the_final_state_reflects_the_last_input` |
+| The control is always in one `DiffViewState`; every transition is logged once at `Information` through `DiffViewLog.StateChanged` | A transition logged twice or not at all | `SideBySideDiffView.SetStateCore`; test `The_log_never_carries_document_text_and_each_state_transition_appears_exactly_once` |
+| `DiffViewLog` is the only place a log line is formatted, and no line carries document text | A secret under comparison reaches a log file | `DiffViewLog`; the sentinel test above |
+| `StatusController.Set` is private; only `SetActive`, `SetSuccess`, `SetWarning`, `SetFailure`, `SetState` emit | A failure renders as quiet text | `StatusController`; `StatusControllerTests` |
+| `DiffPanePresenter.RenderFault` is raised after the render pass, via the dispatcher | "Visual was invalidated during the render pass" from a listener | `DiffPanePresenter.ReportFault` |
+| `ScrollSync` compares before it sets and guards re-entrancy; both panes' horizontal bars are `Visible` or `Hidden` together | A feedback loop, or panes with unequal viewport heights | `ScrollSync.Follow`, `SideBySideDiffView.UpdateHorizontalScrollBars`; test `Scroll_sync_is_one_to_one_at_top_middle_and_bottom_with_no_feedback_loop` |
+| The scroll coupling waits for both panes' templates: `DiffPanePresenter.PaneScrollViewer` is null until `OnApplyTemplate` | Sync silently absent after a template re-application | `SideBySideDiffView.TryWireScrollSync` on `TemplateApplied` |
+| Every user-visible string of the composite, headers and strip goes through `DiffViewStrings` and is computed per instance, never at type initialisation | Swapping `DiffViewStrings.Resolver` before load changes nothing | `SideBySideDiffView.RefreshStrings`, `UpdateHeaders`, `UpdateStrip`; test `Swapping_the_string_resolver_before_load_changes_the_rendered_strings` |
+| The composite's, header's and strip's control themes are the compiled `SideBySideDiffViewTheme` merged into each control's own resources | Invisible controls without a host include, or IL2026 under the trim-check | `SideBySideDiffView`, `DiffPaneHeader`, `DiffStatusStrip` constructors |
+| A rendered frame carries no machine-specific text: `CompositeHost.ZeroTimeBuilder` zeroes the build time in the test host, and the demo loads its sides on `Opened` so the smoke test can install it first | Snapshots drift by build time | `CompositeHost`, `MainWindow.OnOpened`, `SmokeSnapshotTests` |
+
+## 7. Contributing back
 
 Anything that belongs in ClaudeForge goes there first, as a branch and pull request in the same
 working session; the plan's *Contributing back to ClaudeForge* section and the *Upstreamed to

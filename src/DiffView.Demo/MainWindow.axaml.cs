@@ -3,32 +3,37 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
-using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView.Avalonia;
 using Bennewitz.Ninja.DiffView.Core;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Microsoft.Extensions.Logging;
 using Serilog;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Bennewitz.Ninja.DiffView.Demo;
 
 public sealed partial class MainWindow : Window
 {
-    private string _diffSummary = "no diff loaded";
-    private string? _loadNote;
+    private string? _note;
 
     public MainWindow()
     {
         InitializeComponent();
 
-        ILogger renderLogger = DemoLogging.Factory.CreateLogger(DiffViewLogCategories.Render);
-        LeftPane.Logger = renderLogger;
-        RightPane.Logger = renderLogger;
-        LeftPane.RenderFault += OnRenderFault;
-        RightPane.RenderFault += OnRenderFault;
+        Diff.LoggerFactory = DemoLogging.Factory;
+        Diff.BuildCompleted += (_, _) => UpdateStatus();
+        Diff.BuildFailed += (_, _) => UpdateStatus();
+        Diff.RenderFault += (_, _) => UpdateStatus();
 
+        // The sides load when the window opens, so a host of the window — the smoke snapshot
+        // test — can configure the control between construction and the first build.
+        Opened += OnOpened;
+        UpdateStatus();
+    }
+
+    private void OnOpened(object? sender, EventArgs e)
+    {
+        Opened -= OnOpened;
         LoadPanes();
         UpdateStatus();
     }
@@ -47,39 +52,14 @@ public sealed partial class MainWindow : Window
 
     /// <summary>
     /// Loads the two sides — the files named by <c>--left</c> / <c>--right</c>, or the bundled
-    /// small fixture — builds the diff on the UI thread (Phase 5 moves it to a worker) and feeds
-    /// both presenters from the one model. A file that cannot be read falls back to the fixture
-    /// and says so in the status bar and the log; a build that fails says so the same way.
+    /// small fixture — into the composite, which builds on its worker and reports every state
+    /// in its own strip. A file that cannot be read falls back to the fixture and says so here
+    /// and in the log.
     /// </summary>
     private void LoadPanes()
     {
-        PaneSource left = LoadSource(DebugFlags.LeftPath, "left.txt");
-        PaneSource right = LoadSource(DebugFlags.RightPath, "right.txt");
-        LeftPane.Document = new TextDocument(left.Text);
-        RightPane.Document = new TextDocument(right.Text);
-
-        try
-        {
-            DiffBuildResult result = DiffDocumentBuilder.Build(left, right);
-            LeftPane.DiffDocument = result.Document;
-            RightPane.DiffDocument = result.Document;
-
-            DiffDiagnostics diagnostics = result.Diagnostics;
-            _diffSummary = $"+{diagnostics.Inserted} −{diagnostics.Deleted} ~{diagnostics.Modified} in {diagnostics.RowCount} rows";
-            Log.Information(
-                "Diff built: {Rows} rows, {Blocks} blocks (+{Inserted} -{Deleted} ~{Modified}), similarity {Similarity:F2}, {Elapsed:F1} ms, {Warnings} warning(s)",
-                diagnostics.RowCount, diagnostics.BlockCount, diagnostics.Inserted, diagnostics.Deleted, diagnostics.Modified,
-                diagnostics.Similarity, diagnostics.BuildTime.TotalMilliseconds, result.Warnings.Count);
-            foreach (DiffWarning warning in result.Warnings)
-            {
-                Log.Warning("Diff warning {Code}: {Message}", warning.Code, warning.Message);
-            }
-        }
-        catch (DiffBuildException ex)
-        {
-            _diffSummary = $"diff failed: {ex.Message}";
-            Log.Error(ex, "Diff build failed ({Code})", ex.Code);
-        }
+        Diff.LeftSource = LoadSource(DebugFlags.LeftPath, "left.txt");
+        Diff.RightSource = LoadSource(DebugFlags.RightPath, "right.txt");
     }
 
     private PaneSource LoadSource(string? path, string fixtureFileName)
@@ -92,7 +72,7 @@ public sealed partial class MainWindow : Window
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                _loadNote = $"could not read {path}: {ex.Message}";
+                _note = $"could not read {path}: {ex.Message}";
                 Log.Error(ex, "Could not read {Path}; showing the bundled sample instead", path);
             }
         }
@@ -102,11 +82,64 @@ public sealed partial class MainWindow : Window
         return new PaneSource(reader.ReadToEnd()) { Title = fixtureFileName };
     }
 
-    private void OnRenderFault(object? sender, RenderFaultEventArgs e)
+    private async void OnOpenLeft(object? sender, RoutedEventArgs e)
     {
-        // The presenter has already logged it through its Logger; the status bar shows it.
-        _loadNote = e.Message;
-        UpdateStatus();
+        await OpenIntoAsync(DiffSide.Left);
+    }
+
+    private async void OnOpenRight(object? sender, RoutedEventArgs e)
+    {
+        await OpenIntoAsync(DiffSide.Right);
+    }
+
+    /// <summary>
+    /// Picks a file and loads it into one side. Reading goes through <see cref="PaneSource.FromFile"/>,
+    /// so the encoding and a binary payload are detected there; a read failure is reported in
+    /// the composite's status lane and the log, with the path.
+    /// </summary>
+    private async Task OpenIntoAsync(DiffSide side)
+    {
+        IReadOnlyList<IStorageFile> files;
+        try
+        {
+            files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = side == DiffSide.Left ? "Open the left file" : "Open the right file",
+                AllowMultiple = false,
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or PlatformNotSupportedException)
+        {
+            Log.Warning(ex, "The file picker is not available on this platform");
+            Diff.Status.SetFailure("The file picker is not available here.");
+            return;
+        }
+
+        string? path = files.Count == 0 ? null : files[0].TryGetLocalPath();
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            PaneSource source = PaneSource.FromFile(path);
+            if (side == DiffSide.Left)
+            {
+                Diff.LeftSource = source;
+            }
+            else
+            {
+                Diff.RightSource = source;
+            }
+
+            Log.Information("Opened {Path} into the {Side} pane ({Length} bytes)", path, side, source.Text.Length);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Error(ex, "Could not read {Path}", path);
+            Diff.Status.SetFailure($"Could not read {path}: {ex.Message}");
+        }
     }
 
     private void OnExit(object? sender, RoutedEventArgs e)
@@ -127,6 +160,27 @@ public sealed partial class MainWindow : Window
     private void OnVariantSystem(object? sender, RoutedEventArgs e)
     {
         SetVariant(ThemeVariant.Default);
+    }
+
+    private void OnToggleColourBlindPalette(object? sender, RoutedEventArgs e)
+    {
+        App.UseColourBlindPalette(ColourBlindPalette.IsChecked);
+        UpdateStatus();
+    }
+
+    private void OnToggleIgnoreWhitespace(object? sender, RoutedEventArgs e)
+    {
+        Diff.IgnoreWhitespace = IgnoreWhitespace.IsChecked;
+    }
+
+    private void OnToggleIgnoreCase(object? sender, RoutedEventArgs e)
+    {
+        Diff.IgnoreCase = IgnoreCase.IsChecked;
+    }
+
+    private void OnToggleSyncHorizontal(object? sender, RoutedEventArgs e)
+    {
+        Diff.SyncHorizontalScroll = SyncHorizontal.IsChecked;
     }
 
     private void OnToggleLiveLog(object? sender, RoutedEventArgs e)
@@ -188,11 +242,12 @@ public sealed partial class MainWindow : Window
         VariantSystem.IsChecked = requested == ThemeVariant.Default;
 
         // No machine-specific text in the rendered status: the snapshot tests compare this window
-        // across machines. The logs path is one hover away, in the Debug menu, and in the log
-        // itself; the build time is in the log. A load note carries a path only when a flag
-        // named one, which no snapshot does.
-        string note = _loadNote is null ? string.Empty : $"   ·   {_loadNote}";
-        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Diff: {_diffSummary}{note}   ·   F12: live log";
+        // across machines. The diff's own state, counts and timings live in its status strip; the
+        // logs path is one hover away, in the Debug menu, and in the log itself. A note carries a
+        // path only when a flag named one, which no snapshot does.
+        string palette = ColourBlindPalette.IsChecked ? "colour-blind" : "default";
+        string note = _note is null ? string.Empty : $"   ·   {_note}";
+        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Palette: {palette}{note}   ·   F12: live log";
         ToolTip.SetTip(StatusText, $"Logs: {LogPaths.LogsDirectory}");
     }
 }

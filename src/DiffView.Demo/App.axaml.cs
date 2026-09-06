@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
 using Avalonia.Themes.Simple;
 using Avalonia.Threading;
+using Bennewitz.Ninja.DiffView.Avalonia;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Semi.Avalonia;
 using Serilog;
@@ -15,6 +16,33 @@ namespace Bennewitz.Ninja.DiffView.Demo;
 
 public sealed class App : Application
 {
+    private static DiffViewColorBlindPalette? s_colourBlindPalette;
+
+    /// <summary>
+    /// Merges the colour-blind-safe palette over the default tokens, or removes it. The compiled
+    /// dictionary class keeps the switch trim-safe.
+    /// </summary>
+    public static void UseColourBlindPalette(bool enabled)
+    {
+        if (Current is not { } application)
+        {
+            return;
+        }
+
+        if (enabled)
+        {
+            s_colourBlindPalette ??= new DiffViewColorBlindPalette();
+            if (!application.Resources.MergedDictionaries.Contains(s_colourBlindPalette))
+            {
+                application.Resources.MergedDictionaries.Add(s_colourBlindPalette);
+            }
+        }
+        else if (s_colourBlindPalette is not null)
+        {
+            application.Resources.MergedDictionaries.Remove(s_colourBlindPalette);
+        }
+    }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);

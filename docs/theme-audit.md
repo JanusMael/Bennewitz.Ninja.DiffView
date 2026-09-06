@@ -40,8 +40,8 @@ _none_
 
 | Consumer | Directories | Files | References | Distinct keys | Own keys | Digest | Audited against |
 |---|---|---:|---:|---:|---:|---|---|
-| DiffView | `src/DiffView.Avalonia/Themes` | 4 | 3 | 3 | 35 | `342aaf875fb0` | all |
-| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 4 | 3 | 3 | 35 | `342aaf875fb0` | all |
+| DiffView | `src/DiffView.Avalonia/Themes` | 5 | 49 | 17 | 38 | `b19fb9c747d3` | all |
+| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 5 | 49 | 17 | 38 | `b19fb9c747d3` | all |
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `2ce29f295821` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `ce6e5435da8d` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d91a9d48208f` | Fluent, Semi, Semi + compat |
@@ -810,7 +810,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Fluent
 
-30 pairs × 2 variants: 60 pass, 0 below the floor, 0 not measurable.
+34 pairs × 2 variants: 68 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -840,14 +840,18 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 12.10 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 11.96 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 11.92 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 11.77 |
 
 ### DiffView under Simple
 
-30 pairs × 2 variants: 60 pass, 0 below the floor, 0 not measurable.
+34 pairs × 2 variants: 68 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -877,14 +881,18 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 8.50 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 8.40 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 8.37 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 8.27 |
 
 ### DiffView under Semi
 
-30 pairs × 6 variants: 180 pass, 0 below the floor, 0 not measurable.
+34 pairs × 6 variants: 204 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -914,14 +922,18 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 | 6.15 | 5.22 | 6.15 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 | 15.39 | 13.54 | 15.39 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 | 8.12 | 4.70 | 8.12 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 | 5.33 | 4.61 | 5.33 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 | 4.88 | 4.61 | 4.88 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 | 4.64 | 4.84 | 4.64 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 | 4.57 | 4.66 | 4.57 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 | 5.94 | 4.61 | 5.94 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 | 5.96 | 4.61 | 5.96 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 | 5.87 | 4.84 | 5.87 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 | 5.85 | 4.66 | 5.85 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 10.40 | 9.39 | 7.11 | 7.46 | 12.10 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 10.28 | 9.28 | 7.06 | 7.38 | 11.96 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 10.24 | 9.25 | 7.44 | 7.35 | 11.92 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 10.12 | 9.13 | 7.21 | 7.26 | 11.77 |
 
 ### DiffView under Semi + compat
 
-30 pairs × 6 variants: 180 pass, 0 below the floor, 0 not measurable.
+34 pairs × 6 variants: 204 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -951,14 +963,18 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 | 6.15 | 5.22 | 6.15 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 | 15.39 | 13.54 | 15.39 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 | 8.12 | 4.70 | 8.12 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 | 5.33 | 4.61 | 5.33 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 | 4.88 | 4.61 | 4.88 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 | 4.64 | 4.84 | 4.64 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 | 4.57 | 4.66 | 4.57 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 | 5.94 | 4.61 | 5.94 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 | 5.96 | 4.61 | 5.96 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 | 5.87 | 4.84 | 5.87 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 | 5.85 | 4.66 | 5.85 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 10.40 | 9.39 | 7.11 | 7.46 | 12.10 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 10.28 | 9.28 | 7.06 | 7.38 | 11.96 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 10.24 | 9.25 | 7.44 | 7.35 | 11.92 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 10.12 | 9.13 | 7.21 | 7.26 | 11.77 |
 
 ### DiffView (colour-blind palette) under Fluent
 
-30 pairs × 2 variants: 60 pass, 0 below the floor, 0 not measurable.
+34 pairs × 2 variants: 68 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -988,14 +1004,18 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 12.10 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 11.96 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 11.92 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 11.77 |
 
 ### DiffView (colour-blind palette) under Simple
 
-30 pairs × 2 variants: 60 pass, 0 below the floor, 0 not measurable.
+34 pairs × 2 variants: 68 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -1025,14 +1045,18 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 8.50 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 8.40 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 8.37 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 8.27 |
 
 ### DiffView (colour-blind palette) under Semi
 
-30 pairs × 6 variants: 180 pass, 0 below the floor, 0 not measurable.
+34 pairs × 6 variants: 204 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -1062,14 +1086,18 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 | 6.15 | 5.22 | 6.15 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 | 15.39 | 13.54 | 15.39 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 | 8.12 | 4.70 | 8.12 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 | 5.33 | 4.61 | 5.33 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 | 4.88 | 4.61 | 4.88 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 | 4.64 | 4.84 | 4.64 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 | 4.57 | 4.66 | 4.57 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 | 5.94 | 4.61 | 5.94 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 | 5.96 | 4.61 | 5.96 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 | 5.87 | 4.84 | 5.87 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 | 5.85 | 4.66 | 5.85 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 10.40 | 9.39 | 7.11 | 7.46 | 12.10 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 10.28 | 9.28 | 7.06 | 7.38 | 11.96 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 10.24 | 9.25 | 7.44 | 7.35 | 11.92 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 10.12 | 9.13 | 7.21 | 7.26 | 11.77 |
 
 ### DiffView (colour-blind palette) under Semi + compat
 
-30 pairs × 6 variants: 180 pass, 0 below the floor, 0 not measurable.
+34 pairs × 6 variants: 204 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -1099,10 +1127,14 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MutedForegroundBrush` | `DiffView.HeaderBackgroundBrush` | 4.5 | 5.22 | 6.15 | 6.15 | 5.22 | 6.15 | 6.15 |
 | `DiffView.StatusForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 13.54 | 15.39 | 15.39 | 13.54 | 15.39 | 15.39 |
 | `DiffView.MutedForegroundBrush` | `DiffView.StatusBackgroundBrush` | 4.5 | 4.70 | 8.12 | 8.12 | 4.70 | 8.12 | 8.12 |
-| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.33 | 5.33 | 4.61 | 5.33 | 5.33 |
-| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 4.88 | 4.88 | 4.61 | 4.88 | 4.88 |
-| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 4.64 | 4.64 | 4.84 | 4.64 | 4.64 |
-| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 4.57 | 4.57 | 4.66 | 4.57 | 4.57 |
+| `DiffView.StatusSuccessForegroundBrush` | `DiffView.StatusSuccessBackgroundBrush` | 4.5 | 4.61 | 5.94 | 5.94 | 4.61 | 5.94 | 5.94 |
+| `DiffView.StatusWarningForegroundBrush` | `DiffView.StatusWarningBackgroundBrush` | 4.5 | 4.61 | 5.96 | 5.96 | 4.61 | 5.96 | 5.96 |
+| `DiffView.StatusFailureForegroundBrush` | `DiffView.StatusFailureBackgroundBrush` | 4.5 | 4.84 | 5.87 | 5.87 | 4.84 | 5.87 | 5.87 |
+| `DiffView.StatusActiveForegroundBrush` | `DiffView.StatusActiveBackgroundBrush` | 4.5 | 4.66 | 5.85 | 5.85 | 4.66 | 5.85 | 5.85 |
+| `DiffView.StatusSuccessForegroundBrush` | `$Page` | 7.0 | 7.40 | 10.40 | 9.39 | 7.11 | 7.46 | 12.10 |
+| `DiffView.StatusWarningForegroundBrush` | `$Page` | 7.0 | 7.35 | 10.28 | 9.28 | 7.06 | 7.38 | 11.96 |
+| `DiffView.StatusFailureForegroundBrush` | `$Page` | 7.0 | 7.75 | 10.24 | 9.25 | 7.44 | 7.35 | 11.92 |
+| `DiffView.StatusActiveForegroundBrush` | `$Page` | 7.0 | 7.50 | 10.12 | 9.13 | 7.21 | 7.26 | 11.77 |
 
 ## Compat dictionaries
 

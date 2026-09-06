@@ -60,7 +60,31 @@ All notable changes to DiffView are recorded here. The format follows
 - Headless, pixel and snapshot tests for the presenter under all ten theme targets;
   `PresenterHost`, `ThemeSwap` and `ThemeTargets` as shared fixtures.
 
+- Phase 5, the composite control: `SideBySideDiffView` with headers, banner, panes and status
+  strip; `DiffPaneHeader` (title, detail line, binary / empty / identical badge);
+  `DiffStatusStrip` (state pill, stale marker, progress after 100 ms, counts, changes, build
+  time, options, caret position, transient lane with dismiss); the state machine `Empty` /
+  `Building` / `Ready` / `Degraded` / `Failed` with the error, too-different and identical
+  banners and their Retry and Force actions; the latest-wins build worker with cancellation;
+  `ScrollSync` with equalised horizontal bars; `StatusController` and `StatusKind` lifted from
+  ClaudeForge onto `TimeProvider`; `DiffViewLog` as the one log formatter under the four
+  `DiffViewLogCategories`; `DiffViewStrings` behind every string of the new surface;
+  `DiffPanePresenter.PaneScrollViewer`; the compiled `SideBySideDiffViewTheme` and
+  `DiffViewColorBlindPalette`; the four 7:1 page pairs in `contrast-pairs.json` and the
+  brightened Dark status foregrounds.
+- The demo hosts the composite, opens files into either side through the file picker, toggles
+  ignore-whitespace, ignore-case, horizontal sync and the colour-blind palette, and loads its
+  sides on `Opened`.
+- Headless tests for every Phase 5 done-when item, `StatusControllerTests` on a fake clock,
+  snapshots of the headers and strip in both variants and both palettes plus the identical and
+  error banners; `CompositeHost`, `FakeTimeProvider` and `CapturingLoggerFactory` as fixtures.
+
 ### Changed
 
 - The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and
   `DiffPanePresenter` as interactive controls.
+- `RenderFault` on the presenter is raised after the render pass that caught the fault.
+- The demo smoke snapshot shows the composite; the accessibility guard counts
+  `SideBySideDiffView` as interactive.
+- The snapshot comparer decodes from copies of the streams, so a mismatch can still write the
+  `.received` file.

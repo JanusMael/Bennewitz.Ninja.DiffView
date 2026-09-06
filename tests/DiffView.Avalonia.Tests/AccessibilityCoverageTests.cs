@@ -34,9 +34,11 @@ public sealed class AccessibilityCoverageTests
         "TimePicker",
         "CalendarDatePicker",
         "MenuItem",
-        // The editor panes take keyboard focus and carry a caret: interactive, so named.
+        // The editor panes take keyboard focus and carry a caret: interactive, so named; the
+        // composite hosts two of them.
         "TextEditor",
         "DiffPanePresenter",
+        "SideBySideDiffView",
     };
 
     /// <summary>

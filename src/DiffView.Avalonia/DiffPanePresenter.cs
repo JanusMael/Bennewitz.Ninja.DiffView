@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
@@ -196,7 +197,9 @@ public class DiffPanePresenter : TextEditor
             source,
             Side,
             lineNumber?.ToString(CultureInfo.InvariantCulture) ?? "-");
-        RenderFault?.Invoke(this, fault);
+        // A fault is usually caught inside a render pass, where a listener may not invalidate a
+        // visual; the event is raised once the pass is over.
+        Dispatcher.UIThread.Post(() => RenderFault?.Invoke(this, fault));
     }
 
     /// <summary>Forgets the faults and re-enables every decorator.</summary>
@@ -212,10 +215,17 @@ public class DiffPanePresenter : TextEditor
         _changeMarkerMargin.Reset();
     }
 
+    /// <summary>
+    /// The scroll viewer of the template, once applied; the composite couples two of these.
+    /// AvaloniaEdit's own <c>ScrollViewer</c> property is internal.
+    /// </summary>
+    public ScrollViewer? PaneScrollViewer { get; private set; }
+
     /// <inheritdoc/>
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
+        PaneScrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
         // TextEditor installs its search panel every time its template is applied; its key
         // bindings would collide with the composite's find bar, so it goes straight back out.
         SearchPanel?.Uninstall();

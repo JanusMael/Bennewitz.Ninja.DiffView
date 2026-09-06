@@ -40,6 +40,13 @@
     { "foreground": "DiffView.StatusSuccessForegroundBrush", "background": "DiffView.StatusSuccessBackgroundBrush", "floor": 4.5, "purpose": "success pill" },
     { "foreground": "DiffView.StatusWarningForegroundBrush", "background": "DiffView.StatusWarningBackgroundBrush", "floor": 4.5, "purpose": "warning pill" },
     { "foreground": "DiffView.StatusFailureForegroundBrush", "background": "DiffView.StatusFailureBackgroundBrush", "floor": 4.5, "purpose": "failure pill" },
-    { "foreground": "DiffView.StatusActiveForegroundBrush", "background": "DiffView.StatusActiveBackgroundBrush", "floor": 4.5, "purpose": "active pill" }
+    { "foreground": "DiffView.StatusActiveForegroundBrush", "background": "DiffView.StatusActiveBackgroundBrush", "floor": 4.5, "purpose": "active pill" },
+
+    // The pill foregrounds are reused as plain text on the host page (a badge without its fill,
+    // a banner line); there they are held to AAA.
+    { "foreground": "DiffView.StatusSuccessForegroundBrush", "background": "$Page", "floor": 7.0, "purpose": "success text on the host page" },
+    { "foreground": "DiffView.StatusWarningForegroundBrush", "background": "$Page", "floor": 7.0, "purpose": "warning text on the host page" },
+    { "foreground": "DiffView.StatusFailureForegroundBrush", "background": "$Page", "floor": 7.0, "purpose": "failure text on the host page" },
+    { "foreground": "DiffView.StatusActiveForegroundBrush", "background": "$Page", "floor": 7.0, "purpose": "active text on the host page" }
   ]
 }

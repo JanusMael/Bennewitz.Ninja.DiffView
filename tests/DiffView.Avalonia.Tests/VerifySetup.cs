@@ -29,8 +29,10 @@ internal static class VerifySetup
 
     private static Task<CompareResult> ComparePng(Stream received, Stream verified, IReadOnlyDictionary<string, object> context)
     {
-        using SKBitmap? receivedBitmap = SKBitmap.Decode(received);
-        using SKBitmap? verifiedBitmap = SKBitmap.Decode(verified);
+        // Decoded from copies: SkiaSharp closes a stream it decodes, and on a mismatch Verify
+        // reads the received stream again to write the .received file.
+        using SKBitmap? receivedBitmap = SKBitmap.Decode(ReadAll(received));
+        using SKBitmap? verifiedBitmap = SKBitmap.Decode(ReadAll(verified));
         if (receivedBitmap is null || verifiedBitmap is null)
         {
             return Task.FromResult(CompareResult.NotEqual("A PNG could not be decoded."));
@@ -57,6 +59,19 @@ internal static class VerifySetup
         return Task.FromResult(fraction <= MaxDifferingFraction
             ? CompareResult.Equal
             : CompareResult.NotEqual($"{fraction:P2} of pixels differ ({differing} of {receivedPixels.Length})."));
+    }
+
+    private static byte[] ReadAll(Stream stream)
+    {
+        long position = stream.CanSeek ? stream.Position : 0;
+        using MemoryStream buffer = new();
+        stream.CopyTo(buffer);
+        if (stream.CanSeek)
+        {
+            stream.Position = position;
+        }
+
+        return buffer.ToArray();
     }
 
     private static bool SamePixel(SKColor a, SKColor b)

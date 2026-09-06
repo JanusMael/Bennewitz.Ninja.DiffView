@@ -35,6 +35,13 @@ public static class DiffViewResources
     public static Uri PresenterThemeUri { get; } = new("avares://DiffView.Avalonia/Themes/DiffPanePresenter.axaml");
 
     /// <summary>
+    /// The control themes of <see cref="SideBySideDiffView"/>, <see cref="DiffPaneHeader"/> and
+    /// <see cref="DiffStatusStrip"/>; their compiled form, <see cref="SideBySideDiffViewTheme"/>,
+    /// travels with the controls the same way.
+    /// </summary>
+    public static Uri CompositeThemeUri { get; } = new("avares://DiffView.Avalonia/Themes/SideBySideDiffView.axaml");
+
+    /// <summary>
     /// The resource key of the panes' monospace font family, defined by <see cref="ThemeUri"/>
     /// as <c>Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace</c>. A host overrides
     /// the font by defining the same key in its own resources.

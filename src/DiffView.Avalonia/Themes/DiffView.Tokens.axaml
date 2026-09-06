@@ -109,13 +109,16 @@
       <SolidColorBrush x:Key="DiffView.StatusForegroundBrush" Color="#E8E8E8" />
 
       <!-- Status family: ClaudeForge's status-bar pills -->
-      <SolidColorBrush x:Key="DiffView.StatusSuccessForegroundBrush" Color="#5BD17B" />
+      <!-- Foregrounds one step brighter than ClaudeForge's: reused as plain text on the host
+           page they are held to 7:1, and Semi Dusk's #2D3236 and Simple's #282828 pages sat
+           between 5.7:1 and 6.9:1 against the originals. Each still clears 4.5:1 on its fill. -->
+      <SolidColorBrush x:Key="DiffView.StatusSuccessForegroundBrush" Color="#6ADB88" />
       <SolidColorBrush x:Key="DiffView.StatusSuccessBackgroundBrush" Color="#1C492A" />
-      <SolidColorBrush x:Key="DiffView.StatusWarningForegroundBrush" Color="#F0A03A" />
+      <SolidColorBrush x:Key="DiffView.StatusWarningForegroundBrush" Color="#F7B85A" />
       <SolidColorBrush x:Key="DiffView.StatusWarningBackgroundBrush" Color="#533B18" />
-      <SolidColorBrush x:Key="DiffView.StatusFailureForegroundBrush" Color="#F99090" />
+      <SolidColorBrush x:Key="DiffView.StatusFailureForegroundBrush" Color="#FFAEAE" />
       <SolidColorBrush x:Key="DiffView.StatusFailureBackgroundBrush" Color="#6D2B2B" />
-      <SolidColorBrush x:Key="DiffView.StatusActiveForegroundBrush" Color="#6BB1F2" />
+      <SolidColorBrush x:Key="DiffView.StatusActiveForegroundBrush" Color="#8FC8F7" />
       <SolidColorBrush x:Key="DiffView.StatusActiveBackgroundBrush" Color="#1F4262" />
     </ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries>

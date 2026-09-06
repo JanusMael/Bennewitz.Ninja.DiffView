@@ -433,3 +433,88 @@ The spike itself — `tests/DiffView.Avalonia.Tests/Spike` — stays: it proves 
 against two plain `TextEditor`s with no presenter in the way, which is the regression canary
 wanted when AvaloniaEdit or Avalonia is bumped, and it is the record Phase 1's verification
 table cites.
+
+## The composite takes a logger factory, not a logger
+
+The plan's public surface names `Logger (ILogger?)`. The library logs under four categories —
+`DiffViewLogCategories.Build`, `Render`, `Find`, `Theme` — and one `ILogger` carries one
+category, so `SideBySideDiffView.LoggerFactory` (`ILoggerFactory?`) creates the category loggers
+and hands the render one to the panes, whose own `Logger` stays as it was in Phase 4. Every log
+line is formatted in `DiffViewLog`, the one place the never-log-document-text rule is enforced:
+lines carry counts, codes, line numbers, lengths, paths and timings. The sentinel test runs the
+build, the render and a forced fault; the find leg of the plan's test waits for Phase 8, where
+find arrives.
+
+## The status controller runs on `TimeProvider`, and only its typed helpers emit
+
+`StatusController` is ClaudeForge's lifecycle — success clears after six seconds, warning after
+ten, failure sticks until dismissed, active and state stick until replaced, a new message
+cancels the pending clear — rewritten as a plain class with a `Changed` event rather than an
+MVVM-toolkit observable, and moved from `Task.Delay` with a test override onto
+`TimeProvider.CreateTimer`, so a hand-advanced clock in the tests fires the clear
+deterministically. `Set` is private; `SetActive`, `SetSuccess`, `SetWarning`, `SetFailure` and
+`SetState` are the only way to emit, which is what keeps a failure from rendering as quiet
+text. Timer callbacks are marshalled to the UI thread. The composite creates its controller on
+first use so a `TimeProvider` set right after construction is the one it runs on.
+
+## Dark status foregrounds brightened one step for 7:1 on the host page
+
+The plan holds the status pills to 4.5:1 on their fill and 7:1 on the page. ClaudeForge's Dark
+foregrounds cleared the fills but sat between 5.7:1 and 6.9:1 on the two lightest dark pages
+the audit knows — Semi Dusk's `#2D3236` and Simple's `#282828` — so Dark now carries
+`#6ADB88`, `#F7B85A`, `#FFAEAE` and `#8FC8F7` for success, warning, failure and active, each
+still above 4.5:1 on its fill and above 7:1 on every page under all ten targets; the Light
+values are ClaudeForge's verbatim. The four page pairs live in `contrast-pairs.json` at floor
+7.0, so the audit keeps holding them.
+
+## A rebuild keeps the model on an option change and drops it on a source change
+
+Changing an option rebuilds over the same documents, so the previous model stays on screen,
+marked stale in the strip, until the new one lands — the plan's "previous result stays on
+screen". Assigning a source replaces that side's `TextDocument`, and the previous model
+described the previous text, so it is cleared at once: the panes show plain text until the
+build lands rather than the old kinds over the new lines. A rebuild never replaces a
+`TextDocument`; the test holds caret, selection, scroll offset and the undo stack across one.
+
+## Latest wins by generation; cancellation is honoured between stages
+
+Each build increments a generation and cancels the previous token; the builder runs on the
+thread pool over text captured on the UI thread, and the outcome is applied on the UI thread
+only when its generation is still the latest — an older build that lands late is discarded
+with a `Debug` line. Cancellation and supersession are `Debug`; the Myers run itself is not
+interruptible, which is why the similarity gate runs first. Progress shows after
+`SlowBuildThreshold` (100 ms) on a `TimeProvider` timer, so a fast build never flashes it.
+
+## A render fault is raised after the render pass that caught it
+
+A decorator's throw is caught inside `TextView.Render`, and a listener that changes a
+pseudo-class or a property there trips Avalonia's "visual was invalidated during the render
+pass". `DiffPanePresenter.ReportFault` records and logs the fault at once and posts the
+`RenderFault` event to the dispatcher, so the composite's state change and the strip's failure
+pill land after the pass. A test reading the event runs the dispatcher once after the frame.
+
+## Horizontal scrollbars are equalised by need; the left vertical bar is hidden
+
+`Auto` would show a horizontal bar in one pane only, and a bar takes height from its viewport,
+so the composite sets both panes to `Visible` when either extent overflows its viewport and to
+`Hidden` otherwise, on every extent or viewport change. The left pane's vertical bar is hidden
+and the right one reflects both, since the primed extents are equal. `Hidden` still scrolls
+through the keyboard and the wheel; `Disabled` would switch AvaloniaEdit to word wrap.
+
+## The demo loads on `Opened`, and the smoke snapshot zeroes the build time
+
+A rendered frame carries no machine-specific text, and the strip shows the build time. The test
+host wraps the real builder to zero `DiffDiagnostics.BuildTime`, and the demo's window loads
+its sides on `Opened` rather than in its constructor so the smoke test can install the same
+wrapper between construction and the first build; the demo grants the test project
+`InternalsVisibleTo` for that one seam. The demo's colour-blind toggle merges the compiled
+`DiffViewColorBlindPalette` class, for the same trim reason as the presenter theme.
+
+## Pointer scrolling in the test: the thumb when the theme exposes one, otherwise the wheel
+
+The plan's "dragging the gutter" test drives the right pane's vertical scrollbar with headless
+pointer input. Semi's scrollbar may not expose a hit-testable thumb until hovered, so the test
+drags the thumb when it finds one with a size and otherwise scrolls with the wheel; either way
+it asserts that both offsets moved together and every shared row sits at the same
+document-relative top. The first visual line's top is not the comparison: a padding block
+straddling the viewport edge starts above it on one side only.
