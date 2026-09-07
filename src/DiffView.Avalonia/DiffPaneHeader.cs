@@ -26,6 +26,10 @@ public class DiffPaneHeader : TemplatedControl
     public static readonly StyledProperty<StatusKind> BadgeKindProperty =
         AvaloniaProperty.Register<DiffPaneHeader, StatusKind>(nameof(BadgeKind));
 
+    /// <summary>Identifies the <see cref="IsPaneFocused"/> property.</summary>
+    public static readonly StyledProperty<bool> IsPaneFocusedProperty =
+        AvaloniaProperty.Register<DiffPaneHeader, bool>(nameof(IsPaneFocused));
+
     /// <summary>Creates a header with its compiled theme merged into its own resources.</summary>
     public DiffPaneHeader()
     {
@@ -61,11 +65,22 @@ public class DiffPaneHeader : TemplatedControl
         set => SetValue(BadgeKindProperty, value);
     }
 
+    /// <summary>
+    /// Whether this side's pane has keyboard focus. The header shows it as an accent along its
+    /// bottom edge — the pane's own caret is the other half of the answer, and can be scrolled
+    /// out of sight. The accent is an overlay, so showing it moves nothing.
+    /// </summary>
+    public bool IsPaneFocused
+    {
+        get => GetValue(IsPaneFocusedProperty);
+        set => SetValue(IsPaneFocusedProperty, value);
+    }
+
     /// <inheritdoc/>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == BadgeKindProperty)
+        if (change.Property == BadgeKindProperty || change.Property == IsPaneFocusedProperty)
         {
             UpdatePseudoClasses();
         }
@@ -78,5 +93,6 @@ public class DiffPaneHeader : TemplatedControl
         PseudoClasses.Set(":badge-warning", kind == StatusKind.Warning);
         PseudoClasses.Set(":badge-failure", kind == StatusKind.Failure);
         PseudoClasses.Set(":badge-active", kind == StatusKind.Active);
+        PseudoClasses.Set(":pane-focused", IsPaneFocused);
     }
 }

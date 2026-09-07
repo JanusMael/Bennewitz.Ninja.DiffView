@@ -35,6 +35,27 @@
                   Click="OnToggleSyncHorizontal" AutomationProperties.Name="Couple horizontal scrolling of the panes" />
         <MenuItem x:Name="UseSyntax" Header="S_yntax highlighting" ToggleType="CheckBox" IsChecked="True"
                   Click="OnToggleSyntax" AutomationProperties.Name="Colour the panes from a grammar chosen by file extension" />
+        <Separator />
+        <MenuItem x:Name="ShowWhitespace" Header="Show w_hitespace" ToggleType="CheckBox"
+                  Click="OnToggleShowWhitespace" AutomationProperties.Name="Draw spaces and tabs as glyphs" />
+        <MenuItem x:Name="ShowLineEndings" Header="Show line _endings" ToggleType="CheckBox"
+                  Click="OnToggleShowLineEndings" AutomationProperties.Name="Draw a glyph at the end of each line" />
+        <MenuItem Header="_Tab width" AutomationProperties.Name="Tab width">
+          <MenuItem x:Name="Tab2" Header="_2" ToggleType="Radio" GroupName="tab"
+                    Click="OnTabWidth" Tag="2" AutomationProperties.Name="Tab width of two columns" />
+          <MenuItem x:Name="Tab4" Header="_4" ToggleType="Radio" GroupName="tab" IsChecked="True"
+                    Click="OnTabWidth" Tag="4" AutomationProperties.Name="Tab width of four columns" />
+          <MenuItem x:Name="Tab8" Header="_8" ToggleType="Radio" GroupName="tab"
+                    Click="OnTabWidth" Tag="8" AutomationProperties.Name="Tab width of eight columns" />
+        </MenuItem>
+        <MenuItem Header="Pane font si_ze" AutomationProperties.Name="Pane font size">
+          <MenuItem x:Name="FontTheme" Header="_Theme" ToggleType="Radio" GroupName="panefont" IsChecked="True"
+                    Click="OnPaneFontSize" AutomationProperties.Name="The font size the pane theme sets" />
+          <MenuItem x:Name="Font16" Header="1_6" ToggleType="Radio" GroupName="panefont"
+                    Click="OnPaneFontSize" Tag="16" AutomationProperties.Name="Pane font size of sixteen" />
+          <MenuItem x:Name="Font20" Header="_20" ToggleType="Radio" GroupName="panefont"
+                    Click="OnPaneFontSize" Tag="20" AutomationProperties.Name="Pane font size of twenty" />
+        </MenuItem>
       </MenuItem>
       <MenuItem Header="_Debug" AutomationProperties.Name="Debug menu">
         <MenuItem Header="Show live _log (F12)" Click="OnToggleLiveLog" AutomationProperties.Name="Show live log window" />

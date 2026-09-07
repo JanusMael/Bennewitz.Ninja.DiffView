@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView.Core;
@@ -112,6 +113,29 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Identifies the <see cref="UseSyntaxHighlighting"/> property.</summary>
     public static readonly StyledProperty<bool> UseSyntaxHighlightingProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(UseSyntaxHighlighting), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="ShowWhitespace"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowWhitespaceProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowWhitespace));
+
+    /// <summary>Identifies the <see cref="ShowLineEndings"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowLineEndingsProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowLineEndings));
+
+    /// <summary>Identifies the <see cref="TabWidth"/> property. Coerced to at least 1.</summary>
+    public static readonly StyledProperty<int> TabWidthProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, int>(
+            nameof(TabWidth),
+            defaultValue: 4,
+            coerce: static (_, value) => Math.Max(1, value));
+
+    /// <summary>Identifies the <see cref="PaneFontSize"/> property. <see cref="double.NaN"/> leaves the panes' own.</summary>
+    public static readonly StyledProperty<double> PaneFontSizeProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, double>(nameof(PaneFontSize), defaultValue: double.NaN);
+
+    /// <summary>Identifies the <see cref="PaneFontFamily"/> property. <c>null</c> leaves the panes' own.</summary>
+    public static readonly StyledProperty<FontFamily?> PaneFontFamilyProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, FontFamily?>(nameof(PaneFontFamily));
 
     /// <summary>Identifies the <see cref="LeftPaneName"/> property.</summary>
     public static readonly StyledProperty<string> LeftPaneNameProperty =
@@ -424,6 +448,52 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(UseSyntaxHighlightingProperty);
         set => SetValue(UseSyntaxHighlightingProperty, value);
+    }
+
+    /// <summary>Whether both panes draw spaces and tabs as glyphs. Off by default.</summary>
+    public bool ShowWhitespace
+    {
+        get => GetValue(ShowWhitespaceProperty);
+        set => SetValue(ShowWhitespaceProperty, value);
+    }
+
+    /// <summary>Whether both panes draw a line terminator at the end of each line. Off by default.</summary>
+    public bool ShowLineEndings
+    {
+        get => GetValue(ShowLineEndingsProperty);
+        set => SetValue(ShowLineEndingsProperty, value);
+    }
+
+    /// <summary>
+    /// Columns a tab advances to in both panes, 4 by default and never below 1. Rows keep their
+    /// heights, so the panes stay aligned across a change.
+    /// </summary>
+    public int TabWidth
+    {
+        get => GetValue(TabWidthProperty);
+        set => SetValue(TabWidthProperty, value);
+    }
+
+    /// <summary>
+    /// The panes' font size, or <see cref="double.NaN"/> — the default — to leave the size their
+    /// own theme sets. Changing it re-primes both panes, so the row heights and the two extents
+    /// follow it.
+    /// </summary>
+    public double PaneFontSize
+    {
+        get => GetValue(PaneFontSizeProperty);
+        set => SetValue(PaneFontSizeProperty, value);
+    }
+
+    /// <summary>
+    /// The panes' font family, or <c>null</c> — the default — to leave the family their theme
+    /// sets, which is the <c>DiffView.MonospaceFontFamily</c> stack a host can redefine. Changing
+    /// it re-primes both panes.
+    /// </summary>
+    public FontFamily? PaneFontFamily
+    {
+        get => GetValue(PaneFontFamilyProperty);
+        set => SetValue(PaneFontFamilyProperty, value);
     }
 
     /// <summary>The left pane's automation name, from <see cref="DiffViewStrings"/>.</summary>
@@ -1031,27 +1101,21 @@ public class SideBySideDiffView : TemplatedControl
         }
         else if (change.Property == IsCaretBlinkEnabledProperty)
         {
-            if (_leftPane is not null)
-            {
-                _leftPane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
-            }
-
-            if (_rightPane is not null)
-            {
-                _rightPane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
-            }
+            ForEachPane(pane => pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled);
         }
         else if (change.Property == UseSyntaxHighlightingProperty)
         {
-            if (_leftPane is not null)
-            {
-                _leftPane.UseSyntaxHighlighting = UseSyntaxHighlighting;
-            }
-
-            if (_rightPane is not null)
-            {
-                _rightPane.UseSyntaxHighlighting = UseSyntaxHighlighting;
-            }
+            ForEachPane(pane => pane.UseSyntaxHighlighting = UseSyntaxHighlighting);
+        }
+        else if (change.Property == ShowWhitespaceProperty
+                 || change.Property == ShowLineEndingsProperty
+                 || change.Property == TabWidthProperty)
+        {
+            ForEachPane(ApplyDisplayOptions);
+        }
+        else if (change.Property == PaneFontSizeProperty || change.Property == PaneFontFamilyProperty)
+        {
+            ForEachPane(ApplyPaneFont);
         }
         else if (change.Property == StateProperty || change.Property == BannerKindProperty)
         {
@@ -1444,6 +1508,7 @@ public class SideBySideDiffView : TemplatedControl
             return;
         }
 
+        header.IsPaneFocused = FocusedSide == side;
         header.Title = source?.Title
                        ?? (source?.Path is { } path ? Path.GetFileName(path) : null)
                        ?? DiffViewStrings.Get(side == DiffSide.Left ? DiffViewStrings.LeftTitle : DiffViewStrings.RightTitle);
@@ -1619,6 +1684,8 @@ public class SideBySideDiffView : TemplatedControl
         pane.Logger = _renderLogger;
         pane.UseSyntaxHighlighting = UseSyntaxHighlighting;
         pane.SyntaxFileName = SyntaxFileNameOf(side == DiffSide.Left ? LeftSource : RightSource);
+        ApplyDisplayOptions(pane);
+        ApplyPaneFont(pane);
         // The left bar is hidden and the right one reflects both: after priming the extents are equal.
         pane.VerticalScrollBarVisibility = side == DiffSide.Left ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
         pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
@@ -1627,6 +1694,52 @@ public class SideBySideDiffView : TemplatedControl
         pane.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         pane.TextArea.GotFocus += OnPaneGotFocus;
         pane.TextArea.LostFocus += OnPaneLostFocus;
+    }
+
+    /// <summary>Runs <paramref name="action"/> over whichever panes the template has produced.</summary>
+    private void ForEachPane(Action<DiffPanePresenter> action)
+    {
+        if (_leftPane is not null)
+        {
+            action(_leftPane);
+        }
+
+        if (_rightPane is not null)
+        {
+            action(_rightPane);
+        }
+    }
+
+    private void ApplyDisplayOptions(DiffPanePresenter pane)
+    {
+        pane.ShowWhitespace = ShowWhitespace;
+        pane.ShowLineEndings = ShowLineEndings;
+        pane.TabWidth = TabWidth;
+    }
+
+    /// <summary>
+    /// The font, when this control names one: an unset size or family leaves the pane's own
+    /// theme in charge, so the local value is cleared rather than overwritten with a default.
+    /// </summary>
+    private void ApplyPaneFont(DiffPanePresenter pane)
+    {
+        if (double.IsNaN(PaneFontSize))
+        {
+            pane.ClearValue(FontSizeProperty);
+        }
+        else
+        {
+            pane.FontSize = PaneFontSize;
+        }
+
+        if (PaneFontFamily is { } family)
+        {
+            pane.FontFamily = family;
+        }
+        else
+        {
+            pane.ClearValue(FontFamilyProperty);
+        }
     }
 
     private void DetachParts()
@@ -2306,6 +2419,18 @@ public class SideBySideDiffView : TemplatedControl
         {
             CaretLine = pane.TextArea.Caret.Line;
             CaretColumn = pane.TextArea.Caret.Column;
+        }
+
+        // Which pane has focus is a header state as well as a caret: the accent says so where the
+        // caret cannot, having been scrolled away.
+        if (_leftHeader is not null)
+        {
+            _leftHeader.IsPaneFocused = FocusedSide == DiffSide.Left;
+        }
+
+        if (_rightHeader is not null)
+        {
+            _rightHeader.IsPaneFocused = FocusedSide == DiffSide.Right;
         }
 
         UpdateStrip();

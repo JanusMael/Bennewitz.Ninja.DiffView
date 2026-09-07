@@ -35,6 +35,7 @@
     // Headers and status strip.
     { "foreground": "DiffView.HeaderForegroundBrush", "background": "DiffView.HeaderBackgroundBrush", "floor": 4.5, "purpose": "header text" },
     { "foreground": "DiffView.MutedForegroundBrush", "background": "DiffView.HeaderBackgroundBrush", "floor": 4.5, "purpose": "muted header text" },
+    { "foreground": "DiffView.FocusAccentBrush", "background": "DiffView.HeaderBackgroundBrush", "floor": 3.0, "purpose": "focus accent under the focused pane's header" },
     { "foreground": "DiffView.StatusForegroundBrush", "background": "DiffView.StatusBackgroundBrush", "floor": 4.5, "purpose": "status text" },
     { "foreground": "DiffView.MutedForegroundBrush", "background": "DiffView.StatusBackgroundBrush", "floor": 4.5, "purpose": "muted status text" },
     { "foreground": "DiffView.StatusSuccessForegroundBrush", "background": "DiffView.StatusSuccessBackgroundBrush", "floor": 4.5, "purpose": "success pill" },

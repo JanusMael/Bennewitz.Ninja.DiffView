@@ -134,6 +134,19 @@ All notable changes to DiffView are recorded here. The format follows
   the pixel assertion that an inserted row keeps its fill with the token colours over it;
   `fixtures/json`, `SyntaxProbe` and `CompositeHost.PumpUntilAsync` as fixtures.
 
+- Phase 10, scale, visibility and accessibility: `ShowWhitespace`, `ShowLineEndings` and
+  `TabWidth` on the presenter and the composite, written onto the editor's `TextEditorOptions`
+  and re-applied when a host replaces them; `PaneFontSize` and `PaneFontFamily`, which leave the
+  pane theme's own when unset and re-prime when they change; the focused pane accented under its
+  header on a new `DiffView.FocusAccentBrush` (in both palettes, in `contrast-pairs.json` and in
+  the regenerated `docs/theme-audit.md`); the demo's View menu gaining whitespace, line endings,
+  tab width and pane font size.
+- Headless tests for the view options, the tab width, the pane font and family, the
+  mixed-line-ending notice, per-pane copy with read-only holding against paste and typing, the
+  focus accent and F6, and a runtime sweep of every decorator's automation name; a snapshot of
+  the options and the accent in both variants; `ScalePerfTests` measuring the 200,000-line pair
+  and the one-megabyte line from build to scroll, with the numbers in `PROGRESS.md`.
+
 ### Changed
 
 - The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and

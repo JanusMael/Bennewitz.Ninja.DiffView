@@ -214,35 +214,51 @@
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Template">
       <ControlTemplate>
-        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-          <DockPanel>
-            <Border Name="PART_Badge"
-                    DockPanel.Dock="Right"
-                    Margin="8,0,0,0"
-                    Padding="4,1"
-                    CornerRadius="3"
-                    VerticalAlignment="Center"
-                    IsVisible="{TemplateBinding Badge, Converter={x:Static ObjectConverters.IsNotNull}}"
-                    ToolTip.Tip="{TemplateBinding Badge}"
-                    AutomationProperties.Name="{TemplateBinding Badge}">
-              <TextBlock Name="PART_BadgeText" Text="{TemplateBinding Badge}" FontSize="11" FontWeight="SemiBold" />
+        <Border Background="{TemplateBinding Background}">
+          <Grid>
+            <!-- The focus accent is an overlay on the header's bottom edge: collapsed it
+                 measures nothing, so a pane taking focus moves no row and no pixel outside
+                 the header itself. -->
+            <Border Name="PART_FocusAccent"
+                    Height="2"
+                    VerticalAlignment="Bottom"
+                    IsVisible="False"
+                    Background="{DynamicResource DiffView.FocusAccentBrush}" />
+            <Border Padding="{TemplateBinding Padding}">
+              <DockPanel>
+                <Border Name="PART_Badge"
+                        DockPanel.Dock="Right"
+                        Margin="8,0,0,0"
+                        Padding="4,1"
+                        CornerRadius="3"
+                        VerticalAlignment="Center"
+                        IsVisible="{TemplateBinding Badge, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        ToolTip.Tip="{TemplateBinding Badge}"
+                        AutomationProperties.Name="{TemplateBinding Badge}">
+                  <TextBlock Name="PART_BadgeText" Text="{TemplateBinding Badge}" FontSize="11" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Name="PART_Detail"
+                           DockPanel.Dock="Right"
+                           Margin="8,0,0,0"
+                           Text="{TemplateBinding Detail}"
+                           Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                           VerticalAlignment="Center" />
+                <TextBlock Name="PART_Title"
+                           Text="{TemplateBinding Title}"
+                           Foreground="{TemplateBinding Foreground}"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+              </DockPanel>
             </Border>
-            <TextBlock Name="PART_Detail"
-                       DockPanel.Dock="Right"
-                       Margin="8,0,0,0"
-                       Text="{TemplateBinding Detail}"
-                       Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
-                       VerticalAlignment="Center" />
-            <TextBlock Name="PART_Title"
-                       Text="{TemplateBinding Title}"
-                       Foreground="{TemplateBinding Foreground}"
-                       FontWeight="SemiBold"
-                       TextTrimming="CharacterEllipsis"
-                       VerticalAlignment="Center" />
-          </DockPanel>
+          </Grid>
         </Border>
       </ControlTemplate>
     </Setter>
+
+    <Style Selector="^:pane-focused /template/ Border#PART_FocusAccent">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
 
     <Style Selector="^:badge-success /template/ Border#PART_Badge">
       <Setter Property="Background" Value="{DynamicResource DiffView.StatusSuccessBackgroundBrush}" />

@@ -2,9 +2,10 @@
 
 ## Resume
 
-**Phase 9 — Syntax highlighting** of [plan 00001](plans/00001-side-by-side-diff-control.md) is
-complete on `main`; phases 0 through 9 are done, and what remains of the plan is the
-scale-and-accessibility pass and the optional inline view. `SideBySideDiffView` compares two
+**Phase 10 — Scale, visibility, accessibility** of
+[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`; phases 0 through 10
+are done, and what remains of the plan is the optional inline view. `SideBySideDiffView` compares
+two
 `PaneSource`s: two `DiffPanePresenter`s over the sources' own documents, with rendered padding
 holding the rows level, row and word-level highlights, line-number and change-marker gutters,
 headers, a banner for what failed or was skipped, a status strip, a connector gutter between the
@@ -23,16 +24,19 @@ and every log line through `DiffViewLog`, which never carries document text — 
 either, only its length. Each pane also colours its text from a TextMate grammar chosen by the
 side's file extension, with the theme following the variant, under everything the diff draws; an
 extension no grammar claims is plain text and not a failure, and a grammar that will not install
-turns itself off and leaves the control `Degraded` with the language named. The demo hosts the
-control with file-open, option toggles, Find, syntax highlighting and the colour-blind palette.
+turns itself off and leaves the control `Degraded` with the language named. Whitespace glyphs,
+line-ending glyphs, the tab width and the pane font are the view options, each pushed to both
+panes and none of them touching a row's height; the focused pane is accented under its header;
+each pane copies its own selection while read-only holds against typing and pasting; and every
+decorator announces itself. The demo hosts the control with file-open, option toggles, Find,
+syntax highlighting, the view options and the colour-blind palette.
 
-Next is **Phase 10 — Scale, visibility, accessibility** (plan §Phase 10): the 200k-line and
-1 MB-single-line fixtures measured for build, priming, first paint and scroll latency, with the
-numbers recorded here and the DiffPlex vendoring decision made if the budget is missed;
-`ShowWhitespace`, `ShowLineEndings`, `TabWidth`, the mixed-line-ending notice and a font-family
-fallback list that re-primes on a runtime font change; copy per pane with read-only enforced
-against paste and typing; focus visuals and an automation name on every decorator. Done-when
-tests in plan §Phase 10. Phase 11 is the optional inline view.
+Next is **Phase 11 — Inline (unified) view** (plan §Phase 11, optional): `InlineDiffView` reusing
+the renderer, margins, status strip, find bar and state machine on a single presenter fed from the
+same `Rows`, with the find scope control collapsing to the one pane. Done when the same fixtures
+render in unified form with matching change counts, the same find results and the same failure
+behaviour. Windows and macOS demo runs are still owed from Phase 10, and this session cannot
+screenshot a window (XWayland refuses the grab), so a look at the running demo is the user's.
 
 Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the
 merge (see *Upstreamed to ClaudeForge*).
@@ -62,8 +66,26 @@ dotnet run --project src/ThemeAudit -- report
 | 7 Navigation, minimap, connectors, tooltips | done | `CurrentChangeIndex` + commands + F7 / Shift+F7 / F6, current-block border, "change i of n"; `DiffMinimap`; `ChangeConnectorGutter` with `SplitRatio`; tooltips on line numbers, markers, connectors and the minimap; 9 headless and snapshot test cases |
 | 8 Find | done | `DiffFindBar` (query, Match case / Whole word / Regex / Changed rows only, L / R / Both scope, count, prev / next / close, inline error and truncation notice); `SearchMatchRenderer` per pane over `KnownLayer.Selection`; debounced, cancellable searches over `DocumentPaneText` snapshots, off the UI thread above 2,000 rows; minimap match ticks; the strip's find lane; Ctrl+F / F3 / Shift+F3 / Enter / Shift+Enter / Escape; 9 headless and snapshot test cases plus the sentinel log test's find leg |
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
-| 10 Scale, visibility, accessibility | not started | |
+| 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 10 verification
+
+| Done-when item | Result |
+|---|---|
+| 200k-line fixture opens and scrolls without visible stalls; the 1 MB line renders; numbers in `PROGRESS.md` | pass: `ScalePerfTests` (`Perf` trait) — the 200,000-line pair (204,001 rows, 4,000 blocks) builds in 297 ms, is loaded, primed and laid out 1,243 ms after the sources are assigned, paints its first frame in 14 ms, and scrolls to the middle, to the end and back in 20 / 17 / 17 ms; the one-megabyte single line builds in 16 ms, is up in 612 ms, paints in 55 ms and scrolls sideways to the middle of the line in 54 ms. Both are in *Measurements*. The build is well inside the budget, so DiffPlex is **not** vendored (`DECISIONS.md`) |
+| Headless test: a `FontSize` change leaves both extents equal | pass: `ViewOptionsTests.A_font_size_change_re_primes_both_panes_and_leaves_their_extents_equal` — `PaneFontSize = 22` gives taller rows and a taller document with the two extents still equal, and clearing it back to `NaN` returns the panes to the size their own theme sets, extents equal again; `A_pane_font_family_change_reaches_both_panes_and_clears_back_to_the_theme` is the family's half |
+| Demo runs cleanly on this Linux box; Windows and macOS runs are recorded when available | pass: the demo boots on this Wayland session against two `.cs` files, colourises both panes, builds and reaches `Ready` with no fault; its View menu now carries whitespace, line endings, tab width and pane font size. Windows and macOS runs are still owed; the window itself cannot be screenshotted from this session (XWayland refuses the grab) |
+| `ShowWhitespace`, `ShowLineEndings`, `TabWidth` | pass: `Whitespace_and_line_ending_glyphs_reach_both_panes_and_put_more_ink_on_the_page` (the options reach both panes' `TextEditorOptions` and the frame gains ink, which returns exactly to its old count when they go off) and `A_tab_width_change_moves_text_sideways_and_leaves_the_rows_and_the_extents_alone` (the first text column moves right, the line height does not move, the extents stay equal, and a width of 0 is floored to 1) |
+| Mixed-line-ending notice | pass: `Mixed_line_endings_are_noticed_in_the_state_and_the_strip` — a CRLF/LF pair leaves the control `Degraded` with the warning in `StateMessage`, the strip's transient lane carrying it as a warning, and the header naming the convention per side |
+| Font-family fallback list for Linux/macOS/Windows | already in `Themes/DiffView.axaml`: `Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace` — the first installed family of the stack, with the tests overriding the key with the bundled font so frames stay machine-independent |
+| Copy selection works per pane; read-only is enforced against paste and typing | pass: `InteractionTests.Each_pane_copies_its_own_selection_and_read_only_holds_against_typing_and_pasting` — each pane copies its own selection to the clipboard (read back through `TryGetTextAsync`), and with `INJECTED` on the clipboard neither `Paste()` nor a keystroke changes a character in either document; `CanPaste` is false while read-only. `DiffPanePresenterTests.IsReadOnly_is_honoured_and_defaults_to_true` covers typing at the presenter |
+| Focus visuals; automation names on every decorator | pass: `The_focused_pane_is_accented_in_its_header_and_F6_moves_the_accent` — no accent pixels while nothing has focus, the accent under the focused pane's header only, and F6 moves it to the other side; `Every_decorator_the_composite_builds_carries_an_automation_name` sweeps the panes, both margins of each, the connector gutter, the minimap, the status strip and the find bar at runtime, where the XAML guard cannot see the margins because they are built in code |
+| Snapshot | `ViewOptionsSnapshotTests.The_view_options_and_the_focus_accent_render` Light and Dark — tab arrows, space dots and `\n` glyphs at a tab width of 8 and a pane font of 16, with the focus accent under the right header; reviewed and approved |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 295 passed (285 before the phase); 6 `Perf` tests excluded, 2 of them new |
+| New headless tests proven able to fail | six mutations: dropping `ShowSpaces`/`ShowTabs`/`IndentationSize` failed the whitespace and tab-width tests; clearing the pane font instead of setting it failed the font test; not pushing focus into the headers failed the focus test; dropping the margins' automation name failed the decorator sweep; and reporting the mixed-line-ending warning as a success failed the notice test |
+| Theme audit regenerated | `theme-audit compat` then `report` after the new `DiffView.FocusAccentBrush`: `docs/theme-audit.md` scores it 5.22:1 (light) and 6.45:1 (dark) against the header background, 0 low-contrast findings, and the drift test passes |
 
 ## Phase 9 verification
 
@@ -256,7 +278,9 @@ dotnet run --project src/ThemeAudit -- report
 
 | What | Value | Where |
 |---|---|---|
-| Test run, all three projects | ~20 s for 285 tests (~8 s at Phase 5's 200) | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter and composite tests render under all ten theme targets; the syntax tests wait on TextMateSharp's tokenizer thread |
+| Test run, all three projects | ~20 s for 295 tests (~8 s at Phase 5's 200) | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter and composite tests render under all ten theme targets; the syntax tests wait on TextMateSharp's tokenizer thread |
+| The 200,000-line pair in the composite (204,001 rows, 4,000 blocks) | build 297 ms; sources assigned through prime and layout 1,243 ms; first frame 14 ms; scroll to middle 20 ms, to end 17 ms, back to top 17 ms | `ScalePerfTests.The_200k_line_pair_builds_primes_paints_and_scrolls`, this machine, Debug. The left pane primes 4,000 padded lines and the right none: this fixture only inserts and modifies, so every gap falls on the left |
+| The 1 MB single line in the composite | build 16 ms; assigned through prime and layout 612 ms; first frame 55 ms; scroll to the middle of the line 54 ms | `ScalePerfTests.The_one_megabyte_single_line_renders_and_scrolls_sideways`, same machine and configuration |
 | Trimmed self-contained publish of the demo, linux-x64 | 57 MB after Phase 9 — TextMateSharp's grammars and themes (51 MB after Phase 5, 50 MB after Phase 4, 48 MB through Phase 3) | `dotnet publish -c Release -r linux-x64 --self-contained true` |
 | Priming 10,000 padding gaps in one pass | 10.3–10.5 s (two runs) | `Item6_priming_cost_for_ten_thousand_gaps`, this machine, Debug; quadratic in the text view's built-line list |
 | Priming 10,000 padding gaps in batches of 256 with `Redraw()` between batches | 200–240 ms (two runs) | same test, including the layout pass that republishes the extent |

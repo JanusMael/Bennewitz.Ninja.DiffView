@@ -7,7 +7,7 @@ not a rewrite. A second, standalone deliverable is `theme-audit`, a dotnet tool 
 resource keys an Avalonia theme leaves undefined (the invisible-control cases) and the tokens
 below a contrast floor, for any Avalonia project.
 
-Status: **Phase 9 — syntax highlighting — complete; Phase 10, scale, visibility and accessibility, is next.** The
+Status: **Phase 10 — scale, visibility and accessibility — complete; only the optional inline view remains.** The
 theme audit report is [docs/theme-audit.md](docs/theme-audit.md). The plan is
 [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
 progress is tracked in [PROGRESS.md](PROGRESS.md), decisions in [DECISIONS.md](DECISIONS.md),

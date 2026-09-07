@@ -80,6 +80,22 @@ no dates, no counts.
 - A new colour token goes into `DiffView.Tokens.axaml`, `DiffView.Tokens.ColorBlind.axaml` and
   `contrast-pairs.json` together; `ThemeResolutionTests.Every_DiffView_token_resolves_in_both_palettes`
   asserts the two palettes define the same keys.
+- The **view options** — `ShowWhitespace` (which covers spaces *and* tabs), `ShowLineEndings` and
+  `TabWidth` (`IndentationSize`, coerced to at least 1) — are written onto the editor's
+  `TextEditorOptions` by `DiffPanePresenter.ApplyDisplayOptions`, which also runs when a host
+  replaces `Options` wholesale. None of them changes a row's height, so none re-primes; anything
+  added here that *would* change a row's height must (test
+  `ViewOptionsTests.A_tab_width_change_moves_text_sideways_and_leaves_the_rows_and_the_extents_alone`).
+- The **pane font** is `SideBySideDiffView.PaneFontSize` / `PaneFontFamily`, and `double.NaN` /
+  `null` mean "leave the pane theme's own": `ApplyPaneFont` clears the local value rather than
+  writing a default over it. Inheriting `FontSize` into the panes does not work — the presenter's
+  `ControlTheme` setter beats an inherited value. A size change re-primes through
+  `PaddingHeightPrimer.LineHeightChanged`; test
+  `ViewOptionsTests.A_font_size_change_re_primes_both_panes_and_leaves_their_extents_equal`.
+- The **focus accent** is a collapsed overlay in the header's template (`PART_FocusAccent`, the
+  `:pane-focused` pseudo-class, `DiffView.FocusAccentBrush`), never a border thickness: an
+  unfocused header must lay out exactly as it did before it existed, so focus moves no row.
+  `SideBySideDiffView.UpdateCaret` and `UpdateHeader` are the two places that set it.
 - The **syntax** theme follows `ActualThemeVariant` and nothing else: `ThemeName.DarkPlus` under
   Dark, `ThemeName.LightPlus` otherwise (`SyntaxHighlighting.ThemeNameFor`), re-applied from
   `DiffPanePresenter.OnThemeVariantChanged`. The colour-blind palette is a `DiffView.*` matter and

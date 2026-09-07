@@ -748,3 +748,65 @@ no reflection, no `System.Text.Json` — which is why. The published output grew
 The trimmed binary was then run against two real `.cs` files, and its log carries
 `Syntax highlighting on the "Left" pane: csharp` for both sides with no fault and a plain
 `Ready` — the grammars resolve from the trimmed assembly at runtime, not only in the test host.
+
+## The view options are the editor's own, pushed down from the composite
+
+`ShowWhitespace`, `ShowLineEndings` and `TabWidth` exist on both `DiffPanePresenter` and
+`SideBySideDiffView`; the composite's are pushed onto both panes, and each pane writes them onto
+its `TextEditorOptions` — `ShowWhitespace` covering `ShowSpaces` **and** `ShowTabs`, because a
+reader who wants to see one wants to see the other, and `TabWidth` mapping to `IndentationSize`,
+coerced to at least 1 rather than throwing at a caller who computed a zero.
+
+`DiffPanePresenter.ApplyDisplayOptions` also runs when `Options` itself changes, so a host that
+replaces the whole options object does not silently lose them.
+
+None of the three re-primes. A glyph is drawn inside the row it belongs to and a tab moves text
+sideways: the row heights, and with them the padded heights the two extents are built from, do
+not move. The tab-width test asserts exactly that — the first text column moves right, the
+default line height does not move, and the extents stay equal.
+
+## The pane font is named by the composite, never inherited into it
+
+`PaneFontSize` (`double.NaN` by default) and `PaneFontFamily` (`null` by default) mean "leave the
+panes' own theme in charge", and `ApplyPaneFont` *clears* the local value rather than writing a
+default over it. The obvious alternative — let `FontSize` inherit from the composite into the
+panes — does not work: `DiffPanePresenter`'s control theme sets `FontSize` and `FontFamily`, and a
+`ControlTheme` setter beats an inherited value, so the inheritance would be silently ignored until
+some ancestor changed its font, at which point every pane would jump to it. An explicit property
+that a host sets on purpose is the honest version of the same feature.
+
+A size change re-primes through the Phase 4 path — `PaddingHeightPrimer.LineHeightChanged` sees
+the moved default line height on the next `LayoutUpdated` — which is what the plan's done-when
+test asserts: after `PaneFontSize = 22` the rows are taller, the document is taller, and the two
+extents are still equal.
+
+## The focus accent is an overlay, so taking focus moves nothing
+
+Which pane has focus was visible only as a caret, and a caret can be scrolled out of sight. The
+focused pane's header now carries a 2 px accent along its bottom edge, in a new
+`DiffView.FocusAccentBrush` (the same blues as the current-block border, 5.22:1 light and 6.45:1
+dark against the header background, against a 3.0 floor for non-text UI).
+
+It is a `Grid` overlay with `IsVisible="False"`, not a border thickness: a collapsed overlay
+measures nothing, so an unfocused header lays out exactly as it did before this phase and no row,
+gutter or connector moves when focus arrives. That is also why no snapshot from Phases 4 through 9
+had to be re-approved for it.
+
+`SideBySideDiffView.UpdateCaret` is where it is set, because that is the one place that already
+runs on every focus change, and `UpdateHeader` sets it again when the headers are rebuilt.
+
+## Avalonia 12 renamed the clipboard's read
+
+`IClipboard.GetTextAsync` is `TryGetTextAsync` in Avalonia 12; `SetTextAsync` is unchanged. The
+headless platform implements both, so the per-pane copy test reads back what the pane put there
+rather than asserting on `CanCopy` alone.
+
+## No DiffPlex vendoring: the Myers run is inside the budget
+
+The plan left open whether to vendor DiffPlex's `Differ` with a cancellation check if a realistic
+large pair ran too long. It does not: the 200,000-line pair (204,001 rows, 4,000 blocks) builds in
+**297 ms** on this machine in Debug, on a worker, with the control showing its previous result
+marked stale meanwhile. The build is already cancellable between stages, and a cancelled build's
+result is discarded by generation. Vendoring would buy cancellation *within* one Myers run for a
+cost that nothing in the measurements justifies, so it is not done; the numbers are in
+`PROGRESS.md` and the decision is revisited only if a real pair misses the budget.

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -188,6 +189,35 @@ public sealed partial class MainWindow : Window
         // The bundled fixture is .txt, which no grammar claims: open a .cs or .json file, or pass
         // --left / --right, to see this do anything.
         Diff.UseSyntaxHighlighting = UseSyntax.IsChecked;
+    }
+
+    private void OnToggleShowWhitespace(object? sender, RoutedEventArgs e)
+    {
+        Diff.ShowWhitespace = ShowWhitespace.IsChecked;
+    }
+
+    private void OnToggleShowLineEndings(object? sender, RoutedEventArgs e)
+    {
+        Diff.ShowLineEndings = ShowLineEndings.IsChecked;
+    }
+
+    private void OnTabWidth(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { Tag: string tag } && int.TryParse(tag, CultureInfo.InvariantCulture, out int width))
+        {
+            Diff.TabWidth = width;
+        }
+    }
+
+    /// <summary>
+    /// A size, or the pane theme's own when the item carries no tag. Changing it re-primes the
+    /// padded rows, which is what keeps the two panes' extents equal across a font change.
+    /// </summary>
+    private void OnPaneFontSize(object? sender, RoutedEventArgs e)
+    {
+        Diff.PaneFontSize = sender is MenuItem { Tag: string tag } && double.TryParse(tag, CultureInfo.InvariantCulture, out double size)
+            ? size
+            : double.NaN;
     }
 
     private void OnFind(object? sender, RoutedEventArgs e)

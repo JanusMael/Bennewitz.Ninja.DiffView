@@ -50,6 +50,21 @@ public class DiffPanePresenter : TextEditor
     public static readonly StyledProperty<string?> SyntaxFileNameProperty =
         AvaloniaProperty.Register<DiffPanePresenter, string?>(nameof(SyntaxFileName));
 
+    /// <summary>Identifies the <see cref="ShowWhitespace"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowWhitespaceProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(ShowWhitespace));
+
+    /// <summary>Identifies the <see cref="ShowLineEndings"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowLineEndingsProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(ShowLineEndings));
+
+    /// <summary>Identifies the <see cref="TabWidth"/> property. Coerced to at least 1.</summary>
+    public static readonly StyledProperty<int> TabWidthProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, int>(
+            nameof(TabWidth),
+            defaultValue: 4,
+            coerce: static (_, value) => Math.Max(1, value));
+
     private readonly PaddingElementGenerator _generator;
     private readonly PaddingHeightPrimer _primer = new();
     private readonly DiffLineBackgroundRenderer _backgroundRenderer;
@@ -187,6 +202,30 @@ public class DiffPanePresenter : TextEditor
     /// while it is plain text.
     /// </summary>
     public string? SyntaxLanguageId => _syntax?.Installed?.LanguageId;
+
+    /// <summary>Whether spaces and tabs are drawn as glyphs. Off by default.</summary>
+    public bool ShowWhitespace
+    {
+        get => GetValue(ShowWhitespaceProperty);
+        set => SetValue(ShowWhitespaceProperty, value);
+    }
+
+    /// <summary>Whether a line terminator is drawn at the end of its line. Off by default.</summary>
+    public bool ShowLineEndings
+    {
+        get => GetValue(ShowLineEndingsProperty);
+        set => SetValue(ShowLineEndingsProperty, value);
+    }
+
+    /// <summary>
+    /// Columns a tab advances to, 4 by default and never below 1. A width change moves text
+    /// sideways only: rows keep their heights, so the panes stay aligned.
+    /// </summary>
+    public int TabWidth
+    {
+        get => GetValue(TabWidthProperty);
+        set => SetValue(TabWidthProperty, value);
+    }
 
     /// <summary>Receives faults at <c>Error</c> with the exception attached; never document text.</summary>
     public ILogger? Logger { get; set; }
@@ -396,6 +435,13 @@ public class DiffPanePresenter : TextEditor
         else if (change.Property == IsCaretBlinkEnabledProperty)
         {
             _caretRenderer.OnFocusChanged();
+        }
+        else if (change.Property == ShowWhitespaceProperty
+                 || change.Property == ShowLineEndingsProperty
+                 || change.Property == TabWidthProperty
+                 || change.Property == OptionsProperty)
+        {
+            ApplyDisplayOptions();
         }
         else if (change.Property == UseSyntaxHighlightingProperty || change.Property == SyntaxFileNameProperty)
         {
@@ -611,6 +657,20 @@ public class DiffPanePresenter : TextEditor
         {
             DisableSyntax(grammar?.LanguageId ?? System.IO.Path.GetExtension(fileName), ex);
         }
+    }
+
+    /// <summary>
+    /// Pushes the display options onto the editor's <see cref="TextEditorOptions"/>, which is
+    /// also where they land again if a host replaces the whole options object. None of them
+    /// changes a row's height, so nothing here re-primes.
+    /// </summary>
+    private void ApplyDisplayOptions()
+    {
+        TextEditorOptions options = Options;
+        options.ShowSpaces = ShowWhitespace;
+        options.ShowTabs = ShowWhitespace;
+        options.ShowEndOfLine = ShowLineEndings;
+        options.IndentationSize = TabWidth;
     }
 
     private void RemoveSyntax()
