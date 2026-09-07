@@ -113,11 +113,24 @@ internal static class DiffViewLog
         logger?.LogDebug("Find {Generation} superseded by find {By}; its result is discarded", generation, by);
     }
 
+    public static void SyntaxInstalled(ILogger? logger, DiffSide side, string languageId)
+    {
+        // The language, never the file's text; the path is already in the source line above.
+        logger?.LogInformation("Syntax highlighting on the {Side} pane: {Language}", side, languageId);
+    }
+
+    public static void SyntaxUnavailable(ILogger? logger, DiffSide side, string extension)
+    {
+        logger?.LogDebug("No grammar claims {Extension}; the {Side} pane stays plain text", extension.Length == 0 ? "-" : extension, side);
+    }
+
     public static void RenderFault(ILogger? logger, DiffSide side, RenderFaultEventArgs fault)
     {
+        // The subject is a grammar's language, never document text; a decorator that failed over a
+        // line reports the line instead, and one that failed over neither reports "-" for both.
         logger?.LogError(
             fault.Exception,
-            "{Decorator} on the {Side} pane failed at line {Line} and is disabled until the next model",
-            fault.Source, side, fault.LineNumber?.ToString(CultureInfo.InvariantCulture) ?? "-");
+            "{Decorator} on the {Side} pane failed at line {Line} for {Subject} and was disabled",
+            fault.Source, side, fault.LineNumber?.ToString(CultureInfo.InvariantCulture) ?? "-", fault.Subject ?? "-");
     }
 }

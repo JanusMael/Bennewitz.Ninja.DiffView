@@ -183,6 +183,13 @@ public sealed partial class MainWindow : Window
         Diff.SyncHorizontalScroll = SyncHorizontal.IsChecked;
     }
 
+    private void OnToggleSyntax(object? sender, RoutedEventArgs e)
+    {
+        // The bundled fixture is .txt, which no grammar claims: open a .cs or .json file, or pass
+        // --left / --right, to see this do anything.
+        Diff.UseSyntaxHighlighting = UseSyntax.IsChecked;
+    }
+
     private void OnFind(object? sender, RoutedEventArgs e)
     {
         // The control's own Ctrl+F does this too; the item is here so the feature is findable.

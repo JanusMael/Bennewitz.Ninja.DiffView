@@ -23,7 +23,9 @@ no dates, no counts.
 | A new model re-enables every decorator | A decorator stays dark after the input that broke it is gone | `DiffPanePresenter.ResetFaults`, called from `ApplyMetadata` |
 | No renderer or margin reads `TextView.VisualLines` while `TextView.VisualLinesValid` is false | `VisualLinesInvalidException` during layout | `GuardedBackgroundRenderer.Draw`, `DiffMargin.Render` |
 | Line splitting agrees three ways: `LineSplitter`, DiffPlex `LineChunker`, AvaloniaEdit `NewLineFinder` | Kinds and padding land on the wrong lines for CR or mixed input | `DiffPane.Lines` count equals `TextDocument.LineCount`; test `DiffPanePresenterTests.The_model_and_the_editor_count_the_same_lines_on_mixed_line_endings` |
-| Document text is never logged | A secret under comparison lands in a log file | `DiffPanePresenter.ReportFault` logs decorator, side and line number only |
+| Document text is never logged | A secret under comparison lands in a log file | `DiffPanePresenter.ReportFault` goes through `DiffViewLog.RenderFault`, which logs decorator, side, line number and — for a grammar — its language, never text |
+| Syntax highlighting is a foreground: TextMate colours the tokens and nothing else, so the row fills, the word pieces, the match highlights and the selection all compose over it | Colours fight, or a grammar hides the diff | `SyntaxHighlighting` installs `AvaloniaEdit.TextMate` and sets a grammar and a theme only; test `SyntaxSnapshotTests.Syntax_colour_and_the_inserted_fill_compose_on_the_same_row` |
+| A grammar is chosen from `DiffPanePresenter.SyntaxFileName`'s extension; no extension, or one no grammar claims, is plain text and **not** a fault | A `.txt` pair puts the control in `Degraded`, or an unknown file throws | `SyntaxHighlighting.GrammarFor`; tests `SyntaxTests.An_extension_no_grammar_claims_leaves_plain_text_and_the_state_stays_ready`, `SyntaxTests.A_source_with_no_name_at_all_stays_plain_text` |
 
 ## 2. Height priming
 
@@ -78,6 +80,11 @@ no dates, no counts.
 - A new colour token goes into `DiffView.Tokens.axaml`, `DiffView.Tokens.ColorBlind.axaml` and
   `contrast-pairs.json` together; `ThemeResolutionTests.Every_DiffView_token_resolves_in_both_palettes`
   asserts the two palettes define the same keys.
+- The **syntax** theme follows `ActualThemeVariant` and nothing else: `ThemeName.DarkPlus` under
+  Dark, `ThemeName.LightPlus` otherwise (`SyntaxHighlighting.ThemeNameFor`), re-applied from
+  `DiffPanePresenter.OnThemeVariantChanged`. The colour-blind palette is a `DiffView.*` matter and
+  does not reach it. The `RegistryOptions` is per pane, built on the first file with an extension,
+  because TextMateSharp tokenizes on its own thread and reaches back into the registry.
 - `DiffViewResources.MonospaceFontFamilyKey` is defined in `DiffView.axaml`;
   `HeadlessTestApp.Initialize` overrides it with the bundled font, which is what keeps the
   rendered snapshots machine-independent.
@@ -94,6 +101,11 @@ no dates, no counts.
   the `EnsureReferenceSources` target fetches.
 - `PresenterHost` under `tests/DiffView.Avalonia.Tests/Presenter` is the fixture for presenter
   tests; `ThemeSwap` and `ThemeTargets` cover the ten theme targets.
+- `CompositeHost` keeps syntax highlighting **off** unless a test passes `syntax: true`, for the
+  reason it keeps the caret from blinking: TextMateSharp tokenizes on its own thread, so a frame
+  captured without waiting is a coin toss. A test that wants colour waits on
+  `CompositeHost.PumpUntilAsync` with a `SyntaxProbe` condition — the built runs' foregrounds,
+  which are readable the moment the line is rebuilt — never on a sleep.
 - Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`).
   Static seams: `DebugFlags.ResetForTesting`, `DiffViewStrings.ResetForTesting`.
 - `AccessibilityCoverageTests` counts `DiffPanePresenter` and `TextEditor` as interactive, so
@@ -127,6 +139,8 @@ no dates, no counts.
 | `SearchMatchRenderer` is added to the text view **before** `DiffSelectionRenderer`; both draw on `KnownLayer.Selection`, in list order | The selection vanishes under the match highlight, or matches fall under the row fills | `DiffPanePresenter` constructor; test `FindTests.Match_highlights_sit_above_the_row_fill_and_below_the_selection` |
 | A fresh `FindResult` leaves `CurrentFindMatchIndex` at -1; only `FindNext`, `FindPrevious` and the setter reveal a match, and revealing is the only thing that selects, focuses and scrolls | Typing in the query box pulls focus into a pane after every keystroke | `SideBySideDiffView.ApplyFindResult`, `SetCurrentFindMatch`, `RevealMatch`; test `FindTests.In_both_scope_F3_walks_the_matches_in_row_then_side_order_and_the_pane_holding_one_has_it_selected` |
 | A query that cannot run is `FindResult.Error` shown inline in the bar; `State` does not change and no match is highlighted | A typo in a regular expression puts the control in `Failed` | `SideBySideDiffView.CompleteFind`, `UpdateFindBar`; test `FindTests.An_invalid_regular_expression_shows_the_error_inline_leaves_no_highlights_and_the_state_stays_ready` |
+| A grammar that will not install turns the pane back to plain text, reports one fault naming the language, and is retried only when `SyntaxFileName` or `UseSyntaxHighlighting` changes — never by a rebuild, which would repeat the same failure | The control flickers between `Ready` and `Degraded` on every option change, or a broken grammar is never retried after the file changes | `DiffPanePresenter.DisableSyntax`, `UpdateSyntax`; test `SyntaxTests.A_grammar_that_will_not_install_degrades_the_control_names_it_and_leaves_the_diff_highlighting` |
+| `DiffPanePresenter.SyntaxFault` outlives `ResetFaults`, and `SideBySideDiffView.ApplyResult` reads `PaneFault()` **before** applying the model, so a fault raised while a build ran lands as `Degraded` when the build does | A grammar failure during `Building` is swallowed by the `Ready` that follows | `SideBySideDiffView.ApplyResult`, `PaneFault`; the test above |
 | The find query is never logged — only its length — because Ctrl+F pre-fills it from the pane's selection, so it may be document text | A secret under comparison reaches a log file through the find bar | `DiffViewLog.FindStarted`, `DiffViewLog.FindFailed`; the sentinel test above |
 
 ## 7. Contributing back

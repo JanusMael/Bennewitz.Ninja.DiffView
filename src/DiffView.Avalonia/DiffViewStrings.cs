@@ -34,6 +34,9 @@ public static class DiffViewStrings
     /// <summary>A decorator failed on a line and is disabled: <c>{0}</c> decorator, <c>{1}</c> line, <c>{2}</c> exception message.</summary>
     public const string RenderFaultOnLine = "RenderFault.OnLine";
 
+    /// <summary>A decorator failed over something that is not a line — a grammar — and is disabled: <c>{0}</c> decorator, <c>{1}</c> subject, <c>{2}</c> exception message.</summary>
+    public const string RenderFaultOnSubject = "RenderFault.OnSubject";
+
     /// <summary>The left header's title when the source has none.</summary>
     public const string LeftTitle = "Header.Left.Title";
 
@@ -320,6 +323,7 @@ public static class DiffViewStrings
         [StatusStripName] = "Status",
         [RenderFault] = "{0} failed and was disabled: {1}",
         [RenderFaultOnLine] = "{0} failed on line {1} and was disabled: {2}",
+        [RenderFaultOnSubject] = "{0} failed for {1} and was disabled: {2}",
         [LeftTitle] = "Left",
         [RightTitle] = "Right",
         [NoContent] = "No content",

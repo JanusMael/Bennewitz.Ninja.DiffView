@@ -119,6 +119,21 @@ All notable changes to DiffView are recorded here. The format follows
   both variants; the sentinel log test gained the find leg Phase 5 left owing.
 - The demo's View menu opens the find bar (Ctrl+F).
 
+- Phase 9, syntax highlighting: `SyntaxHighlighting` installs `AvaloniaEdit.TextMate` on a pane,
+  choosing the grammar from `DiffPanePresenter.SyntaxFileName`'s extension — the composite gives
+  it each side's `PaneSource.Path`, or its `Title` — with the TextMate theme following
+  `ActualThemeVariant` (Dark+ / Light+); `UseSyntaxHighlighting` on the presenter and on the
+  composite, on by default; `DiffPanePresenter.SyntaxLanguageId`; an extension no grammar claims
+  is plain text and not a failure, and a grammar that will not install turns itself off, leaves
+  the diff highlighting untouched and puts the control in `Degraded` with the language named
+  (`RenderFaultEventArgs.Subject`, the `RenderFault.OnSubject` string); `DiffView.Syntax` logging
+  that carries the language and the extension, never text; the demo's View menu toggles it.
+- Headless tests for the unclaimed extension, a source with no name at all, the path and title
+  routes, the theme following the variant, the toggle, and a grammar that will not install;
+  snapshots of a C# and a JSON pair colourised under the diff backgrounds in both variants, and
+  the pixel assertion that an inserted row keeps its fill with the token colours over it;
+  `fixtures/json`, `SyntaxProbe` and `CompositeHost.PumpUntilAsync` as fixtures.
+
 ### Changed
 
 - The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and
@@ -132,3 +147,7 @@ All notable changes to DiffView are recorded here. The format follows
   `SideBySideDiffView` as interactive.
 - The snapshot comparer decodes from copies of the streams, so a mismatch can still write the
   `.received` file.
+- A pane's faults reach the composite's state through `SideBySideDiffView.ApplyResult` as well as
+  through `RenderFault`, so one raised while a build was running is not buried by the `Ready` that
+  follows it; `DiffPanePresenter.ReportFault` now formats through `DiffViewLog.RenderFault`, which
+  was written in Phase 5 and never called.

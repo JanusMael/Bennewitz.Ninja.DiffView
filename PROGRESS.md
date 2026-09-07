@@ -2,8 +2,8 @@
 
 ## Resume
 
-**Phase 8 — Find** of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete on
-`main`; phases 0 through 8 are done, and what remains of the plan is syntax highlighting, the
+**Phase 9 — Syntax highlighting** of [plan 00001](plans/00001-side-by-side-diff-control.md) is
+complete on `main`; phases 0 through 9 are done, and what remains of the plan is the
 scale-and-accessibility pass and the optional inline view. `SideBySideDiffView` compares two
 `PaneSource`s: two `DiffPanePresenter`s over the sources' own documents, with rendered padding
 holding the rows level, row and word-level highlights, line-number and change-marker gutters,
@@ -20,15 +20,19 @@ over text captured on the UI thread, and so do searches, over `TextDocument` sna
 line table copied on the UI thread; a rebuild swaps the model and never a `TextDocument`; the
 control is always in one `DiffViewState`; every user-visible string goes through `DiffViewStrings`
 and every log line through `DiffViewLog`, which never carries document text — not the query
-either, only its length. The demo hosts the control with file-open, option toggles, Find and the
-colour-blind palette.
+either, only its length. Each pane also colours its text from a TextMate grammar chosen by the
+side's file extension, with the theme following the variant, under everything the diff draws; an
+extension no grammar claims is plain text and not a failure, and a grammar that will not install
+turns itself off and leaves the control `Degraded` with the language named. The demo hosts the
+control with file-open, option toggles, Find, syntax highlighting and the colour-blind palette.
 
-Next is **Phase 9 — Syntax highlighting** (plan §Phase 9): `AvaloniaEdit.TextMate` on both
-presenters with the grammar chosen from `FileName`'s extension and the theme following
-`ThemeVariant`; a `UseSyntaxHighlighting` toggle; a failed install falling back to plain text with
-`Degraded` and the grammar named; and the trim-check re-run with TextMateSharp on board, any
-IL2xxx handled through `TRIMMING.md`'s wiring and recorded in `DECISIONS.md`. Done-when tests in
-plan §Phase 9. Phase 10 is scale, visibility and accessibility; Phase 11 the optional inline view.
+Next is **Phase 10 — Scale, visibility, accessibility** (plan §Phase 10): the 200k-line and
+1 MB-single-line fixtures measured for build, priming, first paint and scroll latency, with the
+numbers recorded here and the DiffPlex vendoring decision made if the budget is missed;
+`ShowWhitespace`, `ShowLineEndings`, `TabWidth`, the mixed-line-ending notice and a font-family
+fallback list that re-primes on a runtime font change; copy per pane with read-only enforced
+against paste and typing; focus visuals and an automation name on every decorator. Done-when
+tests in plan §Phase 10. Phase 11 is the optional inline view.
 
 Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the
 merge (see *Upstreamed to ClaudeForge*).
@@ -57,9 +61,24 @@ dotnet run --project src/ThemeAudit -- report
 | 6 Word-level highlights and options | done | `WordDiffLookup` over the live documents, one per build bound to its options; piece rectangles in `DiffLineBackgroundRenderer` through the visual line's columns; the marker margin's long-line tooltip; 6 headless and snapshot test cases |
 | 7 Navigation, minimap, connectors, tooltips | done | `CurrentChangeIndex` + commands + F7 / Shift+F7 / F6, current-block border, "change i of n"; `DiffMinimap`; `ChangeConnectorGutter` with `SplitRatio`; tooltips on line numbers, markers, connectors and the minimap; 9 headless and snapshot test cases |
 | 8 Find | done | `DiffFindBar` (query, Match case / Whole word / Regex / Changed rows only, L / R / Both scope, count, prev / next / close, inline error and truncation notice); `SearchMatchRenderer` per pane over `KnownLayer.Selection`; debounced, cancellable searches over `DocumentPaneText` snapshots, off the UI thread above 2,000 rows; minimap match ticks; the strip's find lane; Ctrl+F / F3 / Shift+F3 / Enter / Shift+Enter / Escape; 9 headless and snapshot test cases plus the sentinel log test's find leg |
-| 9 Syntax highlighting | not started | |
+| 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | not started | |
 | 11 Inline (unified) view | not started | optional |
+
+## Phase 9 verification
+
+| Done-when item | Result |
+|---|---|
+| The trimmed publish of the demo succeeds and colourizes a C# fixture at runtime | pass: `dotnet publish -c Release -r linux-x64 --self-contained true` with `TrimMode=link` gives **0 IL warnings** and needs no `TRIMMING.md` wiring — TextMateSharp keeps its grammars as embedded resources and parses them with its own parser, so nothing is reflected over; `TextMateSharp.dll`, `TextMateSharp.Grammars.dll`, `Onigwrap.dll` and `libonigwrap.so` are in the output, which grew from 51 MB to 57 MB. The published binary run against `src/DiffView.Core/PaneSource.cs` and `TextProbe.cs` logs `Syntax highlighting on the "Left" pane: csharp` and the same for the right, then `State "Building" → "Ready"` with no fault. The window itself could not be screenshotted from this session (XWayland refuses the grab), so the pixels are the headless snapshots' evidence; a look at the running window is left for the user |
+| Headless: unknown extension does not throw and falls back to plain text with state `Ready` | pass: `SyntaxTests.An_extension_no_grammar_claims_leaves_plain_text_and_the_state_stays_ready` — the small pair under `left.txt` / `right.txt` leaves `SyntaxLanguageId` null on both panes, one foreground on the first line, `Ready`, no fault, and the row kinds still drawn; `A_source_with_no_name_at_all_stays_plain_text` covers the source with neither path nor title, and `The_grammar_follows_the_path_when_the_source_has_one` the path route (the title route is what every other test uses) |
+| Headless: a grammar install that throws puts the control in `Degraded`, names the grammar, and diff highlighting is unaffected | pass: `A_grammar_that_will_not_install_degrades_the_control_names_it_and_leaves_the_diff_highlighting` — the left pane's install throws through the `SyntaxInstallerForTesting` seam: exactly one fault, `Source` `SyntaxHighlighting` and `Subject` `csharp`, the message and `StateMessage` both naming it, that pane back to one foreground, `Degraded`, and the modified and inserted row fills still drawn on both sides while the right pane stays colourised |
+| Snapshot: C# and JSON fixtures colorized under the diff backgrounds in both theme variants | pass: `SyntaxSnapshotTests.A_colourised_pair_renders_under_the_diff_backgrounds` × {Csharp, Json} × {Light, Dark} — keywords, types, strings and numbers coloured by Dark+ / Light+ over the inserted, deleted and modified fills, with the word-level pieces and the change border still on top; reviewed and approved. `fixtures/json` is the new pair |
+| Pixel assertion: syntax colour is present under an inserted row's background — the two layers compose | pass: `Syntax_colour_and_the_inserted_fill_compose_on_the_same_row` — on the first inserted row of the right pane, the inserted fill composited over the pane background is on screen *and* more than one of the token colours that row's runs carry is painted inside the same band |
+| Headless: the toggle | pass: `Turning_the_toggle_off_returns_the_panes_to_plain_text_and_turning_it_on_colours_them_again` — `UseSyntaxHighlighting = false` removes both installations and returns the first line to one foreground; back on, the grammar returns and the state stays `Ready` |
+| Headless: the theme follows the variant | pass: `The_syntax_theme_follows_the_variant` — the first token's own colour on `using System;` changes when the application variant goes Light → Dark, and the pane is still colourised by the same grammar |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 285 passed (273 before the phase) |
+| New headless tests proven able to fail | six mutations: dropping `SetGrammar` failed seven of the twelve (both colourisation tests, the theme and toggle tests, all four snapshots and the pixel assertion); pinning the syntax theme to Light+ failed the variant test and the two Dark snapshots — and, before the test was sharpened to read the first token's colour rather than the line's whole colour set, it passed under that mutation because the pane's own foreground moves with the palette; dropping the fault report failed the degraded test; making `Remove` a no-op failed the toggle test; resolving every file to the C# grammar failed the unclaimed-extension test and the JSON snapshots; and treating a nameless source as `x.cs` failed the no-name test |
 
 ## Phase 8 verification
 
@@ -237,8 +256,8 @@ dotnet run --project src/ThemeAudit -- report
 
 | What | Value | Where |
 |---|---|---|
-| Test run, all three projects | ~8 s | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter and composite tests render under all ten theme targets |
-| Trimmed self-contained publish of the demo, linux-x64 | 51 MB after Phase 5 (50 MB after Phase 4, 48 MB through Phase 3) | `dotnet publish -c Release -r linux-x64 --self-contained true` |
+| Test run, all three projects | ~20 s for 285 tests (~8 s at Phase 5's 200) | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter and composite tests render under all ten theme targets; the syntax tests wait on TextMateSharp's tokenizer thread |
+| Trimmed self-contained publish of the demo, linux-x64 | 57 MB after Phase 9 — TextMateSharp's grammars and themes (51 MB after Phase 5, 50 MB after Phase 4, 48 MB through Phase 3) | `dotnet publish -c Release -r linux-x64 --self-contained true` |
 | Priming 10,000 padding gaps in one pass | 10.3–10.5 s (two runs) | `Item6_priming_cost_for_ten_thousand_gaps`, this machine, Debug; quadratic in the text view's built-line list |
 | Priming 10,000 padding gaps in batches of 256 with `Redraw()` between batches | 200–240 ms (two runs) | same test, including the layout pass that republishes the extent |
 | Fluent 12.1.2 inventory | 1153 keys, 85 files per variant | `docs/theme-audit.md` |

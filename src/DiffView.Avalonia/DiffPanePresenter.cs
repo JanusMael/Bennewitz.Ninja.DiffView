@@ -1,4 +1,3 @@
-using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -43,6 +42,14 @@ public class DiffPanePresenter : TextEditor
     public static readonly StyledProperty<bool> IsCaretBlinkEnabledProperty =
         AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(IsCaretBlinkEnabled), defaultValue: true);
 
+    /// <summary>Identifies the <see cref="UseSyntaxHighlighting"/> property.</summary>
+    public static readonly StyledProperty<bool> UseSyntaxHighlightingProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(UseSyntaxHighlighting), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="SyntaxFileName"/> property.</summary>
+    public static readonly StyledProperty<string?> SyntaxFileNameProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, string?>(nameof(SyntaxFileName));
+
     private readonly PaddingElementGenerator _generator;
     private readonly PaddingHeightPrimer _primer = new();
     private readonly DiffLineBackgroundRenderer _backgroundRenderer;
@@ -52,6 +59,8 @@ public class DiffPanePresenter : TextEditor
     private readonly DiffLineNumberMargin _lineNumberMargin;
     private readonly ChangeMarkerMargin _changeMarkerMargin;
     private readonly List<RenderFaultEventArgs> _faults = [];
+    private SyntaxHighlighting? _syntax;
+    private bool _syntaxDisabled;
     private WordDiffLookup? _wordDiffLookup;
     private ChangeBlock? _currentBlock;
     private IReadOnlyList<FindMatch> _searchMatches = [];
@@ -150,6 +159,35 @@ public class DiffPanePresenter : TextEditor
         set => SetValue(IsCaretBlinkEnabledProperty, value);
     }
 
+    /// <summary>
+    /// Whether the pane colours its text from a TextMate grammar chosen by
+    /// <see cref="SyntaxFileName"/>. On by default; off leaves plain text and removes an
+    /// installed grammar. The diff highlighting is a separate layer either way.
+    /// </summary>
+    public bool UseSyntaxHighlighting
+    {
+        get => GetValue(UseSyntaxHighlightingProperty);
+        set => SetValue(UseSyntaxHighlightingProperty, value);
+    }
+
+    /// <summary>
+    /// The file name — or path — the grammar is chosen from, by extension. <c>null</c>, an
+    /// extensionless name or an extension no grammar claims leaves the pane plain text, which is
+    /// a result and not a failure. The composite assigns the side's <see cref="PaneSource.Path"/>,
+    /// falling back to its <see cref="PaneSource.Title"/>.
+    /// </summary>
+    public string? SyntaxFileName
+    {
+        get => GetValue(SyntaxFileNameProperty);
+        set => SetValue(SyntaxFileNameProperty, value);
+    }
+
+    /// <summary>
+    /// The language currently colouring the pane — <c>csharp</c>, <c>json</c> — or <c>null</c>
+    /// while it is plain text.
+    /// </summary>
+    public string? SyntaxLanguageId => _syntax?.Installed?.LanguageId;
+
     /// <summary>Receives faults at <c>Error</c> with the exception attached; never document text.</summary>
     public ILogger? Logger { get; set; }
 
@@ -238,6 +276,14 @@ public class DiffPanePresenter : TextEditor
     /// <summary>Lines the last height priming built.</summary>
     public int PrimedLineCount { get; private set; }
 
+    /// <summary>
+    /// The fault that turned the syntax highlighting off, or <c>null</c>. Unlike
+    /// <see cref="Faults"/> it survives <see cref="ResetFaults"/>: a rebuild is not what would fix
+    /// a grammar that will not install, so the pane stays plain text — and the control stays
+    /// degraded — until the file or the toggle changes.
+    /// </summary>
+    internal RenderFaultEventArgs? SyntaxFault { get; private set; }
+
     internal PaneMetadata Metadata { get; private set; } = PaneMetadata.Empty;
 
     internal DiffBrushes Palette { get; }
@@ -257,6 +303,9 @@ public class DiffPanePresenter : TextEditor
     /// <summary>Replaces the padding source; a test seam for provoking a generator fault.</summary>
     internal Func<int, PaddingSpec>? PaddingSourceForTesting { get; set; }
 
+    /// <summary>Replaces the grammar install; a test seam for provoking a syntax fault.</summary>
+    internal Action<SyntaxGrammar>? SyntaxInstallerForTesting { get; set; }
+
     /// <summary>Primes now when the pane is laid out, otherwise on its next layout.</summary>
     internal void RequestPrime()
     {
@@ -271,19 +320,19 @@ public class DiffPanePresenter : TextEditor
     }
 
     /// <summary>Records a fault, logs it and raises <see cref="RenderFault"/>.</summary>
-    internal void ReportFault(string source, int? lineNumber, Exception exception)
+    /// <param name="source">The decorator that failed, by type name.</param>
+    /// <param name="lineNumber">The 1-based line being processed, when it was one.</param>
+    /// <param name="exception">What was thrown.</param>
+    /// <param name="subject">What was being processed when it was not a line — a grammar's language.</param>
+    internal RenderFaultEventArgs ReportFault(string source, int? lineNumber, Exception exception, string? subject = null)
     {
-        RenderFaultEventArgs fault = new(source, lineNumber, exception);
+        RenderFaultEventArgs fault = new(source, lineNumber, exception, subject);
         _faults.Add(fault);
-        Logger?.LogError(
-            exception,
-            "{Decorator} on the {Side} pane failed at line {Line} and is disabled until the next model",
-            source,
-            Side,
-            lineNumber?.ToString(CultureInfo.InvariantCulture) ?? "-");
+        DiffViewLog.RenderFault(Logger, Side, fault);
         // A fault is usually caught inside a render pass, where a listener may not invalidate a
         // visual; the event is raised once the pass is over.
         Dispatcher.UIThread.Post(() => RenderFault?.Invoke(this, fault));
+        return fault;
     }
 
     /// <summary>Forgets the faults and re-enables every decorator.</summary>
@@ -348,6 +397,14 @@ public class DiffPanePresenter : TextEditor
         {
             _caretRenderer.OnFocusChanged();
         }
+        else if (change.Property == UseSyntaxHighlightingProperty || change.Property == SyntaxFileNameProperty)
+        {
+            // The install's own inputs changed, so a grammar that would not install is tried
+            // again — but only here: a rebuild over the same file would repeat the same failure.
+            _syntaxDisabled = false;
+            SyntaxFault = null;
+            UpdateSyntax();
+        }
     }
 
     /// <inheritdoc/>
@@ -357,6 +414,8 @@ public class DiffPanePresenter : TextEditor
         ResourcesChanged += OnResourcesChanged;
         ActualThemeVariantChanged += OnThemeVariantChanged;
         RefreshPalette();
+        // The variant is only known once the pane is in a tree, and it chooses the syntax theme.
+        UpdateSyntax();
     }
 
     /// <inheritdoc/>
@@ -365,6 +424,9 @@ public class DiffPanePresenter : TextEditor
         ResourcesChanged -= OnResourcesChanged;
         ActualThemeVariantChanged -= OnThemeVariantChanged;
         _caretRenderer.Stop();
+        // TextMateSharp tokenizes on a thread of its own, which the installation owns: a pane
+        // that leaves the tree gives it up, and takes it again when it comes back.
+        RemoveSyntax();
         base.OnDetachedFromLogicalTree(e);
     }
 
@@ -490,6 +552,95 @@ public class DiffPanePresenter : TextEditor
     private void OnThemeVariantChanged(object? sender, EventArgs e)
     {
         RefreshPalette();
+        UpdateSyntax();
+    }
+
+    /// <summary>
+    /// Brings the syntax colouring in line with <see cref="UseSyntaxHighlighting"/>,
+    /// <see cref="SyntaxFileName"/> and the current variant: installs the grammar the file name
+    /// implies, re-themes one already installed, or removes it. A file no grammar claims is plain
+    /// text and <em>not</em> a fault; anything thrown along the way is, and leaves the colouring
+    /// off until the file name or the toggle changes.
+    /// </summary>
+    private void UpdateSyntax()
+    {
+        if (_syntaxDisabled)
+        {
+            return;
+        }
+
+        string? fileName = SyntaxFileName;
+        if (!UseSyntaxHighlighting || string.IsNullOrEmpty(fileName))
+        {
+            RemoveSyntax();
+            return;
+        }
+
+        ThemeVariant variant = ActualThemeVariant;
+        SyntaxHighlighting syntax = _syntax ??= new SyntaxHighlighting(this, OnSyntaxException);
+        SyntaxGrammar? grammar = null;
+        try
+        {
+            grammar = syntax.GrammarFor(fileName, variant);
+            if (grammar is not { } found)
+            {
+                DiffViewLog.SyntaxUnavailable(Logger, Side, System.IO.Path.GetExtension(fileName));
+                RemoveSyntax();
+                return;
+            }
+
+            if (found == syntax.Installed)
+            {
+                syntax.SetTheme(variant);
+                return;
+            }
+
+            if (SyntaxInstallerForTesting is { } installer)
+            {
+                installer(found);
+            }
+            else
+            {
+                syntax.Apply(found, variant);
+            }
+
+            DiffViewLog.SyntaxInstalled(Logger, Side, found.LanguageId);
+            TextArea.TextView.Redraw();
+        }
+        catch (Exception ex)
+        {
+            DisableSyntax(grammar?.LanguageId ?? System.IO.Path.GetExtension(fileName), ex);
+        }
+    }
+
+    private void RemoveSyntax()
+    {
+        if (_syntax?.Remove() == true)
+        {
+            TextArea.TextView.Redraw();
+        }
+    }
+
+    /// <summary>
+    /// The installation threw after it was installed. TextMateSharp tokenizes on its own thread,
+    /// so the fault becomes state on the UI thread, and only the first one does: the rest of the
+    /// stream is the same failure.
+    /// </summary>
+    private void OnSyntaxException(Exception exception)
+    {
+        Dispatcher.UIThread.Post(() => DisableSyntax(_syntax?.Installed?.LanguageId ?? SyntaxFileName ?? "?", exception));
+    }
+
+    private void DisableSyntax(string subject, Exception exception)
+    {
+        if (_syntaxDisabled)
+        {
+            return;
+        }
+
+        _syntaxDisabled = true;
+        RemoveSyntax();
+        SyntaxFault = ReportFault(nameof(SyntaxHighlighting), null, exception, subject);
     }
 
     private void RefreshPalette()

@@ -12,6 +12,8 @@ was read or adapted, and the assets bundled into the repository.
 | [Avalonia](https://github.com/AvaloniaUI/Avalonia) | MIT | The UI framework; Fluent and Simple theme sources read by the theme audit |
 | [Semi.Avalonia](https://github.com/irihitech/Semi.Avalonia) | MIT | The demo's primary theme; source read by the theme audit |
 | [DiffPlex](https://github.com/mmanela/diffplex) | Apache-2.0 | Line diff engine and word chunkers |
+| [TextMateSharp](https://github.com/danipen/TextMateSharp) | MIT | Grammar and theme engine behind `AvaloniaEdit.TextMate`; `TextMateSharp.Grammars` carries the grammars and the Dark+ / Light+ themes, which come from [VS Code](https://github.com/microsoft/vscode) (MIT) and the upstream grammars each grammar's own header names |
+| [Onigwrap](https://github.com/danipen/TextMateSharp) / [Oniguruma](https://github.com/kkos/oniguruma) | MIT / BSD-2-Clause | The regular-expression engine TextMateSharp tokenizes with, and its native binding |
 | [DejaVu fonts](https://dejavu-fonts.github.io/) | Bitstream Vera license; DejaVu changes public domain | `fixtures/fonts/DejaVuSansMono.ttf`, bundled so rendered snapshots do not depend on installed fonts. License text beside the font |
 | Inter (via `Avalonia.Fonts.Inter`) | SIL OFL 1.1 | The demo's UI font |
 

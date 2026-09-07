@@ -33,6 +33,8 @@
                   Click="OnToggleIgnoreCase" AutomationProperties.Name="Ignore case differences" />
         <MenuItem x:Name="SyncHorizontal" Header="Sync _horizontal scroll" ToggleType="CheckBox"
                   Click="OnToggleSyncHorizontal" AutomationProperties.Name="Couple horizontal scrolling of the panes" />
+        <MenuItem x:Name="UseSyntax" Header="S_yntax highlighting" ToggleType="CheckBox" IsChecked="True"
+                  Click="OnToggleSyntax" AutomationProperties.Name="Colour the panes from a grammar chosen by file extension" />
       </MenuItem>
       <MenuItem Header="_Debug" AutomationProperties.Name="Debug menu">
         <MenuItem Header="Show live _log (F12)" Click="OnToggleLiveLog" AutomationProperties.Name="Show live log window" />

@@ -1,0 +1,16 @@
+{
+  "name": "diffview",
+  "version": "1.1.0",
+  "private": true,
+  "panes": ["left", "right", "inline"],
+  "options": {
+    "ignoreWhitespace": true,
+    "ignoreCase": false,
+    "wordDiff": "character",
+    "forceAlignment": false
+  },
+  "limits": {
+    "maxMatches": 5000,
+    "maxWordDiffLineLength": 2000
+  }
+}

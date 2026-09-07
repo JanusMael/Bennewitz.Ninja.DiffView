@@ -673,3 +673,78 @@ counts, timings and truncation; `FindFailed` records that the query would not co
 out, and never the engine's own message, which quotes the pattern. Ctrl+F pre-fills the query
 from the pane's selection, so the query is document text as often as not, and the sentinel test
 now searches for the sentinel to prove it does not reach the log.
+
+## Syntax highlighting is an installation per pane, and a grammar registry per pane with it
+
+`SyntaxHighlighting` wraps `AvaloniaEdit.TextMate` for one `DiffPanePresenter`: a
+`TextMateSharp.Grammars.RegistryOptions`, the `TextMate.Installation` over the editor, and the
+theme. Both are per pane rather than shared. The installation has to be, because it owns a
+`TextMateColoringTransformer` on that text view; the registry does not have to be, and sharing one
+would save reading the grammar index twice — but TextMateSharp tokenizes on its own thread and
+reaches back into the registry for embedded grammars, and two panes tokenizing at once would be
+two threads in one registry for no measurable gain. The registry is built lazily, on the first
+file name that has an extension, so a pane comparing two strings never pays for it at all.
+
+The installation colours **foregrounds**: it adds a line transformer, and it never touches the
+editor's background. That is what lets the diff layers keep working unchanged — the row fills and
+word pieces below the text, the match highlights and selection above it — and it is asserted as
+pixels in `SyntaxSnapshotTests.Syntax_colour_and_the_inserted_fill_compose_on_the_same_row`, which
+requires both the inserted row's fill and more than one token colour inside the same row.
+
+## The grammar comes from the file name; an extension no grammar claims is a result, not a failure
+
+`DiffPanePresenter.SyntaxFileName` takes a name or a path — the composite assigns
+`PaneSource.Path`, falling back to `PaneSource.Title` — and `SyntaxHighlighting.GrammarFor` maps
+its extension through `RegistryOptions.GetLanguageByExtension`. No name, no extension, or an
+extension no grammar claims leaves the pane plain text, logs one `Debug` line, and installs
+nothing at all: no transformer, no tokenizer thread, no cost. The bundled `.txt` fixture is
+exactly that case, which is why every snapshot from Phases 4 through 8 still matches unchanged.
+
+`Language.Id` (`csharp`, `json`) is what a message names; the scope name (`source.cs`) is what the
+registry loads by. Both are carried on `SyntaxGrammar`.
+
+## A grammar that will not install degrades the control and stays off until its inputs change
+
+The install is a fault boundary like every other decorator: `DiffPanePresenter.DisableSyntax`
+removes the installation, leaves plain text, and reports one `RenderFaultEventArgs` whose
+`Subject` is the language, so the message names the grammar
+(`RenderFault.OnSubject` — "{0} failed for {1} and was disabled: {2}"). What is *not* like the
+other decorators is the retry: `ResetFaults` re-enables a renderer on every new model, but a
+rebuild is not what would fix a grammar, so a failed install is retried only when
+`SyntaxFileName` or `UseSyntaxHighlighting` changes — the install's own inputs. Repeating it per
+build would flip the control between `Ready` and `Degraded` on every option change.
+
+That outliving is why `DiffPanePresenter.SyntaxFault` is separate from `Faults`, and why
+`SideBySideDiffView.ApplyResult` reads `PaneFault()` *before* it applies the model: a grammar
+installs at source-assignment time, which is inside `Building`, where `OnPaneRenderFault` will not
+change the state — and the `Ready` that follows the build would otherwise bury it. The first
+version of the test caught exactly that, twice: once because the fault landed during `Building`,
+and again because the second source's `RequestBuild` cleared the first side's faults.
+
+TextMateSharp also raises on its own thread, after the install: the `exceptionHandler` given to
+`InstallTextMate` posts to the UI thread and lands in the same `DisableSyntax`, which reports the
+first fault and ignores the stream that follows it.
+
+## The syntax theme follows the variant, and only the variant
+
+`ThemeName.DarkPlus` under `ThemeVariant.Dark`, `ThemeName.LightPlus` otherwise, re-applied from
+`ActualThemeVariantChanged` beside the palette refresh. The colour-blind palette is a `DiffView.*`
+matter — the row fills — and does not reach the grammar's colours; a reader who needs different
+token colours wants a different TextMate theme, which is a `RegistryOptions.LoadTheme` away if it
+is ever asked for. The test asserts the *first token's* colour changes with the variant, not the
+line's whole colour set: the set also holds the pane's own foreground, which the palette moves,
+and an earlier version of the test passed for that reason under a mutation that pinned the syntax
+theme to Light+.
+
+## TextMateSharp trims clean, and the demo publishes at 57 MB
+
+The Phase 9 trim-check needed no wiring at all: `dotnet publish -c Release -r linux-x64
+--self-contained true` with `TrimMode=link` produced **0 IL warnings** with TextMateSharp,
+TextMateSharp.Grammars and Onigwrap on board, and no `_ILLinkSuppressions` or
+`TrimmerRootAssembly` entry. The grammars are embedded resources and the parser is hand-written —
+no reflection, no `System.Text.Json` — which is why. The published output grew from 51 MB to
+57 MB, most of it the grammar and theme resources; `libonigwrap.so` travels with it.
+
+The trimmed binary was then run against two real `.cs` files, and its log carries
+`Syntax highlighting on the "Left" pane: csharp` for both sides with no fault and a plain
+`Ready` — the grammars resolve from the trimmed assembly at runtime, not only in the test host.

@@ -109,6 +109,10 @@ public class SideBySideDiffView : TemplatedControl
     public static readonly StyledProperty<bool> IsCaretBlinkEnabledProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(IsCaretBlinkEnabled), defaultValue: true);
 
+    /// <summary>Identifies the <see cref="UseSyntaxHighlighting"/> property.</summary>
+    public static readonly StyledProperty<bool> UseSyntaxHighlightingProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(UseSyntaxHighlighting), defaultValue: true);
+
     /// <summary>Identifies the <see cref="LeftPaneName"/> property.</summary>
     public static readonly StyledProperty<string> LeftPaneNameProperty =
         AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(LeftPaneName), string.Empty);
@@ -408,6 +412,18 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(IsCaretBlinkEnabledProperty);
         set => SetValue(IsCaretBlinkEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Whether both panes colour their text from a TextMate grammar, chosen from each side's
+    /// <see cref="PaneSource.Path"/> — its <see cref="PaneSource.Title"/> when it has no path — by
+    /// extension, with the theme following the variant. On by default; a side whose extension no
+    /// grammar claims stays plain text. The diff highlighting is a separate layer either way.
+    /// </summary>
+    public bool UseSyntaxHighlighting
+    {
+        get => GetValue(UseSyntaxHighlightingProperty);
+        set => SetValue(UseSyntaxHighlightingProperty, value);
     }
 
     /// <summary>The left pane's automation name, from <see cref="DiffViewStrings"/>.</summary>
@@ -1025,6 +1041,18 @@ public class SideBySideDiffView : TemplatedControl
                 _rightPane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
             }
         }
+        else if (change.Property == UseSyntaxHighlightingProperty)
+        {
+            if (_leftPane is not null)
+            {
+                _leftPane.UseSyntaxHighlighting = UseSyntaxHighlighting;
+            }
+
+            if (_rightPane is not null)
+            {
+                _rightPane.UseSyntaxHighlighting = UseSyntaxHighlighting;
+            }
+        }
         else if (change.Property == StateProperty || change.Property == BannerKindProperty)
         {
             UpdatePseudoClasses();
@@ -1059,10 +1087,18 @@ public class SideBySideDiffView : TemplatedControl
         if (pane is not null)
         {
             pane.Document = document;
+            // The grammar follows the file, not the build, so it is chosen here.
+            pane.SyntaxFileName = SyntaxFileNameOf(source);
         }
 
         // The old model described the old text; nothing of it applies to the new document.
         RequestBuild(keepModel: false);
+    }
+
+    /// <summary>What the grammar is chosen from: the file the side came from, or what it is called.</summary>
+    private static string? SyntaxFileNameOf(PaneSource? source)
+    {
+        return source?.Path ?? source?.Title;
     }
 
     private void RequestBuild(bool keepModel)
@@ -1169,6 +1205,10 @@ public class SideBySideDiffView : TemplatedControl
 
     private void ApplyResult(int generation, DiffBuildResult result, DiffOptions options)
     {
+        // A decorator that faulted while this build ran — a grammar that would not install, say —
+        // keeps the control Degraded once it lands. It is read before the model is applied,
+        // because applying one re-enables every decorator and forgets its faults.
+        RenderFaultEventArgs? fault = PaneFault();
         ApplyModel(result.Document, result.Warnings, result.Diagnostics, options);
         IsStale = false;
         foreach (DiffWarning warning in result.Warnings)
@@ -1192,12 +1232,16 @@ public class SideBySideDiffView : TemplatedControl
             SetBanner(DiffBannerKind.None, null, null);
         }
 
-        string? message = result.Warnings.Count == 0 ? null : string.Join(" ", result.Warnings.Select(w => w.Message));
-        SetState(result.Warnings.Count == 0 ? DiffViewState.Ready : DiffViewState.Degraded, message);
+        string? message = result.Warnings.Count == 0 ? fault?.Message : string.Join(" ", result.Warnings.Select(w => w.Message));
+        SetState(message is null ? DiffViewState.Ready : DiffViewState.Degraded, message);
 
         if (result.Warnings.Count > 0)
         {
             Status.SetWarning(message!);
+        }
+        else if (fault is not null)
+        {
+            Status.SetFailure(message!);
         }
         else if (result.Diagnostics.Identical)
         {
@@ -1226,6 +1270,19 @@ public class SideBySideDiffView : TemplatedControl
         UpdateHeaders();
         UpdateStrip();
         BuildFailed?.Invoke(this, new DiffBuildFailedEventArgs(failure));
+    }
+
+    /// <summary>
+    /// The first fault either pane is still carrying: one its decorators raised since they were
+    /// last re-enabled, or the one that turned its syntax highlighting off, which outlives a
+    /// rebuild because a rebuild is not what would fix it.
+    /// </summary>
+    private RenderFaultEventArgs? PaneFault()
+    {
+        return _leftPane?.Faults.FirstOrDefault()
+               ?? _rightPane?.Faults.FirstOrDefault()
+               ?? _leftPane?.SyntaxFault
+               ?? _rightPane?.SyntaxFault;
     }
 
     private void ApplyModel(SideBySideDocument? document, IReadOnlyList<DiffWarning> warnings, DiffDiagnostics? diagnostics, DiffOptions? options)
@@ -1558,7 +1615,10 @@ public class SideBySideDiffView : TemplatedControl
         pane.WordDiffLookup = WordDiffLookup;
         pane.IsReadOnly = side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
         pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
+        // The logger first: assigning the file name may install a grammar, which logs.
         pane.Logger = _renderLogger;
+        pane.UseSyntaxHighlighting = UseSyntaxHighlighting;
+        pane.SyntaxFileName = SyntaxFileNameOf(side == DiffSide.Left ? LeftSource : RightSource);
         // The left bar is hidden and the right one reflects both: after priming the extents are equal.
         pane.VerticalScrollBarVisibility = side == DiffSide.Left ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
         pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
