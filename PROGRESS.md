@@ -5,8 +5,7 @@
 **Phase 10 — Scale, visibility, accessibility** of
 [plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`; phases 0 through 10
 are done, and what remains of the plan is the optional inline view. `SideBySideDiffView` compares
-two
-`PaneSource`s: two `DiffPanePresenter`s over the sources' own documents, with rendered padding
+two `PaneSource`s: two `DiffPanePresenter`s over the sources' own documents, with rendered padding
 holding the rows level, row and word-level highlights, line-number and change-marker gutters,
 headers, a banner for what failed or was skipped, a status strip, a connector gutter between the
 panes and a minimap beside them, vertical scrolling coupled 1:1, change navigation on F7 /
@@ -83,7 +82,7 @@ dotnet run --project src/ThemeAudit -- report
 | Focus visuals; automation names on every decorator | pass: `The_focused_pane_is_accented_in_its_header_and_F6_moves_the_accent` — no accent pixels while nothing has focus, the accent under the focused pane's header only, and F6 moves it to the other side; `Every_decorator_the_composite_builds_carries_an_automation_name` sweeps the panes, both margins of each, the connector gutter, the minimap, the status strip and the find bar at runtime, where the XAML guard cannot see the margins because they are built in code |
 | Snapshot | `ViewOptionsSnapshotTests.The_view_options_and_the_focus_accent_render` Light and Dark — tab arrows, space dots and `\n` glyphs at a tab width of 8 and a pane font of 16, with the focus accent under the right header; reviewed and approved |
 | `dotnet build DiffView.slnx -warnaserror` | clean |
-| `dotnet test --solution DiffView.slnx` | 295 passed (285 before the phase); 6 `Perf` tests excluded, 2 of them new |
+| `dotnet test --solution DiffView.slnx` | 295 passed (285 before the phase); with `-p:IncludePerfTests=true`, 302 — the 7 `Perf` tests, 2 of them new |
 | New headless tests proven able to fail | six mutations: dropping `ShowSpaces`/`ShowTabs`/`IndentationSize` failed the whitespace and tab-width tests; clearing the pane font instead of setting it failed the font test; not pushing focus into the headers failed the focus test; dropping the margins' automation name failed the decorator sweep; and reporting the mixed-line-ending warning as a success failed the notice test |
 | Theme audit regenerated | `theme-audit compat` then `report` after the new `DiffView.FocusAccentBrush`: `docs/theme-audit.md` scores it 5.22:1 (light) and 6.45:1 (dark) against the header background, 0 low-contrast findings, and the drift test passes |
 
