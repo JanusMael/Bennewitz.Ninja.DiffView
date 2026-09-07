@@ -1,13 +1,13 @@
 # DiffView
 
-A side-by-side text diff control for Avalonia 12 — row-aligned panes on AvaloniaEdit, line and
-word-level highlighting, change navigation, minimap, connectors, find across either or both
-panes, syntax highlighting — built read-only first and designed so in-pane editing is a flip,
-not a rewrite. A second, standalone deliverable is `theme-audit`, a dotnet tool that finds the
+Text diff controls for Avalonia 12 — row-aligned panes on AvaloniaEdit, line and word-level
+highlighting, change navigation, minimap, connectors, find across either or both panes, syntax
+highlighting, and a unified (inline) view over the same model — built read-only first and
+designed so in-pane editing is a flip, not a rewrite. A second, standalone deliverable is `theme-audit`, a dotnet tool that finds the
 resource keys an Avalonia theme leaves undefined (the invisible-control cases) and the tokens
 below a contrast floor, for any Avalonia project.
 
-Status: **Phase 10 — scale, visibility and accessibility — complete; only the optional inline view remains.** The
+Status: **every phase of the plan is complete, the optional inline view included.** The
 theme audit report is [docs/theme-audit.md](docs/theme-audit.md). The plan is
 [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);
 progress is tracked in [PROGRESS.md](PROGRESS.md), decisions in [DECISIONS.md](DECISIONS.md),
@@ -61,6 +61,12 @@ Run the demo under a different theme or variant:
 
 ```bash
 dotnet run --project src/DiffView.Demo -- --theme fluent --variant dark
+```
+
+Open two files in the unified view, which View → Unified (inline) view also switches to:
+
+```bash
+dotnet run --project src/DiffView.Demo -- --unified --left one.cs --right two.cs
 ```
 
 ## The theme audit

@@ -1,0 +1,78 @@
+<!--
+    The control theme of InlineDiffView, compiled as InlineDiffViewTheme (the x:Class below) and
+    merged by the control into its own resources, so the structure never depends on a host
+    include and the merge is trim-safe. The find bar, the headers and the status strip carry
+    their own themes from SideBySideDiffView.axaml, which each of them merges itself. Every
+    brush is a DiffView.* token from the host's DiffView.axaml include; no host theme key is
+    referenced.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dv="using:Bennewitz.Ninja.DiffView.Avalonia"
+                    x:Class="Bennewitz.Ninja.DiffView.Avalonia.InlineDiffViewTheme">
+
+  <ControlTheme x:Key="{x:Type dv:InlineDiffView}" TargetType="dv:InlineDiffView">
+    <Setter Property="Background" Value="{DynamicResource DiffView.PaneBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource DiffView.PaneForegroundBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Background="{TemplateBinding Background}">
+          <!-- One pane, two files: a header per side, each naming its own and what probing it
+               found. Neither carries the focus accent — with one pane, which has focus says
+               nothing. -->
+          <Grid Name="PART_Headers" ColumnDefinitions="*,1,*">
+            <dv:DiffPaneHeader Name="PART_LeftHeader" />
+            <Border Grid.Column="1" Background="{DynamicResource DiffView.ConnectorBrush}" />
+            <dv:DiffPaneHeader Name="PART_RightHeader" Grid.Column="2" />
+          </Grid>
+
+          <Border Name="PART_Banner" Grid.Row="1" Padding="10,6">
+            <DockPanel>
+              <Button Name="PART_BannerAction"
+                      DockPanel.Dock="Right"
+                      Margin="12,0,0,0"
+                      VerticalAlignment="Center"
+                      Content="{TemplateBinding BannerActionText}"
+                      IsVisible="{TemplateBinding BannerActionText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                      ToolTip.Tip="{TemplateBinding BannerActionText}"
+                      AutomationProperties.Name="{TemplateBinding BannerActionText}" />
+              <TextBlock Name="PART_BannerText"
+                         Text="{TemplateBinding BannerMessage}"
+                         TextWrapping="Wrap"
+                         VerticalAlignment="Center" />
+            </DockPanel>
+          </Border>
+
+          <!-- The find bar collapses when it is closed, so its Auto row takes no height. -->
+          <dv:DiffFindBar Name="PART_FindBar" Grid.Row="2" IsVisible="False" />
+
+          <dv:DiffPanePresenter Name="PART_Pane" Grid.Row="3" AutomationProperties.Name="{TemplateBinding PaneName}" />
+
+          <dv:DiffStatusStrip Name="PART_StatusStrip" Grid.Row="4" AutomationProperties.Name="{TemplateBinding StatusStripName}" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:banner-none /template/ Border#PART_Banner">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:banner-error /template/ Border#PART_Banner">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusFailureBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:banner-error /template/ TextBlock#PART_BannerText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusFailureForegroundBrush}" />
+    </Style>
+    <Style Selector="^:banner-degraded /template/ Border#PART_Banner">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusWarningBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:banner-degraded /template/ TextBlock#PART_BannerText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusWarningForegroundBrush}" />
+    </Style>
+    <Style Selector="^:banner-identical /template/ Border#PART_Banner">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusSuccessBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:banner-identical /template/ TextBlock#PART_BannerText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusSuccessForegroundBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

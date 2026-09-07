@@ -16,6 +16,8 @@ namespace Bennewitz.Ninja.DiffView.Demo;
 public sealed partial class MainWindow : Window
 {
     private string? _note;
+    private PaneSource? _left;
+    private PaneSource? _right;
 
     public MainWindow()
     {
@@ -25,6 +27,16 @@ public sealed partial class MainWindow : Window
         Diff.BuildCompleted += (_, _) => UpdateStatus();
         Diff.BuildFailed += (_, _) => UpdateStatus();
         Diff.RenderFault += (_, _) => UpdateStatus();
+
+        Unified.LoggerFactory = DemoLogging.Factory;
+        Unified.BuildCompleted += (_, _) => UpdateStatus();
+        Unified.BuildFailed += (_, _) => UpdateStatus();
+        Unified.RenderFault += (_, _) => UpdateStatus();
+
+        // --unified starts in the unified view; the menu item is the same switch.
+        UnifiedView.IsChecked = DebugFlags.Unified;
+        Unified.IsVisible = DebugFlags.Unified;
+        Diff.IsVisible = !DebugFlags.Unified;
 
         // The sides load when the window opens, so a host of the window — the smoke snapshot
         // test — can configure the control between construction and the first build.
@@ -59,8 +71,31 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private void LoadPanes()
     {
-        Diff.LeftSource = LoadSource(DebugFlags.LeftPath, "left.txt");
-        Diff.RightSource = LoadSource(DebugFlags.RightPath, "right.txt");
+        _left = LoadSource(DebugFlags.LeftPath, "left.txt");
+        _right = LoadSource(DebugFlags.RightPath, "right.txt");
+        ApplySources();
+    }
+
+    /// <summary>
+    /// Hands the sources to the view that is on screen and takes them away from the other, so
+    /// only one of the two builds, holds a model and keeps two documents alive.
+    /// </summary>
+    private void ApplySources()
+    {
+        if (UnifiedView.IsChecked)
+        {
+            Diff.LeftSource = null;
+            Diff.RightSource = null;
+            Unified.LeftSource = _left;
+            Unified.RightSource = _right;
+        }
+        else
+        {
+            Unified.LeftSource = null;
+            Unified.RightSource = null;
+            Diff.LeftSource = _left;
+            Diff.RightSource = _right;
+        }
     }
 
     private PaneSource LoadSource(string? path, string fixtureFileName)
@@ -112,7 +147,7 @@ public sealed partial class MainWindow : Window
         catch (Exception ex) when (ex is InvalidOperationException or PlatformNotSupportedException)
         {
             Log.Warning(ex, "The file picker is not available on this platform");
-            Diff.Status.SetFailure("The file picker is not available here.");
+            Status().SetFailure("The file picker is not available here.");
             return;
         }
 
@@ -127,19 +162,21 @@ public sealed partial class MainWindow : Window
             PaneSource source = PaneSource.FromFile(path);
             if (side == DiffSide.Left)
             {
-                Diff.LeftSource = source;
+                _left = source;
             }
             else
             {
-                Diff.RightSource = source;
+                _right = source;
             }
+
+            ApplySources();
 
             Log.Information("Opened {Path} into the {Side} pane ({Length} bytes)", path, side, source.Text.Length);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Log.Error(ex, "Could not read {Path}", path);
-            Diff.Status.SetFailure($"Could not read {path}: {ex.Message}");
+            Status().SetFailure($"Could not read {path}: {ex.Message}");
         }
     }
 
@@ -169,14 +206,29 @@ public sealed partial class MainWindow : Window
         UpdateStatus();
     }
 
+    /// <summary>
+    /// Swaps the two views over. The options travel with the switch, and only the view on screen
+    /// keeps the sources, so nothing is built twice.
+    /// </summary>
+    private void OnToggleUnifiedView(object? sender, RoutedEventArgs e)
+    {
+        bool unified = UnifiedView.IsChecked;
+        Unified.IsVisible = unified;
+        Diff.IsVisible = !unified;
+        ApplySources();
+        UpdateStatus();
+    }
+
     private void OnToggleIgnoreWhitespace(object? sender, RoutedEventArgs e)
     {
         Diff.IgnoreWhitespace = IgnoreWhitespace.IsChecked;
+        Unified.IgnoreWhitespace = IgnoreWhitespace.IsChecked;
     }
 
     private void OnToggleIgnoreCase(object? sender, RoutedEventArgs e)
     {
         Diff.IgnoreCase = IgnoreCase.IsChecked;
+        Unified.IgnoreCase = IgnoreCase.IsChecked;
     }
 
     private void OnToggleSyncHorizontal(object? sender, RoutedEventArgs e)
@@ -189,16 +241,19 @@ public sealed partial class MainWindow : Window
         // The bundled fixture is .txt, which no grammar claims: open a .cs or .json file, or pass
         // --left / --right, to see this do anything.
         Diff.UseSyntaxHighlighting = UseSyntax.IsChecked;
+        Unified.UseSyntaxHighlighting = UseSyntax.IsChecked;
     }
 
     private void OnToggleShowWhitespace(object? sender, RoutedEventArgs e)
     {
         Diff.ShowWhitespace = ShowWhitespace.IsChecked;
+        Unified.ShowWhitespace = ShowWhitespace.IsChecked;
     }
 
     private void OnToggleShowLineEndings(object? sender, RoutedEventArgs e)
     {
         Diff.ShowLineEndings = ShowLineEndings.IsChecked;
+        Unified.ShowLineEndings = ShowLineEndings.IsChecked;
     }
 
     private void OnTabWidth(object? sender, RoutedEventArgs e)
@@ -206,6 +261,7 @@ public sealed partial class MainWindow : Window
         if (sender is MenuItem { Tag: string tag } && int.TryParse(tag, CultureInfo.InvariantCulture, out int width))
         {
             Diff.TabWidth = width;
+            Unified.TabWidth = width;
         }
     }
 
@@ -215,15 +271,30 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private void OnPaneFontSize(object? sender, RoutedEventArgs e)
     {
-        Diff.PaneFontSize = sender is MenuItem { Tag: string tag } && double.TryParse(tag, CultureInfo.InvariantCulture, out double size)
+        double paneFont = sender is MenuItem { Tag: string tag } && double.TryParse(tag, CultureInfo.InvariantCulture, out double size)
             ? size
             : double.NaN;
+        Diff.PaneFontSize = paneFont;
+        Unified.PaneFontSize = paneFont;
     }
 
     private void OnFind(object? sender, RoutedEventArgs e)
     {
         // The control's own Ctrl+F does this too; the item is here so the feature is findable.
-        Diff.OpenFind();
+        if (UnifiedView.IsChecked)
+        {
+            Unified.OpenFind();
+        }
+        else
+        {
+            Diff.OpenFind();
+        }
+    }
+
+    /// <summary>The status lane of the view on screen, which is where the demo's own notes go.</summary>
+    private StatusController Status()
+    {
+        return UnifiedView.IsChecked ? Unified.Status : Diff.Status;
     }
 
     private void OnToggleLiveLog(object? sender, RoutedEventArgs e)
@@ -289,8 +360,9 @@ public sealed partial class MainWindow : Window
         // logs path is one hover away, in the Debug menu, and in the log itself. A note carries a
         // path only when a flag named one, which no snapshot does.
         string palette = ColourBlindPalette.IsChecked ? "colour-blind" : "default";
+        string layout = UnifiedView.IsChecked ? "unified" : "side by side";
         string note = _note is null ? string.Empty : $"   ·   {_note}";
-        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Palette: {palette}{note}   ·   F12: live log";
+        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Palette: {palette}   ·   View: {layout}{note}   ·   F12: live log";
         ToolTip.SetTip(StatusText, $"Logs: {LogPaths.LogsDirectory}");
     }
 }

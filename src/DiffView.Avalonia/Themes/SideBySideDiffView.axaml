@@ -131,9 +131,12 @@
                             ToolTip.Tip="{TemplateBinding ChangedRowsOnlyName}"
                             AutomationProperties.Name="{TemplateBinding ChangedRowsOnlyName}" />
 
-              <!-- The scope segmented control: exactly one of the three is checked. -->
-              <Border Width="1" Margin="2,3" Background="{DynamicResource DiffView.ConnectorBrush}" />
+              <!-- The scope segmented control: exactly one of the three is checked. A host with
+                   one pane hides the whole group, separator included. -->
+              <Border Width="1" Margin="2,3" Background="{DynamicResource DiffView.ConnectorBrush}"
+                      IsVisible="{TemplateBinding ShowScope}" />
               <ToggleButton Name="PART_ScopeLeft"
+                            IsVisible="{TemplateBinding ShowScope}"
                             Content="{TemplateBinding ScopeLeftText}"
                             Padding="6,2"
                             MinHeight="0"
@@ -142,6 +145,7 @@
                             ToolTip.Tip="{TemplateBinding ScopeLeftName}"
                             AutomationProperties.Name="{TemplateBinding ScopeLeftName}" />
               <ToggleButton Name="PART_ScopeRight"
+                            IsVisible="{TemplateBinding ShowScope}"
                             Content="{TemplateBinding ScopeRightText}"
                             Padding="6,2"
                             MinHeight="0"
@@ -150,6 +154,7 @@
                             ToolTip.Tip="{TemplateBinding ScopeRightName}"
                             AutomationProperties.Name="{TemplateBinding ScopeRightName}" />
               <ToggleButton Name="PART_ScopeBoth"
+                            IsVisible="{TemplateBinding ShowScope}"
                             Content="{TemplateBinding ScopeBothText}"
                             Padding="6,2"
                             MinHeight="0"

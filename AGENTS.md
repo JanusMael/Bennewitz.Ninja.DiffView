@@ -24,6 +24,7 @@ no dates, no counts.
 | No renderer or margin reads `TextView.VisualLines` while `TextView.VisualLinesValid` is false | `VisualLinesInvalidException` during layout | `GuardedBackgroundRenderer.Draw`, `DiffMargin.Render` |
 | Line splitting agrees three ways: `LineSplitter`, DiffPlex `LineChunker`, AvaloniaEdit `NewLineFinder` | Kinds and padding land on the wrong lines for CR or mixed input | `DiffPane.Lines` count equals `TextDocument.LineCount`; test `DiffPanePresenterTests.The_model_and_the_editor_count_the_same_lines_on_mixed_line_endings` |
 | Document text is never logged | A secret under comparison lands in a log file | `DiffPanePresenter.ReportFault` goes through `DiffViewLog.RenderFault`, which logs decorator, side, line number and — for a grammar — its language, never text |
+| The unified view's pane document is the exception to the rule above, and the only one: `InlineDiffView` composes it from both sides and rewrites it when the model changes, which is why that pane is read-only and why its sides' documents stay off screen | An edit lands in a document that is half one file and half the other, or the composed text stops matching the unified table | `InlineDiffView.ComposeUnifiedText`; §7 |
 | Syntax highlighting is a foreground: TextMate colours the tokens and nothing else, so the row fills, the word pieces, the match highlights and the selection all compose over it | Colours fight, or a grammar hides the diff | `SyntaxHighlighting` installs `AvaloniaEdit.TextMate` and sets a grammar and a theme only; test `SyntaxSnapshotTests.Syntax_colour_and_the_inserted_fill_compose_on_the_same_row` |
 | A grammar is chosen from `DiffPanePresenter.SyntaxFileName`'s extension; no extension, or one no grammar claims, is plain text and **not** a fault | A `.txt` pair puts the control in `Degraded`, or an unknown file throws | `SyntaxHighlighting.GrammarFor`; tests `SyntaxTests.An_extension_no_grammar_claims_leaves_plain_text_and_the_state_stays_ready`, `SyntaxTests.A_source_with_no_name_at_all_stays_plain_text` |
 
@@ -75,6 +76,13 @@ no dates, no counts.
   `ResourceInclude` in code is IL2026 under the trim-check; the `x:Class` dictionary is not. The `DiffView.*` tokens come from the host's `DiffViewResources.ThemeUri`
   include; `DiffBrushes.Resolve` reads them on attach, `ResourcesChanged` and
   `ActualThemeVariantChanged`, with a hard fallback per token.
+- `InlineDiffView`'s control theme is `Themes/InlineDiffView.axaml`, compiled as
+  `InlineDiffViewTheme` and merged by the control itself; the find bar, the headers and the strip
+  it hosts each merge `SideBySideDiffViewTheme` in their own constructors, so the file holds one
+  theme and nothing else.
+- `DiffLineNumberMargin` draws one column of the document's own numbers for a side's pane and two
+  columns of the *sides'* numbers for a unified one, a context line filling both; each column is
+  measured against its own side's line count (§7).
 - Nothing under `src/DiffView.Avalonia/Themes` references a host theme key: `theme-audit report`
   scans that directory as the "DiffView" consumer and `ReferenceAuditTests` fails on drift.
 - A new colour token goes into `DiffView.Tokens.axaml`, `DiffView.Tokens.ColorBlind.axaml` and
@@ -122,6 +130,10 @@ no dates, no counts.
   captured without waiting is a coin toss. A test that wants colour waits on
   `CompositeHost.PumpUntilAsync` with a `SyntaxProbe` condition — the built runs' foregrounds,
   which are readable the moment the line is rebuilt — never on a sleep.
+- `InlineHost` under `tests/DiffView.Avalonia.Tests/Inline` is `CompositeHost`'s unified twin —
+  the same hand-advanced clock, the same zero-time builder, the same syntax rule. A test that
+  reads what a margin or a background renderer *drew* captures a frame (`Capture()`); a layout
+  pass alone does not redraw a margin.
 - Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`).
   Static seams: `DebugFlags.ResetForTesting`, `DiffViewStrings.ResetForTesting`.
 - `AccessibilityCoverageTests` counts `DiffPanePresenter` and `TextEditor` as interactive, so
@@ -159,7 +171,28 @@ no dates, no counts.
 | `DiffPanePresenter.SyntaxFault` outlives `ResetFaults`, and `SideBySideDiffView.ApplyResult` reads `PaneFault()` **before** applying the model, so a fault raised while a build ran lands as `Degraded` when the build does | A grammar failure during `Building` is swallowed by the `Ready` that follows | `SideBySideDiffView.ApplyResult`, `PaneFault`; the test above |
 | The find query is never logged — only its length — because Ctrl+F pre-fills it from the pane's selection, so it may be document text | A secret under comparison reaches a log file through the find bar | `DiffViewLog.FindStarted`, `DiffViewLog.FindFailed`; the sentinel test above |
 
-## 7. Contributing back
+## 7. The unified view
+
+`InlineDiffView` is the same model, builder, renderers, margins, find engine and state machine as
+`SideBySideDiffView`, on one pane. Only what differs is listed here; everything in §1–§6 that is
+not contradicted below holds unchanged.
+
+| Invariant | Failure signature if broken | Canonical source |
+|---|---|---|
+| The pane's document is *composed*, not a source: `InlineDiffView.ComposeUnifiedText` rewrites `PaneDocument` from `InlineDocument.Lines` on every model change, keeping the one `TextDocument` instance and clearing its undo stack | The caret and the scroll jump to the top on every option change, or the editor's line count stops matching the unified table | `InlineDiffView.ComposeUnifiedText`, `ApplyModel`; test `InlineDiffViewTests.The_pane_holds_the_two_sides_unified_and_the_change_counts_match_the_side_by_side_view` |
+| The unified pane is read-only, and there is no per-side read-only switch | An edit lands in a document that is half one file and half the other | `InlineDiffView.AttachPane` |
+| `LeftDocument` and `RightDocument` are still built and never displayed: the word diff reads a row's two lines from them, and the search runs over `DocumentPaneText` snapshots of them | Word pieces vanish, or the search reads the composed document and finds a context line once where the model has it twice | `InlineDiffView.OnSourceChanged`, `ApplyModel`, `RunFind` |
+| A unified pane takes its metadata from `InlineDocument`, and `DiffPanePresenter.IsUnified` is what says so — `PaneMetadata.Unified` rather than `PaneMetadata.For` | The pane renders a side's kinds over unified lines | `DiffPanePresenter.ApplyMetadata`, `PaneMetadata.Unified` |
+| There is no padding in a unified reading: `PaneMetadata.PaddedLineNumbers` yields nothing and the primer does no work | The height tree is primed for lines that hold no padding, and rows stop being uniform | `PaneMetadata.PaddingFor`, `PaddedLineNumbers`; test `InlineDiffViewTests.Every_visible_row_is_filled_by_its_own_kind_and_none_of_them_is_padded` |
+| Both halves of a modified row carry `DiffLineKind.Modified`, and the renderer picks the side's pieces with `PaneMetadata.SideOf(lineNumber)` — not the pane's `Side`, which is meaningless when unified | A modified pair loses its word-level highlights, or both halves are highlighted from the same side's pieces | `InlineDocument.Build`, `DiffLineBackgroundRenderer.DrawWordPieces`; test `InlineDiffViewTests.A_modified_row_shows_both_of_its_lines_with_the_word_pieces_of_the_side_each_belongs_to` |
+| A block's on-screen extent is `PaneMetadata.DisplayRowsOf`: the model's rows for a side, the block's own unified lines when unified, where a modified pair takes two | The current-block border is too short and in the wrong place, and navigation scrolls to the wrong line | `PaneMetadata.DisplayRowsOf`, `InlineDiffView.SetCurrentChange`; test `InlineDiffViewTests.F7_walks_the_blocks_and_the_border_covers_the_block_own_unified_lines` |
+| Find maps every match through `InlineDocument.LineOf` and drops the ones the view does not show — the right line of a context row — then re-sorts by unified line and column | A highlight lands on the wrong line, or `SearchMatchRenderer`'s binary search misses matches because they are not in line order | `InlineDiffView.ToUnified`; tests `InlineFindTests.The_matches_are_the_side_by_side_view_own_minus_the_context_lines_it_shows_twice`, `Over_changed_rows_only_the_two_views_find_exactly_the_same_matches` |
+| The find scope is always `FindScope.Both`: the setter coerces it and `DiffFindBar.ShowScope` hides the group | A scope of one side hides matches that are on screen | `InlineDiffView.FindOptions`, `OnApplyTemplate`; test `InlineFindTests.The_scope_control_is_gone_and_the_scope_stays_both` |
+| The line numbers are the *sides'*, in two columns, and so is the strip's caret lane; the unified document's own numbering is never shown | The gutter names lines of neither file | `DiffLineNumberMargin.RenderCore`, `InlineDiffView.UpdateCaret`; test `InlineDiffViewTests.The_gutter_numbers_each_line_on_its_own_side_and_leaves_the_other_column_empty` |
+| A pane that is unified logs as `unified`, never as a side: the three pane-naming log methods take `DiffSide?` and the presenter passes `LogSide` | A log line blames the left pane for a fault in a view that has no sides | `DiffPanePresenter.LogSide`, `DiffViewLog.Pane`; test `InlineDiffViewTests.A_throwing_decorator_degrades_the_control_and_the_text_still_renders` |
+| No minimap and no connector gutter — both are two-sided — and no F6: six key bindings, not seven | A template part that cannot be fed | `Themes/InlineDiffView.axaml`, the `InlineDiffView` constructor |
+
+## 8. Contributing back
 
 Anything that belongs in ClaudeForge goes there first, as a branch and pull request in the same
 working session; the plan's *Contributing back to ClaudeForge* section and the *Upstreamed to

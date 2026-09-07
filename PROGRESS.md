@@ -2,43 +2,49 @@
 
 ## Resume
 
-**Phase 10 — Scale, visibility, accessibility** of
-[plan 00001](plans/00001-side-by-side-diff-control.md) is complete on `main`; phases 0 through 10
-are done, and what remains of the plan is the optional inline view. `SideBySideDiffView` compares
-two `PaneSource`s: two `DiffPanePresenter`s over the sources' own documents, with rendered padding
-holding the rows level, row and word-level highlights, line-number and change-marker gutters,
-headers, a banner for what failed or was skipped, a status strip, a connector gutter between the
-panes and a minimap beside them, vertical scrolling coupled 1:1, change navigation on F7 /
-Shift+F7 with F6 switching panes, and a tooltip on every gutter. Above the panes sits the find
-bar: the query box, the Match case / Whole word / Regex / Changed rows only toggles, the
-L / R / Both scope, the match count, previous / next / close, and an inline line for a bad
-pattern or a truncated result. Matches are highlighted in both panes above the row fills and
-below the selection, the current one in its own brush, with ticks down the minimap and the count
-and scope in the strip; Ctrl+F opens the bar with the query pre-filled from the selection, F3 and
-Enter walk the matches, Escape closes it and hands focus back. Builds run latest-wins on a worker
-over text captured on the UI thread, and so do searches, over `TextDocument` snapshots with the
-line table copied on the UI thread; a rebuild swaps the model and never a `TextDocument`; the
-control is always in one `DiffViewState`; every user-visible string goes through `DiffViewStrings`
-and every log line through `DiffViewLog`, which never carries document text — not the query
-either, only its length. Each pane also colours its text from a TextMate grammar chosen by the
-side's file extension, with the theme following the variant, under everything the diff draws; an
-extension no grammar claims is plain text and not a failure, and a grammar that will not install
-turns itself off and leaves the control `Degraded` with the language named. Whitespace glyphs,
-line-ending glyphs, the tab width and the pane font are the view options, each pushed to both
-panes and none of them touching a row's height; the focused pane is accented under its header;
-each pane copies its own selection while read-only holds against typing and pasting; and every
-decorator announces itself. The demo hosts the control with file-open, option toggles, Find,
-syntax highlighting, the view options and the colour-blind palette.
+**Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
+the optional inline view — included. The library ships two controls over one model.
 
-Next is **Phase 11 — Inline (unified) view** (plan §Phase 11, optional): `InlineDiffView` reusing
-the renderer, margins, status strip, find bar and state machine on a single presenter fed from the
-same `Rows`, with the find scope control collapsing to the one pane. Done when the same fixtures
-render in unified form with matching change counts, the same find results and the same failure
-behaviour. Windows and macOS demo runs are still owed from Phase 10, and this session cannot
-screenshot a window (XWayland refuses the grab), so a look at the running demo is the user's.
+`SideBySideDiffView` compares two `PaneSource`s: two `DiffPanePresenter`s over the sources' own
+documents, with rendered padding holding the rows level, row and word-level highlights,
+line-number and change-marker gutters, headers, a banner for what failed or was skipped, a status
+strip, a connector gutter between the panes and a minimap beside them, vertical scrolling coupled
+1:1, change navigation on F7 / Shift+F7 with F6 switching panes, and a tooltip on every gutter.
+Above the panes sits the find bar: the query box, the Match case / Whole word / Regex / Changed
+rows only toggles, the L / R / Both scope, the match count, previous / next / close, and an inline
+line for a bad pattern or a truncated result. Matches are highlighted in both panes above the row
+fills and below the selection, the current one in its own brush, with ticks down the minimap and
+the count and scope in the strip; Ctrl+F opens the bar with the query pre-filled from the
+selection, F3 and Enter walk the matches, Escape closes it and hands focus back. Each pane also
+colours its text from a TextMate grammar chosen by the side's file extension, with the theme
+following the variant, under everything the diff draws; an extension no grammar claims is plain
+text and not a failure, and a grammar that will not install turns itself off and leaves the
+control `Degraded` with the language named. Whitespace glyphs, line-ending glyphs, the tab width
+and the pane font are the view options, each pushed to both panes and none of them touching a
+row's height; the focused pane is accented under its header; each pane copies its own selection
+while read-only holds against typing and pasting; and every decorator announces itself.
 
-Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin follows the
-merge (see *Upstreamed to ClaudeForge*).
+`InlineDiffView` is the same model, builder, renderers, margins, find engine and state machine on
+**one** pane, over a document it composes from both sides in `diff -u` order: context rows once,
+then every removal of a change block before every addition. It is read-only, because half its
+lines belong to one file and half to the other, and it is the only document in the library that a
+build replaces. A modified pair keeps its kind on both halves, so the word-level highlights
+survive the unified reading; the gutter carries a number column per side, a context line filling
+both; the find bar loses its scope group and searches the two sides, dropping only the matches the
+view does not show; and there is no minimap, no connector gutter and no F6. The demo hosts both,
+switched by View → Unified (inline) view or the `--unified` flag, and only the one on screen holds
+the sources.
+
+Builds run latest-wins on a worker over text captured on the UI thread, and so do searches, over
+`TextDocument` snapshots with the line table copied on the UI thread; the control is always in one
+`DiffViewState`; every user-visible string goes through `DiffViewStrings` and every log line
+through `DiffViewLog`, which never carries document text — not the query either, only its length,
+and it names the unified pane `unified`, which is neither side.
+
+What is left is not code: **Windows and macOS demo runs are still owed** from Phase 10, and this
+box cannot screenshot a window (XWayland refuses the grab), so a look at either running control is
+the user's. Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin
+follows the merge (see *Upstreamed to ClaudeForge*).
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -66,7 +72,28 @@ dotnet run --project src/ThemeAudit -- report
 | 8 Find | done | `DiffFindBar` (query, Match case / Whole word / Regex / Changed rows only, L / R / Both scope, count, prev / next / close, inline error and truncation notice); `SearchMatchRenderer` per pane over `KnownLayer.Selection`; debounced, cancellable searches over `DocumentPaneText` snapshots, off the UI thread above 2,000 rows; minimap match ticks; the strip's find lane; Ctrl+F / F3 / Shift+F3 / Enter / Shift+Enter / Escape; 9 headless and snapshot test cases plus the sentinel log test's find leg |
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
-| 11 Inline (unified) view | not started | optional |
+| 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Phase 11 verification
+
+| Done-when item | Result |
+|---|---|
+| The same fixtures render in unified form | pass: `InlineDiffViewTests.The_pane_holds_the_two_sides_unified_and_the_change_counts_match_the_side_by_side_view` composes the small pair's text independently, line by line from the side each unified line names, and finds it equal to `PaneDocument.Text`, with the editor's line count equal to the table's; `Every_visible_row_is_filled_by_its_own_kind_and_none_of_them_is_padded` walks the rendered frame and finds every row filled by its own kind, the markers agreeing glyph for glyph, and not one padded line — a unified document holds every line it shows, so nothing primes |
+| Matching change counts | pass: the same test compares the two controls side by side — `ChangeCount`, `RowCount` and the strip's `+3 −5 ~2` and `5 changes` are the same numbers, one builder producing one model |
+| The same find results | pass: `InlineFindTests.The_matches_are_the_side_by_side_view_own_minus_the_context_lines_it_shows_twice` — the side-by-side view's four matches for `Greeter` map to the unified view's three, the one dropped being the right line of a context row, whose text the left line already carries on screen; every surviving match is on the line it names with the query under it. `Over_changed_rows_only_the_two_views_find_exactly_the_same_matches` closes the gap the other way: with no context row searched, the counts and sides are identical. `F3_walks_the_matches_down_the_pane_selecting_each_in_turn` walks them in line order and wraps; `An_invalid_regular_expression_shows_the_error_inline_and_the_state_stays_ready` and `Escape_closes_the_bar_drops_the_highlights_and_returns_focus_to_the_pane` are the Phase 8 behaviours over one pane |
+| The same failure behaviour | pass: `A_binary_side_fails_the_build_and_the_banner_offers_a_retry` — `Empty → Building → Failed`, the error banner with Retry, no model, no composed text, the strip failing; `A_throwing_decorator_degrades_the_control_and_the_text_still_renders` — one fault, `Degraded`, the generator disabled, every line still rendered, and the log line naming the pane `unified` rather than a side |
+| The find scope control collapses to the single pane | pass: `The_scope_control_is_gone_and_the_scope_stays_both` — `DiffFindBar.ShowScope` is false, and a host that assigns `FindScope.Left` gets `Both` back while its other options are kept; the strip's find lane carries the count with no scope to name |
+| Line numbers, navigation and the word diff over unified rows | pass: `The_gutter_numbers_each_line_on_its_own_side_and_leaves_the_other_column_empty` (a context line fills both columns, a removed or added line one, and the tooltip names the side); `A_modified_row_shows_both_of_its_lines_with_the_word_pieces_of_the_side_each_belongs_to` (each half highlighted over its own changed word); `F7_walks_the_blocks_and_the_border_covers_the_block_own_unified_lines` (the border spans the block's unified lines, which outnumber its rows); `The_caret_lane_names_the_line_on_its_own_side_not_the_unified_one` |
+| Rendered under every theme target | pass: `Renders_under_every_theme_target_with_no_binding_or_resource_warnings` over all ten targets, with the header's own token sampled from the frame and the log sink asserting no warnings |
+| Automation names | pass: `Every_decorator_the_unified_view_builds_carries_an_automation_name` sweeps the pane, both its margins, the strip and the find bar at runtime; the XAML guard counts `InlineDiffView` as interactive |
+| Snapshot | `InlineSnapshotTests.The_unified_view_renders` Light and Dark — a block's removals above its additions, a number column per side, `+` / `−` / `~` markers, word-level pieces on the modified pair and the current block outlined; reviewed and approved |
+| Core model | pass: `InlineDocumentTests`, 9 cases — one line per row when the sides are identical, every displayed line exactly once with the counts adding up, removals before additions inside a block with each side keeping its order, a modified row's kind on both halves, the right line of a context row mapping to nothing, out-of-range lines and blocks answering rather than throwing, every block a contiguous range holding exactly its own rows over a 600-line pair, and an unaligned pair printing every left line before every right |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 332 passed (295 before the phase); with `-p:IncludePerfTests=true`, 339 |
+| New tests proven able to fail | six mutations, each caught: emitting a block's additions before its removals; reading the word pieces from the pane's `Side` instead of the line's; drawing the current-block border over the model's rows instead of the block's unified lines; drawing the unified document's own numbers in the gutter; logging the unified pane as the left side; and keeping the find matches the unified view cannot show |
+| Trimmed publish (`linux-x64`, self-contained) | succeeds, 0 IL warnings, 57 MB |
+| Demo | pass: the published binary run as `--unified --left src/DiffView.Core/PaneSource.cs --right src/DiffView.Core/TextProbe.cs` logs `Syntax highlighting on the unified pane: csharp`, then `Build 1 completed in 6.4 ms: 151 rows, 25 blocks (+23 -31 ~61)` and `State "Building" → "Ready"` with no fault — the same model the side-by-side run reports for the same pair. The window itself could not be screenshotted from this session (XWayland refuses the grab); the headless snapshots are the pixels' evidence |
+| Theme audit regenerated | `theme-audit compat` then `report` after `Themes/InlineDiffView.axaml`: the DiffView consumer moves from 5 files to 6 and 56 references to 65, with no new key and 0 low-contrast findings; the drift test passes |
 
 ## Phase 10 verification
 

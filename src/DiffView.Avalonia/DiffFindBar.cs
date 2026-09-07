@@ -76,6 +76,10 @@ public class DiffFindBar : TemplatedControl
     public static readonly StyledProperty<FindScope> ScopeProperty =
         AvaloniaProperty.Register<DiffFindBar, FindScope>(nameof(Scope), FindScope.Both);
 
+    /// <summary>Identifies the <see cref="ShowScope"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowScopeProperty =
+        AvaloniaProperty.Register<DiffFindBar, bool>(nameof(ShowScope), defaultValue: true);
+
     /// <summary>Identifies the <see cref="CountText"/> property.</summary>
     public static readonly StyledProperty<string?> CountTextProperty =
         AvaloniaProperty.Register<DiffFindBar, string?>(nameof(CountText));
@@ -251,6 +255,16 @@ public class DiffFindBar : TemplatedControl
     {
         get => GetValue(ScopeProperty);
         set => SetValue(ScopeProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the L / R / Both scope buttons are shown. On by default; a host with one pane —
+    /// <see cref="InlineDiffView"/> — turns them off, there being no side to choose between.
+    /// </summary>
+    public bool ShowScope
+    {
+        get => GetValue(ShowScopeProperty);
+        set => SetValue(ShowScopeProperty, value);
     }
 
     /// <summary>The match count, or <c>null</c> with no query.</summary>

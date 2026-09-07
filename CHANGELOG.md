@@ -147,8 +147,26 @@ All notable changes to DiffView are recorded here. The format follows
   the options and the accent in both variants; `ScalePerfTests` measuring the 200,000-line pair
   and the one-megabyte line from build to scroll, with the numbers in `PROGRESS.md`.
 
+- Phase 11, the unified (inline) view: `InlineDocument`, the unified line table over a
+  `SideBySideDocument` — a context row once, a change block's removals before its additions, a
+  modified pair keeping its kind on both halves so the word diff survives, and a map back from a
+  side's line to the unified one; `InlineDiffView`, one `DiffPanePresenter` over a document
+  composed from both sides, read-only, with the renderers, margins, banner, find bar, status strip
+  and state machine unchanged, a line-number column per side (a context line filling both), block
+  navigation over unified lines, and no minimap, connector gutter or F6; `DiffPanePresenter.IsUnified`
+  and `InlineDocument`, `PaneMetadata.Unified` / `SideOf` / `DisplayRowsOf`, and
+  `DiffFindBar.ShowScope`; the demo hosts both views, switched by View → Unified (inline) view or
+  the `--unified` flag.
+- Headless and unit tests for the composed text, the change counts against the side-by-side
+  view's, the kinds and the absence of padding, the two-column gutter, word pieces on both halves
+  of a modified pair, block navigation and the current-block border, a binary side, a throwing
+  decorator, an option change, the caret lane, the find scope collapsing, the matches the unified
+  view drops and the ones it keeps, and a snapshot of the unified view in both variants.
+
 ### Changed
 
+- The three log methods that name a pane take a `DiffSide?`; the unified view's pane logs as
+  `unified`, which is neither side.
 - The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and
   `DiffPanePresenter` as interactive controls.
 - The composite's gutter is the connector gutter and a minimap column sits beside the right

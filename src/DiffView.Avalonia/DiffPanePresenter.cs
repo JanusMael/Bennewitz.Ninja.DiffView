@@ -38,6 +38,14 @@ public class DiffPanePresenter : TextEditor
     public static readonly StyledProperty<SideBySideDocument?> DiffDocumentProperty =
         AvaloniaProperty.Register<DiffPanePresenter, SideBySideDocument?>(nameof(DiffDocument));
 
+    /// <summary>Identifies the <see cref="InlineDocument"/> property.</summary>
+    public static readonly StyledProperty<InlineDocument?> InlineDocumentProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, InlineDocument?>(nameof(InlineDocument));
+
+    /// <summary>Identifies the <see cref="IsUnified"/> property.</summary>
+    public static readonly StyledProperty<bool> IsUnifiedProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(IsUnified));
+
     /// <summary>Identifies the <see cref="IsCaretBlinkEnabled"/> property.</summary>
     public static readonly StyledProperty<bool> IsCaretBlinkEnabledProperty =
         AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(IsCaretBlinkEnabled), defaultValue: true);
@@ -165,6 +173,31 @@ public class DiffPanePresenter : TextEditor
     {
         get => GetValue(DiffDocumentProperty);
         set => SetValue(DiffDocumentProperty, value);
+    }
+
+    /// <summary>
+    /// The unified line table this pane presents, when <see cref="IsUnified"/>: the document is
+    /// the unified text and this says what each of its lines is. Assigning one has the same
+    /// effect as assigning <see cref="DiffDocument"/> — the metadata is swapped, the decorators
+    /// are re-enabled and the pane redraws.
+    /// </summary>
+    public InlineDocument? InlineDocument
+    {
+        get => GetValue(InlineDocumentProperty);
+        set => SetValue(InlineDocumentProperty, value);
+    }
+
+    /// <summary>
+    /// Whether this pane shows the unified reading of both sides rather than one side of the
+    /// model. Set by <see cref="InlineDiffView"/> and left alone by a side-by-side host, where
+    /// <see cref="Side"/> is what the pane presents. A unified pane takes its metadata from
+    /// <see cref="InlineDocument"/>, has no padding to prime, and names itself "unified" in the
+    /// log, where a side would be a lie.
+    /// </summary>
+    public bool IsUnified
+    {
+        get => GetValue(IsUnifiedProperty);
+        set => SetValue(IsUnifiedProperty, value);
     }
 
     /// <summary>Whether the caret blinks while the pane has focus. Off, it stays visible.</summary>
@@ -325,6 +358,9 @@ public class DiffPanePresenter : TextEditor
 
     internal PaneMetadata Metadata { get; private set; } = PaneMetadata.Empty;
 
+    /// <summary>The side a log line names, or <c>null</c> for the unified pane, which is neither.</summary>
+    internal DiffSide? LogSide => IsUnified ? null : Side;
+
     internal DiffBrushes Palette { get; }
 
     internal PaddingElementGenerator PaddingGenerator => _generator;
@@ -367,7 +403,7 @@ public class DiffPanePresenter : TextEditor
     {
         RenderFaultEventArgs fault = new(source, lineNumber, exception, subject);
         _faults.Add(fault);
-        DiffViewLog.RenderFault(Logger, Side, fault);
+        DiffViewLog.RenderFault(Logger, LogSide, fault);
         // A fault is usually caught inside a render pass, where a listener may not invalidate a
         // visual; the event is raised once the pass is over.
         Dispatcher.UIThread.Post(() => RenderFault?.Invoke(this, fault));
@@ -422,7 +458,10 @@ public class DiffPanePresenter : TextEditor
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == SideProperty || change.Property == DiffDocumentProperty)
+        if (change.Property == SideProperty
+            || change.Property == DiffDocumentProperty
+            || change.Property == InlineDocumentProperty
+            || change.Property == IsUnifiedProperty)
         {
             ApplyMetadata();
         }
@@ -485,11 +524,12 @@ public class DiffPanePresenter : TextEditor
 
     private void ApplyMetadata()
     {
-        Metadata = PaneMetadata.For(DiffDocument, Side);
+        Metadata = IsUnified ? PaneMetadata.Unified(InlineDocument) : PaneMetadata.For(DiffDocument, Side);
         ResetFaults();
         // Built lines carry the old padding: drop them so the generator runs again, then prime.
         TextArea.TextView.Redraw();
         RequestPrime();
+        _lineNumberMargin.OnMetadataChanged();
         _changeMarkerMargin.InvalidateVisual();
     }
 
@@ -630,7 +670,7 @@ public class DiffPanePresenter : TextEditor
             grammar = syntax.GrammarFor(fileName, variant);
             if (grammar is not { } found)
             {
-                DiffViewLog.SyntaxUnavailable(Logger, Side, System.IO.Path.GetExtension(fileName));
+                DiffViewLog.SyntaxUnavailable(Logger, LogSide, System.IO.Path.GetExtension(fileName));
                 RemoveSyntax();
                 return;
             }
@@ -650,7 +690,7 @@ public class DiffPanePresenter : TextEditor
                 syntax.Apply(found, variant);
             }
 
-            DiffViewLog.SyntaxInstalled(Logger, Side, found.LanguageId);
+            DiffViewLog.SyntaxInstalled(Logger, LogSide, found.LanguageId);
             TextArea.TextView.Redraw();
         }
         catch (Exception ex)

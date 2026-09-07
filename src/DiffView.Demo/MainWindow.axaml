@@ -24,6 +24,9 @@
         <MenuItem x:Name="ColourBlindPalette" Header="Colour-_blind palette" ToggleType="CheckBox"
                   Click="OnToggleColourBlindPalette" AutomationProperties.Name="Use the colour-blind-safe palette" />
         <Separator />
+        <MenuItem x:Name="UnifiedView" Header="_Unified (inline) view" ToggleType="CheckBox"
+                  Click="OnToggleUnifiedView" AutomationProperties.Name="Show the comparison unified in one pane" />
+        <Separator />
         <MenuItem Header="_Find…" InputGesture="Ctrl+F" Click="OnFind"
                   AutomationProperties.Name="Open the find bar" />
         <Separator />
@@ -70,6 +73,11 @@
       <TextBlock x:Name="StatusText" FontSize="12" />
     </Border>
 
-    <dv:SideBySideDiffView x:Name="Diff" AutomationProperties.Name="Side-by-side diff" />
+    <!-- Both views, one showing: only the one on screen carries the sources, so the other
+         neither builds nor holds a model. -->
+    <Panel>
+      <dv:SideBySideDiffView x:Name="Diff" AutomationProperties.Name="Side-by-side diff" />
+      <dv:InlineDiffView x:Name="Unified" IsVisible="False" AutomationProperties.Name="Unified diff" />
+    </Panel>
   </DockPanel>
 </Window>

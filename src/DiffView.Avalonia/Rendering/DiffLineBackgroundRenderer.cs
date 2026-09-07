@@ -96,7 +96,7 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
 
             if (kind == DiffLineKind.Modified && Owner.WordDiffLookup is { } words && metadata.RowOf(lineNumber) is { } row)
             {
-                DrawWordPieces(drawingContext, line, row, rowTop, lineHeight, scroll, words, palette);
+                DrawWordPieces(drawingContext, line, row, metadata.SideOf(lineNumber), rowTop, lineHeight, scroll, words, palette);
             }
 
             if (padding.Below > 0)
@@ -108,10 +108,13 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
         }
 
         // The current block's border: rows are uniform once primed, so a row's top is its index
-        // times the line height, and the border spans the block's rows across the viewport.
+        // times the line height, and the border spans the block's rows across the viewport. The
+        // rows are the display's — the model's for a side, the block's own unified lines for the
+        // inline view, where a modified pair takes two of them.
         if (Owner.CurrentBlock is { } block)
         {
-            Rect border = new(0, block.FirstRow * lineHeight - scroll.Y, width, block.RowCount * lineHeight);
+            LineRange rows = metadata.DisplayRowsOf(block);
+            Rect border = new(0, rows.Start * lineHeight - scroll.Y, width, rows.Count * lineHeight);
             if (border.Bottom > 0 && border.Top < textView.Bounds.Height)
             {
                 Pen pen = new(palette[DiffBrush.CurrentBlockBorder], CurrentBlockBorderThickness);
@@ -122,15 +125,15 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
     }
 
     /// <summary>
-    /// One rectangle per changed piece of this side's line, over the row, from the piece's
+    /// One rectangle per changed piece of the line's own side, over the row, from the piece's
     /// character range through the visual line's own column mapping (so tabs and the padding
     /// element are accounted for). Ranges are clamped to the line, which may have changed since
     /// the model was built.
     /// </summary>
-    private void DrawWordPieces(DrawingContext drawingContext, VisualLine line, int row, double rowTop, double lineHeight, Vector scroll, WordDiffLookup words, DiffBrushes palette)
+    private void DrawWordPieces(DrawingContext drawingContext, VisualLine line, int row, DiffSide side, double rowTop, double lineHeight, Vector scroll, WordDiffLookup words, DiffBrushes palette)
     {
         WordDiffPieces pieces = words.PiecesFor(row);
-        IReadOnlyList<PieceRange> mine = Owner.Side == DiffSide.Left ? pieces.Left : pieces.Right;
+        IReadOnlyList<PieceRange> mine = side == DiffSide.Left ? pieces.Left : pieces.Right;
         if (mine.Count == 0)
         {
             return;

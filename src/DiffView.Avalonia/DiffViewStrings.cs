@@ -19,6 +19,9 @@ public static class DiffViewStrings
     /// <summary>Automation name of the right pane.</summary>
     public const string RightPaneName = "Pane.Right.Name";
 
+    /// <summary>Automation name of the unified view's one pane.</summary>
+    public const string UnifiedPaneName = "Pane.Unified.Name";
+
     /// <summary>Automation name of the line-number margin.</summary>
     public const string LineNumbersMarginName = "LineNumbersMargin.Name";
 
@@ -190,6 +193,12 @@ public static class DiffViewStrings
     /// <summary>A line-number tooltip without a counterpart: <c>{0}</c> line, <c>{1}</c> other side.</summary>
     public const string LineTooltipAlone = "LineTooltip.Alone";
 
+    /// <summary>A unified line-number tooltip with a counterpart: <c>{0}</c> this side, <c>{1}</c> this line, <c>{2}</c> other side, <c>{3}</c> other line.</summary>
+    public const string LineTooltipUnifiedAligned = "LineTooltip.Unified.Aligned";
+
+    /// <summary>A unified line-number tooltip without a counterpart: <c>{0}</c> this side, <c>{1}</c> this line, <c>{2}</c> other side.</summary>
+    public const string LineTooltipUnifiedAlone = "LineTooltip.Unified.Alone";
+
     /// <summary>A marker or connector tooltip: <c>{0}</c> change (1-based), <c>{1}</c> total, <c>{2}</c> the block's counts.</summary>
     public const string MarkerTooltip = "Marker.Tooltip";
 
@@ -301,6 +310,9 @@ public static class DiffViewStrings
     /// <summary>The strip's count without a current match: <c>{0}</c> total.</summary>
     public const string StatusFindMatches = "Status.Find.Matches";
 
+    /// <summary>The strip's find lane where there is no scope to name — the unified view: <c>{0}</c> the count.</summary>
+    public const string StatusFindNoScope = "Status.Find.NoScope";
+
     /// <summary>An unchanged row's kind.</summary>
     public const string KindUnchanged = "Kind.Unchanged";
 
@@ -318,6 +330,7 @@ public static class DiffViewStrings
         [DiffViewName] = "Side-by-side diff",
         [LeftPaneName] = "Left pane",
         [RightPaneName] = "Right pane",
+        [UnifiedPaneName] = "Unified pane",
         [LineNumbersMarginName] = "Line numbers",
         [ChangeMarkersMarginName] = "Change markers",
         [StatusStripName] = "Status",
@@ -375,6 +388,8 @@ public static class DiffViewStrings
         [SideRight] = "right",
         [LineTooltipAligned] = "Line {0} · {1} line {2}",
         [LineTooltipAlone] = "Line {0} · no {1} line",
+        [LineTooltipUnifiedAligned] = "Line {1} on the {0} · line {3} on the {2}",
+        [LineTooltipUnifiedAlone] = "Line {1} on the {0} · no {2} line",
         [MarkerTooltip] = "Change {0} of {1} · {2}",
         [MinimapTooltip] = "Row {0} of {1} · {2}",
         [MinimapName] = "Overview",
@@ -412,6 +427,7 @@ public static class DiffViewStrings
         [StatusFindScope] = "find · {0}",
         [StatusFindMatchOf] = "{0} of {1}",
         [StatusFindMatches] = "{0} matches",
+        [StatusFindNoScope] = "find {0}",
         [KindUnchanged] = "unchanged",
         [KindInserted] = "inserted",
         [KindDeleted] = "deleted",

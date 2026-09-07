@@ -31,6 +31,9 @@ internal static class DebugFlags
     /// <summary>File to open in the right pane. <c>--right &lt;path&gt;</c>.</summary>
     public static string? RightPath { get; private set; }
 
+    /// <summary>Start in the unified (inline) view rather than side by side. <c>--unified</c>.</summary>
+    public static bool Unified { get; private set; }
+
     /// <summary>Minimum Serilog level. <c>--log-level &lt;verbose|debug|information|warning|error|fatal&gt;</c>.</summary>
     public static LogEventLevel MinimumLevel { get; private set; } = LogEventLevel.Information;
 
@@ -86,6 +89,9 @@ internal static class DebugFlags
                     }
 
                     break;
+                case "--unified":
+                    Unified = true;
+                    break;
                 case "--log-level":
                     if (TryTakeValue(args, ref i, flag, out string? level))
                     {
@@ -117,8 +123,8 @@ internal static class DebugFlags
 
         Deferred.Clear();
         Log.Information(
-            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} level={Level}",
-            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", MinimumLevel);
+            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} unified={Unified} level={Level}",
+            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", Unified, MinimumLevel);
     }
 
     /// <summary>Restores every flag to its default. Test cleanup hook.</summary>
@@ -128,6 +134,7 @@ internal static class DebugFlags
         Variant = "default";
         LeftPath = null;
         RightPath = null;
+        Unified = false;
         MinimumLevel = LogEventLevel.Information;
         Deferred.Clear();
     }

@@ -810,3 +810,88 @@ marked stale meanwhile. The build is already cancellable between stages, and a c
 result is discarded by generation. Vendoring would buy cancellation *within* one Myers run for a
 cost that nothing in the measurements justifies, so it is not done; the numbers are in
 `PROGRESS.md` and the decision is revisited only if a real pair misses the budget.
+
+## The unified view composes its own document, and that one *is* replaced by a build
+
+Every other document in this library is a source: the pane's editor holds the side's own text,
+padding is rendered rather than inserted, and a rebuild swaps the model without touching the
+`TextDocument` (`AGENTS.md` §1). The unified view cannot work that way — half its lines belong to
+one file and half to the other — so `InlineDiffView` composes `PaneDocument` from
+`InlineDocument.Lines`, taking each line's text from the side it names, and rewrites it whenever
+the model changes.
+
+Three consequences, all deliberate:
+
+- The pane is **read-only, full stop**. There is no `LeftReadOnly`/`RightReadOnly` pair, because
+  there is no edit that could mean the same thing for both files.
+- The text is rewritten through `TextDocument.Text` on the one instance rather than by handing
+  the pane a new document, so a rebuild that leaves the text where it was keeps the caret and the
+  scroll offset; the undo stack is dropped straight after (`UndoStack.ClearAll`), a composed
+  document having no edit history worth keeping.
+- The two source documents are still built and kept — `LeftDocument`, `RightDocument` — because
+  the word diff reads a row's two lines from them and the search runs over snapshots of them.
+  They are simply never displayed.
+
+There is no padding anywhere in the unified reading: every line it shows is a real line of its own
+document, so `PaneMetadata.PaddedLineNumbers` yields nothing, the primer does no work, and the row
+geometry is the editor's own uniform line height.
+
+## A modified pair keeps its kind on both halves, so the word diff survives
+
+A unified diff prints a modified row as a removal followed by an addition, which invites giving
+the two halves the `Deleted` and `Inserted` kinds. `InlineDocument.Build` does not: both halves
+carry **`Modified`**, and only a row that is a pure deletion or insertion gets `Deleted` or
+`Inserted`. The reason is the word diff — `DiffLineBackgroundRenderer` computes pieces only for a
+modified row — so kinds-by-appearance would have silently dropped word-level highlighting from
+exactly the rows that have it. The two halves share the row, which is what
+`WordDiffLookup.PiecesFor` is keyed by; the renderer picks the side's pieces with
+`PaneMetadata.SideOf(lineNumber)`, which is the pane's own `Side` everywhere else and the line's
+own side here. The change-marker gutter then reads `~` on both halves of a pair, which is the same
+vocabulary the side-by-side view uses.
+
+## The unified gutter is two columns, and a context line fills both
+
+`DiffLineNumberMargin` draws the document's own line numbers for a side's pane — the document
+*is* that side — and two columns for a unified pane: the left file's number and the right file's.
+A removed line fills the left column only, an added line the right, and a **context line fills
+both**, which is what makes the gutter readable as a diff and what `diff -u` consumers expect. The
+unified document's own numbering names no line of either file and is never drawn; the same rule
+puts the *source* line in the status strip's caret lane (`InlineDiffView.UpdateCaret`). Each
+column is measured against its own side's line count, not the unified document's, which is the
+sum of both.
+
+## Find searches the two sides and drops what the unified view does not show
+
+The unified view runs the same `DiffSearch` over the same two `IPaneText` snapshots as the
+side-by-side view — one engine, one set of options, one truncation cap — and then maps each match
+through `InlineDocument.LineOf`. A match whose line is not displayed is dropped, which happens for
+exactly one case: the **right line of a context row**, whose text the left line already carries on
+screen. So the two views find the same matches on the lines a user can see, and over
+`ChangedRowsOnly` the counts are identical, no context row being searched at all.
+
+The mapped matches are re-sorted by unified line and column: the engine walks the model's rows,
+left before right *within* a row, while the unified view prints a block's removals before its
+additions. `SearchMatchRenderer` binary-searches the pane's matches by line, so the order is a
+requirement, not a nicety.
+
+The find scope collapses with the panes: `InlineDiffView.FindOptions` coerces `Scope` to
+`FindScope.Both` however it is assigned, and `DiffFindBar.ShowScope` hides the L / R / Both group
+(separator included). A scope of one side would hide matches that are on screen.
+
+## The unified view drops the minimap, the connector gutter and F6
+
+Both overviews are two-sided by construction: `ChangeConnectorGutter` draws the wedge between two
+panes' rows, and `DiffMinimap` addresses the model's rows, which are not the unified view's rows.
+Neither is in the plan's list of what Phase 11 reuses, and neither is in the template. F6 goes
+with them — there is no other pane to switch to — so `InlineDiffView` binds six keys where the
+side-by-side view binds seven. What the block navigation does keep is the current-block border,
+whose extent comes from `PaneMetadata.DisplayRowsOf`: the model's rows for a side, the block's own
+unified lines for the unified view, where a modified pair takes two of them.
+
+## A log line names the unified pane, which is neither side
+
+`DiffPanePresenter.Side` is meaningless while `IsUnified`, so the three log calls that name a pane
+take a `DiffSide?` and the presenter passes `LogSide` — `null` when unified, which
+`DiffViewLog.Pane` renders as `unified`. Naming it "Left" would have been a lie in the one place a
+reader goes to find out what failed. `Side` itself is left alone: it is a public property with a
+default, and the unified pane simply does not use it.
