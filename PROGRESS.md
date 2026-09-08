@@ -43,8 +43,8 @@ and it names the unified pane `unified`, which is neither side.
 
 What is left is not code: **Windows and macOS demo runs are still owed** from Phase 10, and this
 box cannot screenshot a window (XWayland refuses the grab), so a look at either running control is
-the user's. Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin
-follows the merge (see *Upstreamed to ClaudeForge*).
+the user's. All three ClaudeForge contributions (PR #37, #38 and #44) are merged and the
+ClaudeForge pin follows (see *Upstreamed to ClaudeForge*).
 
 **[Plan 00003](plans/00003-in-pane-editing.md) — in-pane editing — is under way.** Phase 1,
 typing, took no source change at all: `LeftReadOnly` and `RightReadOnly` already reached the
@@ -422,6 +422,7 @@ dotnet run --project src/ThemeAudit -- report
 |---|---|---|
 | Live-log window ignored F12 (toggle lived on the host's main window only); and `LayeredEditors.Avalonia.Diagnostics` named a `PackageReadmeFile` it did not ship, so `dotnet pack` failed | [JanusMael/ClaudeForge#37](https://github.com/JanusMael/ClaudeForge/pull/37) | merged as `99c2963`; consumed here as diagnostics 1.0.1 — the merged source is identical to the packed branch head `f7980f2`, so the package did not change; the pin in `reference/sources.json` moved to `93065ba`, main's tip after both merges |
 | Theme audit: the report for ClaudeForge's views (seven `SystemControl*` keys still referenced and undefined under Semi, one of them — `SystemAccentColorBrush` — defined by no theme at all), the generated `FluentKeys.Semi.axaml` / `SimpleKeys.Semi.axaml` merged in its `App.axaml`, the tool as a local dotnet tool, and the `docs/UI-STYLE-GUIDE.md` §2 update | [JanusMael/ClaudeForge#38](https://github.com/JanusMael/ClaudeForge/pull/38) | merged as `93065ba` after the user's click-through; `docs/theme-audit.md` regenerated against the merged checkout — ClaudeForge's own copies of the compat dictionaries now count as consumer-defined keys, leaving `SystemAccentColorBrush` as its one undefined key under Semi |
+| A blanket "AvaloniaEdit is incompatible with Semi.Avalonia" note in `AgentsSkillsEditorView`, citing a `CLAUDE.md` that has never existed in that repository. The narrow claim was true when written — under bare Semi, AvaloniaEdit's Fluent theme leaves 6 keys undefined and its Simple theme 9, three and six of them `StaticResource`, which throws at template load — and stopped being true with PR #38's compat dictionaries, which take both to 0. Corrected in the comment, with the numbers and the corollary (AvaloniaEdit breaks loudly, not subtly, if those dictionaries are ever dropped) recorded as a new `docs/AVALONIA-GOTCHAS.md` entry | [JanusMael/ClaudeForge#44](https://github.com/JanusMael/ClaudeForge/pull/44) | merged as `168bf26`, 2026-09-08. Found while scoping the rejected plan 00002: the comment would have been quoted at the first attempt to host this control there, and it is wrong whether or not that ever happens |
 
 ## Measurements
 
