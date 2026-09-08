@@ -1070,3 +1070,27 @@ answer that one, and the two are deliberately different.
 The bar is drawn down the margin's inner edge beside the diff's own glyph rather than replacing
 it. The two answer different questions — what differs between the sides, and what this session
 touched — and a line is very often both, so the tooltip says both.
+
+## Live re-diff is affordable at 200,000 lines, because a rebuild re-primes only what moved
+
+Phase 2 shipped `LiveReDiff` and `ReDiffNow()` against a fear: priming the 200,000-line pair took
+1,243 ms to be up, a rebuild re-primes, and a rebuild on every debounce might therefore be
+unaffordable. Phase 6 measured it, and the fear was misplaced.
+
+A re-diff of that pair costs **403 ms** end to end — 278 ms of it the diff engine — because
+**priming is proportional to the padding that moved, not to the document**. The rebuild re-primes
+4,000 lines, not 204,001; the 1,243 ms figure was a load from cold, where everything is primed for
+the first time. The two numbers were never measuring the same work.
+
+Nothing waits on that 403 ms either. The previous model stays on screen throughout, and the frame
+drawn while it is stale costs 1 ms. What the user actually feels is the keystroke: 71 ms for the
+first one on a document that size, and 18.9 ms per key sustained.
+
+So **no size threshold is imposed**, and the DiffPlex vendoring decision closed in plan 00001
+stays closed — 278 ms is well inside a debounce nobody waits on.
+
+`LiveReDiff` stays in the public surface even so. Turning it off saves about 4 ms per keystroke of
+bookkeeping and defers the rebuild entirely, which is a reasonable thing for a host to want on a
+pair larger than anything measured here; and a property that exists is easier to reach for than
+one that has to be retrofitted. It is now an option offered on evidence rather than a hedge
+against an unmeasured worry.

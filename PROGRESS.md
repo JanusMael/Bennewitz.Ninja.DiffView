@@ -62,7 +62,10 @@ someone else's write. Phase 4 is done too: a block's lines replace the other sid
 `ChangeBlock` already carried, undoably, with arrows in the connector gutter and Alt+Left /
 Alt+Right on the current block. Phase 5 is done too: the lines this session edited are
 tracked across edits that move them, marked down the marker margin and named in the strip.
-What is left is Phase 6, scale — the measurement that sizes the `LiveReDiff` escape hatch. A ClaudeForge
+Phase 6 closed it: on the 200,000-line pair a keystroke costs 71 ms, the
+re-diff behind it 403 ms, and a rebuild re-primes only the 4,000 lines whose padding moved
+rather than the whole document — so live re-diff is affordable at that size, no threshold is
+imposed, and DiffPlex stays unvendored. **Every phase of plan 00003 is complete.** A ClaudeForge
 integration was drafted as plan 00002 and rejected on its own review before any code; it is
 deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
 
@@ -103,7 +106,19 @@ dotnet run --project src/ThemeAudit -- report
 | 3 Dirty and save | done | `IsDirty` / `CanSave` / `Save` / `Revert` and `SaveOutcome`; `PaneWriter` in Core round-trips the encoding, the byte-order mark and the line endings; a `(LastWriteTimeUtc, Length)` stamp catches someone else's write and follows our own; the header carries a dirty marker; 20 unit and headless test cases, each proven able to fail |
 | 4 Copy to side | done | `CanCopyBlock` / `CopyBlock` / `CopyCurrentBlock`, `CopyToLeftCommand` / `CopyToRightCommand` on Alt+Left and Alt+Right; per-block arrows in the connector gutter on a new `DiffView.GutterArrowBrush`, hit-tested before the polygon they sit inside; 10 headless test cases, five mutations killed and two survivors that removed a dead branch and a wrong one |
 | 5 Feedback and polish | done | `ModifiedLines(side)` tracked across edits that move lines, drawn as a bar down the marker margin on a new `DiffView.ModifiedSinceLoadBrush` and explained in its tooltip; the strip names the sides holding unsaved edits; a revert clears both; 6 headless test cases, each proven able to fail |
-| 6 Scale and hardening | not started | The re-diff loop on the 200k pair; the priming cost per keystroke; an edit→redraw `Perf` measurement |
+| 6 Scale and hardening | done | `EditScalePerfTests` on the 200k pair — a re-diff costs 403 ms because a rebuild re-primes only what moved (4,000 lines), not the 1,243 ms a load from cold takes; the debounce collapses 20 keystrokes into 1 build; live re-diff is affordable at 200k and DiffPlex stays unvendored; 3 `Perf` measurements |
+
+## Plan 00003, Phase 6 verification
+
+| Done-when item | Result |
+|---|---|
+| The re-diff loop measured on the 200k pair | pass: `EditScalePerfTests.An_edit_to_the_200k_pair_re_diffs_re_primes_and_repaints` — one keystroke costs 71 ms, the frame drawn while the model is stale costs 1 ms, the re-diff through prime and layout costs 403 ms of which the engine is 278 ms, and the frame after costs 13 ms. The control ends `Ready`, undegraded, with the two extents still equal |
+| The priming cost per keystroke | pass: same test — a rebuild re-primes **4,000 lines, not 204,001**. Priming is proportional to the padding that moved, not to the document, which is why a rebuild is a third of the 1,243 ms a load from cold takes |
+| The debounce holds at scale | pass: `Typing_a_run_of_keys_coalesces_into_one_rebuild_at_scale` — twenty keystrokes inside the window cost 378 ms in total (18.9 ms per key) and produce exactly **one** build, not twenty |
+| The escape hatch is worth having | pass: `With_live_re_diff_off_a_keystroke_costs_nothing_beyond_the_keystroke` — with `LiveReDiff` false the same twenty keystrokes cost 298 ms (14.9 ms per key), the model does not move however far the clock is advanced, and `ReDiffNow()` rebuilds in 366 ms on demand. Live re-diff therefore costs about 4 ms per keystroke in bookkeeping |
+| The measurement decides the open question | **Live re-diff is affordable at 200,000 lines**, so the threshold Phase 2 hedged against does not exist at this size and none is imposed. The DiffPlex vendoring decision closed in plan 00001 stays closed: the engine is 278 ms of the 403, well inside a debounce the user does not wait on, because the previous model stays on screen throughout |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 379 passed; with `-p:IncludePerfTests=true`, **389** — the 10 `Perf` tests, 3 of them new |
 
 ## Plan 00003, Phase 5 verification
 
@@ -415,6 +430,8 @@ dotnet run --project src/ThemeAudit -- report
 | Test run, all three projects | ~20 s for 295 tests (~8 s at Phase 5's 200) | this machine, Debug, `Perf` excluded; the Reference-trait tests inventory 452 theme files; the presenter and composite tests render under all ten theme targets; the syntax tests wait on TextMateSharp's tokenizer thread |
 | The 200,000-line pair in the composite (204,001 rows, 4,000 blocks) | build 297 ms; sources assigned through prime and layout 1,243 ms; first frame 14 ms; scroll to middle 20 ms, to end 17 ms, back to top 17 ms | `ScalePerfTests.The_200k_line_pair_builds_primes_paints_and_scrolls`, this machine, Debug. The left pane primes 4,000 padded lines and the right none: this fixture only inserts and modifies, so every gap falls on the left |
 | The 1 MB single line in the composite | build 16 ms; assigned through prime and layout 612 ms; first frame 55 ms; scroll to the middle of the line 54 ms | `ScalePerfTests.The_one_megabyte_single_line_renders_and_scrolls_sideways`, same machine and configuration |
+| An edit to the 200,000-line pair | keystroke 71 ms; frame while the model is stale 1 ms; re-diff through prime and layout 403 ms (engine 278 ms); frame after 13 ms; **4,000 lines re-primed, not 204,001** | `EditScalePerfTests.An_edit_to_the_200k_pair_re_diffs_re_primes_and_repaints`, this machine, Debug. A rebuild re-primes only the padding that moved, which is why it costs a third of the 1,243 ms a load from cold takes |
+| Typing on the 200,000-line pair | 20 keystrokes inside the debounce: 378 ms (18.9 ms per key), settling in 380 ms, **1 build not 20**. With `LiveReDiff` off: 298 ms (14.9 ms per key), then `ReDiffNow()` in 366 ms | `EditScalePerfTests`, same machine and configuration. Live re-diff costs about 4 ms per keystroke in bookkeeping |
 | Trimmed self-contained publish of the demo, linux-x64 | 57 MB after Phase 9 — TextMateSharp's grammars and themes (51 MB after Phase 5, 50 MB after Phase 4, 48 MB through Phase 3) | `dotnet publish -c Release -r linux-x64 --self-contained true` |
 | Priming 10,000 padding gaps in one pass | 10.3–10.5 s (two runs) | `Item6_priming_cost_for_ten_thousand_gaps`, this machine, Debug; quadratic in the text view's built-line list |
 | Priming 10,000 padding gaps in batches of 256 with `Redraw()` between batches | 200–240 ms (two runs) | same test, including the layout pass that republishes the extent |
