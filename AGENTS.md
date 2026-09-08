@@ -197,3 +197,37 @@ not contradicted below holds unchanged.
 Anything that belongs in ClaudeForge goes there first, as a branch and pull request in the same
 working session; the plan's *Contributing back to ClaudeForge* section and the *Upstreamed to
 ClaudeForge* table in `PROGRESS.md` are the record.
+
+### Mechanics, learned the hard way
+
+**Never `git checkout` in the ClaudeForge checkout.** Another session may be working in it. Use a
+worktree instead, which leaves that checkout's `HEAD` where it was:
+
+```bash
+git -C /home/janus/c/cl/ClaudeForge worktree add <scratch-path> -b <branch> main
+```
+
+Announce the intent to the ClaudeForge session first if one is running (`ListAgents`); if none is,
+there is nothing to collide with, but the worktree rule still stands.
+
+**An agent session cannot use SSH.** The sandbox's network is host-and-port allowlisted: probed
+2026-09-08, `github.com:443` and `api.github.com:443` connect, while `github.com:22`,
+`ssh.github.com:443` and `1.1.1.1:22` all time out. So an SSH remote hangs until it is killed, and
+GitHub's port-443 SSH endpoint is not a way around it. This is independent of the developer's own
+machine, where SSH works.
+
+Push over HTTPS with `gh` as the credential helper, which is how ClaudeForge PR #44 landed:
+
+```bash
+git -c credential.helper='!gh auth git-credential' push https://github.com/JanusMael/ClaudeForge.git HEAD
+```
+
+`gh` itself is authenticated over HTTPS, so `gh pr create` and `gh api` work normally.
+
+**A pull request description ends at its last line** — no AI attribution trailer, the same rule
+commits follow. Say so once at the point of use when a session instruction asks for one.
+
+**`cmd | head -n; echo $?` reports `head`'s exit code, not `cmd`'s.** This produced a confidently
+wrong conclusion during the work above: an `ssh` probe that had actually failed was read as having
+succeeded, because `head` exits 0 regardless. Capture the status without a pipe, or read
+`${PIPESTATUS[0]}`. The same trap applies to any pipeline whose last stage always succeeds.
