@@ -968,3 +968,45 @@ called. Priming the 200,000-line pair took 1,243 ms to be up, and a rebuild re-p
 exists for which rebuilding on a debounce costs more than it is worth. Phase 6 measures where that
 line falls; until it does, the escape hatch is deliberately part of the public surface rather than
 something to be retrofitted once the measurement is in.
+
+## The encoding carries the byte-order mark, so nothing else has to
+
+`PaneWriter` writes `encoding.GetPreamble()` and then `encoding.GetBytes(text)`, and that is the
+whole of the mark's handling. No flag records whether the file had one, because the encoding
+already does: `PaneSource.FromBytes` hands back `Encoding.UTF8` — whose preamble is three bytes —
+for a file whose preamble said so, and a `UTF8Encoding` constructed with
+`encoderShouldEmitUTF8Identifier: false` for one that had none, whose preamble is empty. The same
+holds for every UTF-16 and UTF-32 encoding a preamble selects. A separate `HadBom` would have been
+a second source of truth for a question already answered.
+
+A source built from a string has no encoding at all, and writes UTF-8 without a mark.
+
+## Normalising line endings, except when there is nothing to normalise to
+
+A save rewrites the text's terminators as `TextInfo.LineEnding`, because the editor works in its
+own convention and a CRLF file must come back CRLF. `LineEnding.None` and `LineEnding.Mixed`
+return the text untouched: there is no single convention to impose, and imposing one would rewrite
+every line in a file the user changed one line of. A CRLF pair counts as one terminator, not two.
+
+## Dirty and edited are different questions
+
+`_leftDirty` is "there are changes not on disk" and clears on a successful save. `_leftEdited` is
+"the document no longer matches the assigned `PaneSource`" and does not, because after a save the
+document still differs from the source the control was handed, and `EffectiveSource` must keep
+reading the document rather than reverting the diff to the original text. Only a source assignment
+or a revert clears `_leftEdited`. Collapsing the two would either make the diff go stale after a
+save or make every save look unnecessary.
+
+## Reverting is its own verb, and the file's identity is a stamp
+
+`Revert(side)` puts the source's text back through the same `TextDocument` — so the caret and the
+scroll offset survive, and the revert is itself undoable — then clears both flags and rebuilds. It
+exists because re-assigning the source cannot do the job: `PaneSource` is a record, so an equal
+source raises no property change at all.
+
+The disk-change check compares a `(LastWriteTimeUtc, Length)` stamp taken when the source was
+assigned against the file at save time, and **the stamp follows every successful save**, or the
+second save of a session would report a conflict with its own first. A side whose stamp was never
+taken — the file did not exist when it was read — is not treated as changed, or a first save could
+never happen. A save reports through `SaveOutcome` and the status strip rather than the banner:
+the banner says what the *build* did, and a save is not a build.

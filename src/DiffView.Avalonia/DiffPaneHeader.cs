@@ -30,6 +30,14 @@ public class DiffPaneHeader : TemplatedControl
     public static readonly StyledProperty<bool> IsPaneFocusedProperty =
         AvaloniaProperty.Register<DiffPaneHeader, bool>(nameof(IsPaneFocused));
 
+    /// <summary>Identifies the <see cref="IsDirty"/> property.</summary>
+    public static readonly StyledProperty<bool> IsDirtyProperty =
+        AvaloniaProperty.Register<DiffPaneHeader, bool>(nameof(IsDirty));
+
+    /// <summary>Identifies the <see cref="DirtyMarker"/> property.</summary>
+    public static readonly StyledProperty<string?> DirtyMarkerProperty =
+        AvaloniaProperty.Register<DiffPaneHeader, string?>(nameof(DirtyMarker));
+
     /// <summary>Creates a header with its compiled theme merged into its own resources.</summary>
     public DiffPaneHeader()
     {
@@ -70,6 +78,21 @@ public class DiffPaneHeader : TemplatedControl
     /// bottom edge — the pane's own caret is the other half of the answer, and can be scrolled
     /// out of sight. The accent is an overlay, so showing it moves nothing.
     /// </summary>
+    /// <summary>Whether the pane holds edits that are not on disk; drives the <c>:dirty</c> class.</summary>
+    public bool IsDirty
+    {
+        get => GetValue(IsDirtyProperty);
+        set => SetValue(IsDirtyProperty, value);
+    }
+
+    /// <summary>The word shown while <see cref="IsDirty"/>; the theme hides it when it is null.</summary>
+    public string? DirtyMarker
+    {
+        get => GetValue(DirtyMarkerProperty);
+        set => SetValue(DirtyMarkerProperty, value);
+    }
+
+    /// <summary>Whether this header's pane has keyboard focus; drives the <c>:pane-focused</c> class.</summary>
     public bool IsPaneFocused
     {
         get => GetValue(IsPaneFocusedProperty);
@@ -80,7 +103,7 @@ public class DiffPaneHeader : TemplatedControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == BadgeKindProperty || change.Property == IsPaneFocusedProperty)
+        if (change.Property == BadgeKindProperty || change.Property == IsPaneFocusedProperty || change.Property == IsDirtyProperty)
         {
             UpdatePseudoClasses();
         }
@@ -94,5 +117,6 @@ public class DiffPaneHeader : TemplatedControl
         PseudoClasses.Set(":badge-failure", kind == StatusKind.Failure);
         PseudoClasses.Set(":badge-active", kind == StatusKind.Active);
         PseudoClasses.Set(":pane-focused", IsPaneFocused);
+        PseudoClasses.Set(":dirty", IsDirty);
     }
 }

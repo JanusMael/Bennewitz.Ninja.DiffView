@@ -242,6 +242,16 @@
                         AutomationProperties.Name="{TemplateBinding Badge}">
                   <TextBlock Name="PART_BadgeText" Text="{TemplateBinding Badge}" FontSize="11" FontWeight="SemiBold" />
                 </Border>
+                <TextBlock Name="PART_Dirty"
+                           DockPanel.Dock="Right"
+                           Margin="8,0,0,0"
+                           Text="{TemplateBinding DirtyMarker}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource DiffView.StatusWarningForegroundBrush}"
+                           VerticalAlignment="Center"
+                           IsVisible="{TemplateBinding DirtyMarker, Converter={x:Static ObjectConverters.IsNotNull}}"
+                           ToolTip.Tip="{TemplateBinding DirtyMarker}"
+                           AutomationProperties.Name="{TemplateBinding DirtyMarker}" />
                 <TextBlock Name="PART_Detail"
                            DockPanel.Dock="Right"
                            Margin="8,0,0,0"

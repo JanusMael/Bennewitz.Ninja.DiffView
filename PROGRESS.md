@@ -55,7 +55,10 @@ the caret, the selection, the scroll offset and the undo stack all come through.
 can be cleared and `ReDiffNow()` called instead, which is the escape hatch for a pair too
 large to rebuild on a debounce. What remains is dirty state and a save that round-trips the
 encoding and the line endings, copy-to-side through the connector gutter, the feedback marks,
-and the scale measurement that sizes the escape hatch. A ClaudeForge
+and the scale measurement that sizes the escape hatch. Phase 3 is done too: `IsDirty`,
+`Save` and `Revert`, with `PaneWriter` writing back the encoding, the byte-order mark and the
+line-terminator convention the file arrived with, and a stamp that refuses to overwrite
+someone else's write. What is left is copy-to-side, the feedback marks, and scale. A ClaudeForge
 integration was drafted as plan 00002 and rejected on its own review before any code; it is
 deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
 
@@ -93,10 +96,27 @@ dotnet run --project src/ThemeAudit -- report
 |---|---|---|
 | 1 Typing | done | No source change was needed. `LeftReadOnly` / `RightReadOnly` already reached the panes, and no layer turned out to rely on the document being immutable; 5 headless test cases, each proven able to fail |
 | 2 Live re-diff | done | `LiveReDiff` / `ReDiffDelay` / `ReDiffNow()` / `IsEdited(side)`; `EffectiveSource` builds from the live document while keeping the source's encoding, path and title; the document, caret, selection, scroll and undo stack survive a rebuild; find results invalidated on edit; 6 headless test cases, each proven able to fail |
-| 3 Dirty and save | not started | `IsDirty`, `Save`, the encoding and line-ending round-trip, the changed-on-disk report |
+| 3 Dirty and save | done | `IsDirty` / `CanSave` / `Save` / `Revert` and `SaveOutcome`; `PaneWriter` in Core round-trips the encoding, the byte-order mark and the line endings; a `(LastWriteTimeUtc, Length)` stamp catches someone else's write and follows our own; the header carries a dirty marker; 20 unit and headless test cases, each proven able to fail |
 | 4 Copy to side | not started | Block and line arrows in the connector gutter over `ChangeBlock`'s per-side ranges |
 | 5 Feedback and polish | not started | Modified-since-load marks, unsaved-changes state, automation names |
 | 6 Scale and hardening | not started | The re-diff loop on the 200k pair; the priming cost per keystroke; an edit→redraw `Perf` measurement |
+
+## Plan 00003, Phase 3 verification
+
+| Done-when item | Result |
+|---|---|
+| `IsDirty(side)` tracks unsaved edits | pass: `SaveTests.An_edited_pane_is_dirty_saves_and_comes_back_clean` — clean on load, dirty after a keystroke, clean again after the save, with the header's `IsDirty` following it |
+| `Save` writes with the file's encoding, mark and line endings | pass: same test — a UTF-8-with-mark, CRLF file is edited and written back with its mark intact as the first three bytes and its CRLF convention preserved, though the editor holds LF internally. The byte-level cases are `PaneWriterTests`: a marked UTF-8 file, an unmarked one, UTF-16 LE and BE, UTF-32, a Latin-1 fallback, and a source built from a string, each round-tripping byte for byte, plus `An_edit_to_one_line_changes_only_that_line_bytes` |
+| A file changed on disk is reported and nothing is written | pass: `A_file_changed_on_disk_is_reported_and_nothing_is_written` — someone else's write lands while the pane holds edits; `Save` answers `ChangedOnDisk`, their bytes are untouched, and the pane keeps both its edits and its dirty flag |
+| A side with no file reports rather than throwing | pass: `A_side_with_no_file_reports_rather_than_throwing` — `CanSave` is false and `Save` answers `NoPath` |
+| A clean side writes nothing | pass: `Saving_a_clean_side_writes_nothing` — `NotDirty`, and the file's last-write time does not move |
+| Our own write is not mistaken for someone else's | pass: `A_save_lets_the_next_one_through_rather_than_seeing_its_own_write_as_a_conflict` — the stamp follows each successful save, so a second save succeeds where a stale stamp would have reported a conflict |
+| Reverting restores the source text | pass: `Revert_puts_the_source_text_back_and_rebuilds` — the document returns to the assigned text, the side is clean and unedited, the header's marker clears, and the rebuilt model's block count returns to what it was before the edit |
+| The dirty state is visible | pass: `DiffPaneHeader.IsDirty` drives a `:dirty` pseudo-class and a `PART_Dirty` marker carrying its own tooltip and automation name; the strip reports the save outcome through the existing warning lane |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 363 passed (343 before the phase) — 14 `PaneWriterTests` and 6 `SaveTests` |
+| New tests proven able to fail | seven mutations, seven distinct failures: never writing the byte-order mark; counting a CRLF pair as two terminators; disabling the disk-change check; not re-stamping after our own write; clearing dirty but not edited on revert; saving a clean side anyway; and reporting the wrong outcome for a pathless side |
+| Theme audit regenerated | `theme-audit compat` then `report` after the header's dirty marker: 0 low-contrast findings, drift test passes |
 
 ## Plan 00003, Phase 2 verification
 

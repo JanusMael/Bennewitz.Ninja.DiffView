@@ -106,6 +106,24 @@ public static class DiffViewStrings
     /// <summary>The message of the empty state.</summary>
     public const string StateEmptyMessage = "State.Empty.Message";
 
+    /// <summary>The marker on a pane whose edits are not on disk.</summary>
+    public const string HeaderDirty = "Header.Dirty";
+
+    /// <summary>The strip's lane while a side has unsaved edits.</summary>
+    public const string StatusDirty = "Status.Dirty";
+
+    /// <summary>Reported when a save succeeds.</summary>
+    public const string SaveSucceeded = "Save.Succeeded";
+
+    /// <summary>Reported when a save is asked for on a side that came from no file.</summary>
+    public const string SaveNoPath = "Save.NoPath";
+
+    /// <summary>Reported when the file changed on disk since it was read.</summary>
+    public const string SaveChangedOnDisk = "Save.ChangedOnDisk";
+
+    /// <summary>Reported when the write itself failed.</summary>
+    public const string SaveFailed = "Save.Failed";
+
     /// <summary>The marker on a result a newer build is about to replace.</summary>
     public const string StatusStale = "Status.Stale";
 
@@ -339,6 +357,12 @@ public static class DiffViewStrings
         [RenderFaultOnSubject] = "{0} failed for {1} and was disabled: {2}",
         [LeftTitle] = "Left",
         [RightTitle] = "Right",
+        [HeaderDirty] = "Unsaved",
+        [StatusDirty] = "Unsaved changes in {0}",
+        [SaveSucceeded] = "Saved {0}",
+        [SaveNoPath] = "{0} did not come from a file, so there is nowhere to save it.",
+        [SaveChangedOnDisk] = "{0} changed on disk since it was read; nothing was written.",
+        [SaveFailed] = "{0} could not be saved: {1}",
         [NoContent] = "No content",
         [HeaderDetail] = "{0} · {1} · {2} · {3}",
         [LineCount] = "{0} lines",

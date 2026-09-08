@@ -318,6 +318,11 @@ public class SideBySideDiffView : TemplatedControl
     private ITimer? _reDiffTimer;
     private bool _leftEdited;
     private bool _rightEdited;
+    private bool _leftDirty;
+    private bool _rightDirty;
+    private bool _suppressTextChanged;
+    private (DateTime WriteTimeUtc, long Length)? _leftStamp;
+    private (DateTime WriteTimeUtc, long Length)? _rightStamp;
     private bool _syncingFindBar;
 
     private DiffPanePresenter? _leftPane;
@@ -1179,6 +1184,8 @@ public class SideBySideDiffView : TemplatedControl
             _leftDocument.TextChanged -= OnLeftTextChanged;
             _leftInfo = info;
             _leftEdited = false;
+            _leftDirty = false;
+            _leftStamp = StampOf(source);
             LeftDocument = document;
             document.TextChanged += OnLeftTextChanged;
         }
@@ -1187,6 +1194,8 @@ public class SideBySideDiffView : TemplatedControl
             _rightDocument.TextChanged -= OnRightTextChanged;
             _rightInfo = info;
             _rightEdited = false;
+            _rightDirty = false;
+            _rightStamp = StampOf(source);
             RightDocument = document;
             document.TextChanged += OnRightTextChanged;
         }
@@ -1246,14 +1255,25 @@ public class SideBySideDiffView : TemplatedControl
     /// </summary>
     private void OnPaneTextChanged(DiffSide side)
     {
+        if (_suppressTextChanged)
+        {
+            // A revert is putting the source's own text back; that is not the user editing.
+            return;
+        }
+
         if (side == DiffSide.Left)
         {
             _leftEdited = true;
+            _leftDirty = true;
         }
         else
         {
             _rightEdited = true;
+            _rightDirty = true;
         }
+
+        UpdateHeaders();
+        UpdateStrip();
 
         // The matches were offsets into text that has just moved under them, so they are wrong
         // now rather than merely stale. The search re-runs with the build.
@@ -1287,6 +1307,160 @@ public class SideBySideDiffView : TemplatedControl
             state: null,
             ReDiffDelay,
             Timeout.InfiniteTimeSpan);
+    }
+
+    /// <summary>Whether <paramref name="side"/> holds edits that are not on disk.</summary>
+    public bool IsDirty(DiffSide side) => side == DiffSide.Left ? _leftDirty : _rightDirty;
+
+    /// <summary>Whether <see cref="Save"/> would write: the side is dirty and came from a file.</summary>
+    public bool CanSave(DiffSide side)
+    {
+        PaneSource? source = side == DiffSide.Left ? LeftSource : RightSource;
+        return IsDirty(side) && !string.IsNullOrEmpty(source?.Path);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="side"/> back to the file it was read from, with that file's encoding,
+    /// byte-order mark and line-terminator convention. Reports rather than throws; the message
+    /// reaches the banner and the strip the way a build failure does.
+    /// </summary>
+    public SaveOutcome Save(DiffSide side)
+    {
+        if (!IsDirty(side))
+        {
+            return SaveOutcome.NotDirty;
+        }
+
+        PaneSource? source = side == DiffSide.Left ? LeftSource : RightSource;
+        string name = HeaderTitle(side, source);
+        if (source?.Path is not { Length: > 0 } path)
+        {
+            ReportSave(DiffViewStrings.Format(DiffViewStrings.SaveNoPath, name));
+            return SaveOutcome.NoPath;
+        }
+
+        // Someone else's write must never be lost to ours.
+        if (HasChangedOnDisk(side, path))
+        {
+            ReportSave(DiffViewStrings.Format(DiffViewStrings.SaveChangedOnDisk, name));
+            return SaveOutcome.ChangedOnDisk;
+        }
+
+        TextInfo? info = side == DiffSide.Left ? _leftInfo : _rightInfo;
+        TextDocument document = side == DiffSide.Left ? LeftDocument : RightDocument;
+        try
+        {
+            PaneWriter.Write(path, document.Text, source.Encoding, info?.LineEnding ?? LineEnding.Lf);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            ReportSave(DiffViewStrings.Format(DiffViewStrings.SaveFailed, name, ex.Message));
+            return SaveOutcome.Failed;
+        }
+
+        // The file now matches the pane, so the side is clean — but still *edited*, because the
+        // assigned source's text is what it always was and the next build still reads the document.
+        if (side == DiffSide.Left)
+        {
+            _leftDirty = false;
+            _leftStamp = StampOf(path);
+        }
+        else
+        {
+            _rightDirty = false;
+            _rightStamp = StampOf(path);
+        }
+
+        Status.SetSuccess(DiffViewStrings.Format(DiffViewStrings.SaveSucceeded, name));
+        UpdateHeaders();
+        UpdateStrip();
+        return SaveOutcome.Saved;
+    }
+
+    /// <summary>
+    /// Puts <paramref name="side"/> back to the text of its assigned source and rebuilds. This is
+    /// a verb of its own because re-assigning the source cannot do it: <see cref="PaneSource"/> is
+    /// a record, so an equal source raises no property change and nothing happens.
+    /// </summary>
+    public void Revert(DiffSide side)
+    {
+        PaneSource? source = side == DiffSide.Left ? LeftSource : RightSource;
+        if (source is null || !IsEdited(side))
+        {
+            return;
+        }
+
+        TextDocument document = side == DiffSide.Left ? LeftDocument : RightDocument;
+        _suppressTextChanged = true;
+        try
+        {
+            // The same document instance, so the caret and the scroll offset are kept; the undo
+            // stack keeps the revert too, which is the behaviour an editor should have.
+            document.Text = source.Text;
+        }
+        finally
+        {
+            _suppressTextChanged = false;
+        }
+
+        if (side == DiffSide.Left)
+        {
+            _leftEdited = false;
+            _leftDirty = false;
+        }
+        else
+        {
+            _rightEdited = false;
+            _rightDirty = false;
+        }
+
+        ReDiffNow();
+    }
+
+    /// <summary>The file's identity when it came from one: enough to notice someone else's write.</summary>
+    private static (DateTime WriteTimeUtc, long Length)? StampOf(PaneSource? source)
+    {
+        return source?.Path is { Length: > 0 } path ? StampOf(path) : null;
+    }
+
+    private static (DateTime WriteTimeUtc, long Length)? StampOf(string path)
+    {
+        try
+        {
+            FileInfo info = new(path);
+            return info.Exists ? (info.LastWriteTimeUtc, info.Length) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Whether the file moved under us. A side whose stamp was never taken — the file did not
+    /// exist when it was read — is not treated as changed, or a first save could never happen.
+    /// </summary>
+    private bool HasChangedOnDisk(DiffSide side, string path)
+    {
+        (DateTime WriteTimeUtc, long Length)? loaded = side == DiffSide.Left ? _leftStamp : _rightStamp;
+        return loaded is { } was && StampOf(path) is { } now && (now.WriteTimeUtc != was.WriteTimeUtc || now.Length != was.Length);
+    }
+
+    /// <summary>
+    /// What to call a side in a save message: the same name its header shows. The banner is left
+    /// alone deliberately — it reports what the *build* did, and a save is not a build.
+    /// </summary>
+    private static string HeaderTitle(DiffSide side, PaneSource? source)
+    {
+        return source?.Title
+               ?? (source?.Path is { } path ? System.IO.Path.GetFileName(path) : null)
+               ?? DiffViewStrings.Get(side == DiffSide.Left ? DiffViewStrings.LeftTitle : DiffViewStrings.RightTitle);
+    }
+
+    private void ReportSave(string message)
+    {
+        Status.SetWarning(message);
+        UpdateStrip();
     }
 
     /// <summary>Rebuilds now from the panes' live text, whatever the debounce was doing.</summary>
@@ -1641,6 +1815,8 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         header.IsPaneFocused = FocusedSide == side;
+        header.IsDirty = IsDirty(side);
+        header.DirtyMarker = header.IsDirty ? DiffViewStrings.Get(DiffViewStrings.HeaderDirty) : null;
         header.Title = source?.Title
                        ?? (source?.Path is { } path ? Path.GetFileName(path) : null)
                        ?? DiffViewStrings.Get(side == DiffSide.Left ? DiffViewStrings.LeftTitle : DiffViewStrings.RightTitle);
