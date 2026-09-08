@@ -81,6 +81,7 @@ public class DiffPanePresenter : TextEditor
     private readonly DiffCaretRenderer _caretRenderer;
     private readonly DiffLineNumberMargin _lineNumberMargin;
     private readonly ChangeMarkerMargin _changeMarkerMargin;
+    private IReadOnlySet<int> _modifiedLines = new HashSet<int>();
     private readonly List<RenderFaultEventArgs> _faults = [];
     private SyntaxHighlighting? _syntax;
     private bool _syntaxDisabled;
@@ -370,6 +371,20 @@ public class DiffPanePresenter : TextEditor
     internal SearchMatchRenderer SearchRenderer => _searchRenderer;
 
     internal DiffCaretRenderer CaretRenderer => _caretRenderer;
+
+    /// <summary>
+    /// The 1-based lines the user has edited since this pane's source was assigned. The change
+    /// marker margin draws them alongside the diff's own marks; empty until something is typed.
+    /// </summary>
+    internal IReadOnlySet<int> ModifiedLines
+    {
+        get => _modifiedLines;
+        set
+        {
+            _modifiedLines = value;
+            _changeMarkerMargin.InvalidateVisual();
+        }
+    }
 
     internal DiffLineNumberMargin LineNumberMargin => _lineNumberMargin;
 

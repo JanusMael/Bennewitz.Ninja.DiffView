@@ -331,6 +331,14 @@
                          Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
                          IsVisible="{TemplateBinding IsStale}"
                          VerticalAlignment="Center" />
+              <TextBlock Name="PART_Dirty"
+                         Text="{TemplateBinding DirtyText}"
+                         FontWeight="SemiBold"
+                         Foreground="{DynamicResource DiffView.StatusWarningForegroundBrush}"
+                         IsVisible="{TemplateBinding DirtyText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         ToolTip.Tip="{TemplateBinding DirtyText}"
+                         AutomationProperties.Name="{TemplateBinding DirtyText}"
+                         VerticalAlignment="Center" />
               <ProgressBar Name="PART_Progress"
                            Width="80"
                            IsIndeterminate="True"

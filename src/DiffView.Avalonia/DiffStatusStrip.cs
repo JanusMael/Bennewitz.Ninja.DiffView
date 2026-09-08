@@ -29,6 +29,10 @@ public class DiffStatusStrip : TemplatedControl
     public static readonly StyledProperty<string> StaleTextProperty =
         AvaloniaProperty.Register<DiffStatusStrip, string>(nameof(StaleText), string.Empty);
 
+    /// <summary>Identifies the <see cref="DirtyText"/> property.</summary>
+    public static readonly StyledProperty<string?> DirtyTextProperty =
+        AvaloniaProperty.Register<DiffStatusStrip, string?>(nameof(DirtyText));
+
     /// <summary>Identifies the <see cref="IsBuildingSlowly"/> property.</summary>
     public static readonly StyledProperty<bool> IsBuildingSlowlyProperty =
         AvaloniaProperty.Register<DiffStatusStrip, bool>(nameof(IsBuildingSlowly));
@@ -134,6 +138,13 @@ public class DiffStatusStrip : TemplatedControl
     {
         get => GetValue(ProgressNameProperty);
         set => SetValue(ProgressNameProperty, value);
+    }
+
+    /// <summary>Which sides hold unsaved edits, or <c>null</c> when none do.</summary>
+    public string? DirtyText
+    {
+        get => GetValue(DirtyTextProperty);
+        set => SetValue(DirtyTextProperty, value);
     }
 
     /// <summary>The row counts, or <c>null</c> without a result.</summary>

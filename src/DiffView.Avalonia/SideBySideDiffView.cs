@@ -320,6 +320,8 @@ public class SideBySideDiffView : TemplatedControl
     private ITimer? _reDiffTimer;
     private bool _leftEdited;
     private bool _rightEdited;
+    private readonly HashSet<int> _leftModifiedLines = [];
+    private readonly HashSet<int> _rightModifiedLines = [];
     private bool _leftDirty;
     private bool _rightDirty;
     private bool _suppressTextChanged;
@@ -1218,22 +1220,28 @@ public class SideBySideDiffView : TemplatedControl
         if (side == DiffSide.Left)
         {
             _leftDocument.TextChanged -= OnLeftTextChanged;
+            _leftDocument.Changed -= OnLeftDocumentChanged;
+            _leftModifiedLines.Clear();
             _leftInfo = info;
             _leftEdited = false;
             _leftDirty = false;
             _leftStamp = StampOf(source);
             LeftDocument = document;
             document.TextChanged += OnLeftTextChanged;
+            document.Changed += OnLeftDocumentChanged;
         }
         else
         {
             _rightDocument.TextChanged -= OnRightTextChanged;
+            _rightDocument.Changed -= OnRightDocumentChanged;
+            _rightModifiedLines.Clear();
             _rightInfo = info;
             _rightEdited = false;
             _rightDirty = false;
             _rightStamp = StampOf(source);
             RightDocument = document;
             document.TextChanged += OnRightTextChanged;
+            document.Changed += OnRightDocumentChanged;
         }
 
         DiffPanePresenter? pane = Pane(side);
@@ -1278,6 +1286,93 @@ public class SideBySideDiffView : TemplatedControl
             Path = source.Path,
             Title = source.Title,
         };
+    }
+
+    private void OnLeftDocumentChanged(object? sender, DocumentChangeEventArgs e) => OnDocumentChanged(DiffSide.Left, e);
+
+    private void OnRightDocumentChanged(object? sender, DocumentChangeEventArgs e) => OnDocumentChanged(DiffSide.Right, e);
+
+    /// <summary>
+    /// Keeps the modified-since-load set true across an edit that moves lines. Only the lines the
+    /// edit touched are added; everything below it shifts by the number of lines the edit gained
+    /// or lost, because a line's number is not its identity once something above it changes.
+    /// </summary>
+    private void OnDocumentChanged(DiffSide side, DocumentChangeEventArgs e)
+    {
+        if (_suppressTextChanged)
+        {
+            return;
+        }
+
+        HashSet<int> modified = side == DiffSide.Left ? _leftModifiedLines : _rightModifiedLines;
+        TextDocument document = side == DiffSide.Left ? LeftDocument : RightDocument;
+        int startLine = document.GetLineByOffset(Math.Clamp(e.Offset, 0, document.TextLength)).LineNumber;
+        int removed = CountLineBreaks(e.RemovedText?.Text);
+        int inserted = CountLineBreaks(e.InsertedText?.Text);
+        int delta = inserted - removed;
+
+        if (delta != 0 && modified.Count > 0)
+        {
+            List<int> shifted = new(modified.Count);
+            foreach (int line in modified)
+            {
+                shifted.Add(line > startLine ? line + delta : line);
+            }
+
+            modified.Clear();
+            foreach (int line in shifted)
+            {
+                if (line >= 1)
+                {
+                    modified.Add(line);
+                }
+            }
+        }
+
+        for (int i = 0; i <= inserted; i++)
+        {
+            modified.Add(startLine + i);
+        }
+
+        PushModifiedLines(side);
+    }
+
+    private static int CountLineBreaks(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return 0;
+        }
+
+        int count = 0;
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '\n')
+            {
+                count++;
+            }
+            else if (text[i] == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n'))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private void PushModifiedLines(DiffSide side)
+    {
+        DiffPanePresenter? pane = Pane(side);
+        if (pane is not null)
+        {
+            pane.ModifiedLines = side == DiffSide.Left ? _leftModifiedLines : _rightModifiedLines;
+        }
+    }
+
+    /// <summary>The lines edited on <paramref name="side"/> since its source was assigned.</summary>
+    public IReadOnlySet<int> ModifiedLines(DiffSide side)
+    {
+        return side == DiffSide.Left ? _leftModifiedLines : _rightModifiedLines;
     }
 
     private void OnLeftTextChanged(object? sender, EventArgs e) => OnPaneTextChanged(DiffSide.Left);
@@ -1443,13 +1538,18 @@ public class SideBySideDiffView : TemplatedControl
         {
             _leftEdited = false;
             _leftDirty = false;
+            _leftModifiedLines.Clear();
         }
         else
         {
             _rightEdited = false;
             _rightDirty = false;
+            _rightModifiedLines.Clear();
         }
 
+        PushModifiedLines(side);
+        UpdateHeaders();
+        UpdateStrip();
         ReDiffNow();
     }
 
@@ -2012,6 +2112,22 @@ public class SideBySideDiffView : TemplatedControl
         });
     }
 
+    /// <summary>Which sides hold unsaved edits, named as their headers name them; null for none.</summary>
+    private string? DirtySidesText()
+    {
+        bool left = IsDirty(DiffSide.Left);
+        bool right = IsDirty(DiffSide.Right);
+        if (!left && !right)
+        {
+            return null;
+        }
+
+        string names = left && right
+            ? HeaderTitle(DiffSide.Left, LeftSource) + ", " + HeaderTitle(DiffSide.Right, RightSource)
+            : HeaderTitle(left ? DiffSide.Left : DiffSide.Right, left ? LeftSource : RightSource);
+        return DiffViewStrings.Format(DiffViewStrings.StatusDirty, names);
+    }
+
     private void UpdateStrip()
     {
         DiffStatusStrip? strip = _statusStrip;
@@ -2029,6 +2145,7 @@ public class SideBySideDiffView : TemplatedControl
             DiffViewState.Degraded => DiffViewStrings.StateDegraded,
             _ => DiffViewStrings.StateFailed,
         });
+        strip.DirtyText = DirtySidesText();
         strip.IsStale = IsStale;
         strip.StaleText = DiffViewStrings.Get(DiffViewStrings.StatusStale);
         strip.IsBuildingSlowly = IsBuildingSlowly;
@@ -2129,6 +2246,7 @@ public class SideBySideDiffView : TemplatedControl
         pane.DiffDocument = Document;
         pane.WordDiffLookup = WordDiffLookup;
         pane.IsReadOnly = side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
+        pane.ModifiedLines = side == DiffSide.Left ? _leftModifiedLines : _rightModifiedLines;
         pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
         // The logger first: assigning the file name may install a grammar, which logs.
         pane.Logger = _renderLogger;

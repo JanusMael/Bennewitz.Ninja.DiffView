@@ -1052,3 +1052,21 @@ The arrows draw in a token of their own, `DiffView.GutterArrowBrush`, dark on th
 and light on the dark ones, so the glyph reads against the block tint it sits on. A token rather
 than a borrowed one, because the audit scores contrast per variant and a borrowed token would be
 scored for a job it is not doing.
+
+## A line's number is not its identity, so the marks shift with the text
+
+`ModifiedLines(side)` is the set of lines the user has edited since the source was assigned, and
+it is maintained from `TextDocument.Changed` rather than recomputed. Only that event carries what
+actually moved: the offset, the text removed and the text inserted. On each change the lines the
+edit touched are added, and **every tracked line below the edit shifts by the number of lines the
+edit gained or lost** — because inserting a line above a marked one does not un-edit it, and
+comparing line numbers against a snapshot would mark every line below an insertion as changed.
+
+Marks are per line, not per row, so they belong to the pane rather than the model and survive a
+rebuild untouched. A revert clears them; a save does not, because the question they answer is
+"what did this session change", not "what is unsaved" — the strip's lane and the header's marker
+answer that one, and the two are deliberately different.
+
+The bar is drawn down the margin's inner edge beside the diff's own glyph rather than replacing
+it. The two answer different questions — what differs between the sides, and what this session
+touched — and a line is very often both, so the tooltip says both.

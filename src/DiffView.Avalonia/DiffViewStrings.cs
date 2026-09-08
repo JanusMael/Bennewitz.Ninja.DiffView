@@ -109,6 +109,9 @@ public static class DiffViewStrings
     /// <summary>The marker on a pane whose edits are not on disk.</summary>
     public const string HeaderDirty = "Header.Dirty";
 
+    /// <summary>Appended to a marker tooltip on a line edited since the source was assigned.</summary>
+    public const string MarkerModifiedSinceLoad = "Marker.ModifiedSinceLoad";
+
     /// <summary>The strip's lane while a side has unsaved edits.</summary>
     public const string StatusDirty = "Status.Dirty";
 
@@ -358,6 +361,7 @@ public static class DiffViewStrings
         [LeftTitle] = "Left",
         [RightTitle] = "Right",
         [HeaderDirty] = "Unsaved",
+        [MarkerModifiedSinceLoad] = "Edited in this session",
         [StatusDirty] = "Unsaved changes in {0}",
         [SaveSucceeded] = "Saved {0}",
         [SaveNoPath] = "{0} did not come from a file, so there is nowhere to save it.",

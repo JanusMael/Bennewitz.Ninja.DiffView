@@ -17,7 +17,11 @@ internal sealed class ChangeMarkerMargin : DiffMargin
 {
     private const double HorizontalPadding = 4;
 
+    /// <summary>The width of the modified-since-load bar down the margin's inner edge.</summary>
+    private const double ModifiedBarWidth = 2;
+
     private readonly List<(int LineNumber, DiffLineKind Kind)> _lastRendered = [];
+    private readonly List<int> _lastModified = [];
 
     public ChangeMarkerMargin(DiffPanePresenter owner)
         : base(owner, nameof(ChangeMarkerMargin), DiffViewStrings.ChangeMarkersMarginName)
@@ -26,6 +30,9 @@ internal sealed class ChangeMarkerMargin : DiffMargin
 
     /// <summary>The lines of the last frame and the kind each was drawn with, in order.</summary>
     public IReadOnlyList<(int LineNumber, DiffLineKind Kind)> LastRendered => _lastRendered;
+
+    /// <summary>The lines that carried a modified-since-load bar in the last frame.</summary>
+    public IReadOnlyList<int> LastModified => _lastModified;
 
     /// <summary>The marker glyph for <paramref name="kind"/>; <c>null</c> for an unchanged line.</summary>
     public static string? GlyphFor(DiffLineKind kind)
@@ -47,9 +54,14 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     public override string? TooltipFor(int lineNumber)
     {
         PaneMetadata metadata = Owner.Metadata;
+        string? edited = Owner.ModifiedLines.Contains(lineNumber)
+            ? DiffViewStrings.Get(DiffViewStrings.MarkerModifiedSinceLoad)
+            : null;
+
         if (metadata.BlockAt(lineNumber) is not { } block || metadata.Document is not { } document)
         {
-            return null;
+            // A line the user edited is worth a tooltip even where the diff has nothing to say.
+            return edited;
         }
 
         string summary = DiffViewStrings.Format(
@@ -66,6 +78,12 @@ internal sealed class ChangeMarkerMargin : DiffMargin
             summary += Environment.NewLine + DiffViewStrings.Format(DiffViewStrings.WordDiffSkipped, lookup.MaxLineLength.ToString("N0", CultureInfo.CurrentCulture));
         }
 
+        // A line can be both inside a change block and edited this session; it says both.
+        if (edited is not null)
+        {
+            summary += Environment.NewLine + edited;
+        }
+
         return summary;
     }
 
@@ -78,12 +96,19 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     protected override void RenderCore(DrawingContext context, TextView textView)
     {
         _lastRendered.Clear();
+        _lastModified.Clear();
         PaneMetadata metadata = Owner.Metadata;
         foreach (VisualLine line in textView.VisualLines)
         {
             int number = line.FirstDocumentLine.LineNumber;
             DiffLineKind kind = metadata.KindOf(number);
             _lastRendered.Add((number, kind));
+            if (Owner.ModifiedLines.Contains(number))
+            {
+                _lastModified.Add(number);
+                RenderModifiedBar(context, textView, line);
+            }
+
             if (GlyphFor(kind) is not { } glyph)
             {
                 continue;
@@ -92,5 +117,18 @@ internal sealed class ChangeMarkerMargin : DiffMargin
             FormattedText text = Format(glyph, Owner.Palette.MarkerFor(kind));
             context.DrawText(text, new Point(HorizontalPadding, TextTopOf(line, textView)));
         }
+    }
+
+    /// <summary>
+    /// The bar drawn down the margin's inner edge for a line the user has edited since the
+    /// source was assigned. It sits beside the diff's glyph rather than replacing it: the two
+    /// answer different questions — what differs between the sides, and what this session
+    /// changed — and a line can well be both.
+    /// </summary>
+    private void RenderModifiedBar(DrawingContext context, TextView textView, VisualLine line)
+    {
+        double top = line.VisualTop - textView.VerticalOffset;
+        Rect bar = new(Bounds.Width - ModifiedBarWidth, top, ModifiedBarWidth, line.Height);
+        context.FillRectangle(Owner.Palette[DiffBrush.ModifiedSinceLoad], bar);
     }
 }

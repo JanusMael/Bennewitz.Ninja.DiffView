@@ -60,7 +60,9 @@ and the scale measurement that sizes the escape hatch. Phase 3 is done too: `IsD
 line-terminator convention the file arrived with, and a stamp that refuses to overwrite
 someone else's write. Phase 4 is done too: a block's lines replace the other side's over the ranges
 `ChangeBlock` already carried, undoably, with arrows in the connector gutter and Alt+Left /
-Alt+Right on the current block. What is left is the feedback marks and scale. A ClaudeForge
+Alt+Right on the current block. Phase 5 is done too: the lines this session edited are
+tracked across edits that move them, marked down the marker margin and named in the strip.
+What is left is Phase 6, scale — the measurement that sizes the `LiveReDiff` escape hatch. A ClaudeForge
 integration was drafted as plan 00002 and rejected on its own review before any code; it is
 deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
 
@@ -100,8 +102,23 @@ dotnet run --project src/ThemeAudit -- report
 | 2 Live re-diff | done | `LiveReDiff` / `ReDiffDelay` / `ReDiffNow()` / `IsEdited(side)`; `EffectiveSource` builds from the live document while keeping the source's encoding, path and title; the document, caret, selection, scroll and undo stack survive a rebuild; find results invalidated on edit; 6 headless test cases, each proven able to fail |
 | 3 Dirty and save | done | `IsDirty` / `CanSave` / `Save` / `Revert` and `SaveOutcome`; `PaneWriter` in Core round-trips the encoding, the byte-order mark and the line endings; a `(LastWriteTimeUtc, Length)` stamp catches someone else's write and follows our own; the header carries a dirty marker; 20 unit and headless test cases, each proven able to fail |
 | 4 Copy to side | done | `CanCopyBlock` / `CopyBlock` / `CopyCurrentBlock`, `CopyToLeftCommand` / `CopyToRightCommand` on Alt+Left and Alt+Right; per-block arrows in the connector gutter on a new `DiffView.GutterArrowBrush`, hit-tested before the polygon they sit inside; 10 headless test cases, five mutations killed and two survivors that removed a dead branch and a wrong one |
-| 5 Feedback and polish | not started | Modified-since-load marks, unsaved-changes state, automation names |
+| 5 Feedback and polish | done | `ModifiedLines(side)` tracked across edits that move lines, drawn as a bar down the marker margin on a new `DiffView.ModifiedSinceLoadBrush` and explained in its tooltip; the strip names the sides holding unsaved edits; a revert clears both; 6 headless test cases, each proven able to fail |
 | 6 Scale and hardening | not started | The re-diff loop on the 200k pair; the priming cost per keystroke; an edit→redraw `Perf` measurement |
+
+## Plan 00003, Phase 5 verification
+
+| Done-when item | Result |
+|---|---|
+| Modified-since-load marks in the marker margin | pass: `EditFeedbackTests.The_margin_draws_a_bar_on_the_lines_this_session_changed` — the margin's `LastModified` is empty before any edit, carries exactly the edited line after one, and stays empty on the pane that was not touched |
+| The marks follow the text, not the line number | pass: `An_edited_line_is_marked_and_the_mark_moves_with_the_line` — a line is edited, then a whole line is inserted above it, and the mark moves down with the text it belongs to; `A_multi_line_insert_marks_every_line_it_added` covers the other half, where three inserted lines are all this session's work rather than only the one the caret sat on |
+| The tooltip explains the mark | pass: `The_margin_tooltip_says_a_line_was_edited_even_where_the_diff_is_silent` — with identical sides the marker tooltip is normally null, and an edited line still gets one; on a line inside a change block the note is appended to the block summary, so a line that is both says both |
+| Unsaved-changes state | pass: `The_strip_names_the_sides_holding_unsaved_edits` — the strip's lane is null while nothing is dirty, names the left side once it is edited, and names both once both are |
+| Reverting clears the feedback | pass: `Reverting_clears_the_marks_and_the_lane` — after a revert the tracked set is empty, the margin draws no bars, and the strip's lane is null again |
+| Automation names on the new decorators | pass: the strip's lane and the header's dirty marker each carry their text as `AutomationProperties.Name` and as a tooltip, so neither is colour alone; the margin's bar is described through `TooltipFor`, which the existing decorator sweep already covers |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 379 passed (373 before the phase) |
+| New tests proven able to fail | six mutations, six distinct failures: not shifting the marks when lines move; marking only the first line of a multi-line insert; leaving the marks behind on a revert; never drawing the bar; never naming an unsaved side in the strip; and returning null from the tooltip where the diff has nothing to say. The multi-line case survived its mutation on the first pass, which is why `A_multi_line_insert_marks_every_line_it_added` exists |
+| Theme audit regenerated | `theme-audit compat` then `report` after the new `DiffView.ModifiedSinceLoadBrush`: 0 low-contrast findings, drift test passes |
 
 ## Plan 00003, Phase 4 verification
 

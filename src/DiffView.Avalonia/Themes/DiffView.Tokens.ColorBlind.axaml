@@ -37,6 +37,7 @@
       <SolidColorBrush x:Key="DiffView.MarkerModifiedBrush" Color="#B5588F" />
       <SolidColorBrush x:Key="DiffView.ConnectorBrush" Color="#757575" />
       <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#37474F" />
+      <SolidColorBrush x:Key="DiffView.ModifiedSinceLoadBrush" Color="#8E24AA" />
       <SolidColorBrush x:Key="DiffView.CurrentBlockBorderBrush" Color="#1565C0" />
 
       <!-- Find -->
@@ -87,6 +88,7 @@
       <SolidColorBrush x:Key="DiffView.MarkerModifiedBrush" Color="#E7A6D0" />
       <SolidColorBrush x:Key="DiffView.ConnectorBrush" Color="#8B9096" />
       <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#CFD8DC" />
+      <SolidColorBrush x:Key="DiffView.ModifiedSinceLoadBrush" Color="#CE93D8" />
       <SolidColorBrush x:Key="DiffView.CurrentBlockBorderBrush" Color="#64B5F6" />
 
       <!-- Find -->
