@@ -46,9 +46,11 @@ box cannot screenshot a window (XWayland refuses the grab), so a look at either 
 the user's. Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin
 follows the merge (see *Upstreamed to ClaudeForge*).
 
-**Next is [plan 00003](plans/00003-in-pane-editing.md) — in-pane editing**, approved
-2026-09-08: typing, live re-diff on a debounce, dirty state and save that round-trips the
-encoding and the line endings, copy-to-side through the connector gutter. A ClaudeForge
+**[Plan 00003](plans/00003-in-pane-editing.md) — in-pane editing — is under way.** Phase 1,
+typing, is done and took no source change at all: `LeftReadOnly` and `RightReadOnly` already
+reached the panes, and no renderer, margin or sync turned out to depend on the document
+holding still. What remains is live re-diff on a debounce, dirty state and a save that
+round-trips the encoding and the line endings, and copy-to-side through the connector gutter. A ClaudeForge
 integration was drafted as plan 00002 and rejected on its own review before any code; it is
 deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
 
@@ -79,6 +81,30 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00003 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 Typing | done | No source change was needed. `LeftReadOnly` / `RightReadOnly` already reached the panes, and no layer turned out to rely on the document being immutable; 5 headless test cases, each proven able to fail |
+| 2 Live re-diff | not started | Debounced rebuild on `TextChanged`; the document-preserving path made explicit; the three caches invalidated |
+| 3 Dirty and save | not started | `IsDirty`, `Save`, the encoding and line-ending round-trip, the changed-on-disk report |
+| 4 Copy to side | not started | Block and line arrows in the connector gutter over `ChangeBlock`'s per-side ranges |
+| 5 Feedback and polish | not started | Modified-since-load marks, unsaved-changes state, automation names |
+| 6 Scale and hardening | not started | The re-diff loop on the 200k pair; the priming cost per keystroke; an edit→redraw `Perf` measurement |
+
+## Plan 00003, Phase 1 verification
+
+| Done-when item | Result |
+|---|---|
+| Flipping `IsReadOnly` lets a pane accept typing | pass: `EditingTests.An_editable_pane_accepts_typing_while_its_neighbour_stays_read_only` — with `LeftReadOnly` cleared, a keystroke lands in the left document and its length grows by one, while the right pane, still read-only, does not move under the same keystroke |
+| No layer relies on the document being immutable | pass: `Typing_past_the_model_leaves_every_visible_row_rendered_and_raises_no_fault` — three lines are appended past the end of what the model knows, with nothing rebuilding. `PaneMetadata.LineCount` stays behind `Document.LineCount`, `Knows` is false for the new lines, `KindOf` answers `Unchanged`, `BlockAt` and `RowOf` answer `null`, the frame still paints, no `RenderFault` is raised and the state does not fail. The bounds-check plan 00001 paid for is what absorbs the disagreement |
+| Undo and redo are the editor's own | pass: `Undo_restores_the_document_and_the_editor_owns_the_stack` — `CanUndo`, undo restores the text exactly, `CanRedo`, redo reapplies it |
+| Paste follows the property in both directions | pass: `Pasting_follows_the_property_in_both_directions` — `CanPaste` is false while read-only and true once cleared, the paste lands, and setting the property back on makes `CanPaste` false again and leaves the next keystroke and paste with no effect |
+| Scroll coupling survives an edit | pass: `An_edit_does_not_disturb_the_other_pane_scroll_coupling` — the appended line is asserted to have landed first, then a 40px scroll on the edited pane still moves the other to the same offset |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 337 passed (332 before the phase) |
+| New tests proven able to fail | two mutations, five failures. Unbounding `PaneMetadata.Knows` (dropping the `<= LineCount` half) failed the stale-model test; pinning `_leftPane.IsReadOnly = true` in the composite's property handler failed the other four. The scroll-coupling test survived both on its first draft — it asserted the coupling without asserting the edit had landed — and was strengthened until the mutation killed it too |
 
 ## Phase 11 verification
 
