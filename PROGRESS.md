@@ -47,10 +47,15 @@ the user's. Both ClaudeForge contributions (PR #37 and PR #38) are merged and th
 follows the merge (see *Upstreamed to ClaudeForge*).
 
 **[Plan 00003](plans/00003-in-pane-editing.md) — in-pane editing — is under way.** Phase 1,
-typing, is done and took no source change at all: `LeftReadOnly` and `RightReadOnly` already
-reached the panes, and no renderer, margin or sync turned out to depend on the document
-holding still. What remains is live re-diff on a debounce, dirty state and a save that
-round-trips the encoding and the line endings, and copy-to-side through the connector gutter. A ClaudeForge
+typing, took no source change at all: `LeftReadOnly` and `RightReadOnly` already reached the
+panes, and no renderer, margin or sync turned out to depend on the document holding still.
+Phase 2, live re-diff, is done too: an edit rests for `ReDiffDelay` and then rebuilds through
+the same latest-wins worker, from the pane's live text, without replacing the document — so
+the caret, the selection, the scroll offset and the undo stack all come through. `LiveReDiff`
+can be cleared and `ReDiffNow()` called instead, which is the escape hatch for a pair too
+large to rebuild on a debounce. What remains is dirty state and a save that round-trips the
+encoding and the line endings, copy-to-side through the connector gutter, the feedback marks,
+and the scale measurement that sizes the escape hatch. A ClaudeForge
 integration was drafted as plan 00002 and rejected on its own review before any code; it is
 deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
 
@@ -87,11 +92,26 @@ dotnet run --project src/ThemeAudit -- report
 | Phase | Status | Notes |
 |---|---|---|
 | 1 Typing | done | No source change was needed. `LeftReadOnly` / `RightReadOnly` already reached the panes, and no layer turned out to rely on the document being immutable; 5 headless test cases, each proven able to fail |
-| 2 Live re-diff | not started | Debounced rebuild on `TextChanged`; the document-preserving path made explicit; the three caches invalidated |
+| 2 Live re-diff | done | `LiveReDiff` / `ReDiffDelay` / `ReDiffNow()` / `IsEdited(side)`; `EffectiveSource` builds from the live document while keeping the source's encoding, path and title; the document, caret, selection, scroll and undo stack survive a rebuild; find results invalidated on edit; 6 headless test cases, each proven able to fail |
 | 3 Dirty and save | not started | `IsDirty`, `Save`, the encoding and line-ending round-trip, the changed-on-disk report |
 | 4 Copy to side | not started | Block and line arrows in the connector gutter over `ChangeBlock`'s per-side ranges |
 | 5 Feedback and polish | not started | Modified-since-load marks, unsaved-changes state, automation names |
 | 6 Scale and hardening | not started | The re-diff loop on the 200k pair; the priming cost per keystroke; an edit→redraw `Perf` measurement |
+
+## Plan 00003, Phase 2 verification
+
+| Done-when item | Result |
+|---|---|
+| A keystroke rebuilds the model once the debounce elapses | pass: `LiveReDiffTests.An_edit_rebuilds_the_model_from_the_live_text_after_the_debounce` — the model's `Version` and block count are unchanged while the edit rests, and both move once `ReDiffDelay` passes, with the metadata's line count catching up to the document's |
+| The rebuild reads the live text, not the assigned source | pass: same test — the new block count can only come from text the `PaneSource` never carried. `EffectiveSource` builds a source from the document while keeping the original's encoding, path and title, which is what a save writes back with |
+| The document, caret, selection, scroll and undo stack survive | pass: `The_rebuild_keeps_the_document_the_caret_the_selection_and_the_undo_stack` — `Assert.Same` on the `TextDocument` instance across the rebuild, with the caret offset, selected text and scroll offset unchanged, and the edit still undoable afterwards back to the original text |
+| Keystrokes coalesce | pass: `Keystrokes_inside_the_window_coalesce_into_one_build` — four keystrokes, each advancing the clock to just short of the delay, leave the version untouched; one build lands after the last, moving it by exactly one |
+| Find results are invalidated | pass: `The_matches_an_edit_invalidated_are_dropped_rather_than_left_pointing_at_moved_text` — matches found before an edit are dropped when it lands, because their offsets index text that has moved |
+| Live re-diff can be turned off | pass: `With_live_re_diff_off_the_model_waits_for_an_explicit_rebuild` — with `LiveReDiff` false the debounce elapses four times over with no build, the side still reports as edited, and `ReDiffNow()` rebuilds on demand. This is the escape hatch Phase 6 will size against the 200k pair |
+| A replaced document stops arming re-diffs | pass: `Assigning_a_source_again_clears_the_edited_flag_and_stops_the_old_document_talking` — after a new source lands, editing the abandoned document changes nothing and arms nothing. This test found two real defects while it was being written; see *Decisions* |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 343 passed (337 before the phase) |
+| New tests proven able to fail | six mutations, six distinct failures: returning the assigned source from `EffectiveSource` when the side is edited; dropping the `LiveReDiff` gate; never unsubscribing the replaced document; skipping the find invalidation; replacing the document on a re-diff the way a source assignment does; and collapsing the debounce to zero |
 
 ## Plan 00003, Phase 1 verification
 

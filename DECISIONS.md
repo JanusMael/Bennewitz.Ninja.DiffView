@@ -932,3 +932,39 @@ risk is gone. Editing is brought forward instead: it pays none of that toll, it 
 read-only consumer never would. The one piece salvaged and sent back on its own merits is the
 correction of ClaudeForge's stale "AvaloniaEdit is incompatible with Semi.Avalonia" note, which
 the compat dictionaries of PR #38 had already made false.
+
+## A re-diff builds from the document; a source assignment builds from the source
+
+`RequestBuild` composes its two sides through `EffectiveSource`, which returns the assigned
+`PaneSource` until the user has edited that side and the document's own text afterwards. The
+encoding, the path and the title always come from the source, because they are what a save writes
+back with and typing does not change them. The text is read on the UI thread, like every other
+text the worker sees.
+
+That split is what lets one pipeline serve both. A source assignment replaces the `TextDocument`
+and rebuilds with `keepModel: false`; an edit keeps the document and rebuilds with
+`keepModel: true`, so the previous model stays on screen — misaligned by whatever the edit changed
+— until the new one lands. Nothing else in the build path needed to know which case it was in.
+
+Two defects surfaced while the phase's last test was being written, and both are worth stating
+because neither was obvious:
+
+**A source assignment must cancel a pending re-diff.** An edit arms a debounce timer against the
+document it edited. If a new source arrives inside that window, the timer survives its document
+and fires a rebuild that the assignment's own build has already superseded. `OnSourceChanged`
+disposes the timer before it replaces anything.
+
+**Re-assigning an equal source does nothing, so reverting needs its own verb.** `PaneSource` is a
+record, so a source equal to the one already assigned raises no property change, `OnSourceChanged`
+never runs, and an edited pane keeps both its edits and its edited flag. Restoring a pane to its
+source is therefore a real operation rather than a re-assignment, and it belongs with the dirty
+state and save work rather than here.
+
+## Live re-diff is a property, not an assumption
+
+`LiveReDiff` defaults to true and `ReDiffDelay` to 300 ms, but the control does not assume either
+is affordable. Clearing `LiveReDiff` leaves the model exactly as it was until `ReDiffNow()` is
+called. Priming the 200,000-line pair took 1,243 ms to be up, and a rebuild re-primes, so a pair
+exists for which rebuilding on a debounce costs more than it is worth. Phase 6 measures where that
+line falls; until it does, the escape hatch is deliberately part of the public surface rather than
+something to be retrofitted once the measurement is in.

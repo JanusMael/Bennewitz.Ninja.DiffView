@@ -146,6 +146,18 @@ internal sealed class CompositeHost : IDisposable
         await WaitForFindAsync();
     }
 
+    /// <summary>
+    /// Fires the re-diff debounce an edit armed, then waits for the build it posts. The clock is
+    /// advanced past <see cref="SideBySideDiffView.ReDiffDelay"/> rather than exactly to it, so a
+    /// timer scheduled a tick late still fires.
+    /// </summary>
+    public async Task WaitForReDiffAsync()
+    {
+        Time.Advance(View.ReDiffDelay + TimeSpan.FromMilliseconds(1));
+        Layout();
+        await WaitForBuildAsync();
+    }
+
     /// <summary>Fires the find debounce, runs the search it posts, and waits for its outcome.</summary>
     public async Task WaitForFindAsync()
     {

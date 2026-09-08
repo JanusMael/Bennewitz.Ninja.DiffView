@@ -66,6 +66,9 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>How long the query and the find options rest before the search runs.</summary>
     public static readonly TimeSpan FindDebounce = TimeSpan.FromMilliseconds(150);
 
+    /// <summary>How long an edited pane rests before the re-diff its edit triggered runs.</summary>
+    public static readonly TimeSpan ReDiffDebounce = TimeSpan.FromMilliseconds(300);
+
     /// <summary>Identifies the <see cref="LeftSource"/> property.</summary>
     public static readonly StyledProperty<PaneSource?> LeftSourceProperty =
         AvaloniaProperty.Register<SideBySideDiffView, PaneSource?>(nameof(LeftSource));
@@ -81,6 +84,14 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Identifies the <see cref="RightReadOnly"/> property.</summary>
     public static readonly StyledProperty<bool> RightReadOnlyProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(RightReadOnly), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="LiveReDiff"/> property.</summary>
+    public static readonly StyledProperty<bool> LiveReDiffProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(LiveReDiff), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="ReDiffDelay"/> property.</summary>
+    public static readonly StyledProperty<TimeSpan> ReDiffDelayProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, TimeSpan>(nameof(ReDiffDelay), defaultValue: ReDiffDebounce);
 
     /// <summary>Identifies the <see cref="IgnoreWhitespace"/> property.</summary>
     public static readonly StyledProperty<bool> IgnoreWhitespaceProperty =
@@ -304,6 +315,9 @@ public class SideBySideDiffView : TemplatedControl
     private int _findGeneration;
     private CancellationTokenSource? _findCts;
     private ITimer? _findTimer;
+    private ITimer? _reDiffTimer;
+    private bool _leftEdited;
+    private bool _rightEdited;
     private bool _syncingFindBar;
 
     private DiffPanePresenter? _leftPane;
@@ -387,6 +401,24 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(RightReadOnlyProperty);
         set => SetValue(RightReadOnlyProperty, value);
+    }
+
+    /// <summary>
+    /// Whether an edit re-diffs on its own after <see cref="ReDiffDelay"/>. Clearing it leaves the
+    /// model as it was until <see cref="ReDiffNow"/> is called, which is the escape hatch for a
+    /// pair large enough that rebuilding on a debounce costs more than it is worth.
+    /// </summary>
+    public bool LiveReDiff
+    {
+        get => GetValue(LiveReDiffProperty);
+        set => SetValue(LiveReDiffProperty, value);
+    }
+
+    /// <summary>How long an edited pane rests before its re-diff runs; <see cref="ReDiffDebounce"/> by default.</summary>
+    public TimeSpan ReDiffDelay
+    {
+        get => GetValue(ReDiffDelayProperty);
+        set => SetValue(ReDiffDelayProperty, value);
     }
 
     /// <summary>Leading and trailing whitespace does not count as a difference. Changing it rebuilds.</summary>
@@ -1136,15 +1168,27 @@ public class SideBySideDiffView : TemplatedControl
         DiffViewLog.SourceAssigned(_buildLogger, side, source);
         TextInfo? info = source is null ? null : TextProbe.Probe(source);
         TextDocument document = new(source?.Text ?? string.Empty);
+
+        // A re-diff armed by an edit to the document being replaced describes text that is about
+        // to stop existing; the build this method requests supersedes it anyway.
+        _reDiffTimer?.Dispose();
+        _reDiffTimer = null;
+
         if (side == DiffSide.Left)
         {
+            _leftDocument.TextChanged -= OnLeftTextChanged;
             _leftInfo = info;
+            _leftEdited = false;
             LeftDocument = document;
+            document.TextChanged += OnLeftTextChanged;
         }
         else
         {
+            _rightDocument.TextChanged -= OnRightTextChanged;
             _rightInfo = info;
+            _rightEdited = false;
             RightDocument = document;
+            document.TextChanged += OnRightTextChanged;
         }
 
         DiffPanePresenter? pane = Pane(side);
@@ -1165,10 +1209,98 @@ public class SideBySideDiffView : TemplatedControl
         return source?.Path ?? source?.Title;
     }
 
+    /// <summary>Whether <paramref name="side"/> has been edited since its source was assigned.</summary>
+    public bool IsEdited(DiffSide side) => side == DiffSide.Left ? _leftEdited : _rightEdited;
+
+    /// <summary>
+    /// What the next build compares: the assigned source, or the pane's live text once the user
+    /// has edited it. The encoding, the path and the title come from the source either way —
+    /// they are what a save writes back with, and typing does not change them.
+    /// </summary>
+    private PaneSource? EffectiveSource(DiffSide side)
+    {
+        PaneSource? source = side == DiffSide.Left ? LeftSource : RightSource;
+        if (source is null || !IsEdited(side))
+        {
+            return source;
+        }
+
+        // Read on the UI thread, like every other text the worker sees.
+        TextDocument document = side == DiffSide.Left ? LeftDocument : RightDocument;
+        return new PaneSource(document.Text)
+        {
+            Encoding = source.Encoding,
+            Path = source.Path,
+            Title = source.Title,
+        };
+    }
+
+    private void OnLeftTextChanged(object? sender, EventArgs e) => OnPaneTextChanged(DiffSide.Left);
+
+    private void OnRightTextChanged(object? sender, EventArgs e) => OnPaneTextChanged(DiffSide.Right);
+
+    /// <summary>
+    /// A pane's document changed. Only the user can have done it: a build swaps metadata and
+    /// never touches a document, and a source assignment replaces the document rather than
+    /// editing it, unsubscribing first.
+    /// </summary>
+    private void OnPaneTextChanged(DiffSide side)
+    {
+        if (side == DiffSide.Left)
+        {
+            _leftEdited = true;
+        }
+        else
+        {
+            _rightEdited = true;
+        }
+
+        // The matches were offsets into text that has just moved under them, so they are wrong
+        // now rather than merely stale. The search re-runs with the build.
+        CancelFind();
+        ApplyFindResult(null);
+        ScheduleReDiff();
+    }
+
+    /// <summary>
+    /// Schedules the re-diff an edit triggered: the pane rests for <see cref="ReDiffDelay"/>, and
+    /// every further keystroke restarts the wait. The model already on screen stays until the new
+    /// one lands, so during the wait the panes are misaligned by whatever the edit changed and
+    /// the padding catches up when the build arrives.
+    /// </summary>
+    private void ScheduleReDiff()
+    {
+        _reDiffTimer?.Dispose();
+        _reDiffTimer = null;
+        if (!LiveReDiff)
+        {
+            return;
+        }
+
+        _reDiffTimer = TimeProvider.CreateTimer(
+            _ => Dispatcher.UIThread.Post(() =>
+            {
+                _reDiffTimer?.Dispose();
+                _reDiffTimer = null;
+                RequestBuild(keepModel: true);
+            }),
+            state: null,
+            ReDiffDelay,
+            Timeout.InfiniteTimeSpan);
+    }
+
+    /// <summary>Rebuilds now from the panes' live text, whatever the debounce was doing.</summary>
+    public void ReDiffNow()
+    {
+        _reDiffTimer?.Dispose();
+        _reDiffTimer = null;
+        RequestBuild(keepModel: true);
+    }
+
     private void RequestBuild(bool keepModel)
     {
-        PaneSource? left = LeftSource;
-        PaneSource? right = RightSource;
+        PaneSource? left = EffectiveSource(DiffSide.Left);
+        PaneSource? right = EffectiveSource(DiffSide.Right);
         if (left is null || right is null)
         {
             CancelBuild();
