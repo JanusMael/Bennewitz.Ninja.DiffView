@@ -46,6 +46,12 @@ box cannot screenshot a window (XWayland refuses the grab), so a look at either 
 the user's. Both ClaudeForge contributions (PR #37 and PR #38) are merged and the ClaudeForge pin
 follows the merge (see *Upstreamed to ClaudeForge*).
 
+**Next is [plan 00003](plans/00003-in-pane-editing.md) — in-pane editing**, approved
+2026-09-08: typing, live re-diff on a debounce, dirty state and save that round-trips the
+encoding and the line endings, copy-to-side through the connector gutter. A ClaudeForge
+integration was drafted as plan 00002 and rejected on its own review before any code; it is
+deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
+
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
 

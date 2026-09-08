@@ -895,3 +895,40 @@ take a `DiffSide?` and the presenter passes `LogSide` — `null` when unified, w
 `DiffViewLog.Pane` renders as `unified`. Naming it "Left" would have been a lie in the one place a
 reader goes to find out what failed. `Side` itself is left alone: it is a public property with a
 default, and the unified pane simply does not use it.
+
+## The ClaudeForge integration is deferred; in-pane editing comes first
+
+Plan 00001 promised the control back to ClaudeForge "once it is ready to host the Save Changes
+dialog's old/new rows". Plan 00002 was drafted against that promise and **rejected on its own
+review** before any code was written. Both the draft and the review are kept under `plans/`.
+
+The premise did not survive contact with the dialog. Those old/new columns are a property table,
+not file text, and `ClaudeForge.Sdk.Diagnostics.JsonDiff` already recurses into nested objects and
+computes a multi-set delta over arrays — deliberately, so that "a single hook removal" does not
+emit a whole container. Its own summary is "surfaces just the leaf changes". By the time a
+`PropertyDiff` reaches the dialog the blob has already been decomposed, so a `Modified` entry
+holds two *leaves*: realistically two long single-line strings. A line-based diff of two
+single-line strings renders one removed line and one added line, which is what the dialog already
+prints as `~ key: old → new`. The unit of the control is the line; the unit of the data is the
+character.
+
+The cost was also larger than it looked. `DiffView.Avalonia` references `AvaloniaEdit.TextMate`
+unconditionally — there is no syntax-free variant — so a consumer inherits 6.7 MB of
+`TextMateSharp.Grammars` and a native `libonigwrap.so` per RID whether or not it colours anything.
+Beyond that, every integration pays the same fixed toll: a solution-wide Avalonia bump across
+three pin sets (12.1.0 application, 12.1.1 headless), a dependabot-managed group and a
+pre-existing NU1605 pin; `nuget.config` wiring ClaudeForge has never had; new strings in nine
+`.resx` files with real translations; four CI gates; and a rebase against the 83-commit
+`feat/agentforge-opencodeforge`, which moves the target files into a product-neutral assembly.
+
+Backup/Restore was checked as a retarget, since a genuine two-file diff would justify all of that.
+It does not exist: `BackupRestoreView` is a configuration page, and the "restore preview" is the
+same property table under `SaveDialogMode.Restore`. Retargeting means designing a new ClaudeForge
+feature, not consuming an existing surface.
+
+So integration waits, and gets cheaper by waiting — once the in-flight branch lands, the rebase
+risk is gone. Editing is brought forward instead: it pays none of that toll, it is what plan
+00001's nine editing-readiness choices were bought for, and it stresses the API in the way a
+read-only consumer never would. The one piece salvaged and sent back on its own merits is the
+correction of ClaudeForge's stale "AvaloniaEdit is incompatible with Semi.Avalonia" note, which
+the compat dictionaries of PR #38 had already made false.
