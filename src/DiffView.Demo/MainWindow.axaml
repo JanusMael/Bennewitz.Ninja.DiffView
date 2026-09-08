@@ -11,6 +11,15 @@
         <MenuItem Header="Open _left…" Click="OnOpenLeft" AutomationProperties.Name="Open a file in the left pane" />
         <MenuItem Header="Open _right…" Click="OnOpenRight" AutomationProperties.Name="Open a file in the right pane" />
         <Separator />
+        <MenuItem Header="_Save left" InputGesture="Ctrl+S" Click="OnSaveLeft"
+                  AutomationProperties.Name="Write the left pane back to its file" />
+        <MenuItem Header="Save _right" Click="OnSaveRight"
+                  AutomationProperties.Name="Write the right pane back to its file" />
+        <MenuItem Header="Re_vert left" Click="OnRevertLeft"
+                  AutomationProperties.Name="Discard the left pane's edits" />
+        <MenuItem Header="Revert r_ight" Click="OnRevertRight"
+                  AutomationProperties.Name="Discard the right pane's edits" />
+        <Separator />
         <MenuItem Header="E_xit" Click="OnExit" AutomationProperties.Name="Exit" />
       </MenuItem>
       <MenuItem Header="_View" AutomationProperties.Name="View menu">
@@ -29,6 +38,15 @@
         <Separator />
         <MenuItem Header="_Find…" InputGesture="Ctrl+F" Click="OnFind"
                   AutomationProperties.Name="Open the find bar" />
+        <Separator />
+        <MenuItem x:Name="EditLeft" Header="Edit left _pane" ToggleType="CheckBox"
+                  Click="OnToggleEditLeft" AutomationProperties.Name="Let the left pane be typed into" />
+        <MenuItem x:Name="EditRight" Header="Edit right pa_ne" ToggleType="CheckBox"
+                  Click="OnToggleEditRight" AutomationProperties.Name="Let the right pane be typed into" />
+        <MenuItem Header="Copy block to _left" InputGesture="Alt+Left" Click="OnCopyToLeft"
+                  AutomationProperties.Name="Copy the current change block onto the left side" />
+        <MenuItem Header="Copy block to _right" InputGesture="Alt+Right" Click="OnCopyToRight"
+                  AutomationProperties.Name="Copy the current change block onto the right side" />
         <Separator />
         <MenuItem x:Name="IgnoreWhitespace" Header="Ignore _whitespace" ToggleType="CheckBox"
                   Click="OnToggleIgnoreWhitespace" AutomationProperties.Name="Ignore whitespace differences" />

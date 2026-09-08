@@ -219,6 +219,77 @@ public sealed partial class MainWindow : Window
         UpdateStatus();
     }
 
+    // ── Editing (plan 00003) ───────────────────────────────────────────────────────────────
+    //
+    // The unified view stays read-only whatever these say: its document is composed from both
+    // sides, so half its lines belong to one file and half to the other.
+
+    private void OnToggleEditLeft(object? sender, RoutedEventArgs e)
+    {
+        Diff.LeftReadOnly = !EditLeft.IsChecked;
+        UpdateStatus();
+    }
+
+    private void OnToggleEditRight(object? sender, RoutedEventArgs e)
+    {
+        Diff.RightReadOnly = !EditRight.IsChecked;
+        UpdateStatus();
+    }
+
+    private void OnCopyToLeft(object? sender, RoutedEventArgs e) => CopyCurrentBlock(DiffSide.Left);
+
+    private void OnCopyToRight(object? sender, RoutedEventArgs e) => CopyCurrentBlock(DiffSide.Right);
+
+    private void CopyCurrentBlock(DiffSide side)
+    {
+        if (Diff.CurrentChangeIndex < 0)
+        {
+            Note("No current change block — press F7 to pick one.");
+            return;
+        }
+
+        if (!Diff.CopyCurrentBlock(side))
+        {
+            Note($"Cannot copy onto the {side} side: it is read-only.");
+            return;
+        }
+
+        UpdateStatus();
+    }
+
+    private void OnSaveLeft(object? sender, RoutedEventArgs e) => Save(DiffSide.Left);
+
+    private void OnSaveRight(object? sender, RoutedEventArgs e) => Save(DiffSide.Right);
+
+    private void Save(DiffSide side)
+    {
+        SaveOutcome outcome = Diff.Save(side);
+        Note(outcome switch
+        {
+            SaveOutcome.Saved => $"Saved the {side} side.",
+            SaveOutcome.NotDirty => $"The {side} side has no unsaved edits.",
+            SaveOutcome.NoPath => $"The {side} side did not come from a file.",
+            SaveOutcome.ChangedOnDisk => $"The {side} side changed on disk; nothing was written.",
+            _ => $"The {side} side could not be saved; the strip says why.",
+        });
+    }
+
+    private void OnRevertLeft(object? sender, RoutedEventArgs e) => Revert(DiffSide.Left);
+
+    private void OnRevertRight(object? sender, RoutedEventArgs e) => Revert(DiffSide.Right);
+
+    private void Revert(DiffSide side)
+    {
+        Diff.Revert(side);
+        Note($"Reverted the {side} side to its source.");
+    }
+
+    private void Note(string text)
+    {
+        _note = text;
+        UpdateStatus();
+    }
+
     private void OnToggleIgnoreWhitespace(object? sender, RoutedEventArgs e)
     {
         Diff.IgnoreWhitespace = IgnoreWhitespace.IsChecked;
@@ -362,7 +433,21 @@ public sealed partial class MainWindow : Window
         string palette = ColourBlindPalette.IsChecked ? "colour-blind" : "default";
         string layout = UnifiedView.IsChecked ? "unified" : "side by side";
         string note = _note is null ? string.Empty : $"   ·   {_note}";
-        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Palette: {palette}   ·   View: {layout}{note}   ·   F12: live log";
+        string editable = (EditLeft.IsChecked, EditRight.IsChecked) switch
+        {
+            (true, true) => "both",
+            (true, false) => "left",
+            (false, true) => "right",
+            _ => "neither",
+        };
+        string dirty = (Diff.IsDirty(DiffSide.Left), Diff.IsDirty(DiffSide.Right)) switch
+        {
+            (true, true) => "   ·   unsaved: both",
+            (true, false) => "   ·   unsaved: left",
+            (false, true) => "   ·   unsaved: right",
+            _ => string.Empty,
+        };
+        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Palette: {palette}   ·   View: {layout}   ·   Editable: {editable}{dirty}{note}   ·   F12: live log";
         ToolTip.SetTip(StatusText, $"Logs: {LogPaths.LogsDirectory}");
     }
 }
