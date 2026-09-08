@@ -26,6 +26,7 @@ internal enum DiffBrush
     WordDeleted,
     CurrentBlockBorder,
     Connector,
+    GutterArrow,
     FindMatch,
     FindCurrentMatch,
 }
@@ -57,6 +58,7 @@ internal sealed class DiffBrushes
         ("DiffView.WordDeletedBrush", Color.Parse("#59C62828")),
         ("DiffView.CurrentBlockBorderBrush", Color.Parse("#1565C0")),
         ("DiffView.ConnectorBrush", Color.Parse("#757575")),
+        ("DiffView.GutterArrowBrush", Color.Parse("#37474F")),
         ("DiffView.FindMatchBrush", Color.Parse("#80FFD54F")),
         ("DiffView.FindCurrentMatchBrush", Color.Parse("#99FF8F00")),
     ];

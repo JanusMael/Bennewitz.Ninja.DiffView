@@ -1010,3 +1010,45 @@ second save of a session would report a conflict with its own first. A side whos
 taken — the file did not exist when it was read — is not treated as changed, or a first save could
 never happen. A save reports through `SaveOutcome` and the status strip rather than the banner:
 the banner says what the *build* did, and a save is not a build.
+
+## A copy makes the target's lines the source's lines, terminator included
+
+`CopyBlock` replaces the target's `LineRange` with the source's, over the ranges `ChangeBlock`
+already carries — which is what plan 00001 meant when it wrote "copy-to-side is a replace over
+these ranges". The edit goes through the editor's own `TextDocument`, so undo takes a copy back
+like any other edit, and the re-diff that follows collapses the block.
+
+Only one fix-up survives at the document's ends, and finding out which was the useful part of the
+phase. Two candidate branches were written and both turned out to be wrong:
+
+**"A copied run that lacks a terminator needs one" is unreachable.** A block is a *maximal* run of
+changed rows, so a run that reaches one side's last line reaches the other's too — there can be no
+unchanged row after it on one side only. A copied run can therefore only lack a terminator when it
+is going to the end of the target as well, where none is wanted.
+
+**"Trim the terminator the target never had" is actively wrong.** The point of a copy is that the
+block collapses, which means the target's bytes become the source's bytes. Trimming the source's
+own trailing terminator leaves exactly the difference the copy was meant to remove.
+`Copying_onto_an_unterminated_last_line_gives_it_the_source_terminator` now pins that.
+
+What remains is the opposite case, which is real: appending past a last line that carries no
+terminator has to put one in *front*, or the copied run joins onto it.
+
+Both branches were found by mutating them and watching nothing fail. A mutation that survives is
+not a gap in the tests by default — sometimes it is a gap in the code, and here it was twice.
+
+## The arrows are hit before the polygon they sit inside
+
+`ChangeConnectorGutter` gains `CanCopyToLeft` / `CanCopyToRight`, an arrow per block per editable
+direction, and a `CopyRequested` event. An arrow's hit-zone lies inside its own block's polygon,
+so `OnPointerPressed` tests `ArrowAt` before `PolygonAt`; the order is what decides whether a
+click copies the block or merely selects it, and a test pins it rather than leaving it to the
+reading order of two `if`s.
+
+Both flags are in `AffectsRender`. Without that the arrows appear only at the next unrelated
+invalidation, which is the kind of defect that looks like a race and is not one.
+
+The arrows draw in a token of their own, `DiffView.GutterArrowBrush`, dark on the light variants
+and light on the dark ones, so the glyph reads against the block tint it sits on. A token rather
+than a borrowed one, because the audit scores contrast per variant and a borrowed token would be
+scored for a job it is not doing.

@@ -58,7 +58,9 @@ encoding and the line endings, copy-to-side through the connector gutter, the fe
 and the scale measurement that sizes the escape hatch. Phase 3 is done too: `IsDirty`,
 `Save` and `Revert`, with `PaneWriter` writing back the encoding, the byte-order mark and the
 line-terminator convention the file arrived with, and a stamp that refuses to overwrite
-someone else's write. What is left is copy-to-side, the feedback marks, and scale. A ClaudeForge
+someone else's write. Phase 4 is done too: a block's lines replace the other side's over the ranges
+`ChangeBlock` already carried, undoably, with arrows in the connector gutter and Alt+Left /
+Alt+Right on the current block. What is left is the feedback marks and scale. A ClaudeForge
 integration was drafted as plan 00002 and rejected on its own review before any code; it is
 deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
 
@@ -97,9 +99,26 @@ dotnet run --project src/ThemeAudit -- report
 | 1 Typing | done | No source change was needed. `LeftReadOnly` / `RightReadOnly` already reached the panes, and no layer turned out to rely on the document being immutable; 5 headless test cases, each proven able to fail |
 | 2 Live re-diff | done | `LiveReDiff` / `ReDiffDelay` / `ReDiffNow()` / `IsEdited(side)`; `EffectiveSource` builds from the live document while keeping the source's encoding, path and title; the document, caret, selection, scroll and undo stack survive a rebuild; find results invalidated on edit; 6 headless test cases, each proven able to fail |
 | 3 Dirty and save | done | `IsDirty` / `CanSave` / `Save` / `Revert` and `SaveOutcome`; `PaneWriter` in Core round-trips the encoding, the byte-order mark and the line endings; a `(LastWriteTimeUtc, Length)` stamp catches someone else's write and follows our own; the header carries a dirty marker; 20 unit and headless test cases, each proven able to fail |
-| 4 Copy to side | not started | Block and line arrows in the connector gutter over `ChangeBlock`'s per-side ranges |
+| 4 Copy to side | done | `CanCopyBlock` / `CopyBlock` / `CopyCurrentBlock`, `CopyToLeftCommand` / `CopyToRightCommand` on Alt+Left and Alt+Right; per-block arrows in the connector gutter on a new `DiffView.GutterArrowBrush`, hit-tested before the polygon they sit inside; 10 headless test cases, five mutations killed and two survivors that removed a dead branch and a wrong one |
 | 5 Feedback and polish | not started | Modified-since-load marks, unsaved-changes state, automation names |
 | 6 Scale and hardening | not started | The re-diff loop on the 200k pair; the priming cost per keystroke; an edit→redraw `Perf` measurement |
+
+## Plan 00003, Phase 4 verification
+
+| Done-when item | Result |
+|---|---|
+| A block's lines replace the other side's, and the block collapses | pass: `CopyToSideTests.Copying_a_modified_block_collapses_it_and_leaves_the_sides_equal_there` — one modified block copied rightwards leaves the right document equal to the left and the change count at 0 once the re-diff lands |
+| Insertions and deletions both work | pass: `Copying_an_insertion_puts_the_missing_lines_in_and_copying_back_takes_them_out` — copying the block rightwards inserts the line the right side lacked; copying the same block leftwards, in a fresh host, removes it instead |
+| The document's ends are handled | pass: `Copying_a_block_at_the_very_end_does_not_strand_a_terminator` — appending past a last line that carries no terminator puts one in front, rather than joining the runs; `Copying_onto_an_unterminated_last_line_gives_it_the_source_terminator` is the mirror, where keeping the source's terminator is what makes the sides identical |
+| Every block copied leaves the sides identical | pass: `Copying_every_block_makes_the_sides_identical` — the small fixture's blocks copied back to front, so an earlier copy cannot move a later block's lines out from under it, ending with equal documents and no changes |
+| Undo takes a copy back | pass: `A_copy_is_one_undo_away_from_never_having_happened` — the copy goes through the editor's own document, so one undo restores both the text and the change count |
+| A read-only target refuses | pass: `A_read_only_target_refuses_the_copy` — `CanCopyBlock` and `CopyBlock` are both false while the target is read-only, an out-of-range index is refused whatever the flags say, and the target document does not move |
+| Commands follow the current block and the flags | pass: `The_commands_follow_the_current_block_and_the_read_only_flags` — unavailable while there is no current block (`CurrentChangeIndex` is -1), available once navigation picks one and the target is editable, and executing copies the block navigation is sitting on. Alt+Left and Alt+Right are the gestures, so the composite now binds 9 keys rather than 7 |
+| Arrows in the connector gutter | pass: `The_gutter_draws_an_arrow_only_towards_an_editable_side` — no arrows while both sides are read-only, rightward arrows only once the right is editable, both once both are; `An_arrow_is_hit_before_the_polygon_it_sits_inside` pins the hit-test order, which is what decides whether a click copies or merely selects the block |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 373 passed (363 before the phase) |
+| New tests proven able to fail | five mutations killed: dropping the terminator that an append past an unterminated last line needs; ignoring the read-only flag in `CanCopyBlock`; reading the block's ranges from the wrong side; and drawing arrows towards read-only sides. **Two mutations survived, and both were the point**: they showed that a "copied run needs a terminator" branch was unreachable — a block is a maximal run of changed rows, so a run reaching one side's last line reaches the other's — and that a "trim the stranded terminator" branch was not merely untested but wrong, since keeping the source's terminator is exactly what makes the sides identical. Both were removed, and the second is now pinned by a test |
+| Theme audit regenerated | `theme-audit compat` then `report` after the new `DiffView.GutterArrowBrush`: 0 low-contrast findings, drift test passes |
 
 ## Plan 00003, Phase 3 verification
 

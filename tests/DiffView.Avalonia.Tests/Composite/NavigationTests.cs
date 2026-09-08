@@ -98,8 +98,8 @@ public sealed class NavigationTests
         using CompositeHost host = new(width: 900, height: 300);
         host.Show();
         await host.LoadAsync(left, right);
-        // F7, Shift+F7, F6, Ctrl+F, F3, Shift+F3, Escape.
-        Assert.Equal(7, host.View.KeyBindings.Count);
+        // F7, Shift+F7, F6, Ctrl+F, F3, Shift+F3, Escape, Alt+Left, Alt+Right.
+        Assert.Equal(9, host.View.KeyBindings.Count);
 
         host.Left.TextArea.Focus();
         CompositeHost.Layout();

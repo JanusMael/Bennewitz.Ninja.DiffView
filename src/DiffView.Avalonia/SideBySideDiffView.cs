@@ -271,6 +271,8 @@ public class SideBySideDiffView : TemplatedControl
     private readonly DelegateCommand _closeFind;
     private readonly DelegateCommand _findNext;
     private readonly DelegateCommand _findPrevious;
+    private readonly DelegateCommand _copyToLeft;
+    private readonly DelegateCommand _copyToRight;
     private bool _isFindBarOpen;
     private string _findQuery = string.Empty;
     private FindOptions _findOptions = FindOptions.Default;
@@ -344,6 +346,8 @@ public class SideBySideDiffView : TemplatedControl
         _firstChange = new DelegateCommand(FirstChange, () => ChangeCount > 0);
         _lastChange = new DelegateCommand(LastChange, () => ChangeCount > 0);
         _switchPane = new DelegateCommand(SwitchPane);
+        _copyToLeft = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Left), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Left));
+        _copyToRight = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Right), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Right));
         _openFind = new DelegateCommand(OpenFind);
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
@@ -361,6 +365,9 @@ public class SideBySideDiffView : TemplatedControl
         KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3), Command = _findNext });
         KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3, KeyModifiers.Shift), Command = _findPrevious });
         KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Escape), Command = _closeFind });
+        // The arrow points the way the text travels, which is the way the gutter's arrows do.
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Left, KeyModifiers.Alt), Command = _copyToLeft });
+        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Right, KeyModifiers.Alt), Command = _copyToRight });
 
         LayoutUpdated += OnLayoutUpdated;
         RefreshStrings();
@@ -838,6 +845,12 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Moves keyboard focus to the other pane; F6 by default.</summary>
     public ICommand SwitchPaneCommand => _switchPane;
 
+    /// <summary>Copies the current block onto the left side; Alt+Left by default.</summary>
+    public ICommand CopyToLeftCommand => _copyToLeft;
+
+    /// <summary>Copies the current block onto the right side; Alt+Right by default.</summary>
+    public ICommand CopyToRightCommand => _copyToRight;
+
     /// <summary>Opens the find bar; Ctrl+F by default.</summary>
     public ICommand OpenFindCommand => _openFind;
 
@@ -1074,7 +1087,10 @@ public class SideBySideDiffView : TemplatedControl
         {
             _gutter.Document = Document;
             _gutter.CurrentChangeIndex = CurrentChangeIndex;
+            _gutter.CanCopyToLeft = !LeftReadOnly;
+            _gutter.CanCopyToRight = !RightReadOnly;
             _gutter.BlockClicked += OnGutterBlockClicked;
+            _gutter.CopyRequested += OnGutterCopyRequested;
             _gutter.ResizeDragged += OnGutterResizeDragged;
         }
 
@@ -1115,13 +1131,33 @@ public class SideBySideDiffView : TemplatedControl
         {
             OnSourceChanged(DiffSide.Right, change.GetNewValue<PaneSource?>());
         }
-        else if (change.Property == LeftReadOnlyProperty && _leftPane is not null)
+        else if (change.Property == LeftReadOnlyProperty)
         {
-            _leftPane.IsReadOnly = LeftReadOnly;
+            if (_leftPane is not null)
+            {
+                _leftPane.IsReadOnly = LeftReadOnly;
+            }
+
+            if (_gutter is not null)
+            {
+                _gutter.CanCopyToLeft = !LeftReadOnly;
+            }
+
+            RaiseNavigationCanExecuteChanged();
         }
-        else if (change.Property == RightReadOnlyProperty && _rightPane is not null)
+        else if (change.Property == RightReadOnlyProperty)
         {
-            _rightPane.IsReadOnly = RightReadOnly;
+            if (_rightPane is not null)
+            {
+                _rightPane.IsReadOnly = RightReadOnly;
+            }
+
+            if (_gutter is not null)
+            {
+                _gutter.CanCopyToRight = !RightReadOnly;
+            }
+
+            RaiseNavigationCanExecuteChanged();
         }
         else if (change.Property == IgnoreWhitespaceProperty
                  || change.Property == IgnoreCaseProperty
@@ -1415,6 +1451,112 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         ReDiffNow();
+    }
+
+    /// <summary>
+    /// Whether block <paramref name="index"/> could be copied onto <paramref name="toSide"/>:
+    /// the model has that block and the target is editable.
+    /// </summary>
+    public bool CanCopyBlock(int index, DiffSide toSide)
+    {
+        bool readOnly = toSide == DiffSide.Left ? LeftReadOnly : RightReadOnly;
+        return !readOnly && Document is { } model && index >= 0 && index < model.Blocks.Count;
+    }
+
+    /// <summary>
+    /// Replaces block <paramref name="index"/>'s lines on <paramref name="toSide"/> with the
+    /// other side's lines of the same block, so the block collapses when the re-diff lands. The
+    /// edit goes through the editor's own document, so undo takes it back like any other.
+    /// </summary>
+    /// <returns>Whether anything was written.</returns>
+    public bool CopyBlock(int index, DiffSide toSide)
+    {
+        if (!CanCopyBlock(index, toSide))
+        {
+            return false;
+        }
+
+        ChangeBlock block = Document!.Blocks[index];
+        DiffSide fromSide = toSide == DiffSide.Left ? DiffSide.Right : DiffSide.Left;
+        LineRange fromRange = fromSide == DiffSide.Left ? block.LeftLines : block.RightLines;
+        LineRange toRange = toSide == DiffSide.Left ? block.LeftLines : block.RightLines;
+        TextDocument from = fromSide == DiffSide.Left ? LeftDocument : RightDocument;
+        TextDocument to = toSide == DiffSide.Left ? LeftDocument : RightDocument;
+
+        string text = LinesOf(from, fromRange);
+        (int offset, int length) = RegionOf(to, toRange);
+        string newLine = NewLineOf(toSide);
+
+        // Whole lines in, whole lines out: an insertion in the middle of a document needs the
+        // terminator the copied run's last line may not carry, and a replacement that reaches the
+        // end must not leave one behind that the target never had.
+        // The copy makes the target's lines the source's lines exactly, terminator included: the
+        // point is for the block to collapse, and trimming the source's own trailing terminator
+        // would leave the very difference the copy was meant to remove.
+        bool atEnd = offset + length >= to.TextLength;
+
+        // Appending past a last line that carries no terminator needs one put in front, or the
+        // copied run joins onto it.
+        if (length == 0 && atEnd && offset > 0 && text.Length > 0 && !EndsWithNewLine(to.GetText(offset - 1, 1)))
+        {
+            text = newLine + text;
+        }
+
+        if (length == 0 && text.Length == 0)
+        {
+            return false;
+        }
+
+        to.Replace(offset, length, text);
+        return true;
+    }
+
+    /// <summary>Copies the current change block onto <paramref name="toSide"/>.</summary>
+    public bool CopyCurrentBlock(DiffSide toSide) => CopyBlock(CurrentChangeIndex, toSide);
+
+    /// <summary>The text of <paramref name="range"/>, terminators included; empty for an empty range.</summary>
+    private static string LinesOf(TextDocument document, LineRange range)
+    {
+        if (range.IsEmpty || range.Start >= document.LineCount)
+        {
+            return string.Empty;
+        }
+
+        DocumentLine first = document.GetLineByNumber(range.Start + 1);
+        DocumentLine last = document.GetLineByNumber(Math.Min(range.End, document.LineCount));
+        int start = first.Offset;
+        return document.GetText(start, last.Offset + last.TotalLength - start);
+    }
+
+    /// <summary>Where <paramref name="range"/> sits in the document; a zero length for an insertion point.</summary>
+    private static (int Offset, int Length) RegionOf(TextDocument document, LineRange range)
+    {
+        if (range.IsEmpty)
+        {
+            // An empty range past the last line is an append; otherwise it is the head of its line.
+            return range.Start >= document.LineCount
+                ? (document.TextLength, 0)
+                : (document.GetLineByNumber(range.Start + 1).Offset, 0);
+        }
+
+        DocumentLine first = document.GetLineByNumber(range.Start + 1);
+        DocumentLine last = document.GetLineByNumber(Math.Min(range.End, document.LineCount));
+        int offset = first.Offset;
+        return (offset, last.Offset + last.TotalLength - offset);
+    }
+
+    private static bool EndsWithNewLine(string text) => text.EndsWith('\n') || text.EndsWith('\r');
+
+    /// <summary>The terminator a copied run should carry on <paramref name="side"/>.</summary>
+    private string NewLineOf(DiffSide side)
+    {
+        TextInfo? info = side == DiffSide.Left ? _leftInfo : _rightInfo;
+        return info?.LineEnding switch
+        {
+            LineEnding.CrLf => "\r\n",
+            LineEnding.Cr => "\r",
+            _ => "\n",
+        };
     }
 
     /// <summary>The file's identity when it came from one: enough to notice someone else's write.</summary>
@@ -2079,6 +2221,7 @@ public class SideBySideDiffView : TemplatedControl
         if (_gutter is not null)
         {
             _gutter.BlockClicked -= OnGutterBlockClicked;
+            _gutter.CopyRequested -= OnGutterCopyRequested;
             _gutter.ResizeDragged -= OnGutterResizeDragged;
         }
 
@@ -2159,6 +2302,11 @@ public class SideBySideDiffView : TemplatedControl
             _minimap.ViewportStartRow = _leftPane.VerticalOffset / lineHeight;
             _minimap.ViewportRowCount = _leftPane.ViewportHeight / lineHeight;
         }
+    }
+
+    private void OnGutterCopyRequested(object? sender, (int BlockIndex, DiffSide ToSide) request)
+    {
+        CopyBlock(request.BlockIndex, request.ToSide);
     }
 
     private void OnGutterBlockClicked(object? sender, int blockIndex)
@@ -2257,6 +2405,11 @@ public class SideBySideDiffView : TemplatedControl
         _previousChange.RaiseCanExecuteChanged();
         _firstChange.RaiseCanExecuteChanged();
         _lastChange.RaiseCanExecuteChanged();
+
+        // Copying targets the current block, so its availability moves with the navigation and
+        // with either side's read-only flag.
+        _copyToLeft.RaiseCanExecuteChanged();
+        _copyToRight.RaiseCanExecuteChanged();
     }
 
     // ── Find ───────────────────────────────────────────────────────────────────────────────
