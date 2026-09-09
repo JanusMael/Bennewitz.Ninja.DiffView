@@ -74,12 +74,14 @@ Copy block to left/right sits on the Alt+Left and Alt+Right the composite binds,
 Save and Revert per side report each `SaveOutcome` in the status line. The unified view stays
 read-only whatever the menu says.
 
-**Plan 00003 lives on `feat/in-pane-editing`, nine commits ahead of `main` and unmerged**,
-awaiting review. Two things about it have only ever been seen in a headless frame: the gutter
-arrows are 12 px in a 24 px column, so the left and right arrows exactly fill it, and the
-modified-since-load bar shares the marker margin with the diff's own glyph. No snapshot test
-covers either, nor the dirty markers — the one gap in this plan's evidence against the
-standard plan 00001 set.
+**Plan 00003 lives on `feat/in-pane-editing`, unmerged**, awaiting review. Its rendered evidence
+is now on the branch as well: `EditingSnapshotTests` captures the copy arrows and the marks an
+edit leaves, in both variants, so what the phases only recorded can now be looked at. The frames
+settle the two things that had only ever been described: the gutter arrows are 12 px in a 24 px
+column, so the leftward and rightward arrows meet in the middle and read as one glyph, and the
+modified-since-load bar runs down the marker margin's inner edge beside the diff's `~` rather
+than over it. Whether the arrows are too cramped is a judgement to make on the picture — one
+constant, `ChangeConnectorGutter.ArrowSize`, moves them apart.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -119,6 +121,23 @@ dotnet run --project src/ThemeAudit -- report
 | 4 Copy to side | done | `CanCopyBlock` / `CopyBlock` / `CopyCurrentBlock`, `CopyToLeftCommand` / `CopyToRightCommand` on Alt+Left and Alt+Right; per-block arrows in the connector gutter on a new `DiffView.GutterArrowBrush`, hit-tested before the polygon they sit inside; 10 headless test cases, five mutations killed and two survivors that removed a dead branch and a wrong one |
 | 5 Feedback and polish | done | `ModifiedLines(side)` tracked across edits that move lines, drawn as a bar down the marker margin on a new `DiffView.ModifiedSinceLoadBrush` and explained in its tooltip; the strip names the sides holding unsaved edits; a revert clears both; 6 headless test cases, each proven able to fail |
 | 6 Scale and hardening | done | `EditScalePerfTests` on the 200k pair — a re-diff costs 403 ms because a rebuild re-primes only what moved (4,000 lines), not the 1,243 ms a load from cold takes; the debounce collapses 20 keystrokes into 1 build; live re-diff is affordable at 200k and DiffPlex stays unvendored; 3 `Perf` measurements |
+
+## Plan 00003, rendered evidence
+
+Plan 00001 gave every phase that drew something a snapshot; plan 00003 did not, and its phases
+assert only what the gutter and the margin *recorded*. `EditingSnapshotTests` closes that, with
+four frames under `Snapshots/`.
+
+| Done-when item | Result |
+|---|---|
+| The copy arrows are painted, and only where the gutter says | pass: `The_copy_arrows_are_painted_on_both_edges_of_the_gutter` — with both sides editable every block carries two arrows; each zone holds more than 20 pixels of `DiffView.GutterArrowBrush`, and the count over the whole column equals the sum over the zones, so an arrow drawn anywhere else would fail even though it moves far too few pixels for the snapshot comparer to notice |
+| The arrows' geometry | pass: same test — the leftward arrow starts at the column's left edge, the rightward one ends at its right, the two are level and do not overlap. At `ArrowSize` 12 in a 24 px column they exactly fill it and meet in the middle, which the frames show |
+| The modified-since-load bar is painted where it belongs | pass: `The_marks_an_edit_leaves_are_painted_and_named` — after one keystroke on line 1 the bar is in `DiffView.ModifiedSinceLoadBrush` at the marker margin's inner edge, absent from the margin's outer half where the diff's glyph sits, and absent from an unedited line |
+| The dirty markers are on screen | pass: same test — the left header's `PART_Dirty` is visible, reads "Unsaved" and paints in the warning brush; the right header is not dirty; the strip's lane names the left side |
+| What the pixels add over Phase 5 | with `RenderModifiedBar` mutated to draw nothing, all six `EditFeedbackTests` still pass and only the new test fails. The bookkeeping and the painting are separate claims, and until now only the first had evidence |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 383 passed (379 before) |
+| New tests proven able to fail | six mutations, six distinct failures: recording the leftward arrow's zone without drawing it; moving the rightward arrow off the column's edge; painting the arrows in the connector brush; drawing the bar at the margin's outer edge; recording a modified line without drawing its bar; and clearing the header's dirty marker |
 
 ## Plan 00003, Phase 6 verification
 
