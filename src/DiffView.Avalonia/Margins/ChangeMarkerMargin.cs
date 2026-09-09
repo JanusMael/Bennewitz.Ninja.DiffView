@@ -27,8 +27,15 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     /// </summary>
     private const FontWeight MarkerWeight = FontWeight.SemiBold;
 
+    /// <summary>The corner radius of a marker chip.</summary>
+    private const double ChipRadius = 3;
+
+    /// <summary>What a chip leaves clear at each end of its run, so a badge reads as one.</summary>
+    private const double ChipInset = 2;
+
     private readonly List<(int LineNumber, DiffLineKind Kind)> _lastRendered = [];
     private readonly List<int> _lastModified = [];
+    private readonly List<(Rect Bounds, DiffLineKind Kind)> _lastChips = [];
 
     public ChangeMarkerMargin(DiffPanePresenter owner)
         : base(owner, nameof(ChangeMarkerMargin), DiffViewStrings.ChangeMarkersMarginName)
@@ -40,6 +47,12 @@ internal sealed class ChangeMarkerMargin : DiffMargin
 
     /// <summary>The lines that carried a modified-since-load bar in the last frame.</summary>
     public IReadOnlyList<int> LastModified => _lastModified;
+
+    /// <summary>
+    /// The marker chips of the last frame: one per run of same-kind rows, in order. A run that
+    /// carries on past the viewport reports a rectangle that extends beyond it.
+    /// </summary>
+    public IReadOnlyList<(Rect Bounds, DiffLineKind Kind)> LastChips => _lastChips;
 
     /// <summary>The marker glyph for <paramref name="kind"/>; <c>null</c> for an unchanged line.</summary>
     /// <remarks>
@@ -122,25 +135,95 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     {
         _lastRendered.Clear();
         _lastModified.Clear();
+        _lastChips.Clear();
         PaneMetadata metadata = Owner.Metadata;
+        double rowHeight = textView.DefaultLineHeight;
+
+        List<Row> rows = [];
         foreach (VisualLine line in textView.VisualLines)
         {
             int number = line.FirstDocumentLine.LineNumber;
             DiffLineKind kind = metadata.KindOf(number);
             _lastRendered.Add((number, kind));
-            if (Owner.ModifiedLines.Contains(number))
+            rows.Add(new Row(number, kind, RowTopOf(line, textView, metadata.PaddingBefore(number), rowHeight), line));
+        }
+
+        RenderChips(context, metadata, rows, rowHeight);
+
+        foreach (Row row in rows)
+        {
+            if (Owner.ModifiedLines.Contains(row.Number))
             {
-                _lastModified.Add(number);
-                RenderModifiedBar(context, textView, line, metadata.PaddingBefore(number));
+                _lastModified.Add(row.Number);
+                RenderModifiedBar(context, textView, row.Line, metadata.PaddingBefore(row.Number));
             }
 
-            if (GlyphFor(kind) is not { } glyph)
+            if (GlyphFor(row.Kind) is not { } glyph)
             {
                 continue;
             }
 
-            FormattedText text = Format(glyph, Owner.Palette.MarkerFor(kind), MarkerWeight);
-            context.DrawText(text, new Point(HorizontalPadding, TextTopOf(line, textView)));
+            // Centred in the chip rather than placed at the padding: the chip is symmetric about
+            // the margin's centre, and a host font's fallback for one of the three characters need
+            // not share the family's advance width.
+            FormattedText text = Format(glyph, Owner.Palette.MarkerFor(row.Kind), MarkerWeight);
+            context.DrawText(text, new Point((Bounds.Width - text.Width) / 2, TextTopOf(row.Line, textView)));
+        }
+    }
+
+    /// <summary>One visible line, with the top of the row it owns.</summary>
+    private readonly record struct Row(int Number, DiffLineKind Kind, double RowTop, VisualLine Line);
+
+    /// <summary>The top of a line's own row: its visual top, past any padding above it.</summary>
+    private static double RowTopOf(VisualLine line, TextView textView, int paddingAbove, double rowHeight)
+    {
+        return line.VisualTop - textView.VerticalOffset + (paddingAbove * rowHeight);
+    }
+
+    /// <summary>
+    /// One rounded chip per run of consecutive same-kind rows, so a lone changed line reads as a
+    /// badge and a block reads as one band — the block's extent, which neither the glyph nor the
+    /// row tint shows in the gutter. There is no second code path for the two cases: a one-row run
+    /// is simply a short rectangle with the same corner radius.
+    /// </summary>
+    private void RenderChips(DrawingContext context, PaneMetadata metadata, List<Row> rows, double rowHeight)
+    {
+        for (int i = 0; i < rows.Count;)
+        {
+            DiffLineKind kind = rows[i].Kind;
+            if (GlyphFor(kind) is null)
+            {
+                i++;
+                continue;
+            }
+
+            // A run breaks on padding: those rows are the *other* side's lines, and a band over
+            // them would claim rows this side does not have.
+            int last = i;
+            while (last + 1 < rows.Count
+                   && rows[last + 1].Kind == kind
+                   && metadata.PaddingBefore(rows[last + 1].Number) == 0)
+            {
+                last++;
+            }
+
+            // A run that carries on past the viewport gets no rounded end there: the rectangle
+            // runs a row beyond the edge so the rounding falls outside the visible area, rather
+            // than making a scrolled block look as though it ends where the window does.
+            bool continuesAbove = metadata.PaddingBefore(rows[i].Number) == 0
+                                  && metadata.KindOf(rows[i].Number - 1) == kind;
+            bool continuesBelow = metadata.KindOf(rows[last].Number + 1) == kind
+                                  && metadata.PaddingBefore(rows[last].Number + 1) == 0;
+            double top = rows[i].RowTop + (continuesAbove ? -rowHeight : ChipInset);
+            double bottom = rows[last].RowTop + rowHeight + (continuesBelow ? rowHeight : -ChipInset);
+
+            // Symmetric about the margin's centre, stopping exactly where the modified-since-load
+            // bar begins, so an edited line inside a changed block paints both without overlap.
+            Rect chip = new(ModifiedBarWidth, top, Bounds.Width - (2 * ModifiedBarWidth), bottom - top);
+            double radius = Math.Min(ChipRadius, chip.Height / 2);
+            context.DrawRectangle(Owner.Palette.MarkerChipFor(kind), null, chip, radius, radius);
+            _lastChips.Add((chip, kind));
+            i = last + 1;
         }
     }
 
