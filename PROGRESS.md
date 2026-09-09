@@ -77,11 +77,12 @@ read-only whatever the menu says.
 **Plan 00003 lives on `feat/in-pane-editing`, unmerged**, awaiting review. Its rendered evidence
 is now on the branch as well: `EditingSnapshotTests` captures the copy arrows and the marks an
 edit leaves, in both variants, so what the phases only recorded can now be looked at. The frames
-settle the two things that had only ever been described: the gutter arrows are 12 px in a 24 px
-column, so the leftward and rightward arrows meet in the middle and read as one glyph, and the
-modified-since-load bar runs down the marker margin's inner edge beside the diff's `~` rather
-than over it. Whether the arrows are too cramped is a judgement to make on the picture — one
-constant, `ChangeConnectorGutter.ArrowSize`, moves them apart.
+settled the two things that had only ever been described. The modified-since-load bar runs down
+the marker margin's inner edge beside the diff's `~` rather than over it, which reads as intended.
+The arrows did not: as bare triangles, the leftward and rightward pair met in the middle of the
+24 px column and read as one bowtie, so each is now a head **and a shaft**, laid out from its tip
+inwards with `InnerGap` left unpainted at the centre — the shape Beyond Compare uses, and for the
+same reason.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -131,7 +132,8 @@ four frames under `Snapshots/`.
 | Done-when item | Result |
 |---|---|
 | The copy arrows are painted, and only where the gutter says | pass: `The_copy_arrows_are_painted_on_both_edges_of_the_gutter` — with both sides editable every block carries two arrows; each zone holds more than 20 pixels of `DiffView.GutterArrowBrush`, and the count over the whole column equals the sum over the zones, so an arrow drawn anywhere else would fail even though it moves far too few pixels for the snapshot comparer to notice |
-| The arrows' geometry | pass: same test — the leftward arrow starts at the column's left edge, the rightward one ends at its right, the two are level and do not overlap. At `ArrowSize` 12 in a 24 px column they exactly fill it and meet in the middle, which the frames show |
+| The arrows' geometry | pass: same test — the leftward arrow starts at the column's left edge, the rightward one ends at its right, the two are level and do not overlap. The assertions pin that relationship rather than `ArrowSize`, so the glyph inside the zone can be redrawn without touching a test |
+| The arrows read as arrows | the first frames showed the pair as one bowtie: two bare triangles meeting in the middle of the 24 px column. Each is now a head and a shaft with `InnerGap` unpainted at the centre, on Brian's comparison with Beyond Compare, whose arrows carry a shaft for the same reason. **The four snapshots passed unchanged across that redraw** — a 12 px glyph is 0.03% of a 900×600 frame and the comparer tolerates 0.5%, so the baselines were regenerated deliberately rather than caught. The pixel assertions, not the PNGs, are what guard a glyph this small |
 | The modified-since-load bar is painted where it belongs | pass: `The_marks_an_edit_leaves_are_painted_and_named` — after one keystroke on line 1 the bar is in `DiffView.ModifiedSinceLoadBrush` at the marker margin's inner edge, absent from the margin's outer half where the diff's glyph sits, and absent from an unedited line |
 | The dirty markers are on screen | pass: same test — the left header's `PART_Dirty` is visible, reads "Unsaved" and paints in the warning brush; the right header is not dirty; the strip's lane names the left side |
 | What the pixels add over Phase 5 | with `RenderModifiedBar` mutated to draw nothing, all six `EditFeedbackTests` still pass and only the new test fails. The bookkeeping and the painting are separate claims, and until now only the first had evidence |

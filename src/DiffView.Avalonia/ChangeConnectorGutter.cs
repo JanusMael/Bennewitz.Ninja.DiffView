@@ -84,6 +84,23 @@ public class ChangeConnectorGutter : Control
     /// <summary>The side of an arrow's square hit-zone, in pixels.</summary>
     private const double ArrowSize = 12;
 
+    /// <summary>How far the tip sits inside the zone's outer edge.</summary>
+    private const double TipInset = 1;
+
+    /// <summary>The arrow head, along the shaft and across it.</summary>
+    private const double HeadLength = 5;
+    private const double HeadHalfHeight = 4.5;
+
+    /// <summary>The shaft behind the head, along it and across it.</summary>
+    private const double ShaftLength = 4;
+    private const double ShaftHalfHeight = 1.5;
+
+    /// <summary>
+    /// What the tip inset, the head and the shaft leave unpainted at the zone's inner edge. Two
+    /// arrows share the column back to back, so this is half the gap between them.
+    /// </summary>
+    private const double InnerGap = ArrowSize - TipInset - HeadLength - ShaftLength;
+
     private readonly DiffBrushes _palette = new();
     private readonly List<ConnectorPolygon> _lastPolygons = [];
     private readonly List<(Rect Bounds, int BlockIndex, DiffSide ToSide)> _lastArrows = [];
@@ -297,20 +314,35 @@ public class ChangeConnectorGutter : Control
         }
     }
 
+    /// <summary>
+    /// One arrow inside its hit-zone: a head at the zone's outer edge and a shaft running back
+    /// towards the column's centre. A bare triangle is cheaper to draw but reads as a wedge, and
+    /// two of them tail-to-tail read as one glyph rather than as two things to click — hence the
+    /// shaft, and the <see cref="InnerGap"/> that keeps the two shafts from meeting.
+    /// </summary>
     private static void DrawArrow(DrawingContext context, IBrush brush, Rect zone, bool pointsLeft)
     {
-        double tipX = pointsLeft ? zone.Left + 1 : zone.Right - 1;
-        double baseX = pointsLeft ? zone.Right - 1 : zone.Left + 1;
-        StreamGeometry head = new();
-        using (StreamGeometryContext path = head.Open())
+        // Measured from the tip inwards, so the head is always on the column's outer edge.
+        double tipX = pointsLeft ? zone.Left + TipInset : zone.Right - TipInset;
+        double inwards = pointsLeft ? 1 : -1;
+        double headBackX = tipX + (inwards * HeadLength);
+        double shaftEndX = pointsLeft ? zone.Right - InnerGap : zone.Left + InnerGap;
+        double centreY = zone.Center.Y;
+
+        StreamGeometry arrow = new();
+        using (StreamGeometryContext path = arrow.Open())
         {
-            path.BeginFigure(new Point(tipX, zone.Center.Y), isFilled: true);
-            path.LineTo(new Point(baseX, zone.Top + 1));
-            path.LineTo(new Point(baseX, zone.Bottom - 1));
+            path.BeginFigure(new Point(tipX, centreY), isFilled: true);
+            path.LineTo(new Point(headBackX, centreY - HeadHalfHeight));
+            path.LineTo(new Point(headBackX, centreY - ShaftHalfHeight));
+            path.LineTo(new Point(shaftEndX, centreY - ShaftHalfHeight));
+            path.LineTo(new Point(shaftEndX, centreY + ShaftHalfHeight));
+            path.LineTo(new Point(headBackX, centreY + ShaftHalfHeight));
+            path.LineTo(new Point(headBackX, centreY + HeadHalfHeight));
             path.EndFigure(isClosed: true);
         }
 
-        context.DrawGeometry(brush, null, head);
+        context.DrawGeometry(brush, null, arrow);
     }
 
     /// <summary>The arrow under <paramref name="point"/>, if any.</summary>

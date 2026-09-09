@@ -1053,6 +1053,14 @@ and light on the dark ones, so the glyph reads against the block tint it sits on
 than a borrowed one, because the audit scores contrast per variant and a borrowed token would be
 scored for a job it is not doing.
 
+The glyph is a head **and a shaft**, not a bare triangle. The two arrows share one 24 px column
+back to back, and two triangles meeting there read as a single bowtie rather than as two things
+to click; Beyond Compare draws a shaft for the same reason, and at this size it is what makes the
+direction legible. `TipInset`, `HeadLength`, `ShaftLength` and their half-heights lay each arrow
+out from its tip inwards, which keeps the head on the column's outer edge whatever the rest is
+set to, and leaves `InnerGap` unpainted at the centre so the two shafts never touch. Growing
+`ArrowSize` past 12 means growing the column with it.
+
 ## A line's number is not its identity, so the marks shift with the text
 
 `ModifiedLines(side)` is the set of lines the user has edited since the source was assigned, and
