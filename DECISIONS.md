@@ -1037,13 +1037,21 @@ terminator has to put one in *front*, or the copied run joins onto it.
 Both branches were found by mutating them and watching nothing fail. A mutation that survives is
 not a gap in the tests by default — sometimes it is a gap in the code, and here it was twice.
 
-## The arrows are hit before the polygon they sit inside
+## ~~The arrows are hit before the polygon they sit inside~~ — retired by plan 00004
 
-`ChangeConnectorGutter` gains `CanCopyToLeft` / `CanCopyToRight`, an arrow per block per editable
-direction, and a `CopyRequested` event. An arrow's hit-zone lies inside its own block's polygon,
-so `OnPointerPressed` tests `ArrowAt` before `PolygonAt`; the order is what decides whether a
-click copies the block or merely selects it, and a test pins it rather than leaving it to the
-reading order of two `if`s.
+**Retired.** The rule below described a hit-order between two controls over regions that overlap.
+Plan 00004 moved the arrows into the panes' number margins, where an arrow is not inside a
+polygon and the question stops existing. `ChangeConnectorGutter` no longer has
+`CanCopyToLeft`, `CanCopyToRight`, `LastArrows`, `ArrowAt` or `CopyRequested`, and
+`An_arrow_is_hit_before_the_polygon_it_sits_inside` is deleted rather than adjusted. The
+replacement is *The copy arrow takes the line number's cell* below. Kept here because a reader
+who remembers the rule should find out where it went, not just fail to find it.
+
+The rule as it stood: `ChangeConnectorGutter` gains `CanCopyToLeft` / `CanCopyToRight`, an arrow
+per block per editable direction, and a `CopyRequested` event. An arrow's hit-zone lies inside its
+own block's polygon, so `OnPointerPressed` tests `ArrowAt` before `PolygonAt`; the order is what
+decides whether a click copies the block or merely selects it, and a test pins it rather than
+leaving it to the reading order of two `if`s.
 
 Both flags are in `AffectsRender`. Without that the arrows appear only at the next unrelated
 invalidation, which is the kind of defect that looks like a race and is not one.
@@ -1102,3 +1110,48 @@ bookkeeping and defers the rebuild entirely, which is a reasonable thing for a h
 pair larger than anything measured here; and a property that exists is easier to reach for than
 one that has to be retrofitted. It is now an option offered on evidence rather than a hedge
 against an unmeasured worry.
+
+## The copy arrow takes the line number's cell
+
+Plan 00004. Each copy arrow lives in the number margin of the pane whose lines it would copy,
+drawn over the line number of its block's anchor row, right-aligned to the edge the numbers use.
+No new column, and nothing wider: `MinimumDigits` is 2 and `HorizontalPadding` is 6 a side, so the
+narrowest cell the margin ever measures already clears the 12 px glyph. A test asserts the
+measured width is identical with arrows on and off rather than trusting that.
+
+**The arrow sits with the source and points at the target.** The left pane's arrow points right and
+means *send this block over there*; it is offered when the **right** side is editable.
+`DiffPanePresenter.CanCopyOut` carries the other side's flag, which reads backwards until you hold
+the rule in mind, and is why it is named for what it does rather than for the flag it mirrors.
+This is the inverse of the connector column's arrangement, and the overlay forces it: anchored to
+the target, a pane's arrow would point at the pane's own text.
+
+**The anchor is the block's first row.** A side's lines in a block start at the block's first row,
+so on a side that has lines there the anchor is a real line and its number gives way. The cost is
+one number per block, and it is paid only in edit mode — the arrow appears only where the other
+side can receive a copy, so a read-only pair shows every number it has ever shown. The tooltip
+carries the number that is not on screen, and says what the arrow in its place would do.
+
+**A block a side has no lines in still offers its arrow**, because copying nothing over is as
+meaningful as copying something — the re-diff collapses the block either way. Those rows are that
+side's padding, so the arrow is drawn there and no number is given up at all. Two paths reach it:
+padding above the line that follows the block, and, for a block past the last line, trailing
+padding, which a walk over the visual lines never reaches. `PaneMetadata.BlockAtRow` exists
+because a padded row has no line to look a block up by.
+
+The arrow is centred on its **row**, not on the text band, so that an arrow standing in for a
+number and an arrow in padding sit at the same height on the same row. Centring on the text band
+put them 1.2 px apart — invisible, and wrong.
+
+`DrawPaddingArrow` tests only that the arrow's row falls inside the padding. Testing the block's
+line range as well would be a second guard on one invariant that nothing can make disagree, and a
+mutation proved it unreachable rather than merely untested.
+
+The margin hit-tests the arrow cell before the row it sits in. The two do not overlap — the arrow
+has the number's cell and nothing else — but the order still decides what a click on an arrow
+does, so a test pins it.
+
+`DiffLineNumberMargin.LastColumnRight` is exposed for one reason: an arrow's own reported bounds
+cannot show that it is where the numbers are, because a drawing that strayed would report the
+place it strayed to. A mutation that shifted the glyph four pixels survived every assertion until
+the numbers' edge was something a test could name.

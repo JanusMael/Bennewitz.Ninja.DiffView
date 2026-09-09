@@ -163,8 +163,19 @@ All notable changes to DiffView are recorded here. The format follows
   decorator, an option change, the caret lane, the find scope collapsing, the matches the unified
   view drops and the ones it keeps, and a snapshot of the unified view in both variants.
 
+### Removed
+
+- `ChangeConnectorGutter.CanCopyToLeft`, `CanCopyToRight`, `LastArrows`, `ArrowAt` and
+  `CopyRequested`. The copy arrows moved into the panes' line-number margins under plan 00004, so
+  the connector column draws polygons and resizes the split and nothing else. Removed outright
+  rather than deprecated: nothing has shipped, and the repository's only tag is a checkpoint.
+
 ### Changed
 
+- The copy arrows are drawn by `DiffLineNumberMargin`, over the line number of each block's anchor
+  row in the pane the block would be copied *from*, and clicking one raises
+  `DiffPanePresenter.CopyOutRequested`. `CanCopyOut` on a pane carries the other side's editable
+  flag. The connector column narrows from 24 px to 16.
 - The three log methods that name a pane take a `DiffSide?`; the unified view's pane logs as
   `unified`, which is neither side.
 - The demo smoke snapshot shows the panes; the accessibility guard counts `TextEditor` and

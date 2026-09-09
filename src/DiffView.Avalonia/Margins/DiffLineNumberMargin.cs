@@ -55,6 +55,13 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     /// </summary>
     public IReadOnlyList<(Rect Bounds, int BlockIndex, int? OverLine)> LastCopyArrows => _lastCopyArrows;
 
+    /// <summary>
+    /// The right edge the last frame aligned its numbers to, and any arrow standing in for one.
+    /// Exposed because an arrow's own reported bounds cannot show that it is where the numbers
+    /// are: a drawing that strayed would report the place it strayed to.
+    /// </summary>
+    public double LastColumnRight { get; private set; }
+
     /// <summary>The tooltip for <paramref name="lineNumber"/>: the line on the other side that shares its row, or that there is none.</summary>
     public override string? TooltipFor(int lineNumber)
     {
@@ -139,6 +146,7 @@ internal sealed class DiffLineNumberMargin : DiffMargin
 
         // A copy arrow takes a number's cell, so it is offered only where the other side can
         // receive the copy: a read-only pair shows every number it has ever shown.
+        LastColumnRight = leftColumnRight;
         bool offersCopy = Owner.CanCopyOut && !metadata.IsUnified && metadata.Document is not null;
         IBrush arrowBrush = Owner.Palette[DiffBrush.GutterArrow];
         double rowHeight = textView.DefaultLineHeight;
@@ -152,8 +160,11 @@ internal sealed class DiffLineNumberMargin : DiffMargin
             if (offersCopy)
             {
                 DrawPaddingArrow(context, textView, metadata, line, number, leftColumnRight, rowHeight, arrowBrush);
+                // Centred on the row rather than on the text band, so that an arrow standing in
+                // for a number and an arrow in padding sit at the same height on the same row.
+                double rowTop = line.VisualTop - textView.VerticalOffset + (metadata.PaddingBefore(number) * rowHeight);
                 if (AnchorBlockOf(metadata, number) is { } anchored
-                    && DrawArrow(context, arrowBrush, leftColumnRight, y, rowHeight, anchored.Index, number))
+                    && DrawArrow(context, arrowBrush, leftColumnRight, rowTop, rowHeight, anchored.Index, number))
                 {
                     // The arrow has this row's cell. The number it stands in for is one hover away.
                     _lastSourceNumbers.Add((null, null));

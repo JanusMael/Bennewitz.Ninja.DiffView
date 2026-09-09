@@ -74,15 +74,22 @@ Copy block to left/right sits on the Alt+Left and Alt+Right the composite binds,
 Save and Revert per side report each `SaveOutcome` in the status line. The unified view stays
 read-only whatever the menu says.
 
-**Plan 00003 lives on `feat/in-pane-editing`, unmerged**, awaiting review. Its rendered evidence
-is now on the branch as well: `EditingSnapshotTests` captures the copy arrows and the marks an
-edit leaves, in both variants, so what the phases only recorded can now be looked at. The frames
-settled the two things that had only ever been described. The modified-since-load bar runs down
-the marker margin's inner edge beside the diff's `~` rather than over it, which reads as intended.
-The arrows did not: as bare triangles, the leftward and rightward pair met in the middle of the
-24 px column and read as one bowtie, so each is now a head **and a shaft**, laid out from its tip
-inwards with `InnerGap` left unpainted at the centre — the shape Beyond Compare uses, and for the
-same reason.
+**Plan 00003 lives on `feat/in-pane-editing`, unmerged**, awaiting review, and
+**[plan 00004](plans/00004-copy-arrows-in-the-panes.md) is complete on the same branch.** Plan
+00003's rendered evidence landed first: `EditingSnapshotTests` captured the marks an edit leaves,
+in both variants, and the modified-since-load bar proved to run down the marker margin's inner
+edge beside the diff's `~` rather than over it, which reads as intended. The copy arrows did not
+survive their first frame: as bare triangles sharing a 24 px column they met in the middle and
+read as one bowtie. Giving each a head **and a shaft** fixed the glyph; plan 00004 then fixed the
+arrangement that had made a 12 px glyph the constraint at all.
+
+**The arrows now live in the panes.** Each sits in the number margin of the side it would copy
+*from*, drawn over the line number of its block's anchor row and pointing the way the text would
+travel — Beyond Compare's arrangement, on a cell that already existed, so it costs no horizontal
+space. A block a side has no lines in still offers its arrow, in that side's padding, where no
+number is given up at all. The connector column is back to one job and 16 px wide, five public
+members lighter, and the decision *"The arrows are hit before the polygon they sit inside"* is
+retired rather than amended: an arrow in a number margin is not inside a polygon.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -111,6 +118,35 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00004 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 The arrow in the number cell | done | `DiffLineNumberMargin` draws a copy arrow on each block's anchor row, over the number, right-aligned to the numbers' edge; `DiffPanePresenter.CanCopyOut` carries the *other* side's flag; `PaneMetadata.BlockAtRow` and `ChangeBlock.LinesFor(side)` added; the padding and trailing-padding paths for a block a side has no lines in; `CopyArrowGlyph` extracted so the column and the margin drew the same arrow; 7 headless test cases, seven mutations killed |
+| 2 The copy, and the column | done | The margin hit-tests the arrow before the row and raises `CopyOutRequested`, which the composite turns into a `CopyBlock` onto the other side; the anchored row's tooltip names the hidden number and the copy; `ChangeConnectorGutter` loses five public members and narrows to 16 px; two connector-arrow tests retired with the decision they pinned; 4 headless test cases, six mutations killed |
+| 3 Evidence | done | `CopyArrowSnapshotTests` — the editable pair, the same pair read-only, and a one-sided block, in both variants; the direction asserted by which half of the zone the glyph's head fills; `LastColumnRight` exposed so a strayed arrow cannot report its own new home as correct; `DECISIONS.md` gains *The copy arrow takes the line number's cell* and marks the hit-order rule retired; 6 snapshot test cases, four mutations killed |
+
+## Plan 00004 verification
+
+| Done-when item | Result |
+|---|---|
+| The arrow is offered by the side it would copy from | pass: `The_arrow_is_offered_by_the_side_it_would_copy_from` — read-only shows none; making the right side editable puts arrows in the **left** pane and none in the right; and the reverse. `A_side_editable_before_the_template_applies_is_wired_too` covers the path a host setting the flag in XAML takes, which the property-change handler never sees |
+| One arrow per block, on its first row | pass: `One_arrow_per_block_on_the_block_s_first_line` — exactly one arrow per block, each over the block's first line on that side, or over no line where the side has none |
+| The hidden number is the only one hidden | pass: `The_only_numbers_missing_are_the_anchored_ones` — the numbers drawn with arrows on equal the numbers drawn with them off, minus exactly the anchor rows |
+| A block a side has no lines in still offers its arrow | pass: `A_block_the_side_has_no_lines_in_puts_its_arrow_in_the_padding` and `A_one_sided_block_at_the_very_end_is_reached_in_the_trailing_padding` — the arrow lands in padding, costs no number, and the trailing case is reached even though a walk over the visual lines never gets there |
+| The arrow costs no horizontal space | pass: `The_arrow_costs_the_margin_no_width` — the measured width is identical with arrows off and on, and exceeds the glyph. This is the premise of drawing over the number rather than beside it, so it is asserted rather than assumed |
+| A click on the arrow copies; a click on a number does not | pass: `A_click_on_the_arrow_copies_the_block_out` and `A_click_on_a_number_still_only_moves_the_caret` — the copy lands on the *other* side and collapses the block; the cell below the arrow puts the caret on line 3 and copies nothing |
+| The tooltip carries what the arrow displaced | pass: `The_anchored_row_s_tooltip_carries_the_number_it_stands_in_for` — the anchored row's tooltip names the line and the copy; a row without an arrow says nothing about copying |
+| The connector column has no arrows left | pass: `The_connector_column_has_no_arrows_left` — with **both** sides editable, the state that used to paint two arrows per block, the column carries zero pixels of the arrow brush and measures 16 px |
+| The arrows are painted, and point the right way | pass: `The_copy_arrows_are_painted_in_the_panes` — the head carries about twice the shaft's area, so the heavier half of the zone is the half the arrow points at, which needs no threshold and dies when the glyph is flipped. Every arrow pixel in each margin belongs to a zone the margin reported, and each zone is flush with `LastColumnRight` |
+| A read-only pair shows every number | pass: `A_read_only_pair_shows_every_number_instead` — not one pixel of the arrow brush in either margin, and every line the pane shows carries its number |
+| Both arrows on a row sit level | pass: `A_one_sided_block_puts_its_arrow_in_the_padding` — the arrow over a number and the arrow in padding are at the same window y. They were 1.2 px apart until the anchored one was centred on its row rather than on its text band |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 396 passed (390 before phase 3, 383 before the plan) |
+| New tests proven able to fail | seventeen mutations across the three phases, seventeen kills. Three survived a first pass: one test gap (the template-apply wiring), one code gap (a guard on an invariant its neighbour already enforced, now removed), and one badly aimed mutation. A fourth survived phase 3 until `LastColumnRight` existed — an arrow shifted four pixels reported its own new position, so every assertion followed it |
+| Theme audit regenerated | `theme-audit compat` then `report` after the column width changed under `Themes/`: 0 low-contrast findings, drift test passes |
+| Snapshot baselines moved | 22 regenerated for the narrower column — composite, find, navigation, syntax, view options, word diff, demo and the plan 00003 marks frame. `PresenterSnapshotTests` and `InlineSnapshotTests` are untouched, which is the evidence that only the composite's geometry moved |
 
 ## Plan 00003 phases
 
