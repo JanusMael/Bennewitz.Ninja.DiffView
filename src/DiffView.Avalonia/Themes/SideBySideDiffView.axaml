@@ -45,7 +45,7 @@
           <!-- The find bar collapses when it is closed, so its Auto row takes no height. -->
           <dv:DiffFindBar Name="PART_FindBar" Grid.Row="2" IsVisible="False" />
 
-          <Grid Name="PART_Panes" Grid.Row="3" ColumnDefinitions="*,24,*,14">
+          <Grid Name="PART_Panes" Grid.Row="3" ColumnDefinitions="*,16,*,14">
             <dv:DiffPanePresenter Name="PART_LeftPane" AutomationProperties.Name="{TemplateBinding LeftPaneName}" />
             <dv:ChangeConnectorGutter Name="PART_Gutter" Grid.Column="1" AutomationProperties.Name="{TemplateBinding GutterName}" />
             <dv:DiffPanePresenter Name="PART_RightPane" Grid.Column="2" AutomationProperties.Name="{TemplateBinding RightPaneName}" />

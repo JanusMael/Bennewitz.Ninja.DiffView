@@ -1089,10 +1089,7 @@ public class SideBySideDiffView : TemplatedControl
         {
             _gutter.Document = Document;
             _gutter.CurrentChangeIndex = CurrentChangeIndex;
-            _gutter.CanCopyToLeft = !LeftReadOnly;
-            _gutter.CanCopyToRight = !RightReadOnly;
             _gutter.BlockClicked += OnGutterBlockClicked;
-            _gutter.CopyRequested += OnGutterCopyRequested;
             _gutter.ResizeDragged += OnGutterResizeDragged;
         }
 
@@ -1140,11 +1137,6 @@ public class SideBySideDiffView : TemplatedControl
                 _leftPane.IsReadOnly = LeftReadOnly;
             }
 
-            if (_gutter is not null)
-            {
-                _gutter.CanCopyToLeft = !LeftReadOnly;
-            }
-
             // A pane offers an arrow when the *other* side can receive the copy, so the left
             // side's flag drives the right pane's arrows.
             if (_rightPane is not null)
@@ -1159,11 +1151,6 @@ public class SideBySideDiffView : TemplatedControl
             if (_rightPane is not null)
             {
                 _rightPane.IsReadOnly = RightReadOnly;
-            }
-
-            if (_gutter is not null)
-            {
-                _gutter.CanCopyToRight = !RightReadOnly;
             }
 
             if (_leftPane is not null)
@@ -2273,6 +2260,7 @@ public class SideBySideDiffView : TemplatedControl
         pane.VerticalScrollBarVisibility = side == DiffSide.Left ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
         pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
         pane.RenderFault += OnPaneRenderFault;
+        pane.CopyOutRequested += OnPaneCopyOutRequested;
         pane.TemplateApplied += OnPaneTemplateApplied;
         pane.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         pane.TextArea.GotFocus += OnPaneGotFocus;
@@ -2354,7 +2342,6 @@ public class SideBySideDiffView : TemplatedControl
         if (_gutter is not null)
         {
             _gutter.BlockClicked -= OnGutterBlockClicked;
-            _gutter.CopyRequested -= OnGutterCopyRequested;
             _gutter.ResizeDragged -= OnGutterResizeDragged;
         }
 
@@ -2437,9 +2424,11 @@ public class SideBySideDiffView : TemplatedControl
         }
     }
 
-    private void OnGutterCopyRequested(object? sender, (int BlockIndex, DiffSide ToSide) request)
+    private void OnPaneCopyOutRequested(object? sender, int blockIndex)
     {
-        CopyBlock(request.BlockIndex, request.ToSide);
+        // The arrow is in the pane the block is copied *from*, so the target is the other side.
+        DiffSide from = sender is DiffPanePresenter pane ? pane.Side : DiffSide.Left;
+        CopyBlock(blockIndex, from == DiffSide.Left ? DiffSide.Right : DiffSide.Left);
     }
 
     private void OnGutterBlockClicked(object? sender, int blockIndex)

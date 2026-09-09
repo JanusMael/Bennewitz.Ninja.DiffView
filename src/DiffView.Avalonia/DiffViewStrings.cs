@@ -112,6 +112,9 @@ public static class DiffViewStrings
     /// <summary>Appended to a marker tooltip on a line edited since the source was assigned.</summary>
     public const string MarkerModifiedSinceLoad = "Marker.ModifiedSinceLoad";
 
+    /// <summary>What the copy arrow standing in for a line number would do.</summary>
+    public const string CopyArrowTooltip = "CopyArrow.Tooltip";
+
     /// <summary>The strip's lane while a side has unsaved edits.</summary>
     public const string StatusDirty = "Status.Dirty";
 
@@ -362,6 +365,7 @@ public static class DiffViewStrings
         [RightTitle] = "Right",
         [HeaderDirty] = "Unsaved",
         [MarkerModifiedSinceLoad] = "Edited in this session",
+        [CopyArrowTooltip] = "Copy this change to the {0} side",
         [StatusDirty] = "Unsaved changes in {0}",
         [SaveSucceeded] = "Saved {0}",
         [SaveNoPath] = "{0} did not come from a file, so there is nowhere to save it.",

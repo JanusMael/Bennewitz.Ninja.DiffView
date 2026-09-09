@@ -1,11 +1,18 @@
+using Avalonia;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
 using Bennewitz.Ninja.DiffView.Core;
 
 namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 
 /// <summary>
-/// Plan 00004 §Phase 1, the arrow in the number cell: which pane carries it, which row it takes,
-/// and the blocks whose rows are padding on a side, where it costs no number at all.
+/// Plan 00004, the copy arrow in the number cell: which pane carries it, which row it takes, the
+/// blocks whose rows are padding on a side — where it costs no number at all — and, once §Phase 2
+/// moved the copy here, what a click on it does and what the connector column has left.
 /// </summary>
 public sealed class CopyArrowMarginTests
 {
@@ -181,5 +188,100 @@ public sealed class CopyArrowMarginTests
         Assert.NotEmpty(host.Left.LineNumberMargin.LastCopyArrows);
         Assert.Equal(before, host.Left.LineNumberMargin.Bounds.Width);
         Assert.True(before >= CopyArrowGlyph.Size, $"the number cell is {before} px against a {CopyArrowGlyph.Size} px glyph");
+    }
+
+    [AvaloniaFact]
+    public async Task A_click_on_the_arrow_copies_the_block_out()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+        host.Capture().Dispose();
+
+        (Rect zone, _, _) = Assert.Single(host.Left.LineNumberMargin.LastCopyArrows);
+        Point at = host.Left.LineNumberMargin.TranslatePoint(zone.Center, host.Window)!.Value;
+        host.Window.MouseDown(at, MouseButton.Left);
+        host.Window.MouseUp(at, MouseButton.Left);
+        await host.WaitForReDiffAsync();
+
+        // The arrow is in the left pane, so the copy lands on the right.
+        Assert.Equal("one\nTWO\nthree\n", host.Right.Document.Text);
+        Assert.Equal(0, host.View.ChangeCount);
+    }
+
+    [AvaloniaFact]
+    public async Task A_click_on_a_number_still_only_moves_the_caret()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+        host.Capture().Dispose();
+
+        // Line 3's cell: a number, not an arrow. The two never overlap, but the order in which
+        // they are tested is what decides this, so it is pinned rather than left to reading order.
+        (Rect zone, _, _) = Assert.Single(host.Left.LineNumberMargin.LastCopyArrows);
+        Point at = host.Left.LineNumberMargin.TranslatePoint(zone.Center, host.Window)!.Value;
+        Point below = at + new Point(0, host.Left.TextArea.TextView.DefaultLineHeight);
+        Assert.Null(host.Left.LineNumberMargin.ArrowAt(zone.Center + new Point(0, host.Left.TextArea.TextView.DefaultLineHeight)));
+
+        host.Window.MouseDown(below, MouseButton.Left);
+        host.Window.MouseUp(below, MouseButton.Left);
+        await host.WaitForReDiffAsync();
+
+        Assert.Equal("one\ntwo\nthree\n", host.Right.Document.Text);
+        Assert.Equal(1, host.View.ChangeCount);
+        Assert.Equal(3, host.Left.TextArea.Caret.Line);
+    }
+
+    [AvaloniaFact]
+    public async Task The_connector_column_has_no_arrows_left()
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 600);
+        host.Show();
+        await host.LoadAsync(left, right);
+        host.View.LeftReadOnly = false;
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+
+        using WriteableBitmap frame = host.Capture();
+        ChangeConnectorGutter gutter = host.View.Gutter!;
+        Point origin = gutter.TranslatePoint(new Point(0, 0), host.Window)!.Value;
+        Color arrowColour = PresenterHost.Token("DiffView.GutterArrowBrush");
+        PixelRect column = PixelProbe.Inside(origin.X, origin.Y, origin.X + gutter.Bounds.Width, origin.Y + gutter.Bounds.Height, inset: 0);
+
+        // Both sides editable, so this is the state that used to paint two arrows per block.
+        Assert.NotEmpty(host.Left.LineNumberMargin.LastCopyArrows);
+        Assert.NotEmpty(host.Right.LineNumberMargin.LastCopyArrows);
+        Assert.Equal(0, PixelProbe.Count(frame, column, c => PresenterHost.Near(c, arrowColour)));
+        Assert.Equal(16, gutter.Bounds.Width);
+    }
+
+    [AvaloniaFact]
+    public async Task The_anchored_row_s_tooltip_carries_the_number_it_stands_in_for()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+        host.Capture().Dispose();
+
+        (_, _, int? overLine) = Assert.Single(host.Left.LineNumberMargin.LastCopyArrows);
+        Assert.Equal(2, overLine);
+
+        // The one number not on screen is still one hover away, and the tooltip says what the
+        // arrow in its place would do.
+        string? tooltip = host.Left.LineNumberMargin.TooltipFor(2);
+        Assert.NotNull(tooltip);
+        Assert.Contains("2", tooltip, StringComparison.Ordinal);
+        Assert.Contains("Copy this change", tooltip, StringComparison.Ordinal);
+
+        // A row with no arrow says nothing about copying.
+        Assert.DoesNotContain("Copy this change", host.Left.LineNumberMargin.TooltipFor(3)!, StringComparison.Ordinal);
     }
 }

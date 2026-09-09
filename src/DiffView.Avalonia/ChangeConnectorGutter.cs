@@ -67,26 +67,14 @@ public class ChangeConnectorGutter : Control
     public static readonly StyledProperty<double> ContentOffsetProperty =
         AvaloniaProperty.Register<ChangeConnectorGutter, double>(nameof(ContentOffset));
 
-    /// <summary>Identifies the <see cref="CanCopyToLeft"/> property.</summary>
-    public static readonly StyledProperty<bool> CanCopyToLeftProperty =
-        AvaloniaProperty.Register<ChangeConnectorGutter, bool>(nameof(CanCopyToLeft));
-
-    /// <summary>Identifies the <see cref="CanCopyToRight"/> property.</summary>
-    public static readonly StyledProperty<bool> CanCopyToRightProperty =
-        AvaloniaProperty.Register<ChangeConnectorGutter, bool>(nameof(CanCopyToRight));
-
     /// <summary>Identifies the <see cref="CurrentChangeIndex"/> property.</summary>
     public static readonly StyledProperty<int> CurrentChangeIndexProperty =
         AvaloniaProperty.Register<ChangeConnectorGutter, int>(nameof(CurrentChangeIndex), defaultValue: -1);
 
     private const double CurrentOutlineThickness = 2;
 
-    /// <summary>The side of an arrow's square hit-zone, in pixels.</summary>
-    private const double ArrowSize = CopyArrowGlyph.Size;
-
     private readonly DiffBrushes _palette = new();
     private readonly List<ConnectorPolygon> _lastPolygons = [];
-    private readonly List<(Rect Bounds, int BlockIndex, DiffSide ToSide)> _lastArrows = [];
     private bool _dragging;
     private double _dragLastX;
 
@@ -97,9 +85,7 @@ public class ChangeConnectorGutter : Control
             RowHeightProperty,
             VerticalOffsetProperty,
             ContentOffsetProperty,
-            CurrentChangeIndexProperty,
-            CanCopyToLeftProperty,
-            CanCopyToRightProperty);
+            CurrentChangeIndexProperty);
     }
 
     /// <summary>Creates the gutter; the composite sets its width and name.</summary>
@@ -111,12 +97,6 @@ public class ChangeConnectorGutter : Control
 
     /// <summary>A polygon was clicked: its block index.</summary>
     public event EventHandler<int>? BlockClicked;
-
-    /// <summary>
-    /// An arrow was clicked: the block to copy, and the side to copy it onto. Raised instead of
-    /// <see cref="BlockClicked"/>, because an arrow sits inside its own block's polygon.
-    /// </summary>
-    public event EventHandler<(int BlockIndex, DiffSide ToSide)>? CopyRequested;
 
     /// <summary>The pointer dragged on empty space: the horizontal distance since the last report.</summary>
     public event EventHandler<double>? ResizeDragged;
@@ -148,23 +128,6 @@ public class ChangeConnectorGutter : Control
         get => GetValue(ContentOffsetProperty);
         set => SetValue(ContentOffsetProperty, value);
     }
-
-    /// <summary>Whether a leftward arrow is offered on each block; the left pane being editable.</summary>
-    public bool CanCopyToLeft
-    {
-        get => GetValue(CanCopyToLeftProperty);
-        set => SetValue(CanCopyToLeftProperty, value);
-    }
-
-    /// <summary>Whether a rightward arrow is offered on each block; the right pane being editable.</summary>
-    public bool CanCopyToRight
-    {
-        get => GetValue(CanCopyToRightProperty);
-        set => SetValue(CanCopyToRightProperty, value);
-    }
-
-    /// <summary>The arrow hit-zones of the last render, in the order they were drawn.</summary>
-    public IReadOnlyList<(Rect Bounds, int BlockIndex, DiffSide ToSide)> LastArrows => _lastArrows;
 
     /// <summary>The current change block, outlined; -1 for none.</summary>
     public int CurrentChangeIndex
@@ -210,7 +173,6 @@ public class ChangeConnectorGutter : Control
     {
         base.Render(context);
         _lastPolygons.Clear();
-        _lastArrows.Clear();
         Rect bounds = new(Bounds.Size);
         context.FillRectangle(_palette[DiffBrush.GutterBackground], bounds);
         SideBySideDocument? document = Document;
@@ -257,58 +219,7 @@ public class ChangeConnectorGutter : Control
 
             bool current = block.Index == CurrentChangeIndex;
             context.DrawGeometry(_palette.ForKind(block.Kind), current ? outline : null, geometry);
-            DrawArrows(context, block, top, Math.Max(leftBottom, rightBottom), width);
         }
-    }
-
-    /// <summary>
-    /// The copy arrows for one block: leftward on the left edge, rightward on the right, each
-    /// offered only when its target side is editable. They are drawn last so the polygon does not
-    /// cover them, and their hit-zones are tested before the polygon's.
-    /// </summary>
-    private void DrawArrows(DrawingContext context, ChangeBlock block, double top, double bottom, double width)
-    {
-        if (!CanCopyToLeft && !CanCopyToRight)
-        {
-            return;
-        }
-
-        double height = Math.Max(bottom - top, 0);
-        if (height < ArrowSize || width < ArrowSize * 2)
-        {
-            // No room to draw one without covering the block it belongs to.
-            return;
-        }
-
-        double centre = top + (height / 2);
-        IBrush brush = _palette[DiffBrush.GutterArrow];
-        if (CanCopyToLeft)
-        {
-            Rect zone = new(0, centre - (ArrowSize / 2), ArrowSize, ArrowSize);
-            _lastArrows.Add((zone, block.Index, DiffSide.Left));
-            CopyArrowGlyph.Draw(context, brush, zone, pointsLeft: true);
-        }
-
-        if (CanCopyToRight)
-        {
-            Rect zone = new(width - ArrowSize, centre - (ArrowSize / 2), ArrowSize, ArrowSize);
-            _lastArrows.Add((zone, block.Index, DiffSide.Right));
-            CopyArrowGlyph.Draw(context, brush, zone, pointsLeft: false);
-        }
-    }
-
-    /// <summary>The arrow under <paramref name="point"/>, if any.</summary>
-    public (int BlockIndex, DiffSide ToSide)? ArrowAt(Point point)
-    {
-        foreach ((Rect bounds, int index, DiffSide side) in _lastArrows)
-        {
-            if (bounds.Contains(point))
-            {
-                return (index, side);
-            }
-        }
-
-        return null;
     }
 
     /// <inheritdoc/>
@@ -321,15 +232,6 @@ public class ChangeConnectorGutter : Control
         }
 
         Point point = e.GetPosition(this);
-
-        // An arrow sits inside its own block's polygon, so it is tested first.
-        if (ArrowAt(point) is { } arrow)
-        {
-            CopyRequested?.Invoke(this, arrow);
-            e.Handled = true;
-            return;
-        }
-
         if (PolygonAt(point) is { } polygon)
         {
             BlockClicked?.Invoke(this, polygon.BlockIndex);

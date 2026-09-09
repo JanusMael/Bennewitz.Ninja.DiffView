@@ -216,6 +216,15 @@ public class DiffPanePresenter : TextEditor
         set => SetValue(CanCopyOutProperty, value);
     }
 
+    /// <summary>
+    /// A copy arrow in this pane's gutter was clicked: the block to copy out of it. The composite
+    /// performs the copy, because a pane knows nothing about the other side.
+    /// </summary>
+    public event EventHandler<int>? CopyOutRequested;
+
+    /// <summary>Raises <see cref="CopyOutRequested"/> for <paramref name="blockIndex"/>.</summary>
+    internal void RequestCopyOut(int blockIndex) => CopyOutRequested?.Invoke(this, blockIndex);
+
     /// <summary>Whether the caret blinks while the pane has focus. Off, it stays visible.</summary>
     public bool IsCaretBlinkEnabled
     {

@@ -79,9 +79,15 @@ internal sealed class DiffLineNumberMargin : DiffMargin
                 : DiffViewStrings.Format(DiffViewStrings.LineTooltipUnifiedAligned, mine, line, other, otherLine);
         }
 
-        return otherLine is null
+        string tooltip = otherLine is null
             ? DiffViewStrings.Format(DiffViewStrings.LineTooltipAlone, line, other)
             : DiffViewStrings.Format(DiffViewStrings.LineTooltipAligned, line, other, otherLine);
+
+        // The one row whose number is not on screen: the tooltip carries it, and says what the
+        // arrow standing in its place would do.
+        return _lastCopyArrows.Any(a => a.OverLine == lineNumber)
+            ? tooltip + Environment.NewLine + DiffViewStrings.Format(DiffViewStrings.CopyArrowTooltip, other)
+            : tooltip;
     }
 
     /// <summary>The metadata was swapped: the columns may have changed width, and the numbers have changed.</summary>
@@ -296,11 +302,35 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         return true;
     }
 
+    /// <summary>The block whose arrow is under <paramref name="point"/>, if any.</summary>
+    public int? ArrowAt(Point point)
+    {
+        foreach ((Rect bounds, int index, _) in _lastCopyArrows)
+        {
+            if (bounds.Contains(point))
+            {
+                return index;
+            }
+        }
+
+        return null;
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
         if (e.Handled || TextView is null || TextArea is null || Document is null)
         {
+            return;
+        }
+
+        // The arrow cell first, then the row it sits in. The two do not overlap — the arrow has
+        // the number's cell and nothing else — but the order still decides what a click on the
+        // arrow does, so a test pins it.
+        if (ArrowAt(e.GetPosition(this)) is { } block)
+        {
+            Owner.RequestCopyOut(block);
+            e.Handled = true;
             return;
         }
 
