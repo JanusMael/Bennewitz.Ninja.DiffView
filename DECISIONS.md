@@ -1069,6 +1069,59 @@ out from its tip inwards, which keeps the head on the column's outer edge whatev
 set to, and leaves `InnerGap` unpainted at the centre so the two shafts never touch. Growing
 `ArrowSize` past 12 means growing the column with it.
 
+## The marker chip is computed over the pane, and shaped to the run
+
+Plan 00005. Each marker glyph sits on a chip of its kind's colour, and consecutive rows of one kind
+share it, so a lone changed line reads as a badge and a block reads as one band — the block's
+extent, which neither the glyph nor the row tint shows in the gutter.
+
+**The chip is composited over the pane background, not blended into the gutter.** The first design
+blended: the marker's colour at 18 % over `DiffView.GutterBackgroundBrush`. It darkens the ground
+*towards* the glyph, and it failed the 3.0 floor in two palettes — `#D96A00` at 2.60 and
+Okabe–Ito's `#D55E00` at 2.84. No alpha rescued it: at 6 %, far too faint to be worth drawing,
+`#D96A00` is still 2.98, and a neutral grey chip is worse. The reason is that `#D96A00` scores 3.49
+against pure white and 3.17 against the gutter, so its entire headroom is 0.49 and blending
+downward spends more than it has.
+
+Compositing over the pane — `#FFFFFF` against the gutter's `#F3F4F6` — moves the ground the other
+way, so the glyph gains contrast instead. Worst case across four palettes is 3.04, and **no palette
+colour changed**. Two darkenings that an earlier draft proposed, `#D96A00` for a third time and the
+canonical vermillion, are both unnecessary. The chip also lands on the colour the row tint already
+is, which is what makes gutter and row read as one field rather than two.
+
+The tokens are **opaque**, one per kind per palette per variant. Opaque because the colour is
+deliberately not a blend with the surface it is painted on — computed over the pane, drawn on the
+gutter — which a translucent brush cannot express, and because `theme-audit` can score an opaque
+token directly with no `over` key to get wrong. Three of the four palettes use their own row tint's
+alpha; Default Light steps 15 % to 12 %, its modified marker having the least headroom of any
+marker in any palette.
+
+**The contract is the durable part.** `contrast-pairs.json` scored markers against the plain gutter
+and the host page and nothing else, so a decorator drawn *behind* a marker was outside what it
+could see — which is how a chip that failed the floor was designed, rendered and reviewed before
+anyone measured it. Three pairs now hold each marker against its own chip. Setting the Default
+Light chip back to the blended value turns 0 low-contrast findings into 6 and prints 2.60 in every
+theme target's column.
+
+**The chip is shaped to the run, not the row**, with no second code path: a one-row run is a short
+rectangle with the same corner radius. Two rules make it right. A run that carries on past the
+viewport gets no rounded end there — the rectangle runs a row beyond the edge so the rounding falls
+outside the visible area, rather than making a scrolled block look as though it ends where the
+window does. And a run needs **no padding test**, though the first implementation had one: adjacent
+lines of one changed kind are always adjacent rows, because a side's lines inside a block are
+contiguous and blocks are separated by at least one unchanged row. A mutation that ran the loop
+through padding changed no frame, which is how the guard was found to be unreachable rather than
+merely untested.
+
+The chip is symmetric about the margin's centre and stops exactly where the modified-since-load bar
+begins, so an edited line inside a changed block paints both without overlap. The glyph is centred
+in the chip rather than placed at `HorizontalPadding`. Those two are arithmetically identical while
+the pane font gives all three glyphs one advance width — `MeasureOverride` returns the widest glyph
+plus twice the padding — so no test distinguishes them; the explicit form is kept because it stays
+correct under a host font whose fallback for one character does not, which is the same case the
+measurement already covers.
+
+
 ## The change markers are operators, not ASCII punctuation
 
 `+` for an inserted line, `−` (U+2212) for a deleted one, `≠` (U+2260) for a modified one, drawn

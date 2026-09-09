@@ -172,6 +172,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- Change markers are drawn on a chip of their kind's colour, one per run of consecutive same-kind
+  rows, so a lone changed line reads as a badge and a block reads as one band. Twelve opaque
+  `DiffView.MarkerChip*Brush` tokens carry the colours, each its marker composited over that
+  variant's pane background, and three new `contrast-pairs.json` pairs hold every marker to its 3.0
+  floor against the chip behind it — a floor nothing had scored until now. No palette colour
+  changed.
 - The change markers are `+`, `−` (U+2212) and `≠` (U+2260), drawn semibold, in place of `+`, `-`
   and `~`. The glyph carries a row's kind where colour cannot, and the ASCII set was too light to
   do it: a hyphen laid down 5 pixels of ink against a line number's 29. `DECISIONS.md` carries the

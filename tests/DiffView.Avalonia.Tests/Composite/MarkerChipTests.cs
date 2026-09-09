@@ -75,24 +75,48 @@ public sealed class MarkerChipTests
     }
 
     [AvaloniaFact]
-    public async Task A_run_breaks_where_padding_separates_its_rows()
+    public async Task The_chips_are_exactly_the_runs_the_model_describes()
     {
-        using CompositeHost host = new(width: 900, height: 400);
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 600);
         host.Show();
-
-        // The right gains a line between two of the left's deletions, so the left's deleted rows
-        // are split by a padding row that belongs to the right's line.
-        await host.LoadAsync("a\ngone1\nb\ngone2\nc\n", "a\nb\nADDED\nc\n");
+        await host.LoadAsync(left, right);
         host.Capture().Dispose();
 
-        ChangeMarkerMargin margin = host.Left.ChangeMarkerMargin;
-        Assert.True(margin.LastChips.Count >= 2, "the deletions should not share one chip across the padding");
-
-        // No chip covers a row this side has no line in.
-        double rowHeight = host.Left.TextArea.TextView.DefaultLineHeight;
-        foreach ((Rect chip, _) in margin.LastChips)
+        foreach (DiffPanePresenter pane in (DiffPanePresenter[])[host.Left, host.Right])
         {
-            Assert.True(chip.Height <= (2 * rowHeight) + 1, $"a chip {chip.Height:F1} tall spans rows the side does not own");
+            ChangeMarkerMargin margin = pane.ChangeMarkerMargin;
+            double rowHeight = pane.TextArea.TextView.DefaultLineHeight;
+
+            // The runs, derived from the kinds the margin reported rather than from the chips.
+            List<(DiffLineKind Kind, int Rows)> runs = [];
+            DiffLineKind? previous = null;
+            foreach ((int _, DiffLineKind kind) in margin.LastRendered)
+            {
+                if (ChangeMarkerMargin.GlyphFor(kind) is null)
+                {
+                    previous = null;
+                    continue;
+                }
+
+                if (previous == kind)
+                {
+                    runs[^1] = (kind, runs[^1].Rows + 1);
+                }
+                else
+                {
+                    runs.Add((kind, 1));
+                }
+
+                previous = kind;
+            }
+
+            Assert.NotEmpty(runs);
+            Assert.Equal(runs.Select(r => r.Kind), margin.LastChips.Select(c => c.Kind));
+            for (int i = 0; i < runs.Count; i++)
+            {
+                Assert.Equal((runs[i].Rows * rowHeight) - 4, margin.LastChips[i].Bounds.Height, 0.5);
+            }
         }
     }
 

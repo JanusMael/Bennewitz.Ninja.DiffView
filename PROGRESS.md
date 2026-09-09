@@ -100,7 +100,10 @@ line's whole visual box — padding rows included, though those belong to the ot
 nobody edited them; it now covers the line's own row, like the arrow. And the change markers were
 measured for the first time: the deleted marker laid down **5 pixels of ink against a digit's 29**,
 making the mark meant to carry kind without colour the faintest thing in the gutter. They are now
-`+` `−` `≠` — one vocabulary of operators — drawn semibold, at 41, 25 and 56.
+`+` `−` `≠` — one vocabulary of operators — drawn semibold, at 41, 25 and 56. Each now sits on a
+chip of its kind's colour, shared across a run of same-kind rows, so the gutter shows a block's
+extent as well as each row's kind — and the chip is composited over the *pane* background rather
+than blended into the gutter, which is what let every palette colour stay exactly as it was.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -129,6 +132,31 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00005 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 The tokens and the contract | done | Twelve opaque `MarkerChip*` brushes across both palettes and both variants, each its marker over that variant's pane background; `DiffBrush` entries and `MarkerChipFor(kind)`; three new pairs in `contrast-pairs.json`; audit regenerated. Nothing drawn, so no frame moved — the phase's output is that a floor nothing had scored is now scored |
+| 2 The chip | done | One rounded chip per run of same-kind rows, symmetric about the margin's centre, stopping where the modified-since-load bar begins; the glyph centred in it; the viewport-edge rule; 6 headless test cases |
+| 3 Evidence | done | `MarkerChipSnapshotTests` — a run sharing one chip beside a lone badge, and a run scrolled past both edges, in both variants; six mutations; this section and `DECISIONS.md` |
+
+## Plan 00005 verification
+
+| Done-when item | Result |
+|---|---|
+| One chip per run | pass: `The_chips_are_exactly_the_runs_the_model_describes` — the runs are derived from the kinds the margin reported, on both panes of the small fixture, and compared to the chips it drew, kind for kind and height for height |
+| A lone changed row is a badge | pass: `A_lone_changed_row_gets_a_badge_of_the_same_shape` — one row's height less the inset, same corner radius as a five-row band |
+| A run leaving the viewport is not rounded there | pass: `A_run_scrolled_off_the_top_is_not_rounded_there` — scrolled into the middle of a 40-line deletion, the chip starts a **full row** above the edge and ends below it. The first version of this assertion only required a negative top, which holds either way when the first visible row starts mid-line; the mutation that stopped extending the run survived it |
+| The glyph is centred in its chip | pass: `The_glyph_is_centred_in_its_chip` — glyph ink weighed either side of each chip's centre line, within a third of the heavier side. Reported rectangles cannot show this: the off-centre draft reported the place it drew |
+| The chip stops where the bar begins | pass: `The_chip_stops_where_the_modified_since_load_bar_begins` — symmetric bounds, right edge at `Bounds.Width - ModifiedBarWidth`, and an edited line inside a changed block paints chip and bar both |
+| The margin does not grow | pass: `The_chip_costs_the_margin_no_width` — 16 px with chips and without |
+| Every marker clears its floor with the chip behind it | pass: `theme-audit report`, 0 low-contrast findings with the three new pairs present. Proven to bite: the Default Light chip set back to the blended value yields 6 findings and prints **2.60** against the 3.0 floor |
+| No palette colour changed | `#D96A00` and Okabe–Ito's `#D55E00` are as they were. An earlier draft darkened both; compositing over the pane rather than the gutter made that unnecessary |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 409 passed (399 before the plan) |
+| New tests proven able to fail | six mutations, six kills, after a first pass with three survivors: one weak assertion (the viewport top), one unreachable guard (the run's padding test, now removed with the invariant written down), and one provably equivalent expression (the glyph's centring, kept and documented rather than tested) |
+| Snapshot baselines moved | **30**, across 13 test methods, **none of which failed on its own** — a chip is glyph-scale against a 0.5 % tolerance. Found with the zeroed-comparer sweep, now the documented procedure and used for the fourth time in this branch |
 
 ## The change markers, weighed and replaced
 

@@ -197,12 +197,13 @@ internal sealed class ChangeMarkerMargin : DiffMargin
                 continue;
             }
 
-            // A run breaks on padding: those rows are the *other* side's lines, and a band over
-            // them would claim rows this side does not have.
+            // Adjacent lines of one changed kind are always adjacent *rows*, so a run needs no
+            // padding test. A side's lines inside a block are contiguous — the layout gives this
+            // side its rows first and the other side's padding after — and blocks are separated by
+            // at least one unchanged row, which ends the run by kind. A mutation that ran the loop
+            // through padding changed no frame, which is how the guard was found to be unreachable.
             int last = i;
-            while (last + 1 < rows.Count
-                   && rows[last + 1].Kind == kind
-                   && metadata.PaddingBefore(rows[last + 1].Number) == 0)
+            while (last + 1 < rows.Count && rows[last + 1].Kind == kind)
             {
                 last++;
             }
@@ -210,10 +211,8 @@ internal sealed class ChangeMarkerMargin : DiffMargin
             // A run that carries on past the viewport gets no rounded end there: the rectangle
             // runs a row beyond the edge so the rounding falls outside the visible area, rather
             // than making a scrolled block look as though it ends where the window does.
-            bool continuesAbove = metadata.PaddingBefore(rows[i].Number) == 0
-                                  && metadata.KindOf(rows[i].Number - 1) == kind;
-            bool continuesBelow = metadata.KindOf(rows[last].Number + 1) == kind
-                                  && metadata.PaddingBefore(rows[last].Number + 1) == 0;
+            bool continuesAbove = metadata.KindOf(rows[i].Number - 1) == kind;
+            bool continuesBelow = metadata.KindOf(rows[last].Number + 1) == kind;
             double top = rows[i].RowTop + (continuesAbove ? -rowHeight : ChipInset);
             double bottom = rows[last].RowTop + rowHeight + (continuesBelow ? rowHeight : -ChipInset);
 
