@@ -39,6 +39,25 @@ public sealed class CopyArrowMarginTests
     }
 
     [AvaloniaFact]
+    public async Task A_side_editable_before_the_template_applies_is_wired_too()
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 600);
+
+        // Set before the template exists, so the property-change handler has no pane to reach and
+        // the wiring falls to `AttachPane` — the path a host that sets the flag in XAML takes.
+        host.View.RightReadOnly = false;
+        host.Show();
+        await host.LoadAsync(left, right);
+        host.Capture().Dispose();
+
+        Assert.True(host.Left.CanCopyOut);
+        Assert.False(host.Right.CanCopyOut);
+        Assert.NotEmpty(host.Left.LineNumberMargin.LastCopyArrows);
+        Assert.Empty(host.Right.LineNumberMargin.LastCopyArrows);
+    }
+
+    [AvaloniaFact]
     public async Task One_arrow_per_block_on_the_block_s_first_line()
     {
         (string left, string right) = CompositeHost.SmallFixture();

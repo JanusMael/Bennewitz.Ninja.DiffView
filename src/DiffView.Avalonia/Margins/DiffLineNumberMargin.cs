@@ -229,12 +229,15 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         int padding = metadata.PaddingBefore(lineNumber);
         if (padding <= 0
             || metadata.RowOf(lineNumber) is not { } row
-            || metadata.BlockAtRow(row - 1) is not { } block
-            || !block.LinesFor(metadata.Side).IsEmpty)
+            || metadata.BlockAtRow(row - 1) is not { } block)
         {
             return;
         }
 
+        // A side's lines in a block start at the block's first row, so a block this side *does*
+        // have lines in cannot have that row in padding: the offset lands before the padding
+        // begins and is rejected here. Testing the block's line range as well would be a second
+        // guard on the same invariant, and nothing could make the two disagree.
         int offset = block.FirstRow - (row - padding);
         if (offset < 0 || offset >= padding)
         {
