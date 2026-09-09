@@ -46,6 +46,12 @@
       <SolidColorBrush x:Key="DiffView.MarkerInsertedBrush" Color="#2E7D32" />
       <SolidColorBrush x:Key="DiffView.MarkerDeletedBrush" Color="#C62828" />
       <SolidColorBrush x:Key="DiffView.MarkerModifiedBrush" Color="#D96A00" />
+      <!-- The ground each marker glyph sits on: its own colour over the pane background,
+           opaque. Over the pane rather than the gutter because that is the lighter of the
+           two, which is what keeps the glyph above its 3.0 floor. -->
+      <SolidColorBrush x:Key="DiffView.MarkerChipInsertedBrush" Color="#E6EFE6" />
+      <SolidColorBrush x:Key="DiffView.MarkerChipDeletedBrush" Color="#F8E5E5" />
+      <SolidColorBrush x:Key="DiffView.MarkerChipModifiedBrush" Color="#FAEDE0" />
       <SolidColorBrush x:Key="DiffView.ConnectorBrush" Color="#757575" />
       <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#37474F" />
       <SolidColorBrush x:Key="DiffView.ModifiedSinceLoadBrush" Color="#F57C00" />
@@ -97,6 +103,12 @@
       <SolidColorBrush x:Key="DiffView.MarkerInsertedBrush" Color="#66BB6A" />
       <SolidColorBrush x:Key="DiffView.MarkerDeletedBrush" Color="#EF5350" />
       <SolidColorBrush x:Key="DiffView.MarkerModifiedBrush" Color="#FFA726" />
+      <!-- The ground each marker glyph sits on: its own colour over the pane background,
+           opaque. Over the pane rather than the gutter because that is the lighter of the
+           two, which is what keeps the glyph above its 3.0 floor. -->
+      <SolidColorBrush x:Key="DiffView.MarkerChipInsertedBrush" Color="#2C3D2D" />
+      <SolidColorBrush x:Key="DiffView.MarkerChipDeletedBrush" Color="#482928" />
+      <SolidColorBrush x:Key="DiffView.MarkerChipModifiedBrush" Color="#4B3920" />
       <SolidColorBrush x:Key="DiffView.ConnectorBrush" Color="#8B9096" />
       <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#CFD8DC" />
       <SolidColorBrush x:Key="DiffView.ModifiedSinceLoadBrush" Color="#FFB74D" />

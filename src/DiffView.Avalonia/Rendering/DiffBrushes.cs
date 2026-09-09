@@ -22,6 +22,9 @@ internal enum DiffBrush
     MarkerInserted,
     MarkerDeleted,
     MarkerModified,
+    MarkerChipInserted,
+    MarkerChipDeleted,
+    MarkerChipModified,
     WordInserted,
     WordDeleted,
     CurrentBlockBorder,
@@ -55,6 +58,9 @@ internal sealed class DiffBrushes
         ("DiffView.MarkerInsertedBrush", Color.Parse("#2E7D32")),
         ("DiffView.MarkerDeletedBrush", Color.Parse("#C62828")),
         ("DiffView.MarkerModifiedBrush", Color.Parse("#D96A00")),
+        ("DiffView.MarkerChipInsertedBrush", Color.Parse("#E6EFE6")),
+        ("DiffView.MarkerChipDeletedBrush", Color.Parse("#F8E5E5")),
+        ("DiffView.MarkerChipModifiedBrush", Color.Parse("#FAEDE0")),
         ("DiffView.WordInsertedBrush", Color.Parse("#592E7D32")),
         ("DiffView.WordDeletedBrush", Color.Parse("#59C62828")),
         ("DiffView.CurrentBlockBorderBrush", Color.Parse("#1565C0")),
@@ -113,6 +119,18 @@ internal sealed class DiffBrushes
             DiffLineKind.Inserted => this[DiffBrush.MarkerInserted],
             DiffLineKind.Deleted => this[DiffBrush.MarkerDeleted],
             DiffLineKind.Modified => this[DiffBrush.MarkerModified],
+            _ => Brushes.Transparent,
+        };
+    }
+
+    /// <summary>The ground <paramref name="kind"/>'s marker glyph is drawn on; transparent for an unchanged line.</summary>
+    public IBrush MarkerChipFor(DiffLineKind kind)
+    {
+        return kind switch
+        {
+            DiffLineKind.Inserted => this[DiffBrush.MarkerChipInserted],
+            DiffLineKind.Deleted => this[DiffBrush.MarkerChipDeleted],
+            DiffLineKind.Modified => this[DiffBrush.MarkerChipModified],
             _ => Brushes.Transparent,
         };
     }

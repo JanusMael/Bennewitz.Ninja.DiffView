@@ -40,8 +40,8 @@ _none_
 
 | Consumer | Directories | Files | References | Distinct keys | Own keys | Digest | Audited against |
 |---|---|---:|---:|---:|---:|---|---|
-| DiffView | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 43 | `2b72b211574f` | all |
-| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 43 | `2b72b211574f` | all |
+| DiffView | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 46 | `e075126c4ef7` | all |
+| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 46 | `e075126c4ef7` | all |
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `2ce29f295821` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `ce6e5435da8d` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d91a9d48208f` | Fluent, Semi, Semi + compat |
@@ -810,7 +810,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Fluent
 
-35 pairs × 2 variants: 70 pass, 0 below the floor, 0 not measurable.
+38 pairs × 2 variants: 76 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -830,6 +830,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.66 | 6.48 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.11 | 4.39 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.17 | 7.88 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.13 | 8.88 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 5.62 | 6.02 |
@@ -852,7 +855,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Simple
 
-35 pairs × 2 variants: 70 pass, 0 below the floor, 0 not measurable.
+38 pairs × 2 variants: 76 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -872,6 +875,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.66 | 6.48 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.11 | 4.39 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.17 | 7.88 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.13 | 6.24 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 5.62 | 4.23 |
@@ -894,7 +900,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Semi
 
-35 pairs × 6 variants: 210 pass, 0 below the floor, 0 not measurable.
+38 pairs × 6 variants: 228 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -914,6 +920,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.66 | 6.48 | 6.48 | 4.66 | 6.48 | 6.48 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.11 | 4.39 | 4.39 | 5.11 | 4.39 | 4.39 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.17 | 7.88 | 7.88 | 3.17 | 7.88 | 7.88 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 | 4.90 | 4.36 | 4.90 | 4.90 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 | 3.71 | 4.64 | 3.71 | 3.71 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 | 5.67 | 3.04 | 5.67 | 5.67 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 | 4.76 | 4.19 | 4.76 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.13 | 7.63 | 6.89 | 4.93 | 5.48 | 8.88 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 5.62 | 5.18 | 4.67 | 5.40 | 3.72 | 6.02 |
@@ -936,7 +945,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Semi + compat
 
-35 pairs × 6 variants: 210 pass, 0 below the floor, 0 not measurable.
+38 pairs × 6 variants: 228 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -956,6 +965,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.66 | 6.48 | 6.48 | 4.66 | 6.48 | 6.48 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.11 | 4.39 | 4.39 | 5.11 | 4.39 | 4.39 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.17 | 7.88 | 7.88 | 3.17 | 7.88 | 7.88 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 | 4.90 | 4.36 | 4.90 | 4.90 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 | 3.71 | 4.64 | 3.71 | 3.71 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 | 5.67 | 3.04 | 5.67 | 5.67 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 | 4.76 | 4.19 | 4.76 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.13 | 7.63 | 6.89 | 4.93 | 5.48 | 8.88 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 5.62 | 5.18 | 4.67 | 5.40 | 3.72 | 6.02 |
@@ -978,7 +990,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Fluent
 
-35 pairs × 2 variants: 70 pass, 0 below the floor, 0 not measurable.
+38 pairs × 2 variants: 76 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -998,6 +1010,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.71 | 6.64 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.51 | 6.80 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.01 | 7.85 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.20 | 4.97 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 3.22 | 5.07 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.66 | 5.59 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.19 | 9.10 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 3.87 | 9.32 |
@@ -1020,7 +1035,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Simple
 
-35 pairs × 2 variants: 70 pass, 0 below the floor, 0 not measurable.
+38 pairs × 2 variants: 76 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -1040,6 +1055,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.71 | 6.64 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.51 | 6.80 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.01 | 7.85 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.20 | 4.97 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 3.22 | 5.07 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.66 | 5.59 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.19 | 6.39 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 3.87 | 6.55 |
@@ -1062,7 +1080,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Semi
 
-35 pairs × 6 variants: 210 pass, 0 below the floor, 0 not measurable.
+38 pairs × 6 variants: 228 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -1082,6 +1100,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.71 | 6.64 | 6.64 | 4.71 | 6.64 | 6.64 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.51 | 6.80 | 6.80 | 3.51 | 6.80 | 6.80 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.01 | 7.85 | 7.85 | 4.01 | 7.85 | 7.85 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.20 | 4.97 | 4.97 | 4.20 | 4.97 | 4.97 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 3.22 | 5.07 | 5.07 | 3.22 | 5.07 | 5.07 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.66 | 5.59 | 5.59 | 3.66 | 5.59 | 5.59 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 | 4.76 | 4.19 | 4.76 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.19 | 7.82 | 7.06 | 4.98 | 5.61 | 9.10 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 3.87 | 8.01 | 7.23 | 3.71 | 5.75 | 9.32 |
@@ -1104,7 +1125,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Semi + compat
 
-35 pairs × 6 variants: 210 pass, 0 below the floor, 0 not measurable.
+38 pairs × 6 variants: 228 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -1124,6 +1145,9 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.71 | 6.64 | 6.64 | 4.71 | 6.64 | 6.64 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 3.51 | 6.80 | 6.80 | 3.51 | 6.80 | 6.80 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.01 | 7.85 | 7.85 | 4.01 | 7.85 | 7.85 |
+| `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.20 | 4.97 | 4.97 | 4.20 | 4.97 | 4.97 |
+| `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 3.22 | 5.07 | 5.07 | 3.22 | 5.07 | 5.07 |
+| `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.66 | 5.59 | 5.59 | 3.66 | 5.59 | 5.59 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 | 4.76 | 4.19 | 4.76 | 4.76 |
 | `DiffView.MarkerInsertedBrush` | `$Page` | 3.0 | 5.19 | 7.82 | 7.06 | 4.98 | 5.61 | 9.10 |
 | `DiffView.MarkerDeletedBrush` | `$Page` | 3.0 | 3.87 | 8.01 | 7.23 | 3.71 | 5.75 | 9.32 |
