@@ -172,6 +172,10 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- The change markers are `+`, `−` (U+2212) and `≠` (U+2260), drawn semibold, in place of `+`, `-`
+  and `~`. The glyph carries a row's kind where colour cannot, and the ASCII set was too light to
+  do it: a hyphen laid down 5 pixels of ink against a line number's 29. `DECISIONS.md` carries the
+  measurements and why weight alone was not enough.
 - The copy arrows are drawn by `DiffLineNumberMargin`, over the line number of each block's anchor
   row in the pane the block would be copied *from*, and clicking one raises
   `DiffPanePresenter.CopyOutRequested`. `CanCopyOut` on a pane carries the other side's editable

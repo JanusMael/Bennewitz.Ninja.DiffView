@@ -1069,6 +1069,41 @@ out from its tip inwards, which keeps the head on the column's outer edge whatev
 set to, and leaves `InnerGap` unpainted at the centre so the two shafts never touch. Growing
 `ArrowSize` past 12 means growing the column with it.
 
+## The change markers are operators, not ASCII punctuation
+
+`+` for an inserted line, `−` (U+2212) for a deleted one, `≠` (U+2260) for a modified one, drawn
+semibold. The glyph exists to carry a row's kind where colour cannot — the palette has a
+colour-blind sibling, and row tints are translucent by design so text stays readable under them,
+which makes hue a weak channel for kind even for a reader who sees it perfectly.
+
+**The ASCII set failed at its own job, and only measuring showed it.** Ink laid down per glyph at
+the pane's 14 px, against a single digit's 29 in the next column:
+
+| | inserted | deleted | modified |
+|---|---|---|---|
+| `+` `-` `~` (was) | 20 | **5** | 14 |
+| `+` `-` `~` semibold | 41 | **14** | 21 |
+| `+` `−` `≠` semibold | 41 | 25 | 56 |
+| `▲` `▼` `◆` | 53 | 44 | 48 |
+
+The mark meant to survive a colour-blind reader was the faintest thing in the gutter, an order of
+magnitude lighter than the number beside it. **Weight alone does not fix a hyphen** — it is a short
+bar at any weight — so the character had to change, not just its rendering. The colours had been
+scored against a 3.0:1 floor; nothing had ever scored the geometry, and contrast on a five-pixel
+mark buys little.
+
+Operators rather than the heavier geometric shapes, which are the most visible option on the
+sheet: `▲`/`▼` read as sort direction rather than added/removed, and the set throws away the
+plus/minus mnemonic every diff tool has taught. `≠` also says what a modified row *is* more
+precisely than `~` did — the two sides are not equal. Over the heavier `✚` and `━`: U+2212 and
+U+2260 are in every monospace font worth the name, while dingbats and box-drawing are not, and
+the pane font is the host's choice rather than ours.
+
+`MeasureOverride` measures all three glyphs rather than assuming one is widest, for that same
+reason — a fallback for a character the host font lacks need not share the family's advance
+width. No test can distinguish that from measuring one glyph while the bundled font covers all
+three; it is defensive, and deliberately so.
+
 ## A line's number is not its identity, so the marks shift with the text
 
 `ModifiedLines(side)` is the set of lines the user has edited since the source was assigned, and

@@ -7,10 +7,11 @@ using Bennewitz.Ninja.DiffView.Core;
 namespace Bennewitz.Ninja.DiffView.Avalonia;
 
 /// <summary>
-/// A one-character strip beside the line numbers: <c>+</c> for an inserted line, <c>-</c> for a
-/// deleted one, <c>~</c> for a modified one, in the marker brush of the kind, at the line's text
-/// band; nothing for an unchanged line and nothing over padding space. ASCII glyphs, so the kind
-/// is scannable down the gutter without relying on colour alone. The tooltip follows the pointer
+/// A one-character strip beside the line numbers: <c>+</c> for an inserted line, <c>−</c> for a
+/// deleted one, <c>≠</c> for a modified one, in the marker brush of the kind, at the line's text
+/// band; nothing for an unchanged line and nothing over padding space. One vocabulary of
+/// mathematical operators, drawn semibold, so the kind is scannable down the gutter without
+/// relying on colour alone — see <see cref="GlyphFor"/> for why these three. The tooltip follows the pointer
 /// and, over a modified row whose line was too long for word-level pieces, says so.
 /// </summary>
 internal sealed class ChangeMarkerMargin : DiffMargin
@@ -19,6 +20,12 @@ internal sealed class ChangeMarkerMargin : DiffMargin
 
     /// <summary>The width of the modified-since-load bar down the margin's inner edge.</summary>
     private const double ModifiedBarWidth = 2;
+
+    /// <summary>
+    /// The weight the markers are drawn at. A line number is read one at a time; a marker is
+    /// scanned down a column, and at this size the difference matters.
+    /// </summary>
+    private const FontWeight MarkerWeight = FontWeight.SemiBold;
 
     private readonly List<(int LineNumber, DiffLineKind Kind)> _lastRendered = [];
     private readonly List<int> _lastModified = [];
@@ -35,13 +42,24 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     public IReadOnlyList<int> LastModified => _lastModified;
 
     /// <summary>The marker glyph for <paramref name="kind"/>; <c>null</c> for an unchanged line.</summary>
+    /// <remarks>
+    /// A minus sign rather than a hyphen, and a not-equal rather than a tilde. The glyph is the
+    /// channel that carries the kind when colour cannot, and the ASCII pair failed at that: a
+    /// hyphen laid down 5 pixels of ink against a digit's 29, so the mark meant to survive a
+    /// colour-blind reader was the faintest thing in the gutter. Semibold alone did not fix it —
+    /// a hyphen is a short bar at any weight. These three are one vocabulary of mathematical
+    /// operators, they weigh 41, 25 and 56 pixels, and <c>≠</c> says what a modified row is
+    /// more precisely than <c>~</c> ever did: the two sides are not equal. Chosen over heavier
+    /// dingbat and box-drawing candidates because U+2212 and U+2260 are in every monospace font
+    /// worth the name, and the pane font is the host's choice, not ours.
+    /// </remarks>
     public static string? GlyphFor(DiffLineKind kind)
     {
         return kind switch
         {
             DiffLineKind.Inserted => "+",
-            DiffLineKind.Deleted => "-",
-            DiffLineKind.Modified => "~",
+            DiffLineKind.Deleted => "−",
+            DiffLineKind.Modified => "≠",
             _ => null,
         };
     }
@@ -89,8 +107,15 @@ internal sealed class ChangeMarkerMargin : DiffMargin
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        FormattedText widest = Format("~", Owner.Palette[DiffBrush.MarkerModified]);
-        return new Size(widest.Width + 2 * HorizontalPadding, 0);
+        // Every glyph, not an assumed widest: the pane font is the host's, and a fallback for a
+        // character it lacks need not share the family's advance width.
+        double widest = 0;
+        foreach (DiffLineKind kind in (DiffLineKind[])[DiffLineKind.Inserted, DiffLineKind.Deleted, DiffLineKind.Modified])
+        {
+            widest = Math.Max(widest, Format(GlyphFor(kind)!, Owner.Palette.MarkerFor(kind), MarkerWeight).Width);
+        }
+
+        return new Size(widest + (2 * HorizontalPadding), 0);
     }
 
     protected override void RenderCore(DrawingContext context, TextView textView)
@@ -114,7 +139,7 @@ internal sealed class ChangeMarkerMargin : DiffMargin
                 continue;
             }
 
-            FormattedText text = Format(glyph, Owner.Palette.MarkerFor(kind));
+            FormattedText text = Format(glyph, Owner.Palette.MarkerFor(kind), MarkerWeight);
             context.DrawText(text, new Point(HorizontalPadding, TextTopOf(line, textView)));
         }
     }

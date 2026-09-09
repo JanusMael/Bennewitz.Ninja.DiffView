@@ -95,6 +95,13 @@ Settling the arrow's vertical placement turned up the same mistake in the modifi
 which spanned each line's whole visual box — padding rows included, though those belong to the
 other side's lines and nobody edited them. It now covers the line's own row, like the arrow.
 
+Looking hard at the gutter turned up two more things. The modified-since-load bar spanned each
+line's whole visual box — padding rows included, though those belong to the other side's lines and
+nobody edited them; it now covers the line's own row, like the arrow. And the change markers were
+measured for the first time: the deleted marker laid down **5 pixels of ink against a digit's 29**,
+making the mark meant to carry kind without colour the faintest thing in the gutter. They are now
+`+` `−` `≠` — one vocabulary of operators — drawn semibold, at 41, 25 and 56.
+
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
 
@@ -122,6 +129,18 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## The change markers, weighed and replaced
+
+| Done-when item | Result |
+|---|---|
+| The vocabulary is pinned | pass: `MarkerGlyphTests.The_vocabulary_is_one_family_of_operators` — `+`, `−` (U+2212), `≠` (U+2260), and nothing for an unchanged line |
+| Every marker is heavy enough to scan | pass: `Every_marker_is_heavy_enough_to_scan` — a pair carrying one block of each kind, each marker's cell measured against the gutter background, all three over a 20-pixel floor. This is the property the change exists for, so it is the assertion rather than a detail beside one |
+| Weight alone was not the fix | recorded: `+` `-` `~` semibold weighs 41 / **14** / 21 — a hyphen is a short bar at any weight, so the character had to change. The mutation that drops the weight and the two that restore the old characters each fail the ink test |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 399 passed (397 before) |
+| New tests proven able to fail | three mutations, three kills: the hyphen restored, the tilde restored, and the semibold weight dropped |
+| Snapshot baselines moved | **30**, across 13 test methods — every frame that draws a changed row, `PresenterSnapshotTests` and `InlineSnapshotTests` included. **Not one of them failed on its own**: a glyph swap moves fewer pixels than the comparer's 0.5 % tolerance, so they were stale and green. They were found by zeroing `ChannelTolerance` and `MaxDifferingFraction` for one run, regenerating exactly what that flagged, and restoring the comparer — the third time in this branch that a change too small for the comparer had to be caught deliberately |
 
 ## Plan 00004 phases
 

@@ -90,9 +90,17 @@ internal abstract class DiffMargin : AbstractMargin
     }
 
     /// <summary>Text in the margin's inherited font, in <paramref name="brush"/>.</summary>
-    protected FormattedText Format(string text, IBrush brush)
+    /// <summary>
+    /// Formats <paramref name="text"/> in the margin's own typeface, optionally overriding the
+    /// weight — a one-character marker needs more of it than a line number does, and setting the
+    /// inherited property instead would carry the weight into the margin's tooltip.
+    /// </summary>
+    protected FormattedText Format(string text, IBrush brush, FontWeight? weight = null)
     {
-        Typeface typeface = new(GetValue(TextBlock.FontFamilyProperty), GetValue(TextBlock.FontStyleProperty), GetValue(TextBlock.FontWeightProperty));
+        Typeface typeface = new(
+            GetValue(TextBlock.FontFamilyProperty),
+            GetValue(TextBlock.FontStyleProperty),
+            weight ?? GetValue(TextBlock.FontWeightProperty));
         return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, GetValue(TextBlock.FontSizeProperty), brush);
     }
 
