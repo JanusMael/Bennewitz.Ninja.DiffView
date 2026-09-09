@@ -157,10 +157,16 @@ no dates, no counts.
   green, every baseline stale. **A snapshot is never the guard for anything smaller than a row.**
   Put a pixel assertion beside the capture (`PixelProbe`, `PresenterHost.Near`,
   `PresenterHost.Token`) and let the PNG be what a reviewer looks at.
-- To find what a small change actually moved: set `VerifySetup.ChannelTolerance` and
-  `MaxDifferingFraction` to zero, run once, regenerate exactly the baselines that fail, restore
-  both constants. Promoting every `.received.png` blindly is not the same thing — it rewrites
-  frames a change never touched.
+- To find what a small change actually moved: set `VerifySetup.MaxDifferingFraction` to zero,
+  **leaving `ChannelTolerance` at 8**, run once, regenerate exactly the baselines that fail,
+  restore the constant. Promoting every `.received.png` blindly is not the same thing — it
+  rewrites frames a change never touched.
+- **Do not zero `ChannelTolerance` as well.** It absorbs sub-perceptual anti-aliasing, and some
+  frames carry a few pixels of it that reproduce run to run: zeroing it reported two
+  `SyntaxSnapshotTests` frames as moved by a change to the copy arrow, which those frames do not
+  even draw. The differences were 3 and 5 of 255 in a single-pixel column; the genuinely changed
+  frames differed by 121 to 143. The fraction is what hides a real change, and the fraction alone
+  is what the sweep should remove.
 - A reported rectangle cannot show that a drawing is where it should be, because a drawing that
   strays reports where it strayed to. Where position matters, assert it against something the
   decorator does not choose: `DiffLineNumberMargin.LastColumnRight` names the edge the numbers

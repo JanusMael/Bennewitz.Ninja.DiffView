@@ -33,8 +33,12 @@ internal static class CopyArrowGlyph
     /// <summary>What the tip inset, the head and the shaft leave unpainted at the trailing edge.</summary>
     public const double InnerGap = Size - TipInset - HeadLength - ShaftLength;
 
-    /// <summary>Draws one arrow filling <paramref name="zone"/>, pointing left or right.</summary>
-    public static void Draw(DrawingContext context, IBrush brush, Rect zone, bool pointsLeft)
+    /// <summary>
+    /// Draws one arrow filling <paramref name="zone"/>, pointing left or right: the silhouette in
+    /// <paramref name="outline"/> and the interior in <paramref name="fill"/>. Two colours rather
+    /// than one because a flat silhouette reads as a mark and an outlined shape reads as a control.
+    /// </summary>
+    public static void Draw(DrawingContext context, IBrush fill, IPen outline, Rect zone, bool pointsLeft)
     {
         double tipX = pointsLeft ? zone.Left + TipInset : zone.Right - TipInset;
         double inwards = pointsLeft ? 1 : -1;
@@ -55,6 +59,6 @@ internal static class CopyArrowGlyph
             path.EndFigure(isClosed: true);
         }
 
-        context.DrawGeometry(brush, null, arrow);
+        context.DrawGeometry(fill, outline, arrow);
     }
 }

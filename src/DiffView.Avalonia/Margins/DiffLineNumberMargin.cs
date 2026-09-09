@@ -26,6 +26,9 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     private const double HorizontalPadding = 6;
     private const double ColumnGap = 6;
 
+    /// <summary>The width of an arrow's outline.</summary>
+    private const double OutlineThickness = 1;
+
     /// <summary>Shown over a copy arrow. One instance: `OnPointerMoved` runs on every move.</summary>
     private static readonly Cursor ClickableCursor = new(StandardCursorType.Hand);
 
@@ -311,7 +314,12 @@ internal sealed class DiffLineNumberMargin : DiffMargin
             return false;
         }
 
-        CopyArrowGlyph.Draw(context, brush, zone, pointsLeft: Owner.Side == DiffSide.Right);
+        CopyArrowGlyph.Draw(
+            context,
+            Owner.Palette[DiffBrush.GutterArrowFill],
+            new Pen(brush, OutlineThickness),
+            zone,
+            pointsLeft: Owner.Side == DiffSide.Right);
         _lastCopyArrows.Add((zone, blockIndex, overLine));
         return true;
     }

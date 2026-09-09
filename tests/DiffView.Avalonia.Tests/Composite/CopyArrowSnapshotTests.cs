@@ -44,7 +44,11 @@ public sealed class CopyArrowSnapshotTests
 
             using WriteableBitmap frame = host.Capture();
             frame.Save(png, PngBitmapEncoderOptions.Default);
-            Color arrowColour = PresenterHost.Token("DiffView.GutterArrowBrush");
+            // The arrow is outlined and filled since plan 00006, so its ink is both colours: a
+            // count of the outline alone is the 1 px edge and almost nothing.
+            Color outline = PresenterHost.Token("DiffView.GutterArrowBrush");
+            Color fill = PresenterHost.Token("DiffView.GutterArrowFillBrush");
+            Color gutter = PresenterHost.Token("DiffView.GutterBackgroundBrush");
 
             foreach (DiffPanePresenter pane in (DiffPanePresenter[])[host.Left, host.Right])
             {
@@ -55,31 +59,34 @@ public sealed class CopyArrowSnapshotTests
                 int painted = 0;
                 foreach ((Rect zone, _, _) in margin.LastCopyArrows)
                 {
-                    // The head carries about twice the shaft's area, so the heavier half of the
-                    // zone is the half the arrow points at. No threshold to tune: the two halves
-                    // simply cannot be equal, and flipping the glyph swaps them.
                     // Flush with the numbers' own right edge, which the arrow's reported bounds
                     // cannot show on their own.
                     Assert.Equal(margin.LastColumnRight, zone.Right, 0.5);
 
-                    int towardsLeft = PaintedWith(frame, origin, new Rect(zone.Left, zone.Top, zone.Width / 2, zone.Height), arrowColour);
-                    int towardsRight = PaintedWith(frame, origin, new Rect(zone.Center.X, zone.Top, zone.Width / 2, zone.Height), arrowColour);
-                    Assert.True(towardsLeft > 0 && towardsRight > 0, $"{pane.Side}: the arrow painted {towardsLeft} and {towardsRight} pixels.");
+                    int ink = Glyph(frame, origin, zone, gutter);
+                    Assert.True(ink > 30, $"{pane.Side}: the arrow painted {ink} pixels.");
+
+                    // The head's back edge is the widest part of the glyph, so the column carrying
+                    // the most ink is on the side the arrow points at, whichever way it faces.
+                    // Weighing the two halves stopped working when the arrow gained an outline:
+                    // the shaft's long edges put ink on the tail side and the head's interior is
+                    // eaten by its own border, which reversed the comparison.
+                    int heaviest = HeaviestColumn(frame, origin, zone, fill);
                     if (pane.Side == DiffSide.Left)
                     {
-                        Assert.True(towardsRight > towardsLeft, $"the left pane's arrow should point right; halves were {towardsLeft} and {towardsRight}.");
+                        Assert.True(heaviest > zone.Width / 2, $"the left pane's arrow should point right; its heaviest column is {heaviest} of {zone.Width}.");
                     }
                     else
                     {
-                        Assert.True(towardsLeft > towardsRight, $"the right pane's arrow should point left; halves were {towardsLeft} and {towardsRight}.");
+                        Assert.True(heaviest < zone.Width / 2, $"the right pane's arrow should point left; its heaviest column is {heaviest} of {zone.Width}.");
                     }
 
-                    painted += towardsLeft + towardsRight;
+                    painted += PaintedWith(frame, origin, zone, outline);
                 }
 
                 // Nothing else in the margin is drawn in the arrow brush, so every arrow pixel
                 // belongs to a zone the margin reported.
-                Assert.Equal(painted, PaintedWith(frame, origin, new Rect(margin.Bounds.Size), arrowColour));
+                Assert.Equal(painted, PaintedWith(frame, origin, new Rect(margin.Bounds.Size), outline));
             }
         }
         finally
@@ -169,8 +176,9 @@ public sealed class CopyArrowSnapshotTests
             Assert.Equal(host.Left.LineNumberMargin.LastColumnRight, leftZone.Right, 0.5);
             Assert.Equal(host.Right.LineNumberMargin.LastColumnRight, rightZone.Right, 0.5);
 
-            Color arrowColour = PresenterHost.Token("DiffView.GutterArrowBrush");
-            Assert.True(PaintedWith(frame, rightOrigin, rightZone, arrowColour) > 20, "the padding arrow should be painted.");
+            Assert.True(
+                Glyph(frame, rightOrigin, rightZone, PresenterHost.Token("DiffView.GutterBackgroundBrush")) > 30,
+                "the padding arrow should be painted.");
         }
         finally
         {
@@ -186,6 +194,45 @@ public sealed class CopyArrowSnapshotTests
     {
         return control.TranslatePoint(new Point(0, 0), host.Window)
                ?? throw new InvalidOperationException("The control is not in the window's visual tree.");
+    }
+
+    /// <summary>
+    /// The column of <paramref name="zone"/> carrying the most of the arrow's <em>fill</em>, which
+    /// is on the side the arrow points at.
+    /// </summary>
+    /// <remarks>
+    /// The fill and not the whole glyph: the silhouette is symmetric — a tip inset one pixel plus
+    /// a five-pixel head puts the head's back edge six from either end of a twelve-pixel zone — so
+    /// the widest column of the outline is the same whichever way the arrow faces. The pen offsets
+    /// the fill towards the head's interior, and that is the asymmetry worth measuring.
+    /// </remarks>
+    private static int HeaviestColumn(WriteableBitmap frame, Point origin, Rect zone, Color fill)
+    {
+        int heaviest = -1;
+        int most = -1;
+        for (int dx = 0; dx < (int)zone.Width; dx++)
+        {
+            int ink = PaintedWith(frame, origin, new Rect(zone.Left + dx, zone.Top, 1, zone.Height), fill);
+            if (ink > most)
+            {
+                most = ink;
+                heaviest = dx;
+            }
+        }
+
+        return heaviest;
+    }
+
+    /// <summary>
+    /// Everything painted over the gutter inside <paramref name="area"/>. An outlined glyph is
+    /// mostly neither of its two colours exactly — the edge between them is anti-aliased — so
+    /// "not the background" is what measures the shape, and matching a token measures a colour.
+    /// </summary>
+    private static int Glyph(WriteableBitmap frame, Point origin, Rect area, Color gutter)
+    {
+        PixelRect probe = PixelProbe.Inside(
+            origin.X + area.Left, origin.Y + area.Top, origin.X + area.Right, origin.Y + area.Bottom, inset: 0);
+        return PixelProbe.Count(frame, probe, c => !PresenterHost.Near(c, gutter, tolerance: 24));
     }
 
     private static int PaintedWith(WriteableBitmap frame, Point origin, Rect area, Color colour)

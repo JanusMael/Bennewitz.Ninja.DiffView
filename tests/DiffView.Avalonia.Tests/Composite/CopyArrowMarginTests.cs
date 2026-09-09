@@ -238,6 +238,37 @@ public sealed class CopyArrowMarginTests
     }
 
     [AvaloniaFact]
+    public async Task The_arrow_is_outlined_and_filled()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+
+        using WriteableBitmap frame = host.Capture();
+        DiffLineNumberMargin margin = host.Left.LineNumberMargin;
+        (Rect zone, _, _) = Assert.Single(margin.LastCopyArrows);
+        Point origin = margin.TranslatePoint(new Point(0, 0), host.Window)!.Value;
+
+        // Two colours inside one glyph: the silhouette in the outline brush and the interior in
+        // the fill. One colour is a mark; two are a shape, which is what makes it read as a
+        // control rather than a marker.
+        // The outline is a one-pixel pen, so most of it is a blend rather than the token exactly;
+        // it needs a wider tolerance than the fill, which covers whole pixels.
+        int outline = Painted(frame, origin, zone, PresenterHost.Token("DiffView.GutterArrowBrush"), tolerance: 24);
+        int fill = Painted(frame, origin, zone, PresenterHost.Token("DiffView.GutterArrowFillBrush"));
+        Assert.True(outline > 3, $"the arrow painted {outline} pixels of its outline brush");
+        Assert.True(fill > 5, $"the arrow painted {fill} pixels of its fill brush");
+    }
+
+    private static int Painted(WriteableBitmap frame, Point origin, Rect area, Color colour, int tolerance = 6)
+    {
+        PixelRect probe = PixelProbe.Inside(origin.X + area.Left, origin.Y + area.Top, origin.X + area.Right, origin.Y + area.Bottom, inset: 0);
+        return PixelProbe.Count(frame, probe, c => PresenterHost.Near(c, colour, tolerance));
+    }
+
+    [AvaloniaFact]
     public async Task The_pointer_says_the_arrow_is_clickable()
     {
         using CompositeHost host = new(width: 900, height: 400);
