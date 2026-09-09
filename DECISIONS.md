@@ -1087,6 +1087,13 @@ The bar is drawn down the margin's inner edge beside the diff's own glyph rather
 it. The two answer different questions — what differs between the sides, and what this session
 touched — and a line is very often both, so the tooltip says both.
 
+**The bar covers the line's own row, not its whole visual box** (corrected under plan 00004; it
+spanned the box until then). A visual box begins above the padding rows the *other* side's lines
+put there, and this session did not edit those — nobody did, they are not lines. Measured before
+the fix, on `"a\nb\n"` against `"a\nX\nY\nb\n"` with line 2 edited: 68 of the bar's pixels fell in
+padding. A row rather than the text band, so that consecutive edited lines make one unbroken bar,
+which is also why the copy arrow is centred on its row.
+
 ## Live re-diff is affordable at 200,000 lines, because a rebuild re-primes only what moved
 
 Phase 2 shipped `LiveReDiff` and `ReDiffNow()` against a fear: priming the 200,000-line pair took

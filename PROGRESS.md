@@ -91,6 +91,10 @@ number is given up at all. The connector column is back to one job and 16 px wid
 members lighter, and the decision *"The arrows are hit before the polygon they sit inside"* is
 retired rather than amended: an arrow in a number margin is not inside a polygon.
 
+Settling the arrow's vertical placement turned up the same mistake in the modified-since-load bar,
+which spanned each line's whole visual box — padding rows included, though those belong to the
+other side's lines and nobody edited them. It now covers the line's own row, like the arrow.
+
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
 
@@ -147,6 +151,14 @@ dotnet run --project src/ThemeAudit -- report
 | New tests proven able to fail | seventeen mutations across the three phases, seventeen kills. Three survived a first pass: one test gap (the template-apply wiring), one code gap (a guard on an invariant its neighbour already enforced, now removed), and one badly aimed mutation. A fourth survived phase 3 until `LastColumnRight` existed — an arrow shifted four pixels reported its own new position, so every assertion followed it |
 | Theme audit regenerated | `theme-audit compat` then `report` after the column width changed under `Themes/`: 0 low-contrast findings, drift test passes |
 | Snapshot baselines moved | 22 regenerated for the narrower column — composite, find, navigation, syntax, view options, word diff, demo and the plan 00003 marks frame. `PresenterSnapshotTests` and `InlineSnapshotTests` are untouched, which is the evidence that only the composite's geometry moved |
+
+## The modified-since-load bar, corrected
+
+| Done-when item | Result |
+|---|---|
+| The bar covers what this session edited, and no more | pass: `The_bar_covers_the_line_s_own_row_and_not_the_padding_above_it` — on a line carrying two padding rows above it, the padding band holds zero pixels of the bar brush and the line's own row holds them. Before the fix that band held 68, which is what the test was written to see fail |
+| Nothing else moves | the plan 00003 marks snapshot is byte-identical: its edited line 1 carries no padding above it, so the bar already covered exactly one row there. The defect only ever showed on a padded line, which no committed frame had |
+| `dotnet test --solution DiffView.slnx` | 397 passed (396 before) |
 
 ## Plan 00003 phases
 

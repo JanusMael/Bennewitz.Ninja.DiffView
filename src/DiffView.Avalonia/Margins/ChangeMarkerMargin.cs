@@ -106,7 +106,7 @@ internal sealed class ChangeMarkerMargin : DiffMargin
             if (Owner.ModifiedLines.Contains(number))
             {
                 _lastModified.Add(number);
-                RenderModifiedBar(context, textView, line);
+                RenderModifiedBar(context, textView, line, metadata.PaddingBefore(number));
             }
 
             if (GlyphFor(kind) is not { } glyph)
@@ -125,10 +125,17 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     /// answer different questions — what differs between the sides, and what this session
     /// changed — and a line can well be both.
     /// </summary>
-    private void RenderModifiedBar(DrawingContext context, TextView textView, VisualLine line)
+    /// <remarks>
+    /// It covers the line's own <em>row</em>, not its whole visual box. A visual box starts above
+    /// the padding rows the other side's lines put there, and this session did not edit those —
+    /// nobody did, they are not lines. A row rather than the text band, so that consecutive edited
+    /// lines make one unbroken bar.
+    /// </remarks>
+    private void RenderModifiedBar(DrawingContext context, TextView textView, VisualLine line, int paddingAbove)
     {
-        double top = line.VisualTop - textView.VerticalOffset;
-        Rect bar = new(Bounds.Width - ModifiedBarWidth, top, ModifiedBarWidth, line.Height);
+        double rowHeight = textView.DefaultLineHeight;
+        double top = line.VisualTop - textView.VerticalOffset + (paddingAbove * rowHeight);
+        Rect bar = new(Bounds.Width - ModifiedBarWidth, top, ModifiedBarWidth, rowHeight);
         context.FillRectangle(Owner.Palette[DiffBrush.ModifiedSinceLoad], bar);
     }
 }

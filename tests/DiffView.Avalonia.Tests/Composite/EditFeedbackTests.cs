@@ -1,5 +1,10 @@
+using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using AvaloniaEdit.Rendering;
+using Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
 using Bennewitz.Ninja.DiffView.Core;
 
 namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
@@ -86,6 +91,50 @@ public sealed class EditFeedbackTests
 
         // The other pane was not touched, and says so.
         Assert.Empty(host.Right.ChangeMarkerMargin.LastModified);
+    }
+
+    [AvaloniaFact]
+    public async Task The_bar_covers_the_line_s_own_row_and_not_the_padding_above_it()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+
+        // Two padding rows above the left's line 2, for the right's inserted X and Y.
+        await host.LoadAsync("a\nb\n", "a\nX\nY\nb\n");
+        host.View.LeftReadOnly = false;
+        CompositeHost.Layout();
+        host.Left.TextArea.Focus();
+        host.Left.TextArea.Caret.Offset = host.Left.Document.GetLineByNumber(2).Offset;
+        CompositeHost.Layout();
+        host.Window.KeyTextInput("Z");
+        CompositeHost.Layout();
+        Assert.Equal("a\nZb\n", host.Left.Document.Text);
+
+        using WriteableBitmap frame = host.Capture();
+        ChangeMarkerMargin margin = host.Left.ChangeMarkerMargin;
+        Assert.Equal([2], margin.LastModified);
+
+        TextView view = host.Left.TextArea.TextView;
+        VisualLine line = view.GetVisualLine(2)!;
+        double rowHeight = view.DefaultLineHeight;
+        double paddingTop = line.VisualTop - view.VerticalOffset;
+        double rowTop = paddingTop + (host.Left.Metadata.PaddingBefore(2) * rowHeight);
+        Assert.True(rowTop > paddingTop, "line 2 should carry padding above it, or this proves nothing");
+
+        Point origin = margin.TranslatePoint(new Point(0, 0), host.Window)!.Value;
+        Color bar = PresenterHost.Token("DiffView.ModifiedSinceLoadBrush");
+        double x = margin.Bounds.Width - 3;
+
+        // The bar marks the row holding the edited line. The padding above it belongs to lines of
+        // the *other* side, which this session did not touch.
+        Assert.Equal(0, Painted(frame, origin, new Rect(x, paddingTop, 3, rowTop - paddingTop), bar));
+        Assert.True(Painted(frame, origin, new Rect(x, rowTop, 3, rowHeight), bar) > 0, "the edited line's own row should carry the bar");
+    }
+
+    private static int Painted(WriteableBitmap frame, Point origin, Rect area, Color colour)
+    {
+        PixelRect probe = PixelProbe.Inside(origin.X + area.Left, origin.Y + area.Top, origin.X + area.Right, origin.Y + area.Bottom, inset: 0);
+        return PixelProbe.Count(frame, probe, c => PresenterHost.Near(c, colour));
     }
 
     [AvaloniaFact]
