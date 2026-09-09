@@ -26,6 +26,9 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     private const double HorizontalPadding = 6;
     private const double ColumnGap = 6;
 
+    /// <summary>Shown over a copy arrow. One instance: `OnPointerMoved` runs on every move.</summary>
+    private static readonly Cursor ClickableCursor = new(StandardCursorType.Hand);
+
     private readonly List<(int LineNumber, double Y)> _lastRendered = [];
     private readonly List<(int? Left, int? Right)> _lastSourceNumbers = [];
     private readonly List<(Rect Bounds, int BlockIndex, int? OverLine)> _lastCopyArrows = [];
@@ -311,6 +314,24 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         CopyArrowGlyph.Draw(context, brush, zone, pointsLeft: Owner.Side == DiffSide.Right);
         _lastCopyArrows.Add((zone, blockIndex, overLine));
         return true;
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+
+        // An arrow is clickable and a line number is not, so the pointer has to say which it is
+        // over. Null rather than an explicit arrow cursor off the zone: the margin then keeps
+        // whatever the pane gives it, which is what every other margin shows.
+        Cursor = ArrowAt(e.GetPosition(this)) is null ? null : ClickableCursor;
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        Cursor = null;
     }
 
     /// <summary>The block whose arrow is under <paramref name="point"/>, if any.</summary>

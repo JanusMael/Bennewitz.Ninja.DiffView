@@ -238,6 +238,31 @@ public sealed class CopyArrowMarginTests
     }
 
     [AvaloniaFact]
+    public async Task The_pointer_says_the_arrow_is_clickable()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+        host.Capture().Dispose();
+
+        DiffLineNumberMargin margin = host.Left.LineNumberMargin;
+        (Rect zone, _, _) = Assert.Single(margin.LastCopyArrows);
+        double rowHeight = host.Left.TextArea.TextView.DefaultLineHeight;
+
+        // Over the arrow: a hand. A line number is not clickable in the same way, and the margin
+        // inherits the pane's own cursor there rather than claiming one.
+        host.Window.MouseMove(margin.TranslatePoint(zone.Center, host.Window)!.Value);
+        CompositeHost.Layout();
+        Assert.Equal(StandardCursorType.Hand.ToString(), margin.Cursor?.ToString());
+
+        host.Window.MouseMove(margin.TranslatePoint(zone.Center + new Point(0, rowHeight), host.Window)!.Value);
+        CompositeHost.Layout();
+        Assert.Null(margin.Cursor);
+    }
+
+    [AvaloniaFact]
     public async Task The_connector_column_has_no_arrows_left()
     {
         (string left, string right) = CompositeHost.SmallFixture();
