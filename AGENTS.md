@@ -88,6 +88,19 @@ no dates, no counts.
 - A new colour token goes into `DiffView.Tokens.axaml`, `DiffView.Tokens.ColorBlind.axaml` and
   `contrast-pairs.json` together; `ThemeResolutionTests.Every_DiffView_token_resolves_in_both_palettes`
   asserts the two palettes define the same keys.
+- **A decorator that draws a ground *under* a glyph needs a `contrast-pairs.json` pair of its
+  own.** The contract scored a marker against the plain gutter and the host page and nothing
+  else, so a chip drawn behind one was outside what it could see, and a chip that failed the 3.0
+  floor was designed, rendered and reviewed before anything measured it. The pairs holding
+  `DiffView.Marker*Brush` against `DiffView.MarkerChip*Brush` are what closes that; anything new
+  drawn behind a glyph adds its own.
+- The `DiffView.MarkerChip*Brush` tokens are **opaque**, and each is its marker composited over
+  that variant's `DiffView.PaneBackgroundBrush` — not over the gutter it is painted on. Over the
+  pane because that is the lighter of the two, which is what keeps a marker above its floor; a
+  blend into the gutter darkens the ground towards the glyph and cannot reach 3.0 for
+  `DiffView.MarkerModifiedBrush` at any alpha. Opaque because a colour computed over one surface
+  and painted on another is not expressible as a translucent brush with an `over` key, and
+  because `theme-audit` scores an opaque token directly. `DiffBrushes.MarkerChipFor` reads them.
 - The **view options** — `ShowWhitespace` (which covers spaces *and* tabs), `ShowLineEndings` and
   `TabWidth` (`IndentationSize`, coerced to at least 1) — are written onto the editor's
   `TextEditorOptions` by `DiffPanePresenter.ApplyDisplayOptions`, which also runs when a host
@@ -136,6 +149,22 @@ no dates, no counts.
   pass alone does not redraw a margin.
 - Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`).
   Static seams: `DebugFlags.ResetForTesting`, `DiffViewStrings.ResetForTesting`.
+- **The snapshot comparer tolerates anti-aliasing, not glyphs, and this is the trap that recurs.**
+  `VerifySetup.ChannelTolerance` and `VerifySetup.MaxDifferingFraction` exist so a platform's
+  anti-aliasing does not fail a frame; the cost is that a change smaller than that fraction passes
+  every snapshot *while the frames still depict the old drawing*. A redrawn arrow, a swapped
+  marker glyph and a new chip behind one have each done it in this repository — every baseline
+  green, every baseline stale. **A snapshot is never the guard for anything smaller than a row.**
+  Put a pixel assertion beside the capture (`PixelProbe`, `PresenterHost.Near`,
+  `PresenterHost.Token`) and let the PNG be what a reviewer looks at.
+- To find what a small change actually moved: set `VerifySetup.ChannelTolerance` and
+  `MaxDifferingFraction` to zero, run once, regenerate exactly the baselines that fail, restore
+  both constants. Promoting every `.received.png` blindly is not the same thing — it rewrites
+  frames a change never touched.
+- A reported rectangle cannot show that a drawing is where it should be, because a drawing that
+  strays reports where it strayed to. Where position matters, assert it against something the
+  decorator does not choose: `DiffLineNumberMargin.LastColumnRight` names the edge the numbers
+  were aligned to, which is why a copy arrow shifted four pixels survived every other assertion.
 - `AccessibilityCoverageTests` counts `DiffPanePresenter` and `TextEditor` as interactive, so
   every pane in a view carries `AutomationProperties.Name`.
 
@@ -163,6 +192,12 @@ no dates, no counts.
 | The default key bindings are the composite's `KeyBindings`; Avalonia tries an ancestor's bindings before raising the key event, so they fire while a pane has focus, and a host may clear them | Keys stop working after a template change, or a host cannot rebind | `SideBySideDiffView` constructor; test `NavigationTests.F7_and_Shift_F7_navigate_and_F6_switches_panes` |
 | `SplitRatio` is applied to both the headers grid and the panes grid, which share their star columns | Headers drift from their panes after a gutter drag | `SideBySideDiffView.ApplySplit`, template parts `PART_Headers` and `PART_Panes` |
 | A margin's tooltip is resolved per line under the pointer by `DiffMargin.OnPointerMoved` and cleared on exit; each margin supplies `TooltipFor(lineNumber)` from `PaneMetadata` | A tooltip names the wrong line, or lingers | `DiffMargin`, `DiffLineNumberMargin.TooltipFor`, `ChangeMarkerMargin.TooltipFor`; `TooltipTests` |
+| `DiffPanePresenter.CanCopyOut` carries the **other** side's editable flag, not its own: a pane offers to copy a block out when the side that would receive it is editable | Arrows appear on the pane that cannot be copied from, or vanish from the one that can | `SideBySideDiffView.AttachPane` and the `LeftReadOnlyProperty` / `RightReadOnlyProperty` branches of `OnPropertyChanged` — both paths, because a host that sets the flag in XAML is wired by the first and never reaches the second; test `CopyArrowMarginTests.A_side_editable_before_the_template_applies_is_wired_too` |
+| A copy arrow is drawn over the line number of its block's **anchor row** — the block's first row — and a block a side has no lines in draws its arrow in that side's padding, where no number is given up | An arrow on the wrong row, or a block that offers no copy on the side that has nothing to send | `DiffLineNumberMargin.LastCopyArrows` (its `OverLine` is null for a padding arrow), `PaneMetadata.BlockAtRow`, `ChangeBlock.LinesFor`; tests `CopyArrowMarginTests.One_arrow_per_block_on_the_block_s_first_line`, `A_one_sided_block_at_the_very_end_is_reached_in_the_trailing_padding` |
+| The number margin hit-tests its arrow before the row it sits in; the composite performs the copy, because a pane knows nothing about the other side | A click on an arrow moves the caret instead of copying, or a pane tries to reach across | `DiffLineNumberMargin.OnPointerPressed`, `DiffPanePresenter.CopyOutRequested`, `SideBySideDiffView.OnPaneCopyOutRequested`; test `CopyArrowMarginTests.A_click_on_a_number_still_only_moves_the_caret` |
+| A marker chip covers a **run** of same-kind rows, not a row, and needs no padding test: adjacent lines of one changed kind are always adjacent rows, because a side's lines inside a block are contiguous and blocks are separated by at least one unchanged row | A band claims rows the side does not own, or a block's extent stops being visible | `ChangeMarkerMargin.RenderChips`, `ChangeMarkerMargin.LastChips`; test `MarkerChipTests.The_chips_are_exactly_the_runs_the_model_describes` |
+| A run continuing past the viewport extends a row beyond the edge, so its rounding falls off screen | A scrolled block looks as though it ends where the window does | `ChangeMarkerMargin.RenderChips`; test `MarkerChipSnapshotTests.A_run_scrolled_off_the_top_is_not_rounded_there` |
+| The marker margin's chip stops exactly where the modified-since-load bar begins, and both are centred on a line's own **row** rather than its text band or its whole visual box | Chip and bar overlap, or a mark spans the padding rows above a line — which belong to the other side's lines, and which nobody edited | `ChangeMarkerMargin.RenderChips`, `ChangeMarkerMargin.RenderModifiedBar`; tests `MarkerChipTests.The_chip_stops_where_the_modified_since_load_bar_begins`, `EditFeedbackTests.The_bar_covers_the_line_s_own_row_and_not_the_padding_above_it` |
 | Find is latest-wins by generation and debounced on `TimeProvider`; a query, an option or a new model cancels the search in flight and re-runs it | A stale result paints matches over newer text, or over rows a newer model renumbered | `SideBySideDiffView.RequestFind`, `RunFind`, `CompleteFind`, `ApplyModel` |
 | `SearchMatchRenderer` is added to the text view **before** `DiffSelectionRenderer`; both draw on `KnownLayer.Selection`, in list order | The selection vanishes under the match highlight, or matches fall under the row fills | `DiffPanePresenter` constructor; test `FindTests.Match_highlights_sit_above_the_row_fill_and_below_the_selection` |
 | A fresh `FindResult` leaves `CurrentFindMatchIndex` at -1; only `FindNext`, `FindPrevious` and the setter reveal a match, and revealing is the only thing that selects, focuses and scrolls | Typing in the query box pulls focus into a pane after every keystroke | `SideBySideDiffView.ApplyFindResult`, `SetCurrentFindMatch`, `RevealMatch`; test `FindTests.In_both_scope_F3_walks_the_matches_in_row_then_side_order_and_the_pane_holding_one_has_it_selected` |
