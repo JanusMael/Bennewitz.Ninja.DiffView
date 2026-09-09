@@ -69,6 +69,18 @@ imposed, and DiffPlex stays unvendored. **Every phase of plan 00003 is complete.
 integration was drafted as plan 00002 and rejected on its own review before any code; it is
 deferred until `feat/agentforge-opencodeforge` lands, and *Decisions* records why.
 
+The demo reaches all of it: View → Edit left/right pane clears the corresponding `ReadOnly`,
+Copy block to left/right sits on the Alt+Left and Alt+Right the composite binds, and File →
+Save and Revert per side report each `SaveOutcome` in the status line. The unified view stays
+read-only whatever the menu says.
+
+**Plan 00003 lives on `feat/in-pane-editing`, nine commits ahead of `main` and unmerged**,
+awaiting review. Two things about it have only ever been seen in a headless frame: the gutter
+arrows are 12 px in a 24 px column, so the left and right arrows exactly fill it, and the
+modified-since-load bar shares the marker margin with the diff's own glyph. No snapshot test
+covers either, nor the dirty markers — the one gap in this plan's evidence against the
+standard plan 00001 set.
+
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
 
