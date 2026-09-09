@@ -1145,6 +1145,13 @@ public class SideBySideDiffView : TemplatedControl
                 _gutter.CanCopyToLeft = !LeftReadOnly;
             }
 
+            // A pane offers an arrow when the *other* side can receive the copy, so the left
+            // side's flag drives the right pane's arrows.
+            if (_rightPane is not null)
+            {
+                _rightPane.CanCopyOut = !LeftReadOnly;
+            }
+
             RaiseNavigationCanExecuteChanged();
         }
         else if (change.Property == RightReadOnlyProperty)
@@ -1157,6 +1164,11 @@ public class SideBySideDiffView : TemplatedControl
             if (_gutter is not null)
             {
                 _gutter.CanCopyToRight = !RightReadOnly;
+            }
+
+            if (_leftPane is not null)
+            {
+                _leftPane.CanCopyOut = !RightReadOnly;
             }
 
             RaiseNavigationCanExecuteChanged();
@@ -1578,8 +1590,8 @@ public class SideBySideDiffView : TemplatedControl
 
         ChangeBlock block = Document!.Blocks[index];
         DiffSide fromSide = toSide == DiffSide.Left ? DiffSide.Right : DiffSide.Left;
-        LineRange fromRange = fromSide == DiffSide.Left ? block.LeftLines : block.RightLines;
-        LineRange toRange = toSide == DiffSide.Left ? block.LeftLines : block.RightLines;
+        LineRange fromRange = block.LinesFor(fromSide);
+        LineRange toRange = block.LinesFor(toSide);
         TextDocument from = fromSide == DiffSide.Left ? LeftDocument : RightDocument;
         TextDocument to = toSide == DiffSide.Left ? LeftDocument : RightDocument;
 
@@ -2246,6 +2258,9 @@ public class SideBySideDiffView : TemplatedControl
         pane.DiffDocument = Document;
         pane.WordDiffLookup = WordDiffLookup;
         pane.IsReadOnly = side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
+        // The other side's flag: a pane offers a copy arrow when the side it would copy to is
+        // editable, not when it is itself.
+        pane.CanCopyOut = side == DiffSide.Left ? !RightReadOnly : !LeftReadOnly;
         pane.ModifiedLines = side == DiffSide.Left ? _leftModifiedLines : _rightModifiedLines;
         pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
         // The logger first: assigning the file name may install a grammar, which logs.

@@ -28,6 +28,7 @@ internal sealed class DiffLineNumberMargin : DiffMargin
 
     private readonly List<(int LineNumber, double Y)> _lastRendered = [];
     private readonly List<(int? Left, int? Right)> _lastSourceNumbers = [];
+    private readonly List<(Rect Bounds, int BlockIndex, int? OverLine)> _lastCopyArrows = [];
     private int _digits = MinimumDigits;
     private int _rightDigits;
 
@@ -41,10 +42,18 @@ internal sealed class DiffLineNumberMargin : DiffMargin
 
     /// <summary>
     /// The source numbers of the last frame, one pair per line in order: the left column and the
-    /// right, each <c>null</c> where the line is not that side's. A side's pane draws its own
+    /// right, each <c>null</c> where the line is not that side's — or where a copy arrow took the
+    /// cell, which is the one case a number the pane has is not drawn. A side's pane draws its own
     /// numbers in the left column and leaves the right one empty.
     /// </summary>
     public IReadOnlyList<(int? Left, int? Right)> LastSourceNumbers => _lastSourceNumbers;
+
+    /// <summary>
+    /// The copy arrows of the last frame: the hit-zone, the block it would copy, and the line
+    /// whose number cell it took — <c>null</c> where the block has no lines on this side and the
+    /// arrow was drawn in padding, costing no number at all.
+    /// </summary>
+    public IReadOnlyList<(Rect Bounds, int BlockIndex, int? OverLine)> LastCopyArrows => _lastCopyArrows;
 
     /// <summary>The tooltip for <paramref name="lineNumber"/>: the line on the other side that shares its row, or that there is none.</summary>
     public override string? TooltipFor(int lineNumber)
@@ -114,6 +123,7 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     {
         _lastRendered.Clear();
         _lastSourceNumbers.Clear();
+        _lastCopyArrows.Clear();
         PaneMetadata metadata = Owner.Metadata;
         IBrush foreground = Owner.Palette[DiffBrush.LineNumberForeground];
         double right = Bounds.Width - HorizontalPadding;
@@ -121,11 +131,29 @@ internal sealed class DiffLineNumberMargin : DiffMargin
             ? right - ColumnGap - Format(new string('9', _rightDigits), foreground).Width
             : right;
 
+        // A copy arrow takes a number's cell, so it is offered only where the other side can
+        // receive the copy: a read-only pair shows every number it has ever shown.
+        bool offersCopy = Owner.CanCopyOut && !metadata.IsUnified && metadata.Document is not null;
+        IBrush arrowBrush = Owner.Palette[DiffBrush.GutterArrow];
+        double rowHeight = textView.DefaultLineHeight;
+
         foreach (VisualLine line in textView.VisualLines)
         {
             int number = line.FirstDocumentLine.LineNumber;
             double y = TextTopOf(line, textView);
             _lastRendered.Add((number, y));
+
+            if (offersCopy)
+            {
+                DrawPaddingArrow(context, textView, metadata, line, number, leftColumnRight, rowHeight, arrowBrush);
+                if (AnchorBlockOf(metadata, number) is { } anchored
+                    && DrawArrow(context, arrowBrush, leftColumnRight, y, rowHeight, anchored.Index, number))
+                {
+                    // The arrow has this row's cell. The number it stands in for is one hover away.
+                    _lastSourceNumbers.Add((null, null));
+                    continue;
+                }
+            }
 
             if (metadata.UnifiedLineAt(number) is not { } unified)
             {
@@ -159,6 +187,110 @@ internal sealed class DiffLineNumberMargin : DiffMargin
                 _lastSourceNumbers.Add((other, source));
             }
         }
+
+        if (offersCopy)
+        {
+            DrawTrailingArrow(context, textView, metadata, leftColumnRight, rowHeight, arrowBrush);
+        }
+    }
+
+    /// <summary>
+    /// The block whose anchor row is <paramref name="lineNumber"/> — its first line on this side —
+    /// or <c>null</c> where the line is not a block's first. A side's lines in a block start at
+    /// the block's first row, so the anchor is the block's first row wherever this side has one.
+    /// </summary>
+    private static ChangeBlock? AnchorBlockOf(PaneMetadata metadata, int lineNumber)
+    {
+        if (metadata.BlockAt(lineNumber) is not { } block)
+        {
+            return null;
+        }
+
+        LineRange mine = block.LinesFor(metadata.Side);
+        return !mine.IsEmpty && mine.Start + 1 == lineNumber ? block : null;
+    }
+
+    /// <summary>
+    /// The arrow for a block this side has no lines in. Its rows are padding above the line that
+    /// follows the block, so there is no number to stand in for and nothing is hidden. Blocks are
+    /// separated by at least one unchanged row — a line on both sides — so the padding above one
+    /// line belongs to exactly one block.
+    /// </summary>
+    private void DrawPaddingArrow(
+        DrawingContext context,
+        TextView textView,
+        PaneMetadata metadata,
+        VisualLine line,
+        int lineNumber,
+        double cellRight,
+        double rowHeight,
+        IBrush brush)
+    {
+        int padding = metadata.PaddingBefore(lineNumber);
+        if (padding <= 0
+            || metadata.RowOf(lineNumber) is not { } row
+            || metadata.BlockAtRow(row - 1) is not { } block
+            || !block.LinesFor(metadata.Side).IsEmpty)
+        {
+            return;
+        }
+
+        int offset = block.FirstRow - (row - padding);
+        if (offset < 0 || offset >= padding)
+        {
+            return;
+        }
+
+        DrawArrow(context, brush, cellRight, line.VisualTop - textView.VerticalOffset + (offset * rowHeight), rowHeight, block.Index, overLine: null);
+    }
+
+    /// <summary>
+    /// A one-sided block at the very end sits in trailing padding, below the last line, where a
+    /// walk over the visual lines never reaches it.
+    /// </summary>
+    private void DrawTrailingArrow(DrawingContext context, TextView textView, PaneMetadata metadata, double cellRight, double rowHeight, IBrush brush)
+    {
+        if (Document is not { } document || textView.VisualLines.Count == 0)
+        {
+            return;
+        }
+
+        VisualLine last = textView.VisualLines[^1];
+        int lineNumber = last.FirstDocumentLine.LineNumber;
+        if (lineNumber != document.LineCount
+            || metadata.PaddingFor(lineNumber, document.LineCount).Below <= 0
+            || metadata.RowOf(lineNumber) is not { } row
+            || metadata.BlockAtRow(row + 1) is not { } block
+            || !block.LinesFor(metadata.Side).IsEmpty)
+        {
+            return;
+        }
+
+        double top = TextTopOf(last, textView) + rowHeight + ((block.FirstRow - (row + 1)) * rowHeight);
+        DrawArrow(context, brush, cellRight, top, rowHeight, block.Index, overLine: null);
+    }
+
+    /// <summary>
+    /// One arrow in the cell ending at <paramref name="cellRight"/>, centred on the row that
+    /// starts at <paramref name="top"/>, pointing the way a copy out of this pane would travel.
+    /// </summary>
+    /// <returns>Whether the arrow was drawn; <c>false</c> leaves the cell to its number.</returns>
+    private bool DrawArrow(DrawingContext context, IBrush brush, double cellRight, double top, double rowHeight, int blockIndex, int? overLine)
+    {
+        Rect zone = new(
+            cellRight - CopyArrowGlyph.Size,
+            top + ((rowHeight - CopyArrowGlyph.Size) / 2),
+            CopyArrowGlyph.Size,
+            CopyArrowGlyph.Size);
+        if (zone.Left < 0)
+        {
+            // Narrower than the glyph: no arrow rather than a clipped one, and the number stays.
+            return false;
+        }
+
+        CopyArrowGlyph.Draw(context, brush, zone, pointsLeft: Owner.Side == DiffSide.Right);
+        _lastCopyArrows.Add((zone, blockIndex, overLine));
+        return true;
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)

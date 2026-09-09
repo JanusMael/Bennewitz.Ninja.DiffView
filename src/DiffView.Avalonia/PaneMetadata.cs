@@ -108,7 +108,17 @@ internal sealed class PaneMetadata
     /// <summary>The change block containing <paramref name="lineNumber"/>'s row, or <c>null</c> for an unchanged or unknown line.</summary>
     public ChangeBlock? BlockAt(int lineNumber)
     {
-        if (RowOf(lineNumber) is not { } row || _document is null)
+        return RowOf(lineNumber) is { } row ? BlockAtRow(row) : null;
+    }
+
+    /// <summary>
+    /// The change block covering <paramref name="row"/>, or <c>null</c> for an unchanged row.
+    /// A row rather than a line, because a block can occupy rows a side has no lines for — its
+    /// padding — and those rows still belong to it.
+    /// </summary>
+    public ChangeBlock? BlockAtRow(int row)
+    {
+        if (_document is null)
         {
             return null;
         }

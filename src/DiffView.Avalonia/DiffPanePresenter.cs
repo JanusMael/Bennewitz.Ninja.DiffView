@@ -46,6 +46,10 @@ public class DiffPanePresenter : TextEditor
     public static readonly StyledProperty<bool> IsUnifiedProperty =
         AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(IsUnified));
 
+    /// <summary>Identifies the <see cref="CanCopyOut"/> property.</summary>
+    public static readonly StyledProperty<bool> CanCopyOutProperty =
+        AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(CanCopyOut));
+
     /// <summary>Identifies the <see cref="IsCaretBlinkEnabled"/> property.</summary>
     public static readonly StyledProperty<bool> IsCaretBlinkEnabledProperty =
         AvaloniaProperty.Register<DiffPanePresenter, bool>(nameof(IsCaretBlinkEnabled), defaultValue: true);
@@ -199,6 +203,17 @@ public class DiffPanePresenter : TextEditor
     {
         get => GetValue(IsUnifiedProperty);
         set => SetValue(IsUnifiedProperty, value);
+    }
+
+    /// <summary>
+    /// Whether this pane's change blocks can be copied to the other side — which is to say
+    /// whether the <em>other</em> side is editable, not this one. Set, the line-number margin
+    /// offers a copy arrow on each block's anchor row, pointing the way the text would travel.
+    /// </summary>
+    public bool CanCopyOut
+    {
+        get => GetValue(CanCopyOutProperty);
+        set => SetValue(CanCopyOutProperty, value);
     }
 
     /// <summary>Whether the caret blinks while the pane has focus. Off, it stays visible.</summary>
@@ -489,6 +504,14 @@ public class DiffPanePresenter : TextEditor
         else if (change.Property == IsCaretBlinkEnabledProperty)
         {
             _caretRenderer.OnFocusChanged();
+        }
+        else if (change.Property == CanCopyOutProperty)
+        {
+            // The arrow takes an anchor row's number cell, so the numbers change with it. Measure
+            // as well as visual: the cell is expected to be wide enough already, and a frame that
+            // proved otherwise should widen rather than clip.
+            _lineNumberMargin.InvalidateMeasure();
+            _lineNumberMargin.InvalidateVisual();
         }
         else if (change.Property == ShowWhitespaceProperty
                  || change.Property == ShowLineEndingsProperty

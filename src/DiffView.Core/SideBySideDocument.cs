@@ -59,6 +59,9 @@ public sealed record ChangeBlock(
 {
     /// <summary>Rows in the block.</summary>
     public int RowCount => LastRow - FirstRow + 1;
+
+    /// <summary>The lines <paramref name="side"/> has in the block; empty where it has none.</summary>
+    public LineRange LinesFor(DiffSide side) => side == DiffSide.Left ? LeftLines : RightLines;
 }
 
 /// <summary>One side's per-line metadata, indexed by line. The text itself lives in the editor's document.</summary>
