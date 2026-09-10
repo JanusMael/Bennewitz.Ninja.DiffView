@@ -134,6 +134,16 @@ internal static class DiffViewLog
         logger?.LogWarning("{Gesture} is bound to both {First} and {Second}; which one fires is Avalonia's choice", gesture, first, second);
     }
 
+    /// <summary>
+    /// A gesture was given to a command the view has no meaning for — the unified view and the
+    /// two-sided verbs. The binding is skipped, because binding the key to nothing would leave it
+    /// dead with no explanation. A command name and a gesture, never document text.
+    /// </summary>
+    public static void KeyCommandUnsupported(ILogger? logger, string command, string gesture)
+    {
+        logger?.LogWarning("{Command} has no meaning in the unified view; the {Gesture} binding for it was skipped", command, gesture);
+    }
+
     public static void RenderFault(ILogger? logger, DiffSide? side, RenderFaultEventArgs fault)
     {
         // The subject is a grammar's language, never document text; a decorator that failed over a

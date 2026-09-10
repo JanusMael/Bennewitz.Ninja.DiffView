@@ -365,12 +365,7 @@ public class SideBySideDiffView : TemplatedControl
     private Button? _bannerAction;
     private ScrollSync? _sync;
 
-    /// <summary>
-    /// The key bindings this control put in <see cref="InputElement.KeyBindings"/>. Only these are
-    /// replaced when the map changes: the collection is public, so a host may have added its own,
-    /// and rebuilding it wholesale would delete that silently.
-    /// </summary>
-    private readonly List<KeyBinding> _ownedBindings = [];
+    private readonly DiffKeyBindings _bindings;
 
     private DiffKeyMap _keyMap = new();
 
@@ -399,6 +394,7 @@ public class SideBySideDiffView : TemplatedControl
         // The default key bindings come from the map; a host rebinds, unbinds or clears them.
         // Escape and F3 execute only while the find bar is open, and a binding that does not
         // execute leaves the key unhandled, so Escape still reaches the rest of the application.
+        _bindings = new DiffKeyBindings(this, CommandFor);
         KeyMap = DiffKeyMap.Default();
 
         LayoutUpdated += OnLayoutUpdated;
@@ -1724,43 +1720,7 @@ public class SideBySideDiffView : TemplatedControl
 
     private void OnKeyMapChanged(object? sender, EventArgs e) => RebuildKeyBindings();
 
-    /// <summary>
-    /// Replaces the bindings this control owns with the map's, leaving every other entry in
-    /// <see cref="InputElement.KeyBindings"/> where it is.
-    /// </summary>
-    private void RebuildKeyBindings()
-    {
-        foreach (KeyBinding owned in _ownedBindings)
-        {
-            KeyBindings.Remove(owned);
-        }
-
-        _ownedBindings.Clear();
-
-        Dictionary<KeyGesture, DiffCommand> seen = [];
-        foreach (DiffCommand command in _keyMap.Commands.Order())
-        {
-            if (_keyMap[command] is not { } gesture)
-            {
-                continue;
-            }
-
-            if (seen.TryGetValue(gesture, out DiffCommand already))
-            {
-                // Avalonia decides which of the two fires. Refusing the binding, or dropping one
-                // without a word, would each be worse than saying so.
-                DiffViewLog.KeyGestureConflict(_renderLogger, gesture.ToString(), already.ToString(), command.ToString());
-            }
-            else
-            {
-                seen[gesture] = command;
-            }
-
-            KeyBinding binding = new() { Gesture = gesture, Command = CommandFor(command) };
-            _ownedBindings.Add(binding);
-            KeyBindings.Add(binding);
-        }
-    }
+    private void RebuildKeyBindings() => _bindings.Rebuild(_keyMap, _renderLogger);
 
     /// <summary>
     /// Whether the selection in <paramref name="fromSide"/>'s pane could be copied to the other

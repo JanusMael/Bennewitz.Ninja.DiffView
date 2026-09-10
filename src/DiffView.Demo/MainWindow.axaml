@@ -47,10 +47,24 @@
                   Click="OnToggleEditLeft" AutomationProperties.Name="Let the left pane be typed into" />
         <MenuItem x:Name="EditRight" Header="Edit right pa_ne" ToggleType="CheckBox"
                   Click="OnToggleEditRight" AutomationProperties.Name="Let the right pane be typed into" />
-        <MenuItem Header="Copy block to _left" InputGesture="Alt+Left" Click="OnCopyToLeft"
-                  AutomationProperties.Name="Copy the current change block onto the left side" />
-        <MenuItem Header="Copy block to _right" InputGesture="Alt+Right" Click="OnCopyToRight"
-                  AutomationProperties.Name="Copy the current change block onto the right side" />
+        <MenuItem x:Name="CopyToLeft" Header="Copy to _left" Click="OnCopyToLeft"
+                  AutomationProperties.Name="Copy the selection, or the current change block, onto the left side" />
+        <MenuItem x:Name="CopyToRight" Header="Copy to _right" Click="OnCopyToRight"
+                  AutomationProperties.Name="Copy the selection, or the current change block, onto the right side" />
+        <Separator />
+        <!-- A submenu, not four more rows: this menu already scrolls past its fold, and the
+             accelerators below are written from the control's key map rather than typed here, so
+             the rebind moves the labels as well as the keys. -->
+        <MenuItem Header="_Key bindings" AutomationProperties.Name="Key bindings">
+          <MenuItem x:Name="NextChange" Header="Ne_xt change" Click="OnNextChange"
+                    AutomationProperties.Name="Move to the next change block" />
+          <MenuItem x:Name="PreviousChange" Header="Previous chan_ge" Click="OnPreviousChange"
+                    AutomationProperties.Name="Move to the previous change block" />
+          <Separator />
+          <MenuItem x:Name="RebindNavigation" Header="_Rebind these to Ctrl+Down / Ctrl+Up" ToggleType="CheckBox"
+                    Click="OnToggleRebindNavigation"
+                    AutomationProperties.Name="Move next and previous change off F7 onto Ctrl+Down and Ctrl+Up" />
+        </MenuItem>
         <Separator />
         <MenuItem x:Name="IgnoreWhitespace" Header="Ignore _whitespace" ToggleType="CheckBox"
                   Click="OnToggleIgnoreWhitespace" AutomationProperties.Name="Ignore whitespace differences" />

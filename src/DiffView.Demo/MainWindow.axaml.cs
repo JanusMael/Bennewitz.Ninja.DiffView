@@ -38,6 +38,8 @@ public sealed partial class MainWindow : Window
         Unified.IsVisible = DebugFlags.Unified;
         Diff.IsVisible = !DebugFlags.Unified;
 
+        RefreshGestureLabels();
+
         // The sides load when the window opens, so a host of the window — the smoke snapshot
         // test — can configure the control between construction and the first build.
         Opened += OnOpened;
@@ -236,25 +238,89 @@ public sealed partial class MainWindow : Window
         UpdateStatus();
     }
 
-    private void OnCopyToLeft(object? sender, RoutedEventArgs e) => CopyCurrentBlock(DiffSide.Left);
+    private void OnCopyToLeft(object? sender, RoutedEventArgs e) => Copy(DiffSide.Left);
 
-    private void OnCopyToRight(object? sender, RoutedEventArgs e) => CopyCurrentBlock(DiffSide.Right);
+    private void OnCopyToRight(object? sender, RoutedEventArgs e) => Copy(DiffSide.Right);
 
-    private void CopyCurrentBlock(DiffSide side)
+    /// <summary>
+    /// The selection when there is one and the current block otherwise — the rule the gutter's
+    /// arrows and the copy chord both follow, so the menu cannot promise one and deliver the other.
+    /// </summary>
+    private void Copy(DiffSide side)
     {
-        if (Diff.CurrentChangeIndex < 0)
+        if (!Diff.CanCopyToward(side))
         {
-            Note("No current change block — press F7 to pick one.");
+            Note(Diff.CurrentChangeIndex < 0
+                ? $"Nothing to copy onto the {side} side — select some lines, or press {Gesture(DiffCommand.NextChange)} to pick a change block."
+                : $"Cannot copy onto the {side} side: it is read-only.");
             return;
         }
 
-        if (!Diff.CopyCurrentBlock(side))
+        Diff.CopyToward(side);
+        UpdateStatus();
+    }
+
+    private void OnNextChange(object? sender, RoutedEventArgs e) => Navigate(next: true);
+
+    private void OnPreviousChange(object? sender, RoutedEventArgs e) => Navigate(next: false);
+
+    private void Navigate(bool next)
+    {
+        if (UnifiedView.IsChecked)
         {
-            Note($"Cannot copy onto the {side} side: it is read-only.");
-            return;
+            if (next)
+            {
+                Unified.NextChange();
+            }
+            else
+            {
+                Unified.PreviousChange();
+            }
+        }
+        else if (next)
+        {
+            Diff.NextChange();
+        }
+        else
+        {
+            Diff.PreviousChange();
         }
 
         UpdateStatus();
+    }
+
+    /// <summary>
+    /// Rebinding, in code, on the control — which is all plan 00009 offers and all it means to.
+    /// Both views take the same two changes, and the menu's accelerators are written back from
+    /// <c>GestureFor</c> afterwards, so the labels move with the keys instead of going stale.
+    /// </summary>
+    private void OnToggleRebindNavigation(object? sender, RoutedEventArgs e)
+    {
+        KeyGesture? forward = RebindNavigation.IsChecked ? new KeyGesture(Key.Down, KeyModifiers.Control) : new KeyGesture(Key.F7);
+        KeyGesture? back = RebindNavigation.IsChecked ? new KeyGesture(Key.Up, KeyModifiers.Control) : new KeyGesture(Key.F7, KeyModifiers.Shift);
+
+        foreach (DiffKeyMap map in (DiffKeyMap[])[Diff.KeyMap, Unified.KeyMap])
+        {
+            map[DiffCommand.NextChange] = forward;
+            map[DiffCommand.PreviousChange] = back;
+        }
+
+        RefreshGestureLabels();
+        Note($"Next change is now on {Gesture(DiffCommand.NextChange)}.");
+    }
+
+    /// <summary>Writes the menu's accelerators from the key map, which is the only place they live.</summary>
+    private void RefreshGestureLabels()
+    {
+        NextChange.InputGesture = Diff.GestureFor(DiffCommand.NextChange);
+        PreviousChange.InputGesture = Diff.GestureFor(DiffCommand.PreviousChange);
+        CopyToLeft.InputGesture = Diff.GestureFor(DiffCommand.CopyToLeft);
+        CopyToRight.InputGesture = Diff.GestureFor(DiffCommand.CopyToRight);
+    }
+
+    private string Gesture(DiffCommand command)
+    {
+        return Diff.GestureFor(command)?.ToString() ?? "nothing";
     }
 
     private void OnSaveLeft(object? sender, RoutedEventArgs e) => Save(DiffSide.Left);

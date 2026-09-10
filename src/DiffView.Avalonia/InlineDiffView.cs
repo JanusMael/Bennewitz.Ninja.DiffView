@@ -259,6 +259,10 @@ public class InlineDiffView : TemplatedControl
     private DiffFindBar? _findBar;
     private Button? _bannerAction;
 
+    private readonly DiffKeyBindings _bindings;
+
+    private DiffKeyMap _keyMap = new();
+
     /// <summary>Creates the control with its compiled theme merged into its own resources.</summary>
     public InlineDiffView()
     {
@@ -276,15 +280,11 @@ public class InlineDiffView : TemplatedControl
         Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
         Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, options, token);
 
-        // The same bindings as the side-by-side view, less the one that switches panes: there is
-        // only the one. Escape and F3 execute only while the find bar is open, and a binding that
-        // does not execute leaves the key unhandled.
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7), Command = _nextChange });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7, KeyModifiers.Shift), Command = _previousChange });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F, KeyModifiers.Control), Command = _openFind });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3), Command = _findNext });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3, KeyModifiers.Shift), Command = _findPrevious });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Escape), Command = _closeFind });
+        // The same map and the same binder as the side-by-side view, with a smaller default:
+        // there is one pane to switch to and no other side to copy to. Escape and F3 execute only
+        // while the find bar is open, and a binding that does not execute leaves the key unhandled.
+        _bindings = new DiffKeyBindings(this, CommandOrNull);
+        KeyMap = DiffKeyMap.UnifiedDefault();
 
         RefreshStrings();
         UpdatePseudoClasses();
@@ -678,6 +678,71 @@ public class InlineDiffView : TemplatedControl
 
     /// <summary>Moves to the previous match; Shift+F3 or Shift+Enter by default.</summary>
     public ICommand FindPreviousCommand => _findPrevious;
+
+    /// <summary>
+    /// What key each command is on. Assigning a map, or changing one in place, rebuilds the
+    /// bindings this control owns and leaves any a host added alone.
+    /// </summary>
+    /// <remarks>
+    /// The same type the side-by-side view holds, defaulting to <see cref="DiffKeyMap.UnifiedDefault"/>.
+    /// A gesture on a command this view has no meaning for — <see cref="DiffCommand.SwitchPane"/>
+    /// and the four copies — is skipped and logged rather than bound to nothing.
+    /// </remarks>
+    public DiffKeyMap KeyMap
+    {
+        get => _keyMap;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (ReferenceEquals(_keyMap, value))
+            {
+                return;
+            }
+
+            _keyMap.Changed -= OnKeyMapChanged;
+            _keyMap = value;
+            _keyMap.Changed += OnKeyMapChanged;
+            RebuildKeyBindings();
+        }
+    }
+
+    /// <summary>The gesture <paramref name="command"/> is on, or <c>null</c> when it is unbound.</summary>
+    public KeyGesture? GestureFor(DiffCommand command) => _keyMap[command];
+
+    /// <summary>The command object behind <paramref name="command"/>, for a host that wants to invoke it.</summary>
+    /// <exception cref="NotSupportedException">
+    /// <paramref name="command"/> is one the unified view does not have: there is a single pane to
+    /// switch between and a single composed document to copy between.
+    /// </exception>
+    public ICommand CommandFor(DiffCommand command)
+    {
+        return CommandOrNull(command)
+            ?? throw new NotSupportedException($"The unified view has no {command} command: it has one pane and one document.");
+    }
+
+    /// <summary>The command behind <paramref name="command"/>, or <c>null</c> where this view has none.</summary>
+    private ICommand? CommandOrNull(DiffCommand command)
+    {
+        return command switch
+        {
+            DiffCommand.NextChange => _nextChange,
+            DiffCommand.PreviousChange => _previousChange,
+            DiffCommand.OpenFind => _openFind,
+            DiffCommand.FindNext => _findNext,
+            DiffCommand.FindPrevious => _findPrevious,
+            DiffCommand.CloseFind => _closeFind,
+            DiffCommand.SwitchPane => null,
+            DiffCommand.CopyToLeft => null,
+            DiffCommand.CopyToRight => null,
+            DiffCommand.CopyBlockToLeft => null,
+            DiffCommand.CopyBlockToRight => null,
+            _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Unknown command."),
+        };
+    }
+
+    private void OnKeyMapChanged(object? sender, EventArgs e) => RebuildKeyBindings();
+
+    private void RebuildKeyBindings() => _bindings.Rebuild(_keyMap, _renderLogger);
 
     /// <summary>The build routine; tests replace it to make a build slow or throw.</summary>
     internal Func<PaneSource, PaneSource, DiffOptions, CancellationToken, DiffBuildResult> Builder { get; set; }
