@@ -102,9 +102,9 @@ chip of its kind's colour, shared across a run of same-kind rows, so the gutter 
 extent as well as each row's kind — and the chip is composited over the *pane* background rather
 than blended into the gutter, which is what let every palette colour stay exactly as it was.
 
-**[Plan 00006](plans/00006-copying-a-selection.md) is approved and two phases of three have
-landed.** A copy arrow is now drawn with an outline carrying its silhouette and a fill inside it,
-so it reads as a control rather than a mark, and the pointer shows a hand over one. Phase 1 also
+**[Plan 00006](plans/00006-copying-a-selection.md) is complete, all three phases.** A copy arrow
+is now drawn with an outline carrying its silhouette and a fill inside it, so it reads as a
+control rather than a mark, and the pointer shows a hand over one. Phase 1 also
 closed a gap it found rather than created: **`contrast-pairs.json` had never scored an arrow at
 all** — the block arrow had been drawn on the gutter since plan 00003 with nothing holding it to a
 floor. Four pairs went in, and the twelve tokens the selection arrow needed were declared and
@@ -119,8 +119,16 @@ in the number cell of the line the selection starts on, in its own colours, and 
 also a block's anchor it takes the cell and the block's arrow is not drawn — the block's copy is
 still on Alt+Left and Alt+Right. Its tail bar is drawn on every frame and seen only where the
 palette gives the bar token a colour, which the colour-blind palette does and the default one does
-not. What remains is phase 3: the rendered evidence in both palettes and both variants, and the
-decisions.
+not.
+
+Phase 3 closed it with twelve frames — both arrows at once, a selection whose rows are padding on
+the other side, and the cell both arrows want, in both variants and both palettes. **Brian then
+asked for the block arrow to stand out from the selection's blue the way Beyond Compare's does**,
+and it is goldenrod in the default palette now: `#7A5C00` over `#AB8000` in Light, `#FFD54F` over
+`#DAA520` in Dark. Beyond Compare's own pale yellow fill is not available on a near-white gutter —
+khaki scores 1.16 against a 3.0 floor and even darkgoldenrod is 2.96 — so the light fill is a
+goldenrod rather than a yellow; *Decisions* carries the arithmetic. The colour-blind palette keeps
+its slate arrow, where gold would collide with two Okabe–Ito hues already in use.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -156,7 +164,22 @@ dotnet run --project src/ThemeAudit -- report
 |---|---|---|
 | 1 The arrow reads as a shape | done | `CopyArrowGlyph.Draw` takes a fill and a pen; twelve tokens across both palettes and both variants — the block arrow's fill and the selection arrow's outline, fill and tail bar; four contrast pairs, **two of them for a block arrow that had never been scored**; the hand cursor over an arrow landed just before, in `c88d706` |
 | 2 Copying a selection | done | `CanCopySelection` / `CopySelection` over the row mapping, sharing `CopyLines` with `CopyBlock`; `DiffPanePresenter.SelectedLines` and `CopySelectionRequested`; the selection arrow with its own colours and its tail bar; first-row placement, the contested-cell rule, the tooltip, the hand cursor; `TextArea.SelectionChanged` reaching the margin as a counted notice |
-| 3 Evidence | not started | Snapshots in both palettes and variants; the mutations; `DECISIONS.md`, `AGENTS.md`, `PROGRESS.md`, changelog |
+| 3 Evidence | done | `SelectionArrowSnapshotTests` — twelve frames across three cases, both variants, both palettes; four mutations, three kills and **one deliberate survivor**; the goldenrod block arrow Brian asked for, with the audit regenerated; `DECISIONS.md`, `AGENTS.md`, this file and the changelog |
+
+## Plan 00006, Phase 3 verification
+
+| Done-when item | Result |
+|---|---|
+| Both arrows in one frame | pass: `SelectionArrowSnapshotTests.Both_arrows_are_painted_in_one_frame` — a selection starting on an unchanged row, so its arrow and both block arrows are on three different rows; each fill present in its own zones and absent from the others' |
+| A selection spanning padding | pass: `A_selection_spanning_padding_is_painted` — the selection starts an unchanged line above the block and runs over two rows the right side has no lines for; the right's arrow is in padding and costs no number |
+| The contested cell | pass: `The_selection_arrow_takes_the_block_s_cell` — the right pane is the control, with two block arrows; the left has one, and its selection arrow is level with the right pane's on the row it took |
+| Nothing strayed | pass: in all twelve, the selection fill counted over the **whole margin** equals the count inside the one reported zone, and the zone's right edge is `LastColumnRight` |
+| Both palettes, both variants | pass: 12 frames — 3 cases × Light/Dark × Default/ColorBlind. The colour-blind frames are the only committed evidence of the tail bar, which exists in no other frame |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 436 passed (424 before the phase) |
+| `theme-audit compat` then `report` | regenerated after the palette change: **0 low-contrast findings**, drift test passes |
+| New tests proven able to fail | four mutations, three kills — a strayed arrow and an arrow on every row each kill all twelve; the swapped arrow order kills exactly the four collision frames. **The fourth survives on purpose**: removing the tail bar leaves all twelve green, which is §5's trap measured rather than asserted, and is why `CopySelectionTests.The_selection_arrow_carries_the_palette_s_share_of_shape` is the bar's real guard |
+| Snapshot baselines moved | **12 by the palette change**, at 0.05 %–0.11 % against the comparer's 0.5 % — not one would have failed on its own, and they were found with the §5 sweep. Every colour-blind frame is byte-identical, which is the evidence that only the default palette moved |
 
 ## Plan 00006, Phase 2 verification
 

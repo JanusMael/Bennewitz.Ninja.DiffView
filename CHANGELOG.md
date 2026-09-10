@@ -163,6 +163,29 @@ All notable changes to DiffView are recorded here. The format follows
   decorator, an option change, the caret lane, the find scope collapsing, the matches the unified
   view drops and the ones it keeps, and a snapshot of the unified view in both variants.
 
+- Plan 00006, copying a selection: `SideBySideDiffView.CanCopySelection(DiffSide)` and
+  `CopySelection(DiffSide)` send a pane's selected **whole lines** to the other side, over the rows
+  those lines occupy — the other side's lines in the same rows are replaced, and where it has none
+  there at all the copy inserts between them, as a one-sided block's copy already did; a selection
+  that ends on the next line's first column stops above it. `DiffPanePresenter.SelectedLines` and
+  `CopySelectionRequested`; a selection arrow drawn in the number cell of the selection's first
+  line on new `DiffView.SelectionArrowBrush` / `SelectionArrowFillBrush` /
+  `SelectionArrowBarBrush`, taking that cell from a block arrow that wants it, with its own
+  tooltip and the hand cursor. Alt+Left and Alt+Right go on copying the current block.
+- A copy arrow is drawn as an outlined shape rather than a flat silhouette, on a new
+  `DiffView.GutterArrowFillBrush`, and the selection arrow may carry a bar across its tail — drawn
+  on every frame and seen only where `DiffView.SelectionArrowBarBrush` has a colour, which the
+  colour-blind palette gives it and the default palette leaves transparent, so a host changes one
+  key rather than forking the glyph.
+- Four `contrast-pairs.json` pairs scoring each arrow's outline and fill against the gutter
+  background. Arrows had never been scored at all: the block arrow had been drawn there since
+  plan 00003 with nothing holding it to a floor.
+- Headless, pixel and snapshot tests for the selection copy: the arrow's row, its colours, the
+  contested cell, the whole-line rule at both ends, the aligned-row copy, the insertion over
+  padding, the click and the tooltip; and `SelectionArrowSnapshotTests`, twelve frames over three
+  cases in both variants and both palettes — the colour-blind ones being the only committed
+  evidence of the tail bar.
+
 ### Removed
 
 - `ChangeConnectorGutter.CanCopyToLeft`, `CanCopyToRight`, `LastArrows`, `ArrowAt` and
@@ -171,6 +194,13 @@ All notable changes to DiffView are recorded here. The format follows
   rather than deprecated: nothing has shipped, and the repository's only tag is a checkpoint.
 
 ### Changed
+
+- The change-block arrow is goldenrod in the default palette — `#7A5C00` over `#AB8000` in Light,
+  `#FFD54F` over `#DAA520` in Dark — in place of slate, so it reads apart from the selection
+  arrow's blue at a glance, as Beyond Compare's does. Beyond Compare's own pale yellow *fill*
+  cannot be used on a near-white gutter, where khaki scores 1.16 and even darkgoldenrod 2.96
+  against a 3.0 floor; `DECISIONS.md` carries the arithmetic. The colour-blind palette keeps its
+  slate arrow, where gold would collide with two Okabe–Ito hues already in use.
 
 - Change markers are drawn on a chip of their kind's colour, one per run of consecutive same-kind
   rows, so a lone changed line reads as a badge and a block reads as one band. Twelve opaque

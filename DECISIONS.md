@@ -1250,3 +1250,105 @@ does, so a test pins it.
 cannot show that it is where the numbers are, because a drawing that strayed would report the
 place it strayed to. A mutation that shifted the glyph four pixels survived every assertion until
 the numbers' edge was something a test could name.
+
+## A selection copies, and its arrow takes the cell
+
+Plan 00006. A block arrow sends a whole change block; a selection arrow sends the lines the reader
+picked. `SideBySideDiffView.CanCopySelection(DiffSide)` / `CopySelection(DiffSide)` mirror
+`CanCopyBlock` / `CopyBlock`, and both now write through one `CopyLines`, so a block copy and a
+selection copy differ in the **range** they name and in nothing else — the terminator rules, the
+append-past-an-unterminated-last-line rule and the undoable single `Replace` are shared, not
+reimplemented.
+
+**The rows are the mapping, not the line numbers.** A selection's rows are not a block's rows, so
+none of `CopyBlock`'s ranges apply — but it is the same table read differently. The selection's
+whole lines on the source side occupy a run of rows; the other side's lines *in those same rows*
+are the target; `SideBySideDocument.Rows` and `LineOf` answer both questions and Core needed
+nothing new. Where every one of those rows is padding on the other side, there is nothing to
+replace and the copy inserts, which is what a one-sided block's copy already did. The insertion
+point is the line after the last one that side has **above** the run — the same backward scan
+`DiffDocumentBuilder.NextLine` uses to position a block's empty range, so the two agree by
+construction rather than by coincidence.
+
+**Whole lines, both ends.** A selection that starts or ends mid-line copies both lines whole,
+because every copy in the library is line-based and a partial line has no counterpart on the other
+side. The other end of that rule is the one worth writing down: a selection whose end sits on the
+**very start** of a line stops at the line above. That is what a drag onto the next line's first
+column means in every editor, and without it a three-line drag copies four.
+
+**A selection beginning on a block's anchor row takes that cell, and the block arrow is not drawn
+there.** Two arrows cannot share one cell, and the choice is decided rather than left to render
+order: a selection is the more specific and the more recent intent. The block's own copy remains on
+Alt+Left and Alt+Right, which is one of the reasons those stay bound to the block and were not
+given to the selection. Clearing the selection hands the cell back to the block, not to the number.
+
+**Alt+Left and Alt+Right keep copying the block, even while a selection exists.** A chord chosen
+now would make Alt+Left mean two things depending on state the reader cannot see. The selection
+copy is pointer-only, and the pointer is where it is unambiguous: a hand cursor over the arrow, and
+a tooltip naming what would travel.
+
+**The shape cue is the palette's decision, not the code's.** The two arrows are told apart by
+colour in the default palette and by colour *and* a bar across the tail in the colour-blind one,
+where blue is unavailable — `#0072B2` already means *inserted* there, so the selection arrow takes
+Okabe–Ito's unused bluish green. `DiffView.SelectionArrowBarBrush` is `Transparent` by default and
+the arrow's outline colour in the colour-blind palette; the margin lays the bar out and paints it
+on **every** frame, and a transparent one simply is not seen. Nothing branches on the palette
+because nothing can: the palette is a resource dictionary the *host* merges over the tokens, and
+the control never learns it happened. A property would have been the other way to do it, and is
+worse — the host would merge the dictionary *and* set the property, and the two could disagree. A
+token cannot disagree with itself.
+
+**`CopySelectionRequested` carries no payload.** `CopyOutRequested` carries a block index because a
+block index is stable; a selection is not, so the composite reads it back through
+`DiffPanePresenter.SelectedLines` at the moment it acts. Passing a range through the event would
+create a second copy of the truth that could be stale by the time it arrived.
+
+**A headless capture re-renders every visual, so no frame can show an invalidation.** The margin is
+invalidated from `TextArea.SelectionChanged` for the reason `AffectsRender` was added to
+`ChangeConnectorGutter`: an arrow that appears at the next unrelated redraw looks like a race. The
+first version of the test asserted the frame — and passed with the wiring removed, because
+`Window.CaptureRenderedFrame` draws the whole tree whether or not anything was invalidated.
+`DiffLineNumberMargin.SelectionNotices` counts the notice instead, and the mutation dies. The rule
+generalises: **where a decorator's contract is *when* it repaints rather than what it paints, a
+captured frame is not evidence.**
+
+**The frames cannot see the tail bar, and that was measured rather than assumed.** Removing the bar
+entirely leaves all twelve phase 3 snapshots green — six pixels against a 0.5 % tolerance — which
+is §5's trap in its purest form. `CopySelectionTests.The_selection_arrow_carries_the_palette_s_share_of_shape`
+is the guard: read as luminance against the gutter, with colour discarded, the bar inks **9 rows of
+the 12 px zone against a plain arrow's 5**, and exactly 5 in the default palette, where the token is
+transparent. The PNGs are for a reviewer's eye; that pair of numbers is the contract.
+
+## The change-block arrow is goldenrod, and a pale yellow fill will not fit a light gutter
+
+Brian, looking at the plan 00006 frames: the block arrow should stand out from the selection's blue
+the way Beyond Compare's does — a goldenrod outline over a yellowish fill — and the blue should
+stay. The **default** palette's block arrow moved from slate accordingly. This is drift from an
+approved plan, so it is recorded here rather than edited into `plans/00006-copying-a-selection.md`.
+
+| | outline | vs gutter | fill | vs gutter | outline vs fill |
+|---|---|---|---|---|---|
+| Light | `#7A5C00` | 5.68 | `#AB8000` | 3.28 | 1.73 |
+| Dark | `#FFD54F` | 10.85 | `#DAA520` | 6.84 | 1.59 |
+
+**Beyond Compare's actual fill cannot be used on the light gutter, and the numbers are why.** The
+gutter is `#F3F4F6`, a near-white, and the arrow fill is contracted at 3.0 against it. Khaki is
+1.16 there; Okabe–Ito's yellow `#F0E442` is 1.20; goldenrod `#DAA520` is 2.03; even CSS
+darkgoldenrod `#B8860B` is **2.96 — under the floor by four hundredths**. Nothing that reads as
+*yellow* clears 3.0 on a near-white ground, because that is what "yellow" means. `#AB8000` at 3.28
+is the palest golden fill with headroom, and it reads as goldenrod rather than as mustard only
+because the outline above it is darker still.
+
+The dark variant has no such problem — its gutter is `#252526` — and gets what Beyond Compare
+actually shows: a bright amber outline over a goldenrod fill.
+
+**The colour-blind palette keeps its slate block arrow.** Gold is not free there: `#E69F00` and
+`#D55E00` are already spoken for in the Okabe–Ito set the palette draws from, and a fourth warm
+hue in one gutter is exactly the collision that palette exists to avoid. The two arrows are told
+apart there by the tail bar as well as by hue, which is the whole point of §*A selection copies*'s
+shape rule, so the neutral loses nothing.
+
+**Every one of the twelve frames this moved was under the comparer's tolerance** — 0.05 % to 0.11 %
+against 0.5 % — so not one would have failed on its own. They were found with the §5 sweep. A
+palette change is now the fifth time in this branch that a real change to what the frames depict
+was invisible to the comparer.
