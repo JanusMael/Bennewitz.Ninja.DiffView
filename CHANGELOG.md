@@ -259,7 +259,7 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
-- The change-block arrow is goldenrod-and-yellow in the default palette — `#7A5C00` over
+- The change-block arrow is goldenrod-and-yellow in the default palette — `#8A6D00` over
   `#F0E442` in Light, `#FFD54F` over `#DAA520` in Dark — in place of slate, so it reads apart from
   the selection arrow's blue at a glance, as Beyond Compare's does. The colour-blind palette keeps
   its slate arrow, where gold would collide with two Okabe–Ito hues already in use.

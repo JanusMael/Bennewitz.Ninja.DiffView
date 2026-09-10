@@ -124,7 +124,7 @@ not.
 Phase 3 closed it with twelve frames — both arrows at once, a selection whose rows are padding on
 the other side, and the cell both arrows want, in both variants and both palettes. **Brian then
 asked for the block arrow to stand out from the selection's blue the way Beyond Compare's does**,
-and the default palette's is `#7A5C00` over `#F0E442` in Light, `#FFD54F` over `#DAA520` in Dark.
+and the default palette's is `#8A6D00` over `#F0E442` in Light, `#FFD54F` over `#DAA520` in Dark.
 Getting there **corrected a contract**: the plan scored each arrow's fill against the gutter at
 3.0, which rules out every yellow on a near-white ground, so the first attempt landed on a
 goldenrod `#AB8000` that Brian rejected on the rendered frames as reading brown. A fill is not text

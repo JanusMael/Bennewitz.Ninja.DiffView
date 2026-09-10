@@ -1328,7 +1328,7 @@ approved plan, so it is recorded here rather than edited into `plans/00006-copyi
 
 | | outline | vs gutter | fill | vs its outline |
 |---|---|---|---|---|
-| Light | `#7A5C00` | 5.68 | `#F0E442` | 4.73 |
+| Light | `#8A6D00` | 4.47 | `#F0E442` | 3.72 |
 | Dark | `#FFD54F` | 10.85 | `#DAA520` | 1.59 |
 
 **The first attempt got this wrong, and the way it was wrong is the point.** Plan 00006 contracted

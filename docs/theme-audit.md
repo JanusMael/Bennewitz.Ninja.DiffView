@@ -40,8 +40,8 @@ _none_
 
 | Consumer | Directories | Files | References | Distinct keys | Own keys | Digest | Audited against |
 |---|---|---:|---:|---:|---:|---|---|
-| DiffView | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 50 | `389ddddfe231` | all |
-| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 50 | `389ddddfe231` | all |
+| DiffView | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 50 | `b026a95477f2` | all |
+| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 6 | 67 | 18 | 50 | `b026a95477f2` | all |
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `2ce29f295821` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `ce6e5435da8d` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d91a9d48208f` | Fluent, Semi, Semi + compat |
@@ -833,8 +833,8 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 |
-| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.68 | 10.85 |
-| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 4.73 | 1.59 |
+| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.47 | 10.85 |
+| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 3.72 | 1.59 |
 | `DiffView.SelectionArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 7.84 | 8.75 |
 | `DiffView.SelectionArrowFillBrush` | `DiffView.SelectionArrowBrush` | 1.5 | 1.88 | 1.51 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 |
@@ -882,8 +882,8 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 |
-| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.68 | 10.85 |
-| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 4.73 | 1.59 |
+| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.47 | 10.85 |
+| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 3.72 | 1.59 |
 | `DiffView.SelectionArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 7.84 | 8.75 |
 | `DiffView.SelectionArrowFillBrush` | `DiffView.SelectionArrowBrush` | 1.5 | 1.88 | 1.51 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 |
@@ -931,8 +931,8 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 | 4.90 | 4.36 | 4.90 | 4.90 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 | 3.71 | 4.64 | 3.71 | 3.71 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 | 5.67 | 3.04 | 5.67 | 5.67 |
-| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.68 | 10.85 | 10.85 | 5.68 | 10.85 | 10.85 |
-| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 4.73 | 1.59 | 1.59 | 4.73 | 1.59 | 1.59 |
+| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.47 | 10.85 | 10.85 | 4.47 | 10.85 | 10.85 |
+| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 3.72 | 1.59 | 1.59 | 3.72 | 1.59 | 1.59 |
 | `DiffView.SelectionArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 7.84 | 8.75 | 8.75 | 7.84 | 8.75 | 8.75 |
 | `DiffView.SelectionArrowFillBrush` | `DiffView.SelectionArrowBrush` | 1.5 | 1.88 | 1.51 | 1.51 | 1.88 | 1.51 | 1.51 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 | 4.76 | 4.19 | 4.76 | 4.76 |
@@ -980,8 +980,8 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.MarkerInsertedBrush` | `DiffView.MarkerChipInsertedBrush` | 3.0 | 4.36 | 4.90 | 4.90 | 4.36 | 4.90 | 4.90 |
 | `DiffView.MarkerDeletedBrush` | `DiffView.MarkerChipDeletedBrush` | 3.0 | 4.64 | 3.71 | 3.71 | 4.64 | 3.71 | 3.71 |
 | `DiffView.MarkerModifiedBrush` | `DiffView.MarkerChipModifiedBrush` | 3.0 | 3.04 | 5.67 | 5.67 | 3.04 | 5.67 | 5.67 |
-| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 5.68 | 10.85 | 10.85 | 5.68 | 10.85 | 10.85 |
-| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 4.73 | 1.59 | 1.59 | 4.73 | 1.59 | 1.59 |
+| `DiffView.GutterArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.47 | 10.85 | 10.85 | 4.47 | 10.85 | 10.85 |
+| `DiffView.GutterArrowFillBrush` | `DiffView.GutterArrowBrush` | 1.5 | 3.72 | 1.59 | 1.59 | 3.72 | 1.59 | 1.59 |
 | `DiffView.SelectionArrowBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 7.84 | 8.75 | 8.75 | 7.84 | 8.75 | 8.75 |
 | `DiffView.SelectionArrowFillBrush` | `DiffView.SelectionArrowBrush` | 1.5 | 1.88 | 1.51 | 1.51 | 1.88 | 1.51 | 1.51 |
 | `DiffView.ConnectorBrush` | `DiffView.GutterBackgroundBrush` | 3.0 | 4.19 | 4.76 | 4.76 | 4.19 | 4.76 | 4.76 |

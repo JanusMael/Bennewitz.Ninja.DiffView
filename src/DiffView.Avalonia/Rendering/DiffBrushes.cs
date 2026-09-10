@@ -69,7 +69,7 @@ internal sealed class DiffBrushes
         ("DiffView.WordDeletedBrush", Color.Parse("#59C62828")),
         ("DiffView.CurrentBlockBorderBrush", Color.Parse("#1565C0")),
         ("DiffView.ConnectorBrush", Color.Parse("#757575")),
-        ("DiffView.GutterArrowBrush", Color.Parse("#7A5C00")),
+        ("DiffView.GutterArrowBrush", Color.Parse("#8A6D00")),
         ("DiffView.GutterArrowFillBrush", Color.Parse("#F0E442")),
         ("DiffView.SelectionArrowBrush", Color.Parse("#0D47A1")),
         ("DiffView.SelectionArrowFillBrush", Color.Parse("#1976D2")),

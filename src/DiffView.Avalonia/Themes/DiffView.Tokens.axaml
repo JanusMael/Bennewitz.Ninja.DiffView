@@ -53,7 +53,7 @@
       <SolidColorBrush x:Key="DiffView.MarkerChipDeletedBrush" Color="#F8E5E5" />
       <SolidColorBrush x:Key="DiffView.MarkerChipModifiedBrush" Color="#FAEDE0" />
       <SolidColorBrush x:Key="DiffView.ConnectorBrush" Color="#757575" />
-      <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#7A5C00" />
+      <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#8A6D00" />
       <!-- The copy arrows. The outline carries the silhouette, so it is the strongest
            contrast against the gutter; the fill sits between it and the ground, which is
            what makes an arrow read as an object rather than a stencil. The bar across the
