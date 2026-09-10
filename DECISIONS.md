@@ -1404,3 +1404,42 @@ on most screens, since a bucket is one pixel row and a 140-row pair on a 500 px 
 buckets in five empty. The rendered evidence asserts the drawing against the buckets the map
 *reports*, not against a guessed fraction of the block's height; the first version of that test
 expected a solid band and failed at 58 of 228.
+
+## The map docks either side, and the headers align by construction rather than by luck
+
+Plan 00008. `MinimapPlacement` moves the overview map between an `Auto` slot at each end of the
+panes grid; an empty `Auto` column takes no width, so the arrangement it is not in costs nothing.
+
+**One rule mirrors, and it is not "the map".** Brian settled it: the lanes do not follow the dock,
+because a lane names a *file* and not an edge — tying the left lane to whichever edge the map sits
+on would make it mean two things. What does follow is the pair that hug an edge: the
+current-block marker, which points into the panes, and the find ticks, which stay out of the
+lanes' way on the other side. So the control is told `MirrorEdges` — *which of my own edges faces
+the panes* — and never learns which side of the window it is on. `LaneAt`, `LaneLeft`, `MarkerLeft`
+and `TicksLeft` all read that one flag, so the rule cannot drift into three `if`s.
+
+**The plan claimed docking right would move no frame. It was wrong, and finding out why was worth
+more than the claim.** Twenty-two frames moved, because `PART_Headers` and `PART_Panes` did not
+share a column layout and never had:
+
+| | headers | panes |
+|---|---|---|
+| gutter spacer | 24 | **16** since plan 00004 |
+| map spacer | 14 | **22** since plan 00007 |
+| fixed total | 38 | 38 |
+
+Two stale numbers, from two different plans, that happened to **sum to the same 38**. The star
+columns therefore came out the same width and each header was exactly as wide as its pane — so the
+outer edges lined up and nothing looked wrong — while the boundary *between* them sat 8 px out:
+the right header began 24 px after the left one ended, and the right pane 16 px after. A header
+was the right size in the wrong place.
+
+Neither plan's snapshot regeneration could catch it, and both regenerated wholesale — 22 frames in
+00004 and 44 in 00007. **A real defect hides most easily inside expected churn**, which is the
+lesson worth keeping: when a change is expected to move many frames, the thing to add is an
+assertion about the invariant, not a closer look at the PNGs.
+
+The headers grid now mirrors the panes grid column for column — `Auto,*,16,*,Auto`, the same five
+— and `ApplySplit` writes the ratio into named indices rather than 0 and 2. `Each_header_is_exactly_as_wide_as_its_pane`
+asserts both the width **and the x**, in both placements; the width alone is what passed for four
+plans.

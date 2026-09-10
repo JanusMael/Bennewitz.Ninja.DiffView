@@ -321,6 +321,11 @@ public sealed partial class MainWindow : Window
         Diff.ShowMinimap = ShowMinimap.IsChecked;
     }
 
+    private void OnToggleMinimapPlacement(object? sender, RoutedEventArgs e)
+    {
+        Diff.MinimapPlacement = MinimapOnLeft.IsChecked ? MinimapPlacement.Left : MinimapPlacement.Right;
+    }
+
     private void OnToggleShowWhitespace(object? sender, RoutedEventArgs e)
     {
         Diff.ShowWhitespace = ShowWhitespace.IsChecked;

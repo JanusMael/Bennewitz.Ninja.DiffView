@@ -18,11 +18,15 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Background="{TemplateBinding Background}">
-          <Grid Name="PART_Headers" ColumnDefinitions="*,24,*,14">
-            <dv:DiffPaneHeader Name="PART_LeftHeader" />
-            <Border Grid.Column="1" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
-            <dv:DiffPaneHeader Name="PART_RightHeader" Grid.Column="2" />
-            <Border Grid.Column="3" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
+          <!-- Column for column with PART_Panes below, so a header is always exactly as wide as
+               its pane. The two end slots are the overview map's; whichever one it is not in has
+               no width, and the middle spacer is the connector gutter's. -->
+          <Grid Name="PART_Headers" ColumnDefinitions="Auto,*,16,*,Auto">
+            <Border Name="PART_HeaderLeftSpacer" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
+            <dv:DiffPaneHeader Name="PART_LeftHeader" Grid.Column="1" />
+            <Border Grid.Column="2" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
+            <dv:DiffPaneHeader Name="PART_RightHeader" Grid.Column="3" />
+            <Border Name="PART_HeaderRightSpacer" Grid.Column="4" Background="{DynamicResource DiffView.HeaderBackgroundBrush}" />
           </Grid>
 
           <Border Name="PART_Banner" Grid.Row="1" Padding="10,6">
@@ -45,11 +49,13 @@
           <!-- The find bar collapses when it is closed, so its Auto row takes no height. -->
           <dv:DiffFindBar Name="PART_FindBar" Grid.Row="2" IsVisible="False" />
 
-          <Grid Name="PART_Panes" Grid.Row="3" ColumnDefinitions="*,16,*,Auto">
-            <dv:DiffPanePresenter Name="PART_LeftPane" AutomationProperties.Name="{TemplateBinding LeftPaneName}" />
-            <dv:ChangeConnectorGutter Name="PART_Gutter" Grid.Column="1" AutomationProperties.Name="{TemplateBinding GutterName}" />
-            <dv:DiffPanePresenter Name="PART_RightPane" Grid.Column="2" AutomationProperties.Name="{TemplateBinding RightPaneName}" />
-            <dv:DiffMinimap Name="PART_Minimap" Grid.Column="3" AutomationProperties.Name="{TemplateBinding MinimapName}" />
+          <!-- A map slot at each end. An Auto column with no child in it takes no width, so
+               the unused one costs nothing and docking right is pixel for pixel what it was. -->
+          <Grid Name="PART_Panes" Grid.Row="3" ColumnDefinitions="Auto,*,16,*,Auto">
+            <dv:DiffPanePresenter Name="PART_LeftPane" Grid.Column="1" AutomationProperties.Name="{TemplateBinding LeftPaneName}" />
+            <dv:ChangeConnectorGutter Name="PART_Gutter" Grid.Column="2" AutomationProperties.Name="{TemplateBinding GutterName}" />
+            <dv:DiffPanePresenter Name="PART_RightPane" Grid.Column="3" AutomationProperties.Name="{TemplateBinding RightPaneName}" />
+            <dv:DiffMinimap Name="PART_Minimap" Grid.Column="4" AutomationProperties.Name="{TemplateBinding MinimapName}" />
           </Grid>
 
           <dv:DiffStatusStrip Name="PART_StatusStrip" Grid.Row="4" AutomationProperties.Name="{TemplateBinding StatusStripName}" />

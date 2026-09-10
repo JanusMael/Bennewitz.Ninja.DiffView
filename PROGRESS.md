@@ -165,6 +165,29 @@ dotnet run --project src/ThemeAudit -- report
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
 
+## Plan 00008 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 Placement | done | `MinimapPlacement` over an `Auto` slot at each end of both grids; `DiffMinimap.MirrorEdges` and the one geometry helper the lanes, the marker and the ticks read; the headers grid re-laid to match the panes; `ApplySplit` off hardcoded indices; the demo's View menu |
+| 2 Evidence | done | `MinimapSnapshotTests.Docked_left_the_lanes_stay_and_the_edges_mirror` in both variants; the header-alignment test in both placements; six mutations, six kills |
+
+## Plan 00008 verification
+
+| Done-when item | Result |
+|---|---|
+| The map docks outside either pane | pass: `MinimapLaneTests.The_map_docks_outside_the_panes_either_way` — its far edge is at or before the left pane docked left, at or after the right pane docked right, with `MirrorEdges` following |
+| The lanes do not flip | pass: same test asserts the left lane stays left of the right in both placements, and `MinimapSnapshotTests` reads the lanes through `LaneAt` in both — a flipped lane would be read where it moved to and the notch assertion would fail |
+| The marker hugs the panes | pass: `Docked_left_the_lanes_stay_and_the_edges_mirror` — the current block's colour is on the map's right edge docked left and its left edge docked right, and absent from the other |
+| A host setting the placement in XAML is wired | pass: `A_host_setting_the_placement_before_the_template_applies_is_wired_too` |
+| **Docking right moves no frame** | **failed, and the plan was wrong to expect it.** 22 frames moved — not from the placement mechanism but because the same change corrects a header/pane misalignment that had been in the control since plan 00004. *Decisions* has the arithmetic |
+| Each header is as wide as its pane, and starts where it starts | pass: `Each_header_is_exactly_as_wide_as_its_pane`, both placements, asserting **width and x**. The width alone had been true for four plans while the x was 8 px out |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 456 passed (449 before the plan) |
+| `theme-audit compat` then `report` | regenerated after both grids changed: 0 low-contrast findings |
+| New tests proven able to fail | six mutations, six kills: the lanes made to follow the dock, the marker pinned to one edge, the map never moved out of its template column, the header spacers frozen, the split ratio written into the old indices, and the placement missing from the template path |
+| Snapshot baselines moved | **22** for the header correction, and 6 regenerated in the minimap set — 4 because the evidence now navigates to a block, 2 new for the left dock |
+
 ## Plan 00007 phases
 
 | Phase | Status | Notes |

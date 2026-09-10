@@ -35,6 +35,10 @@ public class DiffMinimap : Control
     public static readonly StyledProperty<int> CurrentChangeIndexProperty =
         AvaloniaProperty.Register<DiffMinimap, int>(nameof(CurrentChangeIndex), defaultValue: -1);
 
+    /// <summary>Identifies the <see cref="MirrorEdges"/> property.</summary>
+    public static readonly StyledProperty<bool> MirrorEdgesProperty =
+        AvaloniaProperty.Register<DiffMinimap, bool>(nameof(MirrorEdges));
+
     /// <summary>Identifies the <see cref="MatchRows"/> property.</summary>
     public static readonly StyledProperty<IReadOnlyList<int>?> MatchRowsProperty =
         AvaloniaProperty.Register<DiffMinimap, IReadOnlyList<int>?>(nameof(MatchRows));
@@ -69,7 +73,7 @@ public class DiffMinimap : Control
 
     static DiffMinimap()
     {
-        AffectsRender<DiffMinimap>(DocumentProperty, ViewportStartRowProperty, ViewportRowCountProperty, CurrentChangeIndexProperty, MatchRowsProperty);
+        AffectsRender<DiffMinimap>(DocumentProperty, ViewportStartRowProperty, ViewportRowCountProperty, CurrentChangeIndexProperty, MatchRowsProperty, MirrorEdgesProperty);
     }
 
     /// <summary>Creates the overview; the composite sets its width and name.</summary>
@@ -111,6 +115,19 @@ public class DiffMinimap : Control
     {
         get => GetValue(CurrentChangeIndexProperty);
         set => SetValue(CurrentChangeIndexProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the edges are mirrored: set when the panes are to the map's <em>right</em>, which
+    /// is what docking on the left means. The marker column hugs the panes and the find ticks hug
+    /// the outside, so both swap ends with this — and the two lanes do not, because a lane names a
+    /// file and not an edge. The map never learns which side of the window it is on, only which of
+    /// its own edges faces the panes.
+    /// </summary>
+    public bool MirrorEdges
+    {
+        get => GetValue(MirrorEdgesProperty);
+        set => SetValue(MirrorEdgesProperty, value);
     }
 
     /// <summary>The rows holding a find match, marked as ticks down the right edge; <c>null</c> for none.</summary>
@@ -197,20 +214,34 @@ public class DiffMinimap : Control
     /// <summary>The lane <paramref name="x"/> falls in, or <c>null</c> for the marker column, the gap or the margin.</summary>
     public DiffSide? LaneAt(double x)
     {
-        if (x >= MarkerColumnWidth && x < MarkerColumnWidth + LaneWidth)
+        foreach (DiffSide side in (DiffSide[])[DiffSide.Left, DiffSide.Right])
         {
-            return DiffSide.Left;
+            double left = LaneLeft(side);
+            if (x >= left && x < left + LaneWidth)
+            {
+                return side;
+            }
         }
 
-        double rightLane = MarkerColumnWidth + LaneWidth + LaneGap;
-        return x >= rightLane && x < rightLane + LaneWidth ? DiffSide.Right : null;
+        return null;
     }
 
     /// <summary>Where <paramref name="side"/>'s lane starts, in control coordinates.</summary>
-    private static double LaneLeft(DiffSide side)
+    /// <remarks>
+    /// The lanes sit between the marker column and the margin whichever way round those two are,
+    /// and in the same order either way: the left file's lane is the left one, always.
+    /// </remarks>
+    private double LaneLeft(DiffSide side)
     {
-        return side == DiffSide.Left ? MarkerColumnWidth : MarkerColumnWidth + LaneWidth + LaneGap;
+        double lanes = MirrorEdges ? LaneMargin : MarkerColumnWidth;
+        return side == DiffSide.Left ? lanes : lanes + LaneWidth + LaneGap;
     }
+
+    /// <summary>Where the current-block marker's column starts: the edge nearest the panes.</summary>
+    private double MarkerLeft => MirrorEdges ? Bounds.Width - MarkerColumnWidth : 0;
+
+    /// <summary>Where the find ticks start: the edge away from the panes, out of the lanes' way.</summary>
+    private double TicksLeft => MirrorEdges ? 0 : Math.Max(0, Bounds.Width - TickWidth);
 
     /// <summary>The row a click at pixel row <paramref name="y"/> jumps to: the bucket's first changed row, else its first row.</summary>
     public int RowForClick(double y)
@@ -310,7 +341,7 @@ public class DiffMinimap : Control
         {
             if (matchBuckets[bucket])
             {
-                context.FillRectangle(_palette[DiffBrush.FindMatch], new Rect(Math.Max(0, width - TickWidth), bucket, Math.Min(TickWidth, width), 1));
+                context.FillRectangle(_palette[DiffBrush.FindMatch], new Rect(TicksLeft, bucket, Math.Min(TickWidth, width), 1));
             }
         }
 
@@ -319,8 +350,9 @@ public class DiffMinimap : Control
             ChangeBlock block = document.Blocks[CurrentChangeIndex];
             int top = BucketOfRow(block.FirstRow);
             int bottom = Math.Max(top + 1, BucketOfRow(block.LastRow) + 1);
-            // Its own column at the left edge: the current block belongs to the pair, not to a side.
-            context.FillRectangle(_palette[DiffBrush.CurrentBlockBorder], new Rect(0, top, MarkerColumnWidth, bottom - top));
+            // Its own column against the panes: the current block belongs to the pair, not to a
+            // side, and it points into the text rather than away from it.
+            context.FillRectangle(_palette[DiffBrush.CurrentBlockBorder], new Rect(MarkerLeft, top, MarkerColumnWidth, bottom - top));
         }
 
         if (ViewportBounds is { } viewport)

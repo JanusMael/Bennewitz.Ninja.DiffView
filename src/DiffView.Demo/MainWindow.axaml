@@ -37,6 +37,8 @@
                   Click="OnToggleUnifiedView" AutomationProperties.Name="Show the comparison unified in one pane" />
         <MenuItem x:Name="ShowMinimap" Header="Show overview _map" ToggleType="CheckBox" IsChecked="True"
                   Click="OnToggleShowMinimap" AutomationProperties.Name="Show the two-lane overview map beside the panes" />
+        <MenuItem x:Name="MinimapOnLeft" Header="Overview map on the le_ft" ToggleType="CheckBox"
+                  Click="OnToggleMinimapPlacement" AutomationProperties.Name="Dock the overview map outside the left pane instead of the right" />
         <Separator />
         <MenuItem Header="_Find…" InputGesture="Ctrl+F" Click="OnFind"
                   AutomationProperties.Name="Open the find bar" />

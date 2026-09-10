@@ -169,6 +169,93 @@ public sealed class MinimapLaneTests
         Assert.Equal(panesWith + DiffMinimap.MapWidth, host.Left.Bounds.Width + host.Right.Bounds.Width, 1);
     }
 
+    [AvaloniaTheory]
+    [InlineData(MinimapPlacement.Right)]
+    [InlineData(MinimapPlacement.Left)]
+    public async Task Each_header_is_exactly_as_wide_as_its_pane(MinimapPlacement placement)
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 600);
+        host.Show();
+        await host.LoadAsync(left, right);
+        host.View.MinimapPlacement = placement;
+        CompositeHost.Layout();
+
+        // The premise of the whole header row, and it was false: the headers grid's spacers were
+        // 24 and 14 against the panes' 16 and 22 — two stale numbers that summed to the same total
+        // and so cancelled at the outer edges while the split between them sat 8 px out.
+        Assert.Equal(host.Left.Bounds.Width, host.View.LeftHeader!.Bounds.Width, 1);
+        Assert.Equal(host.Right.Bounds.Width, host.View.RightHeader!.Bounds.Width, 1);
+
+        // And each header starts where its pane starts, which is the half a width cannot show.
+        Assert.Equal(XOf(host.Left, host), XOf(host.View.LeftHeader!, host), 1);
+        Assert.Equal(XOf(host.Right, host), XOf(host.View.RightHeader!, host), 1);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(MinimapPlacement.Right)]
+    [InlineData(MinimapPlacement.Left)]
+    public async Task The_map_docks_outside_the_panes_either_way(MinimapPlacement placement)
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 600);
+        host.Show();
+        await host.LoadAsync(left, right);
+        host.View.MinimapPlacement = placement;
+        CompositeHost.Layout();
+
+        DiffMinimap map = host.View.Minimap!;
+        double mapLeft = XOf(map, host);
+        if (placement == MinimapPlacement.Left)
+        {
+            Assert.True(mapLeft + map.Bounds.Width <= XOf(host.Left, host) + 1, "the map should sit outside the left pane");
+            Assert.True(map.MirrorEdges, "docked left, the panes are to the map's right");
+        }
+        else
+        {
+            Assert.True(mapLeft >= XOf(host.Right, host) + host.Right.Bounds.Width - 1, "the map should sit outside the right pane");
+            Assert.False(map.MirrorEdges);
+        }
+
+        // The lanes do not follow the dock: the left file's lane is the left one either way.
+        Assert.True(LaneStart(map, DiffSide.Left) < LaneStart(map, DiffSide.Right), "the left lane stays left of the right lane");
+    }
+
+    [AvaloniaFact]
+    public async Task A_host_setting_the_placement_before_the_template_applies_is_wired_too()
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 600);
+
+        host.View.MinimapPlacement = MinimapPlacement.Left;
+        host.Show();
+        await host.LoadAsync(left, right);
+        CompositeHost.Layout();
+
+        DiffMinimap map = host.View.Minimap!;
+        Assert.True(map.MirrorEdges);
+        Assert.True(XOf(map, host) + map.Bounds.Width <= XOf(host.Left, host) + 1);
+    }
+
+    private static double XOf(Visual control, CompositeHost host)
+    {
+        return control.TranslatePoint(new Point(0, 0), host.Window)?.X
+               ?? throw new InvalidOperationException("The control is not in the window's visual tree.");
+    }
+
+    private static double LaneStart(DiffMinimap map, DiffSide side)
+    {
+        for (double x = 0; x < map.Bounds.Width; x += 1)
+        {
+            if (map.LaneAt(x) == side)
+            {
+                return x;
+            }
+        }
+
+        throw new InvalidOperationException($"no lane found for {side}");
+    }
+
     [AvaloniaFact]
     public async Task A_host_setting_the_toggle_before_the_template_applies_is_wired_too()
     {

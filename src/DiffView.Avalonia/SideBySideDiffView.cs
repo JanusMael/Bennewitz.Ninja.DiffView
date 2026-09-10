@@ -48,6 +48,12 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>The template part holding the two headers, whose star columns follow <see cref="SplitRatio"/>.</summary>
     public const string HeadersPart = "PART_Headers";
 
+    /// <summary>The header slots standing in for the overview map, one at each end.</summary>
+    public const string HeaderLeftSpacerPart = "PART_HeaderLeftSpacer";
+
+    /// <summary>The header slot at the other end; exactly one of the two has the map's width.</summary>
+    public const string HeaderRightSpacerPart = "PART_HeaderRightSpacer";
+
     /// <summary>The template part holding the panes, gutter and minimap, whose star columns follow <see cref="SplitRatio"/>.</summary>
     public const string PanesPart = "PART_Panes";
 
@@ -132,6 +138,10 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Identifies the <see cref="ShowMinimap"/> property.</summary>
     public static readonly StyledProperty<bool> ShowMinimapProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowMinimap), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="MinimapPlacement"/> property.</summary>
+    public static readonly StyledProperty<MinimapPlacement> MinimapPlacementProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, MinimapPlacement>(nameof(MinimapPlacement));
 
     /// <summary>Identifies the <see cref="ShowLineEndings"/> property.</summary>
     public static readonly StyledProperty<bool> ShowLineEndingsProperty =
@@ -288,6 +298,18 @@ public class SideBySideDiffView : TemplatedControl
     private Grid? _panesGrid;
     private ChangeConnectorGutter? _gutter;
     private DiffMinimap? _minimap;
+    private Border? _headerLeftSpacer;
+    private Border? _headerRightSpacer;
+
+    /// <summary>
+    /// The columns `PART_Panes` and `PART_Headers` share: a map slot at either end, the two star
+    /// columns the split ratio is written into, and the connector gutter between them. The two
+    /// grids are laid out alike so a header is exactly as wide as its pane by construction.
+    /// </summary>
+    private const int LeftMinimapColumn = 0;
+    private const int LeftPaneColumn = 1;
+    private const int RightPaneColumn = 3;
+    private const int RightMinimapColumn = 4;
     private DiffViewState _state = DiffViewState.Empty;
     private string? _stateMessage;
     private SideBySideDocument? _document;
@@ -515,6 +537,17 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(ShowMinimapProperty);
         set => SetValue(ShowMinimapProperty, value);
+    }
+
+    /// <summary>
+    /// Which edge of the panes the overview map is docked against; <see cref="MinimapPlacement.Right"/>
+    /// by default, which is where it has always been. The map's lanes do not follow this — a lane
+    /// names a file, not an edge — but the current-block marker and the find ticks do.
+    /// </summary>
+    public MinimapPlacement MinimapPlacement
+    {
+        get => GetValue(MinimapPlacementProperty);
+        set => SetValue(MinimapPlacementProperty, value);
     }
 
     /// <summary>Whether both panes draw a line terminator at the end of each line. Off by default.</summary>
@@ -1082,6 +1115,8 @@ public class SideBySideDiffView : TemplatedControl
         _statusStrip = e.NameScope.Find<DiffStatusStrip>(StatusStripPart);
         _bannerAction = e.NameScope.Find<Button>(BannerActionPart);
         _headersGrid = e.NameScope.Find<Grid>(HeadersPart);
+        _headerLeftSpacer = e.NameScope.Find<Border>(HeaderLeftSpacerPart);
+        _headerRightSpacer = e.NameScope.Find<Border>(HeaderRightSpacerPart);
         _panesGrid = e.NameScope.Find<Grid>(PanesPart);
         _gutter = e.NameScope.Find<ChangeConnectorGutter>(GutterPart);
         _minimap = e.NameScope.Find<DiffMinimap>(MinimapPart);
@@ -1114,6 +1149,7 @@ public class SideBySideDiffView : TemplatedControl
             // Both paths, because a host that sets the flag in XAML is wired here and never
             // reaches the property-change handler — the gap plan 00004 had to fix for CanCopyOut.
             _minimap.IsVisible = ShowMinimap;
+            ApplyMinimapPlacement();
             _minimap.JumpRequested += OnMinimapJumpRequested;
         }
 
@@ -1204,6 +1240,12 @@ public class SideBySideDiffView : TemplatedControl
             {
                 _minimap.IsVisible = ShowMinimap;
             }
+
+            ApplyMinimapPlacement();
+        }
+        else if (change.Property == MinimapPlacementProperty)
+        {
+            ApplyMinimapPlacement();
         }
         else if (change.Property == ShowWhitespaceProperty
                  || change.Property == ShowLineEndingsProperty
@@ -2577,6 +2619,37 @@ public class SideBySideDiffView : TemplatedControl
         SplitRatio = (_leftPane.Bounds.Width + delta) / panes;
     }
 
+    /// <summary>
+    /// Moves the map between the panes grid's two <c>Auto</c> slots and tells it which of its own
+    /// edges now faces the panes. The empty slot takes no width, so the arrangement it is not in
+    /// costs nothing.
+    /// </summary>
+    private void ApplyMinimapPlacement()
+    {
+        if (_minimap is null)
+        {
+            return;
+        }
+
+        bool onLeft = MinimapPlacement == MinimapPlacement.Left;
+        Grid.SetColumn(_minimap, onLeft ? LeftMinimapColumn : RightMinimapColumn);
+        _minimap.MirrorEdges = onLeft;
+
+        // The header row has a slot at each end too, and the one over the map has to be exactly
+        // as wide as the map is — or the header stops lining up with the pane under it, which is
+        // the failure §6 has warned about since the gutter first moved.
+        double reserved = ShowMinimap ? DiffMinimap.MapWidth : 0;
+        if (_headerLeftSpacer is not null)
+        {
+            _headerLeftSpacer.Width = onLeft ? reserved : 0;
+        }
+
+        if (_headerRightSpacer is not null)
+        {
+            _headerRightSpacer.Width = onLeft ? 0 : reserved;
+        }
+    }
+
     private void OnMinimapJumpRequested(object? sender, int row)
     {
         ScrollToRow(row);
@@ -2586,13 +2659,13 @@ public class SideBySideDiffView : TemplatedControl
     {
         foreach (Grid? grid in new[] { _headersGrid, _panesGrid })
         {
-            if (grid is null || grid.ColumnDefinitions.Count < 3)
+            if (grid is null || grid.ColumnDefinitions.Count <= RightPaneColumn)
             {
                 continue;
             }
 
-            grid.ColumnDefinitions[0].Width = new GridLength(SplitRatio, GridUnitType.Star);
-            grid.ColumnDefinitions[2].Width = new GridLength(1 - SplitRatio, GridUnitType.Star);
+            grid.ColumnDefinitions[LeftPaneColumn].Width = new GridLength(SplitRatio, GridUnitType.Star);
+            grid.ColumnDefinitions[RightPaneColumn].Width = new GridLength(1 - SplitRatio, GridUnitType.Star);
         }
     }
 

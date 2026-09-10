@@ -29,7 +29,24 @@ public sealed class MinimapSnapshotTests
     [InlineData("Dark", "Default")]
     [InlineData("Light", "ColorBlind")]
     [InlineData("Dark", "ColorBlind")]
-    public async Task A_one_sided_block_inks_one_lane_and_notches_the_other(string variant, string palette)
+    public Task A_one_sided_block_inks_one_lane_and_notches_the_other(string variant, string palette)
+    {
+        return Render(variant, palette, MinimapPlacement.Right);
+    }
+
+    /// <summary>
+    /// Plan 00008: the same pair with the map docked left. The lanes are in the same order — a
+    /// lane names a file, not an edge — and the marker and the ticks are on the other ends.
+    /// </summary>
+    [AvaloniaTheory]
+    [InlineData("Light")]
+    [InlineData("Dark")]
+    public Task Docked_left_the_lanes_stay_and_the_edges_mirror(string variant)
+    {
+        return Render(variant, "Default", MinimapPlacement.Left);
+    }
+
+    private async Task Render(string variant, string palette, MinimapPlacement placement)
     {
         TestLogSink.Instance.Clear();
         Application app = Application.Current!;
@@ -51,6 +68,14 @@ public sealed class MinimapSnapshotTests
 
             // One block, left-only, and long enough to cover many buckets on its own.
             await host.LoadAsync(Lines("keep", 40) + Lines("gone", 60) + Lines("tail", 40), Lines("keep", 40) + Lines("tail", 40));
+            host.View.MinimapPlacement = placement;
+            // The current block draws the marker column, which is one of the two things that
+            // mirror with the dock; without navigating there is nothing to look at. Scrolling home
+            // afterwards keeps the viewport box — drawn last, over everything — off the block, so
+            // the lanes and the marker are both read unobstructed.
+            host.View.NextChange();
+            CompositeHost.Layout();
+            host.Left.ScrollToHome();
             CompositeHost.Layout();
 
             using WriteableBitmap frame = host.Capture();
@@ -90,6 +115,15 @@ public sealed class MinimapSnapshotTests
 
             // And the two lanes really are two: the gap between them carries no ink at all.
             Assert.Equal(0, Ink(frame, origin, LaneCentre(map, DiffSide.Left) + 5, top, bottom, deleted));
+
+            // The marker column hugs the panes, so it is on the edge the dock puts against them —
+            // and the lanes above have already been read at the same x in both placements, which
+            // is the half of the rule that says they do *not* follow the dock.
+            Color marker = PresenterHost.Token("DiffView.CurrentBlockBorderBrush");
+            double panesEdge = placement == MinimapPlacement.Left ? map.Bounds.Width - 1 : 0;
+            double outerEdge = placement == MinimapPlacement.Left ? 0 : map.Bounds.Width - 1;
+            Assert.True(Ink(frame, origin, panesEdge, top, bottom, marker) > 0, $"the marker should hug the panes at x={panesEdge}");
+            Assert.Equal(0, Ink(frame, origin, outerEdge, top, bottom, marker));
         }
         finally
         {
@@ -103,7 +137,9 @@ public sealed class MinimapSnapshotTests
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
         png.Position = 0;
-        await Verifier.Verify(png, "png").UseParameters(variant, palette);
+        await (placement == MinimapPlacement.Left
+            ? Verifier.Verify(png, "png").UseParameters(variant)
+            : Verifier.Verify(png, "png").UseParameters(variant, palette));
     }
 
     /// <summary>The x the map itself says is inside <paramref name="side"/>'s lane.</summary>

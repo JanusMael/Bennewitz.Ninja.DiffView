@@ -260,6 +260,12 @@ All notable changes to DiffView are recorded here. The format follows
   and the demo's View menu carries it as Show overview map. The column is 22 px — a marker column
   the current block moved into, two lanes, the gap and the margin — and `Auto`, so hiding it gives
   the width back to the panes.
+- Plan 00008, docking the overview map: `SideBySideDiffView.MinimapPlacement` puts the map
+  outside either pane, over an `Auto` slot at each end of the panes grid — the empty one takes no
+  width. The map's **lanes do not follow the dock**, because a lane names a file and not an edge;
+  the current-block marker and the find ticks do, through one `DiffMinimap.MirrorEdges` flag that
+  says which of the map's own edges faces the panes. The demo's View menu carries it as Overview
+  map on the left.
 - `scripts/run-demo.sh` and `scripts/run-demo.ps1`, which run the demo on a pair with plenty of
   changes and print what is worth trying by hand.
 - Headless, pixel and snapshot tests for the lanes against the model, the combined reading against
@@ -273,6 +279,15 @@ All notable changes to DiffView are recorded here. The format follows
   `CopyRequested`. The copy arrows moved into the panes' line-number margins under plan 00004, so
   the connector column draws polygons and resizes the split and nothing else. Removed outright
   rather than deprecated: nothing has shipped, and the repository's only tag is a checkpoint.
+
+### Fixed
+
+- **A header was the right size in the wrong place, and had been since plan 00004.**
+  `PART_Headers` reserved 24 px for the connector gutter and 14 px for the overview map while
+  `PART_Panes` used 16 and 22 — two stale numbers, from two different plans, that summed to the
+  same 38. The star columns therefore matched and each header was exactly as wide as its pane, so
+  the outer edges lined up; the boundary between them sat 8 px out. Both grids now share one
+  column layout, and a test asserts each header's **x** as well as its width.
 
 ### Changed
 
