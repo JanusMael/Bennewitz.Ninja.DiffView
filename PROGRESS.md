@@ -91,19 +91,25 @@ number is given up at all. The connector column is back to one job and 16 px wid
 members lighter, and the decision *"The arrows are hit before the polygon they sit inside"* is
 retired rather than amended: an arrow in a number margin is not inside a polygon.
 
-Settling the arrow's vertical placement turned up the same mistake in the modified-since-load bar,
-which spanned each line's whole visual box — padding rows included, though those belong to the
-other side's lines and nobody edited them. It now covers the line's own row, like the arrow.
-
-Looking hard at the gutter turned up two more things. The modified-since-load bar spanned each
-line's whole visual box — padding rows included, though those belong to the other side's lines and
-nobody edited them; it now covers the line's own row, like the arrow. And the change markers were
+Looking hard at the gutter turned up two more things. Settling the arrow's vertical placement
+turned up the same mistake in the modified-since-load bar, which spanned each line's whole visual
+box — padding rows included, though those belong to the other side's lines and nobody edited them;
+it now covers the line's own row, like the arrow. And the change markers were
 measured for the first time: the deleted marker laid down **5 pixels of ink against a digit's 29**,
 making the mark meant to carry kind without colour the faintest thing in the gutter. They are now
 `+` `−` `≠` — one vocabulary of operators — drawn semibold, at 41, 25 and 56. Each now sits on a
 chip of its kind's colour, shared across a run of same-kind rows, so the gutter shows a block's
 extent as well as each row's kind — and the chip is composited over the *pane* background rather
 than blended into the gutter, which is what let every palette colour stay exactly as it was.
+
+**[Plan 00006](plans/00006-copying-a-selection.md) is approved and phase 1 of three has landed.**
+A copy arrow is now drawn with an outline carrying its silhouette and a fill inside it, so it reads
+as a control rather than a mark, and the pointer shows a hand over one. Phase 1 also closed a gap
+it found rather than created: **`contrast-pairs.json` had never scored an arrow at all** — the
+block arrow had been drawn on the gutter since plan 00003 with nothing holding it to a floor. Four
+pairs went in, and the twelve tokens the selection arrow will need are declared and scored ahead of
+the code that draws them. What remains is the feature itself: `CanCopySelection` / `CopySelection`
+over the row mapping, the selection arrow in its own colour, and its evidence.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -132,6 +138,27 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00006 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 The arrow reads as a shape | done | `CopyArrowGlyph.Draw` takes a fill and a pen; twelve tokens across both palettes and both variants — the block arrow's fill and the selection arrow's outline, fill and tail bar; four contrast pairs, **two of them for a block arrow that had never been scored**; the hand cursor over an arrow landed just before, in `c88d706` |
+| 2 Copying a selection | not started | `CanCopySelection` / `CopySelection` over the row mapping; the selection arrow, its bar token, first-row placement, the contested-cell rule, `TextArea.SelectionChanged` invalidation |
+| 3 Evidence | not started | Snapshots in both palettes and variants; the mutations; `DECISIONS.md`, `AGENTS.md`, `PROGRESS.md`, changelog |
+
+## Plan 00006, Phase 1 verification
+
+| Done-when item | Result |
+|---|---|
+| The arrow is outlined and filled | pass: `CopyArrowMarginTests.The_arrow_is_outlined_and_filled` — both colours inside one zone. The outline is a one-pixel pen, so most of it is a blend rather than the token exactly and it is counted at tolerance 24, where it is a reliable 7–8 per zone against the fill's 15 |
+| Every arrow colour clears its floor | pass: `theme-audit report` with the four new pairs — 0 low-contrast findings. Outlines are 7.84–10.58 against their gutters and fills 3.97–5.78 |
+| The direction still reads | pass: `CopyArrowSnapshotTests.The_copy_arrows_are_painted_in_the_panes`, rewritten. The old heavier-half rule **reversed** when the outline arrived: the shaft's long edges put ink on the tail side and the head's interior is eaten by its own border. The silhouette is symmetric anyway — a 1 px tip inset plus a 5 px head puts the widest column 6 from either end of a 12 px zone — so the *fill*, which the pen offsets towards the head, is what now says which way the arrow points |
+| No arrow ink where there are no arrows | pass: `A_read_only_pair_shows_every_number_instead` — measured on the **outline** only. The dark fill `#78909C` matches 16 pixels of the line numbers' own anti-aliasing, so the fill cannot answer "is this an arrow"; the outline is 0 in a read-only margin and 13–15 with arrows |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 411 passed (410 before the phase); 421 with `-p:IncludePerfTests=true` |
+| New tests proven able to fail | three mutations, three kills: a zero-width outline, an outline in the fill's colour, and a fill in the outline's. A fourth — removing the pen — **does not compile**, `IPen` being non-nullable, so an arrow with no outline is not expressible rather than merely untested |
+| Snapshot baselines moved | 6, none of which failed on its own: the two copy-arrow frames, the one-sided-block frames and the plan 00003 marks frames |
 
 ## Plan 00005 phases
 
