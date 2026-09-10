@@ -326,6 +326,14 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Fixed
 
+- **A status message could be cleared by the previous message's timer.**
+  `StatusController` identified a pending auto-clear by "is one scheduled" rather than by *which*
+  one, so a timer that came due and posted its clear immediately before the next message arrived
+  ran against that new message — clearing it and disposing its timer. A token created with the
+  timer and compared in the callback fixes it. The existing tests could not see the race: all five
+  ran the clear inline on the advancing thread, closing the window it lives in. Found while scoping
+  plan 00011, and the guard went upstream with the port.
+
 - **A header was the right size in the wrong place, and had been since plan 00004.**
   `PART_Headers` reserved 24 px for the connector gutter and 14 px for the overview map while
   `PART_Panes` used 16 and 22 — two stale numbers, from two different plans, that summed to the

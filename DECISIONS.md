@@ -933,6 +933,13 @@ read-only consumer never would. The one piece salvaged and sent back on its own 
 correction of ClaudeForge's stale "AvaloniaEdit is incompatible with Semi.Avalonia" note, which
 the compat dictionaries of PR #38 had already made false.
 
+**The deferral condition is not met yet, 2026-09-10.** ClaudeForge's `origin/main` now carries a
+`src/ClaudeForge.Avalonia` assembly, which reads from outside like the product-neutral split this
+waits on. It is not: Brian is driving that work, and what is on `main` is part of it in progress
+rather than the finished split. The rebase risk this deferral exists to avoid is therefore still
+there, and the assembly's existence is **not** the signal to re-scope — that call is Brian's when
+the split is done.
+
 ## A re-diff builds from the document; a source assignment builds from the source
 
 `RequestBuild` composes its two sides through `EffectiveSource`, which returns the assigned
@@ -1637,3 +1644,46 @@ notices.
 ClaudeForge ships `.resx` and satellite assemblies that follow `CurrentUICulture` on their own. The
 per-direction key structure above is what either mechanism needs, so nothing here has to be undone if
 the library later ships translations of its own. Whether it should is not decided.
+
+## A pending clear belongs to the message that scheduled it
+
+`StatusController.OnClearDue` passed `state: null` to `CreateTimer` and then asked only whether
+`_pendingClear` was non-null — which is the *current* timer, never the one that fired. A callback
+that came due and posted its clear immediately before the UI thread called `Set` again therefore ran
+against the **new** message: it disposed that message's timer and cleared text that should have
+stuck. `Dispatcher.UIThread.Post` is what opens the window; on the system clock it is a race of
+microseconds, and in the tests it did not exist at all, because all five passed
+`action => action()` as the dispatch and so ran the clear inline on the advancing thread.
+
+The guard is a token created before the timer, handed to `CreateTimer` as its state and compared in
+the callback; `CancelPendingClear` drops it with the timer. `A_clear_that_came_due_before_the_next_message_does_not_clear_it`
+models production instead — a queue drained after the next message arrives — and fails on the
+previous commit with `second` cleared to null.
+
+**This was a guard the rewrite dropped.** ClaudeForge's original compares
+`ReferenceEquals(_autoClearCts, cts)` before clearing, for exactly this reason; moving from
+`Task.Delay` + `CancellationTokenSource` to `TimeProvider.CreateTimer` lost the identity along with
+the CTS. Worth remembering when a rewrite replaces a mechanism wholesale: the thing being replaced
+may have been carrying an invariant that nothing names.
+
+## The two repositories' status palettes diverge, and should
+
+DiffView's Dark status foregrounds are one step brighter than ClaudeForge's — `#6ADB88`, `#F7B85A`,
+`#FFAEAE`, `#8FC8F7` against `#5BD17B`, `#F0A03A`, `#F99090`, `#6BB1F2`. The Light values are
+ClaudeForge's verbatim, and the pill fills are identical in both. This looks like drift and is not.
+
+**A library holds a floor against variants it does not choose.** DiffView can be hosted under any
+Semi variant, and the lightest dark page the audit knows is Semi Dusk's `#2D3236`, where
+ClaudeForge's four score **5.67 to 6.69**. That is why they moved here.
+
+**An application holds it against the variants it ships.** ClaudeForge sets `ThemeVariant.Dark` or
+`ThemeVariant.Light` and nothing else — `MainWindowViewModel` toggles exactly those two and follows
+the platform between them, so Dusk, Aquatic and NightSky are unreachable there. On Semi Dark
+`#16161A`, its own page, its four score **7.90 to 9.32**. Its values are right for it.
+
+So neither palette is wrong, and neither should be conformed to the other. What ClaudeForge lacked
+was any check at all: `App.axaml` stated the contract in prose — *"every pair here is >= 4.5:1 on the
+pill and >= 7.3:1 on the page. Recheck both numbers if you retint either half"* — and the recheck was
+a manual step. It is now a test there, reading those brush values out of the AXAML so a retint is
+measured rather than assumed. The margin it protects is thinner than the prose suggests: the worst
+pill pair clears by 0.07 and the worst page pair by 0.05.
