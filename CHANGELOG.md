@@ -266,6 +266,25 @@ All notable changes to DiffView are recorded here. The format follows
   the current-block marker and the find ticks do, through one `DiffMinimap.MirrorEdges` flag that
   says which of the map's own edges faces the panes. The demo's View menu carries it as Overview
   map on the left.
+- Plan 00009, key bindings a host can change: `DiffCommand` names the controls' verbs and
+  `DiffKeyMap` says which key each is on — assign a gesture to rebind, `null` to unbind, and a
+  command the default leaves unbound takes one the same way. `SideBySideDiffView.KeyMap` and
+  `InlineDiffView.KeyMap` each hold one, `GestureFor` is the read side, and `CommandFor` hands out
+  the command behind a verb. **Only the bindings a control created are replaced** when the map
+  changes, so a `KeyBinding` a host added to the public collection survives; `DiffKeyBindings` is
+  the one implementation of that rule, and of the warning when two commands land on one gesture,
+  held by both views. The unified view defaults to `DiffKeyMap.UnifiedDefault()` — the same six
+  gestures with `SwitchPane` and the four copies unbound — and a gesture given to one of those
+  five is skipped and logged through `DiffViewLog.KeyCommandUnsupported` rather than left dead
+  without a word.
+- The demo's View menu carries **Key bindings**, a submenu whose accelerators are written from
+  `GestureFor` rather than typed into the XAML, with a toggle that moves navigation to
+  Ctrl+Down / Ctrl+Up on both views — so the labels move along with the keys.
+- Headless tests for the pinned defaults, rebinding and the old key going quiet, unbinding with the
+  command still callable, binding a command with no default, a host's own binding surviving a
+  rebuild, a cleared collection staying cleared, two commands on one gesture, the unified view's
+  smaller default, a two-sided verb skipped and logged there, and the copy chord against both the
+  selection and the block.
 - `scripts/run-demo.sh` and `scripts/run-demo.ps1`, which run the demo on a pair with plenty of
   changes and print what is worth trying by hand.
 - Headless, pixel and snapshot tests for the lanes against the model, the combined reading against
@@ -291,6 +310,13 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **Alt+Left and Alt+Right copy the selection when there is one**, and the current change block
+  otherwise — the rule the gutter already applied when a selection arrow took a block arrow's
+  cell, and the rule cut, copy and delete follow everywhere. Before this the gutter drew one
+  operation and the chord fired another whenever a selection was up. The block-always behaviour
+  keeps a name, `CopyBlockToLeft` / `CopyBlockToRight`, unbound by default, so a host that wants
+  it back binds a gesture rather than losing the verb. This supersedes a non-goal of plan 00006;
+  `DECISIONS.md` carries the reasoning.
 - The change-block arrow is goldenrod-and-yellow in the default palette — `#8A6D00` over
   `#F0E442` in Light, `#FFD54F` over `#DAA520` in Dark — in place of slate, so it reads apart from
   the selection arrow's blue at a glance, as Beyond Compare's does. The colour-blind palette keeps

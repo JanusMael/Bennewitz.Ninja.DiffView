@@ -44,11 +44,12 @@ and it names the unified pane `unified`, which is neither side.
 What is left is not code: **Windows and macOS demo runs are still owed** from Phase 10. The
 Linux run is no longer owed — the demo is an XWayland client and its window **can** be captured
 from a session here, by window id rather than from the root; `AGENTS.md` §9 carries the recipe and
-the mistake it corrects. What still cannot be done here is *driving* the running app: no
-input-injection tool is installed, and the demo has no flag for making a side editable, so
-everything behind the View menu — in-pane editing, and therefore every copy arrow — is still
-judged on headless frames alone. All three ClaudeForge contributions (PR #37, #38 and #44) are merged and the
-ClaudeForge pin follows (see *Upstreamed to ClaudeForge*).
+the mistake it corrects. The app can also be **driven** here: `xdotool` and `wmctrl` are installed,
+clicks reach menu items and keys reach a focused pane, which is how plan 00009's rebind was judged
+by hand. The demo still has no flag for making a side editable, so in-pane editing and the copy
+arrows have to be switched on through the View menu rather than at launch. All three ClaudeForge
+contributions (PR #37, #38 and #44) are merged and the ClaudeForge pin follows (see *Upstreamed to
+ClaudeForge*).
 
 **[Plan 00003](plans/00003-in-pane-editing.md) — in-pane editing — is under way.** Phase 1,
 typing, took no source change at all: `LeftReadOnly` and `RightReadOnly` already reached the
@@ -148,14 +149,20 @@ names a file, not an edge — while the current-block marker and the find ticks 
 panes grid never shared a column layout, so a header was the right size in the wrong place;
 *Decisions* has the arithmetic.
 
-**[Plan 00009](plans/00009-configurable-key-bindings.md) is approved and phase 1 of three has
-landed.** `DiffCommand` names the control's verbs and `DiffKeyMap` says which key each is on;
-`SideBySideDiffView.KeyMap` rebuilds the bindings **it owns** and leaves a host's own alone.
-`GestureFor` is the seam plan 00010's context menu will read its accelerators from. It also settles
-what plan 00006 deferred: `CopyToLeft` / `CopyToRight` now copy the selection when there is one and
-the block otherwise, so the chord agrees with the gutter, and `CopyBlockToLeft` / `CopyBlockToRight`
-keep the old behaviour unbound. What remains is phase 2 — `InlineDiffView.KeyMap` and a demo rebind
-— and phase 3, the mutations and the docs.
+**[Plan 00009](plans/00009-configurable-key-bindings.md) is complete.** `DiffCommand` names the
+control's verbs and `DiffKeyMap` says which key each is on; both views hold one, and both rebuild
+through the single `DiffKeyBindings`, which replaces the bindings **the control owns** and leaves a
+host's own alone. `GestureFor` is the seam plan 00010's context menu will read its accelerators
+from — the demo already reads it, in View ▸ Key bindings, so a rebind moves the menu's labels along
+with the keys. The unified view takes `DiffKeyMap.UnifiedDefault()`: the same six gestures, with
+`SwitchPane` and the four copies unbound, and a gesture given to one of those five is skipped and
+logged rather than left dead without a word. Plan 00009 also settles what plan 00006 deferred:
+`CopyToLeft` / `CopyToRight` now copy the selection when there is one and the block otherwise, so
+the chord agrees with the gutter, and `CopyBlockToLeft` / `CopyBlockToRight` keep the old behaviour
+under a name, unbound. That supersedes a non-goal of an approved plan, so *Decisions* carries it.
+
+**[Plan 00010](plans/), the pane context menu, is agreed and not yet drafted.** Nothing else is in
+flight; new work needs a new plan under `plans/`.
 
 **`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path**, and `AGENTS.md` §9 is how to
 capture the running window from a session here.
@@ -193,8 +200,31 @@ dotnet run --project src/ThemeAudit -- report
 | Phase | Status | Notes |
 |---|---|---|
 | 1 The table | done | `DiffCommand`, `DiffKeyMap` + `Default()` / `UnifiedDefault()`; `SideBySideDiffView.KeyMap`, `GestureFor`, `CommandFor`; the owned-binding rebuild; `DiffViewLog.KeyGestureConflict`; `CopyToward` / `CanCopyToward` and the `CopyBlockTo*` pair; 10 cases, six mutations, six kills |
-| 2 The unified view, and the demo | **not started** | `InlineDiffView.KeyMap` consuming `DiffKeyMap.UnifiedDefault()` — the map and its test already exist, the view does not use it yet; a demo menu item that rebinds something visibly |
-| 3 Evidence | **not started** | Phase 2's mutations; `DECISIONS.md` (the key table, the owned-binding rule, and **plan 00006's non-goal being superseded** — drift, so it goes here and not into that plan), `AGENTS.md` §6, this file, the changelog |
+| 2 The unified view, and the demo | done | `InlineDiffView.KeyMap` over `DiffKeyMap.UnifiedDefault()`, with `CommandOrNull` behind both the skip and `CommandFor`'s throw; `DiffViewLog.KeyCommandUnsupported`; **`DiffKeyBindings`, the one binder both views call** — phase 1's copy collapsed onto it rather than duplicated; the demo's View ▸ Key bindings submenu, its accelerators read from `GestureFor`, and the copy items moved onto `CopyToward`; 7 cases, seven mutations, seven kills |
+| 3 Evidence | done | The mutations above; `DECISIONS.md` (the key table, the owned-binding rule, the one binder, and **plan 00006's non-goal being superseded** — drift, so it lives there and not in that plan), `AGENTS.md` §6, §7 and §9, this file, the changelog |
+
+## Plan 00009 verification
+
+Test names are `KeyMapTests.*` (side-by-side) and `InlineKeyMapTests.*` (unified) unless said
+otherwise.
+
+| Done-when item | Result |
+|---|---|
+| The default map is the bindings that were hard-coded | pass: `KeyMapTests.The_default_map_is_the_bindings_that_were_hard_coded` pins all nine gesture for gesture, plus the two unbound block-always copies |
+| Rebinding moves the behaviour, **and the old key stops working** | pass: `Rebinding_moves_the_behaviour_off_the_old_key`, in both views. The second half is the one a rebind test usually forgets |
+| Unbinding clears the key and leaves the command callable | pass: `Unbinding_leaves_the_key_doing_nothing_and_the_command_still_callable`, in both views |
+| A command with no default can be bound | pass: `KeyMapTests.A_command_with_no_default_can_be_bound` binds `CopyBlockToRight` to F9 and copies the block **while a selection is active** — the behaviour the default no longer has |
+| A host's own binding survives a rebuild | pass: `A_binding_the_host_added_survives_a_rebuild`, in both views. Written before the rebuild code, so it failed first |
+| A cleared collection stays cleared | pass: `A_cleared_collection_stays_cleared`, in both views — §6's existing promise, still true |
+| Two commands on one gesture are both kept and logged once | pass: `Two_commands_on_one_gesture_are_both_kept_and_the_clash_is_logged`, in both views, asserting the warning and that neither binding was dropped |
+| `GestureFor` answers the map, `null` included | pass: asserted through the two default tests and both rebind tests — it is the read side plan 00010 depends on |
+| The unified view's default is smaller | pass: `InlineKeyMapTests.The_unified_default_is_the_side_by_side_one_less_its_two_sided_verbs` — six bindings, `SwitchPane` and the four copies `null`, the rest identical |
+| **A two-sided verb bound on the unified view is skipped and logged, not bound to nothing** | pass: `InlineKeyMapTests.A_two_sided_verb_bound_here_is_skipped_and_logged_not_bound_to_nothing` — assigning `DiffKeyMap.Default()` there leaves six bindings, warns three times at `Warning`, keeps the map reading back what it was given, and F6 does nothing. Beyond the plan's table, and the thing a host will actually hit |
+| Alt+Left copies the selection when there is one, and the block when there is not | pass: `KeyMapTests.The_copy_chord_takes_the_selection_when_there_is_one` and `With_no_selection_the_copy_chord_is_the_block_as_before` |
+| **The gutter and the chord agree on the contested cell** | pass: `KeyMapTests.The_gutter_and_the_chord_agree_on_the_contested_cell` — a selection beginning on a block's anchor row draws the selection's arrow and fires the selection's copy. This is the assertion the behaviour change exists for |
+| Every new test proven able to fail | pass: phase 1 six mutations / six kills, phase 2 seven mutations / seven kills. `A_cleared_collection_stays_cleared` is the exception in both views — it re-asserts §6's standing promise rather than new behaviour, and carries no mutation of its own |
+| Exercised by hand, not only headless | pass: driven under §9 with `xdotool` in both views. F7 walks the blocks; View ▸ Key bindings ▸ Rebind moves navigation to Ctrl+Down / Ctrl+Up; F7 then does nothing, Ctrl+Down / Ctrl+Up walk the blocks, and the submenu's labels follow to `Ctrl+Down Arrow` / `Ctrl+Up Arrow`. The same sequence holds under `--unified`, which is what phase 2 is about |
+| Build and tests | pass: `dotnet build DiffView.slnx -warnaserror` clean, zero warnings; `dotnet test --solution DiffView.slnx` **473 passed** (466 before phase 2). No theme change, so no audit regeneration |
 
 ## Plan 00008 phases
 

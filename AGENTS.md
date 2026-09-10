@@ -213,7 +213,9 @@ no dates, no counts.
 | Row geometry is uniform once primed: a row's top is its index times the line height, and the current-block border, the centring scroll, the connector polygons and the minimap viewport all compute from that product | Borders, connectors and jumps land on the wrong rows when priming is skipped or stale | `DiffLineBackgroundRenderer.DrawCore` (border), `SideBySideDiffView.ScrollToRows`, `ChangeConnectorGutter.TopOfRow`, `DiffMinimap`; the priming contracts in §2 |
 | A connector's left extent is the block's first `ModifiedCount + DeletedCount` rows and its right extent the first `ModifiedCount + InsertedCount`, per the row builder's pairing rule | Wedges point the wrong way or bands are the wrong height | `ChangeConnectorGutter.Render`; test `OverviewTests.Connector_polygons_have_the_expected_extents_a_click_selects_the_block_and_a_drag_resizes_the_panes` |
 | `CurrentChangeIndex` is set only through `SideBySideDiffView.SetCurrentChange`, which clamps, scrolls, and pushes the block to the presenters, the gutter and the minimap together; a new model resets it | One surface shows a different current change than another | `SideBySideDiffView.SetCurrentChange`, `ApplyModel`; test `NavigationTests.NextChange_from_the_top_lands_on_the_first_block_and_stops_at_the_last_with_the_strip_saying_so` |
-| The default key bindings are the composite's `KeyBindings`; Avalonia tries an ancestor's bindings before raising the key event, so they fire while a pane has focus, and a host may clear them | Keys stop working after a template change, or a host cannot rebind | `SideBySideDiffView` constructor; test `NavigationTests.F7_and_Shift_F7_navigate_and_F6_switches_panes` |
+| The key bindings are the composite's `KeyBindings`, built from `KeyMap`; Avalonia tries an ancestor's bindings before raising the key event, so they fire while a pane has focus, and a host may rebind, unbind or clear them | Keys stop working after a template change, or a host cannot rebind | `SideBySideDiffView.KeyMap`, `GestureFor`, `CommandFor`; tests `NavigationTests.F7_and_Shift_F7_navigate_and_F6_switches_panes`, `KeyMapTests.*` |
+| **Only the bindings the control created are replaced** when the map changes — `KeyBindings` is public, so a host may have added its own. `DiffKeyBindings` is the single implementation of that rule and of the two-commands-on-one-gesture warning, held by both views: a second copy is where they would drift apart | A host's own `KeyBinding` deleted without a word by a rebind, or the two views' rules parting | `DiffKeyBindings.Rebuild`; tests `KeyMapTests.A_binding_the_host_added_survives_a_rebuild`, `InlineKeyMapTests.A_binding_the_host_added_survives_a_rebuild` |
+| `CopyToLeft` / `CopyToRight` copy the **selection when there is one and the current block otherwise** — the rule the gutter already applies when a selection arrow takes a block arrow's cell. `CopyBlockToLeft` / `CopyBlockToRight` are the block-always pair, unbound by default so the old behaviour keeps a name | The gutter draws one operation and the chord fires another, which is what plan 00006 left behind | `SideBySideDiffView.CopyToward`, `CanCopyToward`; test `KeyMapTests.The_gutter_and_the_chord_agree_on_the_contested_cell` |
 | `SplitRatio` is applied to both the headers grid and the panes grid, which share their star columns | Headers drift from their panes after a gutter drag | `SideBySideDiffView.ApplySplit`, template parts `PART_Headers` and `PART_Panes` |
 | A margin's tooltip is resolved per line under the pointer by `DiffMargin.OnPointerMoved` and cleared on exit; each margin supplies `TooltipFor(lineNumber)` from `PaneMetadata` | A tooltip names the wrong line, or lingers | `DiffMargin`, `DiffLineNumberMargin.TooltipFor`, `ChangeMarkerMargin.TooltipFor`; `TooltipTests` |
 | `DiffPanePresenter.CanCopyOut` carries the **other** side's editable flag, not its own: a pane offers to copy a block out when the side that would receive it is editable | Arrows appear on the pane that cannot be copied from, or vanish from the one that can | `SideBySideDiffView.AttachPane` and the `LeftReadOnlyProperty` / `RightReadOnlyProperty` branches of `OnPropertyChanged` — both paths, because a host that sets the flag in XAML is wired by the first and never reaches the second; test `CopyArrowMarginTests.A_side_editable_before_the_template_applies_is_wired_too` |
@@ -262,7 +264,7 @@ not contradicted below holds unchanged.
 | The find scope is always `FindScope.Both`: the setter coerces it and `DiffFindBar.ShowScope` hides the group | A scope of one side hides matches that are on screen | `InlineDiffView.FindOptions`, `OnApplyTemplate`; test `InlineFindTests.The_scope_control_is_gone_and_the_scope_stays_both` |
 | The line numbers are the *sides'*, in two columns, and so is the strip's caret lane; the unified document's own numbering is never shown | The gutter names lines of neither file | `DiffLineNumberMargin.RenderCore`, `InlineDiffView.UpdateCaret`; test `InlineDiffViewTests.The_gutter_numbers_each_line_on_its_own_side_and_leaves_the_other_column_empty` |
 | A pane that is unified logs as `unified`, never as a side: the three pane-naming log methods take `DiffSide?` and the presenter passes `LogSide` | A log line blames the left pane for a fault in a view that has no sides | `DiffPanePresenter.LogSide`, `DiffViewLog.Pane`; test `InlineDiffViewTests.A_throwing_decorator_degrades_the_control_and_the_text_still_renders` |
-| No minimap and no connector gutter — both are two-sided — and no F6: six key bindings, not seven | A template part that cannot be fed | `Themes/InlineDiffView.axaml`, the `InlineDiffView` constructor |
+| No minimap and no connector gutter — both are two-sided — and `DiffKeyMap.UnifiedDefault()` for the keys: six bindings, with `SwitchPane` and the four copies unbound. A gesture given to one of those five is skipped and logged through `DiffViewLog.KeyCommandUnsupported`, never bound to nothing, and `CommandFor` throws `NotSupportedException` for them — the skip and the throw both read `CommandOrNull`, so they cannot disagree | A template part that cannot be fed, or a key bound to a verb this view does not have and left silently dead | `Themes/InlineDiffView.axaml`, `InlineDiffView.CommandOrNull`, `DiffKeyMap.UnifiedDefault`; test `InlineKeyMapTests.A_two_sided_verb_bound_here_is_skipped_and_logged_not_bound_to_nothing` |
 
 ## 8. Contributing back
 
@@ -333,11 +335,13 @@ succeeded, because `head` exits 0 regardless. Capture the status without a pipe,
   followed by `disown`, from a script file, outlives the turn.
 - **Only `import` (ImageMagick 7) is installed.** There is no `grim`, `spectacle`,
   `gnome-screenshot`, `flameshot`, `maim` or `xwd`.
-- **There is no input-injection tool** (`xdotool` and `wmctrl` are both absent), so the running app
-  can only be *looked at*, never driven. Anything behind a menu cannot be reached, and that
-  includes **in-pane editing and therefore every copy arrow**: the demo's flags are `--theme`,
-  `--variant`, `--left`, `--right`, `--unified` and `--log-level`, with nothing for making a side
-  editable. A demo flag such as `--edit left|right|both`, or `xdotool`, would close that gap.
+- **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
+  bullet claimed the opposite for three plans; check before repeating it. `xdotool key F7` and
+  `xdotool key ctrl+Down` into a focused pane both work, and that is how plan 00009's rebind was
+  judged by hand. The demo's flags are `--theme`, `--variant`, `--left`, `--right`, `--unified`
+  and `--log-level`, with nothing for making a side editable, so in-pane editing and the copy
+  arrows still have to be switched on through the View menu — reachable now, but by clicking.
+  A demo flag such as `--edit left|right|both` would still save a menu drive.
 - **What this does not change.** A captured window is a look, not a test: it is one machine, one
   variant and one moment. The snapshot frames under `Snapshots/` with their pixel assertions stay
   the evidence, per §5. This is for the judgement a frame cannot give — whether a thing reads
@@ -350,4 +354,7 @@ succeeded, because `head` exits 0 regardless. Capture the status without a pipe,
   then click at the popup's screen origin plus the item's offset. Keyboard accelerators
   (`alt+v`, then the item's letter) did **not** work through `xdotool` here; clicking did.
 - The demo's View menu is taller than its popup and scrolls, so an item below the fold cannot be
-  clicked from the first grab.
+  clicked from the first grab. `xdotool click 5` with the pointer over the popup scrolls it; grab
+  again afterwards, because every position has moved. **New demo items belong in a submenu** for
+  the same reason — a submenu is one more row here and its own popup to grab, where four more
+  rows push something else off the end.

@@ -1443,3 +1443,71 @@ The headers grid now mirrors the panes grid column for column — `Auto,*,16,*,A
 — and `ApplySplit` writes the ratio into named indices rather than 0 and 2. `Each_header_is_exactly_as_wide_as_its_pane`
 asserts both the width **and the x**, in both placements; the width alone is what passed for four
 plans.
+
+## Key bindings are a named table, and Alt+Left now copies what the gutter says it will
+
+Plan 00009. Nine `KeyBinding`s were built in `SideBySideDiffView`'s constructor and six more in
+`InlineDiffView`'s, each pairing a gesture with a private command. A host could clear the
+collection — §6 promised that much — but could not *rebind* anything, because nothing named a
+command and nothing handed out its gesture. That is also upstream of the context menu: a menu that
+prints `Alt+Left` beside "copy this change" has to read the text from wherever the binding lives,
+or the label becomes a lie the first time someone rebinds.
+
+`DiffCommand` names the verbs and `DiffKeyMap` says which key each is on — assign a gesture to
+rebind, `null` to unbind, and a command the default leaves unbound takes one the same way.
+`GestureFor` is the read side. The map is keyed by command, so one command cannot hold two
+gestures; two commands on one gesture **is** expressible and is logged at warning naming both,
+rather than refused. Avalonia decides which fires, and refusing a binding the host asked for — or
+dropping one in silence — would each be worse than saying so.
+
+**Only the bindings the control created are replaced.** `KeyBindings` is public, so a host may
+already have added its own, and rebuilding the collection wholesale would delete it without a
+word — the failure a consumer finds rather than one we do. The instances are tracked and removed
+individually, and the test that adds a host binding and asserts it survives was written before the
+rebuild code, so it failed first.
+
+**No file format and no editor control**, settled before the plan was written. A schema brings
+versioning, an unknown-command policy and conflict rules, and a host is better placed to decide
+how its own settings persist. `DiffKeyMap` is public and separable precisely so that persistence
+can be written against it later without this control growing a settings surface.
+
+### Alt+Left follows the selection, which supersedes a plan 00006 non-goal
+
+Plan 00006 gave a selection arrow the block arrow's cell — *a selection is the more specific and
+the more recent intent* — and in the same breath kept Alt+Left copying the block. So with a
+selection up the gutter drew one operation and the chord fired another. The ambiguity was never
+about which key.
+
+`CopyToLeft` and `CopyToRight` now copy the selection when there is one and the current block
+otherwise: the rule the gutter already applied, and the rule cut, copy and delete follow
+everywhere. `CopyBlockToLeft` and `CopyBlockToRight` keep the block-always behaviour under a name
+and are unbound by default, so a host that wants it back binds a gesture rather than losing the
+verb.
+
+This supersedes plan 00006's non-goal *"A keyboard path for the selection copy"*. That plan is
+approved and is not edited, so the change is recorded here, as drift. It is a behaviour change,
+and the only one in plan 00009.
+
+### One binder, because a second implementation is where the two views drift apart
+
+`DiffKeyMap.UnifiedDefault()` leaves `SwitchPane` and the four copies unbound: the unified view has
+one pane to switch between and one composed document to copy between. A different *default*, not a
+different type — §7 keeps the two views parallel, and a second type is exactly what would drift.
+
+Phase 2 nearly shipped a second `RebuildKeyBindings` beside phase 1's: the two rules above —
+replace only what the control created, warn when a gesture lands on two commands — written twice,
+in the two controls §7 exists to keep parallel. `DiffKeyBindings` is the one implementation both
+call, and phase 1's copy was collapsed onto it in the same change rather than left to rot beside
+it.
+
+A gesture given to a verb the unified view has no meaning for is **skipped and logged**, never
+bound to nothing. A host assigning `DiffKeyMap.Default()` there gets three warnings naming the
+commands and a map that still reads back what it was given: the map does not refuse, the control
+does, and it says which key it left dead. `CommandFor` throws `NotSupportedException` for those
+five, and the private `CommandOrNull` behind it is what the binder asks, so the skip and the throw
+cannot disagree.
+
+The demo carries View ▸ Key bindings, whose accelerators are written from `GestureFor` rather than
+typed into the XAML — a submenu, because that menu already scrolls past its fold. Rebinding
+navigation there moves the labels along with the keys, which is the seam plan 00010's context menu
+will read.
