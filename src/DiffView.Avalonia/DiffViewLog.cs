@@ -124,6 +124,16 @@ internal static class DiffViewLog
         logger?.LogDebug("No grammar claims {Extension}; the {Side} pane stays plain text", extension.Length == 0 ? "-" : extension, Pane(side));
     }
 
+    /// <summary>
+    /// Two commands share one gesture. Avalonia decides which fires; saying so is better than
+    /// refusing a binding the host asked for or dropping one without a word. Command names and a
+    /// gesture, never document text.
+    /// </summary>
+    public static void KeyGestureConflict(ILogger? logger, string gesture, string first, string second)
+    {
+        logger?.LogWarning("{Gesture} is bound to both {First} and {Second}; which one fires is Avalonia's choice", gesture, first, second);
+    }
+
     public static void RenderFault(ILogger? logger, DiffSide? side, RenderFaultEventArgs fault)
     {
         // The subject is a grammar's language, never document text; a decorator that failed over a

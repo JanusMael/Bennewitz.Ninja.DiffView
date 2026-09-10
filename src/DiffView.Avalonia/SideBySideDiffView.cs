@@ -287,6 +287,8 @@ public class SideBySideDiffView : TemplatedControl
     private readonly DelegateCommand _findPrevious;
     private readonly DelegateCommand _copyToLeft;
     private readonly DelegateCommand _copyToRight;
+    private readonly DelegateCommand _copyBlockToLeft;
+    private readonly DelegateCommand _copyBlockToRight;
     private bool _isFindBarOpen;
     private string _findQuery = string.Empty;
     private FindOptions _findOptions = FindOptions.Default;
@@ -363,6 +365,15 @@ public class SideBySideDiffView : TemplatedControl
     private Button? _bannerAction;
     private ScrollSync? _sync;
 
+    /// <summary>
+    /// The key bindings this control put in <see cref="InputElement.KeyBindings"/>. Only these are
+    /// replaced when the map changes: the collection is public, so a host may have added its own,
+    /// and rebuilding it wholesale would delete that silently.
+    /// </summary>
+    private readonly List<KeyBinding> _ownedBindings = [];
+
+    private DiffKeyMap _keyMap = new();
+
     /// <summary>Creates the control with its compiled theme merged into its own resources.</summary>
     public SideBySideDiffView()
     {
@@ -374,8 +385,10 @@ public class SideBySideDiffView : TemplatedControl
         _firstChange = new DelegateCommand(FirstChange, () => ChangeCount > 0);
         _lastChange = new DelegateCommand(LastChange, () => ChangeCount > 0);
         _switchPane = new DelegateCommand(SwitchPane);
-        _copyToLeft = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Left), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Left));
-        _copyToRight = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Right), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Right));
+        _copyToLeft = new DelegateCommand(() => CopyToward(DiffSide.Left), () => CanCopyToward(DiffSide.Left));
+        _copyToRight = new DelegateCommand(() => CopyToward(DiffSide.Right), () => CanCopyToward(DiffSide.Right));
+        _copyBlockToLeft = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Left), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Left));
+        _copyBlockToRight = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Right), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Right));
         _openFind = new DelegateCommand(OpenFind);
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
@@ -383,19 +396,10 @@ public class SideBySideDiffView : TemplatedControl
         Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
         Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, options, token);
 
-        // The default key bindings; a host clears or replaces them. Escape and F3 execute only
-        // while the find bar is open, and a binding that does not execute leaves the key
-        // unhandled, so Escape still reaches the rest of the application.
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7), Command = _nextChange });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F7, KeyModifiers.Shift), Command = _previousChange });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F6), Command = _switchPane });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F, KeyModifiers.Control), Command = _openFind });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3), Command = _findNext });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.F3, KeyModifiers.Shift), Command = _findPrevious });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Escape), Command = _closeFind });
-        // The arrow points the way the text travels, which is the way the gutter's arrows do.
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Left, KeyModifiers.Alt), Command = _copyToLeft });
-        KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.Right, KeyModifiers.Alt), Command = _copyToRight });
+        // The default key bindings come from the map; a host rebinds, unbinds or clears them.
+        // Escape and F3 execute only while the find bar is open, and a binding that does not
+        // execute leaves the key unhandled, so Escape still reaches the rest of the application.
+        KeyMap = DiffKeyMap.Default();
 
         LayoutUpdated += OnLayoutUpdated;
         RefreshStrings();
@@ -1648,6 +1652,115 @@ public class SideBySideDiffView : TemplatedControl
 
     /// <summary>Copies the current change block onto <paramref name="toSide"/>.</summary>
     public bool CopyCurrentBlock(DiffSide toSide) => CopyBlock(CurrentChangeIndex, toSide);
+
+    /// <summary>
+    /// Copies toward <paramref name="toSide"/> the way the gutter says it will: the focused pane's
+    /// selected lines when there is a selection, and the current block otherwise.
+    /// </summary>
+    /// <remarks>
+    /// Plan 00006 made a selection arrow take a block arrow's cell — a selection being the more
+    /// specific and the more recent intent — while the chord went on copying the block, so the two
+    /// disagreed whenever a selection was up. This is the rule that makes them agree, and it is
+    /// the one cut, copy and delete follow everywhere. <see cref="CopyCurrentBlock"/> is still the
+    /// block whatever is selected.
+    /// </remarks>
+    public bool CopyToward(DiffSide toSide)
+    {
+        DiffSide fromSide = Other(toSide);
+        return CanCopySelection(fromSide) ? CopySelection(fromSide) : CopyCurrentBlock(toSide);
+    }
+
+    /// <summary>Whether <see cref="CopyToward"/> would write anything.</summary>
+    public bool CanCopyToward(DiffSide toSide)
+    {
+        DiffSide fromSide = Other(toSide);
+        return CanCopySelection(fromSide) || CanCopyBlock(CurrentChangeIndex, toSide);
+    }
+
+    /// <summary>
+    /// What key each command is on. Assigning a map, or changing one in place, rebuilds the
+    /// bindings this control owns and leaves any a host added alone.
+    /// </summary>
+    public DiffKeyMap KeyMap
+    {
+        get => _keyMap;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (ReferenceEquals(_keyMap, value))
+            {
+                return;
+            }
+
+            _keyMap.Changed -= OnKeyMapChanged;
+            _keyMap = value;
+            _keyMap.Changed += OnKeyMapChanged;
+            RebuildKeyBindings();
+        }
+    }
+
+    /// <summary>The gesture <paramref name="command"/> is on, or <c>null</c> when it is unbound.</summary>
+    public KeyGesture? GestureFor(DiffCommand command) => _keyMap[command];
+
+    /// <summary>The command object behind <paramref name="command"/>, for a host that wants to invoke it.</summary>
+    public ICommand CommandFor(DiffCommand command)
+    {
+        return command switch
+        {
+            DiffCommand.NextChange => _nextChange,
+            DiffCommand.PreviousChange => _previousChange,
+            DiffCommand.SwitchPane => _switchPane,
+            DiffCommand.OpenFind => _openFind,
+            DiffCommand.FindNext => _findNext,
+            DiffCommand.FindPrevious => _findPrevious,
+            DiffCommand.CloseFind => _closeFind,
+            DiffCommand.CopyToLeft => _copyToLeft,
+            DiffCommand.CopyToRight => _copyToRight,
+            DiffCommand.CopyBlockToLeft => _copyBlockToLeft,
+            DiffCommand.CopyBlockToRight => _copyBlockToRight,
+            _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Unknown command."),
+        };
+    }
+
+    private void OnKeyMapChanged(object? sender, EventArgs e) => RebuildKeyBindings();
+
+    /// <summary>
+    /// Replaces the bindings this control owns with the map's, leaving every other entry in
+    /// <see cref="InputElement.KeyBindings"/> where it is.
+    /// </summary>
+    private void RebuildKeyBindings()
+    {
+        foreach (KeyBinding owned in _ownedBindings)
+        {
+            KeyBindings.Remove(owned);
+        }
+
+        _ownedBindings.Clear();
+
+        Dictionary<KeyGesture, DiffCommand> seen = [];
+        foreach (DiffCommand command in _keyMap.Commands.Order())
+        {
+            if (_keyMap[command] is not { } gesture)
+            {
+                continue;
+            }
+
+            if (seen.TryGetValue(gesture, out DiffCommand already))
+            {
+                // Avalonia decides which of the two fires. Refusing the binding, or dropping one
+                // without a word, would each be worse than saying so.
+                DiffViewLog.KeyGestureConflict(_renderLogger, gesture.ToString(), already.ToString(), command.ToString());
+            }
+            else
+            {
+                seen[gesture] = command;
+            }
+
+            KeyBinding binding = new() { Gesture = gesture, Command = CommandFor(command) };
+            _ownedBindings.Add(binding);
+            KeyBindings.Add(binding);
+        }
+    }
 
     /// <summary>
     /// Whether the selection in <paramref name="fromSide"/>'s pane could be copied to the other
