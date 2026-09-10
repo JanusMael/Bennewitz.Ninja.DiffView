@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
@@ -161,6 +162,10 @@ public class DiffPanePresenter : TextEditor
         TextArea.SelectionChanged += OnSelectionChanged;
         DocumentChanged += OnDocumentSwapped;
         LayoutUpdated += OnLayoutUpdated;
+        // Both the right-click and Shift+F10 arrive here, which is why the menu hangs off this
+        // rather than off a ContextMenu assigned in a template: the keyboard's request carries no
+        // position, and a templated menu would answer it with one built for the wrong place.
+        ContextRequested += OnContextRequested;
     }
 
     /// <summary>A decorator threw and disabled itself; the text is still rendered.</summary>
@@ -239,13 +244,112 @@ public class DiffPanePresenter : TextEditor
     internal void RequestCopySelection() => CopySelectionRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
+    /// A context menu was asked for over this pane, by pointer or by keyboard, with what was under
+    /// it. The composite answers, because the items name verbs a pane knows nothing about — the
+    /// other side, the find bar, the save.
+    /// </summary>
+    internal event EventHandler<PaneContextRequest>? ContextMenuRequested;
+
+    /// <summary>
+    /// What a context-menu request carries: the context, where to open — <c>null</c> from the
+    /// keyboard, which the menu answers at the caret — and whether anything was opened.
+    /// </summary>
+    internal sealed class PaneContextRequest(DiffPaneContext context, Point? pointer)
+    {
+        public DiffPaneContext Context { get; } = context;
+
+        public Point? Pointer { get; } = pointer;
+
+        /// <summary>
+        /// Set when a menu actually opened. The pane marks the routed event handled only then, so
+        /// a request it answers with nothing still reaches a <c>ContextMenu</c> a host put on an
+        /// ancestor — the view itself, say — rather than being eaten in silence.
+        /// </summary>
+        public bool Opened { get; set; }
+    }
+
+    /// <summary>
+    /// Describes the line at <paramref name="lineNumber"/> and this pane's selection, for a host
+    /// that wants to know what was clicked. Public because <c>PaneMetadata</c> is not: without it
+    /// a consumer cannot write a menu of their own at all.
+    /// </summary>
+    public DiffPaneContext ContextAt(int lineNumber, DiffPaneRegion region = DiffPaneRegion.Text)
+    {
+        bool known = Metadata.Knows(lineNumber);
+        InlineLine? unified = IsUnified ? Metadata.UnifiedLineAt(lineNumber) : null;
+
+        // The unified view's line belongs to one of the two files and the pane belongs to
+        // neither; the side-by-side view's line belongs to the pane's own side.
+        DiffSide? sourceSide = IsUnified ? unified?.Side : Side;
+        int? sourceLine = IsUnified ? unified?.SourceLine + 1 : known ? lineNumber : null;
+
+        return new DiffPaneContext(
+            region,
+            IsUnified ? null : Side,
+            lineNumber,
+            sourceSide,
+            sourceLine,
+            known ? Metadata.RowOf(lineNumber) : null,
+            known ? Metadata.BlockAt(lineNumber) : null,
+            known ? Metadata.KindOf(lineNumber) : DiffLineKind.Unchanged,
+            SelectedLines,
+            IsUnified,
+            IsReadOnly);
+    }
+
+    /// <summary>
+    /// A context menu was asked for. Hooked rather than overridden: <c>Control</c> exposes
+    /// <c>ContextRequested</c> as an event with no virtual to override.
+    /// </summary>
+    private void OnContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (e.Handled || Document is null)
+        {
+            return;
+        }
+
+        // v1 is the panes. A right-click on a gutter is left alone rather than answered with the
+        // text's menu, because a margin's verbs are its own and are a later plan's.
+        if (e.Source is DiffMargin)
+        {
+            return;
+        }
+
+        Point? pointer = e.TryGetPosition(this, out Point point) ? point : null;
+        int line = LineAt(pointer) ?? TextArea.Caret.Line;
+        if (line < 1)
+        {
+            return;
+        }
+
+        // The caret is deliberately not moved. A right-click that moved it would discard the
+        // selection the menu is about to offer to copy, which is the whole point of the menu.
+        PaneContextRequest request = new(ContextAt(line), pointer);
+        ContextMenuRequested?.Invoke(this, request);
+        e.Handled = request.Opened;
+    }
+
+    /// <summary>The line under <paramref name="pointer"/>, or <c>null</c> for none and for no pointer.</summary>
+    private int? LineAt(Point? pointer)
+    {
+        if (pointer is not { } point)
+        {
+            return null;
+        }
+
+        TextView view = TextArea.TextView;
+        Point inView = this.TranslatePoint(point, view) ?? point;
+        return view.GetDocumentLineByVisualTop(inView.Y + view.VerticalOffset)?.LineNumber;
+    }
+
+    /// <summary>
     /// The whole lines this pane's selection covers, as the model counts them — 0-based, and
     /// <c>null</c> when there is no selection. A selection that starts or ends mid-line takes the
     /// whole of both lines, because every copy in the library is line-based; one whose end sits on
     /// the very start of a line stops at the line above, which is what a drag onto the next line's
     /// first column means in every editor.
     /// </summary>
-    internal LineRange? SelectedLines
+    public LineRange? SelectedLines
     {
         get
         {

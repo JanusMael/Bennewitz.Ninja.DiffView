@@ -1698,6 +1698,45 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>The gesture <paramref name="command"/> is on, or <c>null</c> when it is unbound.</summary>
     public KeyGesture? GestureFor(DiffCommand command) => _keyMap[command];
 
+    /// <summary>
+    /// A pane's context menu is about to open, with what was clicked and the items that will be
+    /// shown, which a handler may insert into, remove from or retitle in place.
+    /// </summary>
+    /// <remarks>Not raised while <see cref="PaneContextMenu"/> is set: there is nothing of ours to amend.</remarks>
+    public event EventHandler<DiffPaneContextMenuEventArgs>? PaneContextMenuOpening;
+
+    /// <summary>
+    /// A menu to open in place of the control's own. The context reaches it as its
+    /// <c>DataContext</c>, which is how a host's XAML binds to what was clicked. Null — the
+    /// default — leaves the control's own menu in charge.
+    /// </summary>
+    public ContextMenu? PaneContextMenu { get; set; }
+
+    /// <summary>
+    /// The items the menu would show for <paramref name="context"/>. Empty in phase 1: the seam is
+    /// built and tested before there is anything in it.
+    /// </summary>
+    private List<DiffMenuItem> MenuItemsFor(DiffPaneContext context)
+    {
+        _ = context;
+        return [];
+    }
+
+    /// <summary>
+    /// The menu the last request opened, or <c>null</c> where none did. A test seam, like the
+    /// margins' <c>LastCopyArrows</c>: a menu that did not open leaves no mark a frame could show.
+    /// </summary>
+    internal ContextMenu? LastPaneMenu { get; private set; }
+
+    private void OnPaneContextMenuRequested(object? sender, DiffPanePresenter.PaneContextRequest e)
+    {
+        if (sender is DiffPanePresenter pane)
+        {
+            LastPaneMenu = DiffPaneMenu.Request(pane, e.Context, e.Pointer, PaneContextMenu, MenuItemsFor, args => PaneContextMenuOpening?.Invoke(this, args));
+            e.Opened = LastPaneMenu is not null;
+        }
+    }
+
     /// <summary>The command object behind <paramref name="command"/>, for a host that wants to invoke it.</summary>
     public ICommand CommandFor(DiffCommand command)
     {
@@ -2492,6 +2531,7 @@ public class SideBySideDiffView : TemplatedControl
         pane.RenderFault += OnPaneRenderFault;
         pane.CopyOutRequested += OnPaneCopyOutRequested;
         pane.CopySelectionRequested += OnPaneCopySelectionRequested;
+        pane.ContextMenuRequested += OnPaneContextMenuRequested;
         pane.TemplateApplied += OnPaneTemplateApplied;
         pane.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         pane.TextArea.GotFocus += OnPaneGotFocus;
