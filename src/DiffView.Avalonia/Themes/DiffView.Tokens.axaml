@@ -53,13 +53,13 @@
       <SolidColorBrush x:Key="DiffView.MarkerChipDeletedBrush" Color="#F8E5E5" />
       <SolidColorBrush x:Key="DiffView.MarkerChipModifiedBrush" Color="#FAEDE0" />
       <SolidColorBrush x:Key="DiffView.ConnectorBrush" Color="#757575" />
-      <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#37474F" />
+      <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#7A5C00" />
       <!-- The copy arrows. The outline carries the silhouette, so it is the strongest
            contrast against the gutter; the fill sits between it and the ground, which is
            what makes an arrow read as an object rather than a stencil. The bar across the
            selection arrow's tail is this palette's choice: transparent where colour alone
            tells the two arrows apart, painted where it must not have to. -->
-      <SolidColorBrush x:Key="DiffView.GutterArrowFillBrush" Color="#607D8B" />
+      <SolidColorBrush x:Key="DiffView.GutterArrowFillBrush" Color="#AB8000" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowBrush" Color="#0D47A1" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowFillBrush" Color="#1976D2" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowBarBrush" Color="Transparent" />
@@ -119,13 +119,13 @@
       <SolidColorBrush x:Key="DiffView.MarkerChipDeletedBrush" Color="#482928" />
       <SolidColorBrush x:Key="DiffView.MarkerChipModifiedBrush" Color="#4B3920" />
       <SolidColorBrush x:Key="DiffView.ConnectorBrush" Color="#8B9096" />
-      <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#CFD8DC" />
+      <SolidColorBrush x:Key="DiffView.GutterArrowBrush" Color="#FFD54F" />
       <!-- The copy arrows. The outline carries the silhouette, so it is the strongest
            contrast against the gutter; the fill sits between it and the ground, which is
            what makes an arrow read as an object rather than a stencil. The bar across the
            selection arrow's tail is this palette's choice: transparent where colour alone
            tells the two arrows apart, painted where it must not have to. -->
-      <SolidColorBrush x:Key="DiffView.GutterArrowFillBrush" Color="#78909C" />
+      <SolidColorBrush x:Key="DiffView.GutterArrowFillBrush" Color="#DAA520" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowBrush" Color="#90CAF9" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowFillBrush" Color="#42A5F5" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowBarBrush" Color="Transparent" />
