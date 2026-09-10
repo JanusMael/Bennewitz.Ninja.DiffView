@@ -301,12 +301,13 @@ public class DiffMinimap : Control
                 DiffViewStrings.MinimapTooltip, number, total, DiffViewStrings.KindName(KindOfBucket(bucket)));
         }
 
-        return DiffViewStrings.Format(
-            DiffViewStrings.MinimapLaneTooltip,
+        // The lane's side picks between two whole sentences; the kind stays a placeholder, because
+        // it stands on its own between separators rather than inside a phrase.
+        return DiffViewStrings.MinimapLaneTooltip(
+            side,
             number,
             total,
-            DiffViewStrings.KindName(KindOfBucket(bucket, side)),
-            DiffViewStrings.SideName(side));
+            DiffViewStrings.KindName(KindOfBucket(bucket, side)));
     }
 
     /// <inheritdoc/>

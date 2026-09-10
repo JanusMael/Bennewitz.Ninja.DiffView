@@ -93,34 +93,36 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         }
 
         DiffSide side = metadata.SideOf(lineNumber);
-        string mine = DiffViewStrings.SideName(side);
-        string other = DiffViewStrings.SideName(side == DiffSide.Left ? DiffSide.Right : DiffSide.Left);
+        DiffSide other = side == DiffSide.Left ? DiffSide.Right : DiffSide.Left;
         int number = metadata.UnifiedLineAt(lineNumber) is { } unified ? unified.SourceLine + 1 : lineNumber;
         string line = number.ToString("N0", CultureInfo.CurrentCulture);
         string? otherLine = metadata.OtherLine(lineNumber)?.ToString("N0", CultureInfo.CurrentCulture);
 
+        // The side is chosen between whole sentences, never pasted into one: only the numbers are
+        // runtime values, and a side word is part of the sentence a translator has to inflect.
+        //
         // A unified line names its own side too: its neighbours may be the other one.
         if (metadata.IsUnified)
         {
             return otherLine is null
-                ? DiffViewStrings.Format(DiffViewStrings.LineTooltipUnifiedAlone, mine, line, other)
-                : DiffViewStrings.Format(DiffViewStrings.LineTooltipUnifiedAligned, mine, line, other, otherLine);
+                ? DiffViewStrings.LineTooltipUnifiedAlone(side, line)
+                : DiffViewStrings.LineTooltipUnifiedAligned(side, line, otherLine);
         }
 
         string tooltip = otherLine is null
-            ? DiffViewStrings.Format(DiffViewStrings.LineTooltipAlone, line, other)
-            : DiffViewStrings.Format(DiffViewStrings.LineTooltipAligned, line, other, otherLine);
+            ? DiffViewStrings.LineTooltipAlone(other, line)
+            : DiffViewStrings.LineTooltipAligned(other, line, otherLine);
 
         // The rows whose numbers are not on screen: the tooltip carries the number, and says
         // what the arrow standing in its place would do. The two arrows never share a cell, so
         // at most one of these answers.
         if (_lastSelectionArrow?.OverLine == lineNumber)
         {
-            return tooltip + Environment.NewLine + DiffViewStrings.Format(DiffViewStrings.SelectionArrowTooltip, other);
+            return tooltip + Environment.NewLine + DiffViewStrings.SelectionArrowTooltip(other);
         }
 
         return _lastCopyArrows.Any(a => a.OverLine == lineNumber)
-            ? tooltip + Environment.NewLine + DiffViewStrings.Format(DiffViewStrings.CopyArrowTooltip, other)
+            ? tooltip + Environment.NewLine + DiffViewStrings.CopyArrowTooltip(other)
             : tooltip;
     }
 

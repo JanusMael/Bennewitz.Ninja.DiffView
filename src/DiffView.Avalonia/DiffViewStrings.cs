@@ -112,11 +112,17 @@ public static class DiffViewStrings
     /// <summary>Appended to a marker tooltip on a line edited since the source was assigned.</summary>
     public const string MarkerModifiedSinceLoad = "Marker.ModifiedSinceLoad";
 
-    /// <summary>What the copy arrow standing in for a line number would do.</summary>
-    public const string CopyArrowTooltip = "CopyArrow.Tooltip";
+    /// <summary>What the copy arrow standing in for a line number would do, copying leftwards.</summary>
+    public const string CopyArrowTooltipLeft = "CopyArrow.Tooltip.Left";
 
-    /// <summary>What the selection's arrow, standing in for a line number, would do.</summary>
-    public const string SelectionArrowTooltip = "SelectionArrow.Tooltip";
+    /// <summary>The same, copying rightwards.</summary>
+    public const string CopyArrowTooltipRight = "CopyArrow.Tooltip.Right";
+
+    /// <summary>What the selection's arrow, standing in for a line number, would do, leftwards.</summary>
+    public const string SelectionArrowTooltipLeft = "SelectionArrow.Tooltip.Left";
+
+    /// <summary>The same, rightwards.</summary>
+    public const string SelectionArrowTooltipRight = "SelectionArrow.Tooltip.Right";
 
     /// <summary>The strip's lane while a side has unsaved edits.</summary>
     public const string StatusDirty = "Status.Dirty";
@@ -254,17 +260,29 @@ public static class DiffViewStrings
     /// <summary>The right side, in a tooltip.</summary>
     public const string SideRight = "Side.Right";
 
-    /// <summary>A line-number tooltip with a counterpart: <c>{0}</c> line, <c>{1}</c> other side, <c>{2}</c> other line.</summary>
-    public const string LineTooltipAligned = "LineTooltip.Aligned";
+    /// <summary>A line-number tooltip whose counterpart is on the left: <c>{0}</c> line, <c>{1}</c> that line.</summary>
+    public const string LineTooltipAlignedLeft = "LineTooltip.Aligned.Left";
 
-    /// <summary>A line-number tooltip without a counterpart: <c>{0}</c> line, <c>{1}</c> other side.</summary>
-    public const string LineTooltipAlone = "LineTooltip.Alone";
+    /// <summary>The same, counterpart on the right.</summary>
+    public const string LineTooltipAlignedRight = "LineTooltip.Aligned.Right";
 
-    /// <summary>A unified line-number tooltip with a counterpart: <c>{0}</c> this side, <c>{1}</c> this line, <c>{2}</c> other side, <c>{3}</c> other line.</summary>
-    public const string LineTooltipUnifiedAligned = "LineTooltip.Unified.Aligned";
+    /// <summary>A line-number tooltip with no counterpart on the left: <c>{0}</c> line.</summary>
+    public const string LineTooltipAloneLeft = "LineTooltip.Alone.Left";
 
-    /// <summary>A unified line-number tooltip without a counterpart: <c>{0}</c> this side, <c>{1}</c> this line, <c>{2}</c> other side.</summary>
-    public const string LineTooltipUnifiedAlone = "LineTooltip.Unified.Alone";
+    /// <summary>The same, none on the right.</summary>
+    public const string LineTooltipAloneRight = "LineTooltip.Alone.Right";
+
+    /// <summary>A unified tooltip for a left line with a counterpart: <c>{0}</c> this line, <c>{1}</c> the right line.</summary>
+    public const string LineTooltipUnifiedAlignedLeft = "LineTooltip.Unified.Aligned.Left";
+
+    /// <summary>The same for a right line: <c>{0}</c> this line, <c>{1}</c> the left line.</summary>
+    public const string LineTooltipUnifiedAlignedRight = "LineTooltip.Unified.Aligned.Right";
+
+    /// <summary>A unified tooltip for a left line with no counterpart: <c>{0}</c> this line.</summary>
+    public const string LineTooltipUnifiedAloneLeft = "LineTooltip.Unified.Alone.Left";
+
+    /// <summary>The same for a right line.</summary>
+    public const string LineTooltipUnifiedAloneRight = "LineTooltip.Unified.Alone.Right";
 
     /// <summary>A marker or connector tooltip: <c>{0}</c> change (1-based), <c>{1}</c> total, <c>{2}</c> the block's counts.</summary>
     public const string MarkerTooltip = "Marker.Tooltip";
@@ -272,8 +290,11 @@ public static class DiffViewStrings
     /// <summary>A minimap tooltip: <c>{0}</c> row (1-based), <c>{1}</c> rows, <c>{2}</c> kind.</summary>
     public const string MinimapTooltip = "Minimap.Tooltip";
 
-    /// <summary>The overview's tooltip inside one side's lane, which names that side.</summary>
-    public const string MinimapLaneTooltip = "Minimap.LaneTooltip";
+    /// <summary>The overview's tooltip inside the left lane: <c>{0}</c> row, <c>{1}</c> rows, <c>{2}</c> kind.</summary>
+    public const string MinimapLaneTooltipLeft = "Minimap.LaneTooltip.Left";
+
+    /// <summary>The same inside the right lane.</summary>
+    public const string MinimapLaneTooltipRight = "Minimap.LaneTooltip.Right";
 
     /// <summary>Automation name of the minimap.</summary>
     public const string MinimapName = "Minimap.Name";
@@ -411,8 +432,10 @@ public static class DiffViewStrings
         [RightTitle] = "Right",
         [HeaderDirty] = "Unsaved",
         [MarkerModifiedSinceLoad] = "Edited in this session",
-        [CopyArrowTooltip] = "Copy this change to the {0} side",
-        [SelectionArrowTooltip] = "Copy the selected lines to the {0} side",
+        [CopyArrowTooltipLeft] = "Copy this change to the left side",
+        [CopyArrowTooltipRight] = "Copy this change to the right side",
+        [SelectionArrowTooltipLeft] = "Copy the selected lines to the left side",
+        [SelectionArrowTooltipRight] = "Copy the selected lines to the right side",
         [StatusDirty] = "Unsaved changes in {0}",
         [SaveSucceeded] = "Saved {0}",
         [SaveNoPath] = "{0} did not come from a file, so there is nowhere to save it.",
@@ -476,13 +499,18 @@ public static class DiffViewStrings
         [MenuRevertRight] = "Revert the right side",
         [SideLeft] = "left",
         [SideRight] = "right",
-        [LineTooltipAligned] = "Line {0} · {1} line {2}",
-        [LineTooltipAlone] = "Line {0} · no {1} line",
-        [LineTooltipUnifiedAligned] = "Line {1} on the {0} · line {3} on the {2}",
-        [LineTooltipUnifiedAlone] = "Line {1} on the {0} · no {2} line",
+        [LineTooltipAlignedLeft] = "Line {0} · left line {1}",
+        [LineTooltipAlignedRight] = "Line {0} · right line {1}",
+        [LineTooltipAloneLeft] = "Line {0} · no left line",
+        [LineTooltipAloneRight] = "Line {0} · no right line",
+        [LineTooltipUnifiedAlignedLeft] = "Line {0} on the left · line {1} on the right",
+        [LineTooltipUnifiedAlignedRight] = "Line {0} on the right · line {1} on the left",
+        [LineTooltipUnifiedAloneLeft] = "Line {0} on the left · no right line",
+        [LineTooltipUnifiedAloneRight] = "Line {0} on the right · no left line",
         [MarkerTooltip] = "Change {0} of {1} · {2}",
         [MinimapTooltip] = "Row {0} of {1} · {2}",
-        [MinimapLaneTooltip] = "Row {0} of {1} · {2} · {3} side",
+        [MinimapLaneTooltipLeft] = "Row {0} of {1} · {2} · left side",
+        [MinimapLaneTooltipRight] = "Row {0} of {1} · {2} · right side",
         [MinimapName] = "Overview",
         [ConnectorGutterName] = "Change connectors",
         [FindBarName] = "Find",
@@ -538,9 +566,59 @@ public static class DiffViewStrings
     }
 
     /// <summary>The name of <paramref name="side"/> for a tooltip.</summary>
+    /// <remarks>
+    /// **Not for building a sentence out of.** Every string of this library that names a side is a
+    /// whole sentence per direction, because a translator cannot inflect a word dropped into
+    /// someone else's sentence — German needs <em>linke Zeile</em> beside <em>nach links</em>, and
+    /// pasting one bare word cannot produce both. This is here for a host that wants the word on
+    /// its own, and `No_string_of_the_library_is_built_by_pasting_a_side_word_into_it` is what
+    /// stops it creeping back into ours.
+    /// </remarks>
     public static string SideName(Core.DiffSide side)
     {
         return Get(side == Core.DiffSide.Left ? SideLeft : SideRight);
+    }
+
+    /// <summary>What the copy arrow would do, worded for the side receiving the change.</summary>
+    public static string CopyArrowTooltip(Core.DiffSide toSide)
+    {
+        return Get(toSide == Core.DiffSide.Left ? CopyArrowTooltipLeft : CopyArrowTooltipRight);
+    }
+
+    /// <summary>What the selection's arrow would do, worded for the side receiving the lines.</summary>
+    public static string SelectionArrowTooltip(Core.DiffSide toSide)
+    {
+        return Get(toSide == Core.DiffSide.Left ? SelectionArrowTooltipLeft : SelectionArrowTooltipRight);
+    }
+
+    /// <summary>A line-number tooltip, worded for the side the counterpart is on.</summary>
+    public static string LineTooltipAligned(Core.DiffSide otherSide, string line, string otherLine)
+    {
+        return Format(otherSide == Core.DiffSide.Left ? LineTooltipAlignedLeft : LineTooltipAlignedRight, line, otherLine);
+    }
+
+    /// <summary>A line-number tooltip, worded for the side that has no counterpart.</summary>
+    public static string LineTooltipAlone(Core.DiffSide otherSide, string line)
+    {
+        return Format(otherSide == Core.DiffSide.Left ? LineTooltipAloneLeft : LineTooltipAloneRight, line);
+    }
+
+    /// <summary>A unified line-number tooltip, worded for the side the line belongs to.</summary>
+    public static string LineTooltipUnifiedAligned(Core.DiffSide side, string line, string otherLine)
+    {
+        return Format(side == Core.DiffSide.Left ? LineTooltipUnifiedAlignedLeft : LineTooltipUnifiedAlignedRight, line, otherLine);
+    }
+
+    /// <summary>The same, where the line has no counterpart.</summary>
+    public static string LineTooltipUnifiedAlone(Core.DiffSide side, string line)
+    {
+        return Format(side == Core.DiffSide.Left ? LineTooltipUnifiedAloneLeft : LineTooltipUnifiedAloneRight, line);
+    }
+
+    /// <summary>The overview's tooltip inside a lane, worded for the lane's side.</summary>
+    public static string MinimapLaneTooltip(Core.DiffSide side, string row, string rows, string kind)
+    {
+        return Format(side == Core.DiffSide.Left ? MinimapLaneTooltipLeft : MinimapLaneTooltipRight, row, rows, kind);
     }
 
     /// <summary>
