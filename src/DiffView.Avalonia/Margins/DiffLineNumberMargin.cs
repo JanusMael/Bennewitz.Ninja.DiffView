@@ -35,6 +35,7 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     private readonly List<(int LineNumber, double Y)> _lastRendered = [];
     private readonly List<(int? Left, int? Right)> _lastSourceNumbers = [];
     private readonly List<(Rect Bounds, int BlockIndex, int? OverLine)> _lastCopyArrows = [];
+    private (Rect Bounds, int OverLine)? _lastSelectionArrow;
     private int _digits = MinimumDigits;
     private int _rightDigits;
 
@@ -60,6 +61,20 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     /// arrow was drawn in padding, costing no number at all.
     /// </summary>
     public IReadOnlyList<(Rect Bounds, int BlockIndex, int? OverLine)> LastCopyArrows => _lastCopyArrows;
+
+    /// <summary>
+    /// The selection arrow of the last frame, if the pane's selection began on a row the frame
+    /// showed: its hit-zone and the line whose number cell it took. There is at most one — a
+    /// selection has one owner and one first row.
+    /// </summary>
+    public (Rect Bounds, int OverLine)? LastSelectionArrow => _lastSelectionArrow;
+
+    /// <summary>
+    /// How many times the pane has told the margin its selection moved. A frame cannot show this:
+    /// a headless capture re-renders every visual whether or not it was invalidated, so a test
+    /// reading pixels would pass with no notice arriving at all — and a real window would not.
+    /// </summary>
+    public int SelectionNotices { get; private set; }
 
     /// <summary>
     /// The right edge the last frame aligned its numbers to, and any arrow standing in for one.
@@ -96,8 +111,14 @@ internal sealed class DiffLineNumberMargin : DiffMargin
             ? DiffViewStrings.Format(DiffViewStrings.LineTooltipAlone, line, other)
             : DiffViewStrings.Format(DiffViewStrings.LineTooltipAligned, line, other, otherLine);
 
-        // The one row whose number is not on screen: the tooltip carries it, and says what the
-        // arrow standing in its place would do.
+        // The rows whose numbers are not on screen: the tooltip carries the number, and says
+        // what the arrow standing in its place would do. The two arrows never share a cell, so
+        // at most one of these answers.
+        if (_lastSelectionArrow?.OverLine == lineNumber)
+        {
+            return tooltip + Environment.NewLine + DiffViewStrings.Format(DiffViewStrings.SelectionArrowTooltip, other);
+        }
+
         return _lastCopyArrows.Any(a => a.OverLine == lineNumber)
             ? tooltip + Environment.NewLine + DiffViewStrings.Format(DiffViewStrings.CopyArrowTooltip, other)
             : tooltip;
@@ -107,6 +128,13 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     public void OnMetadataChanged()
     {
         UpdateDigits();
+        InvalidateVisual();
+    }
+
+    /// <summary>The pane's selection moved: its arrow appears, moves to another row, or goes.</summary>
+    public void OnSelectionChanged()
+    {
+        SelectionNotices++;
         InvalidateVisual();
     }
 
@@ -143,6 +171,7 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         _lastRendered.Clear();
         _lastSourceNumbers.Clear();
         _lastCopyArrows.Clear();
+        _lastSelectionArrow = null;
         PaneMetadata metadata = Owner.Metadata;
         IBrush foreground = Owner.Palette[DiffBrush.LineNumberForeground];
         double right = Bounds.Width - HorizontalPadding;
@@ -157,6 +186,11 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         IBrush arrowBrush = Owner.Palette[DiffBrush.GutterArrow];
         double rowHeight = textView.DefaultLineHeight;
 
+        // The selection's first whole line, which is the row its arrow takes. A selection whose
+        // first line is scrolled out of the frame offers no arrow, exactly as a block anchored
+        // above the viewport offers none.
+        int? selectionAnchor = offersCopy && Owner.SelectedLines is { } selected ? selected.Start + 1 : null;
+
         foreach (VisualLine line in textView.VisualLines)
         {
             int number = line.FirstDocumentLine.LineNumber;
@@ -169,10 +203,22 @@ internal sealed class DiffLineNumberMargin : DiffMargin
                 // Centred on the row rather than on the text band, so that an arrow standing in
                 // for a number and an arrow in padding sit at the same height on the same row.
                 double rowTop = line.VisualTop - textView.VerticalOffset + (metadata.PaddingBefore(number) * rowHeight);
+
+                // Where a selection begins on a block's anchor row the two arrows want one cell,
+                // and the selection's wins: it is the more specific and the more recent intent.
+                // The block's own copy is still on Alt+Left and Alt+Right, which is one of the
+                // reasons those stay bound to the block.
+                if (number == selectionAnchor
+                    && DrawSelectionArrow(context, leftColumnRight, rowTop, rowHeight, number))
+                {
+                    // The arrow has this row's cell. The number it stands in for is one hover away.
+                    _lastSourceNumbers.Add((null, null));
+                    continue;
+                }
+
                 if (AnchorBlockOf(metadata, number) is { } anchored
                     && DrawArrow(context, arrowBrush, leftColumnRight, rowTop, rowHeight, anchored.Index, number))
                 {
-                    // The arrow has this row's cell. The number it stands in for is one hover away.
                     _lastSourceNumbers.Add((null, null));
                     continue;
                 }
@@ -303,14 +349,8 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     /// <returns>Whether the arrow was drawn; <c>false</c> leaves the cell to its number.</returns>
     private bool DrawArrow(DrawingContext context, IBrush brush, double cellRight, double top, double rowHeight, int blockIndex, int? overLine)
     {
-        Rect zone = new(
-            cellRight - CopyArrowGlyph.Size,
-            top + ((rowHeight - CopyArrowGlyph.Size) / 2),
-            CopyArrowGlyph.Size,
-            CopyArrowGlyph.Size);
-        if (zone.Left < 0)
+        if (ZoneFor(cellRight, top, rowHeight) is not { } zone)
         {
-            // Narrower than the glyph: no arrow rather than a clipped one, and the number stays.
             return false;
         }
 
@@ -319,9 +359,53 @@ internal sealed class DiffLineNumberMargin : DiffMargin
             Owner.Palette[DiffBrush.GutterArrowFill],
             new Pen(brush, OutlineThickness),
             zone,
-            pointsLeft: Owner.Side == DiffSide.Right);
+            PointsLeft);
         _lastCopyArrows.Add((zone, blockIndex, overLine));
         return true;
+    }
+
+    /// <summary>
+    /// The selection's arrow, in the number cell of the line the selection starts on. Its own
+    /// colours tell it from the block arrow, and its tail bar tells it from one with the colour
+    /// discarded — the bar is laid out and painted on every frame, and the palette decides
+    /// whether it is seen by giving <see cref="DiffBrush.SelectionArrowBar"/> a colour or leaving
+    /// it transparent. A property would let a merged palette and a host's setting disagree.
+    /// </summary>
+    /// <returns>Whether the arrow was drawn; <c>false</c> leaves the cell to its number.</returns>
+    private bool DrawSelectionArrow(DrawingContext context, double cellRight, double top, double rowHeight, int overLine)
+    {
+        if (ZoneFor(cellRight, top, rowHeight) is not { } zone)
+        {
+            return false;
+        }
+
+        CopyArrowGlyph.Draw(
+            context,
+            Owner.Palette[DiffBrush.SelectionArrowFill],
+            new Pen(Owner.Palette[DiffBrush.SelectionArrow], OutlineThickness),
+            zone,
+            PointsLeft,
+            new Pen(Owner.Palette[DiffBrush.SelectionArrowBar], OutlineThickness));
+        _lastSelectionArrow = (zone, overLine);
+        return true;
+    }
+
+    /// <summary>Which way a copy out of this pane would travel.</summary>
+    private bool PointsLeft => Owner.Side == DiffSide.Right;
+
+    /// <summary>
+    /// The square an arrow takes in the cell ending at <paramref name="cellRight"/>, centred on
+    /// the row that starts at <paramref name="top"/>, or <c>null</c> where the margin is narrower
+    /// than the glyph — no arrow rather than a clipped one.
+    /// </summary>
+    private static Rect? ZoneFor(double cellRight, double top, double rowHeight)
+    {
+        Rect zone = new(
+            cellRight - CopyArrowGlyph.Size,
+            top + ((rowHeight - CopyArrowGlyph.Size) / 2),
+            CopyArrowGlyph.Size,
+            CopyArrowGlyph.Size);
+        return zone.Left < 0 ? null : zone;
     }
 
     /// <inheritdoc/>
@@ -332,7 +416,8 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         // An arrow is clickable and a line number is not, so the pointer has to say which it is
         // over. Null rather than an explicit arrow cursor off the zone: the margin then keeps
         // whatever the pane gives it, which is what every other margin shows.
-        Cursor = ArrowAt(e.GetPosition(this)) is null ? null : ClickableCursor;
+        Point point = e.GetPosition(this);
+        Cursor = ArrowAt(point) is null && !IsOverSelectionArrow(point) ? null : ClickableCursor;
     }
 
     /// <inheritdoc/>
@@ -356,6 +441,12 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         return null;
     }
 
+    /// <summary>Whether <paramref name="point"/> is over the selection's arrow.</summary>
+    public bool IsOverSelectionArrow(Point point)
+    {
+        return _lastSelectionArrow is { } arrow && arrow.Bounds.Contains(point);
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
@@ -364,10 +455,19 @@ internal sealed class DiffLineNumberMargin : DiffMargin
             return;
         }
 
-        // The arrow cell first, then the row it sits in. The two do not overlap — the arrow has
-        // the number's cell and nothing else — but the order still decides what a click on the
-        // arrow does, so a test pins it.
-        if (ArrowAt(e.GetPosition(this)) is { } block)
+        // The arrow cells first, then the row they sit in. No two of the three overlap — an arrow
+        // has the number's cell and nothing else, and the selection's arrow replaces a block's
+        // rather than sharing with it — but the order still decides what a click does, so tests
+        // pin it.
+        Point point = e.GetPosition(this);
+        if (IsOverSelectionArrow(point))
+        {
+            Owner.RequestCopySelection();
+            e.Handled = true;
+            return;
+        }
+
+        if (ArrowAt(point) is { } block)
         {
             Owner.RequestCopyOut(block);
             e.Handled = true;

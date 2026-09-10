@@ -156,6 +156,9 @@ public class DiffPanePresenter : TextEditor
         TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         TextArea.GotFocus += OnTextAreaFocusChanged;
         TextArea.LostFocus += OnTextAreaFocusChanged;
+        // The selection arrow appears and vanishes with the selection rather than at the next
+        // unrelated redraw, which would look like a race and would not be one.
+        TextArea.SelectionChanged += OnSelectionChanged;
         DocumentChanged += OnDocumentSwapped;
         LayoutUpdated += OnLayoutUpdated;
     }
@@ -224,6 +227,44 @@ public class DiffPanePresenter : TextEditor
 
     /// <summary>Raises <see cref="CopyOutRequested"/> for <paramref name="blockIndex"/>.</summary>
     internal void RequestCopyOut(int blockIndex) => CopyOutRequested?.Invoke(this, blockIndex);
+
+    /// <summary>
+    /// The selection arrow in this pane's gutter was clicked: the selection is to be copied out
+    /// of it. No payload, because the selection is the pane's own and the composite reads it back
+    /// through <see cref="SelectedLines"/> — passing a range would let the two disagree.
+    /// </summary>
+    public event EventHandler? CopySelectionRequested;
+
+    /// <summary>Raises <see cref="CopySelectionRequested"/>.</summary>
+    internal void RequestCopySelection() => CopySelectionRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// The whole lines this pane's selection covers, as the model counts them — 0-based, and
+    /// <c>null</c> when there is no selection. A selection that starts or ends mid-line takes the
+    /// whole of both lines, because every copy in the library is line-based; one whose end sits on
+    /// the very start of a line stops at the line above, which is what a drag onto the next line's
+    /// first column means in every editor.
+    /// </summary>
+    internal LineRange? SelectedLines
+    {
+        get
+        {
+            Selection selection = TextArea.Selection;
+            if (selection.IsEmpty || Document is not { } document || selection.SurroundingSegment is not { } segment)
+            {
+                return null;
+            }
+
+            DocumentLine first = document.GetLineByOffset(segment.Offset);
+            DocumentLine last = document.GetLineByOffset(segment.EndOffset);
+            if (last.LineNumber > first.LineNumber && segment.EndOffset == last.Offset)
+            {
+                last = last.PreviousLine!;
+            }
+
+            return new LineRange(first.LineNumber - 1, last.LineNumber - first.LineNumber + 1);
+        }
+    }
 
     /// <summary>Whether the caret blinks while the pane has focus. Off, it stays visible.</summary>
     public bool IsCaretBlinkEnabled
@@ -675,6 +716,16 @@ public class DiffPanePresenter : TextEditor
     private void OnTextAreaFocusChanged(object? sender, RoutedEventArgs e)
     {
         _caretRenderer.OnFocusChanged();
+    }
+
+    /// <summary>
+    /// The selection moved: only the number margin's selection arrow depends on it, so this is a
+    /// margin invalidation and not a redraw of the pane. The margin already repaints on every
+    /// scroll, which is far more often than a selection changes.
+    /// </summary>
+    private void OnSelectionChanged(object? sender, EventArgs e)
+    {
+        _lineNumberMargin.OnSelectionChanged();
     }
 
     private void OnResourcesChanged(object? sender, ResourcesChangedEventArgs e)

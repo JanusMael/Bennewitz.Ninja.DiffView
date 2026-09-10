@@ -1576,9 +1576,103 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         ChangeBlock block = Document!.Blocks[index];
-        DiffSide fromSide = toSide == DiffSide.Left ? DiffSide.Right : DiffSide.Left;
-        LineRange fromRange = block.LinesFor(fromSide);
-        LineRange toRange = block.LinesFor(toSide);
+        DiffSide fromSide = Other(toSide);
+        return CopyLines(fromSide, block.LinesFor(fromSide), toSide, block.LinesFor(toSide));
+    }
+
+    /// <summary>Copies the current change block onto <paramref name="toSide"/>.</summary>
+    public bool CopyCurrentBlock(DiffSide toSide) => CopyBlock(CurrentChangeIndex, toSide);
+
+    /// <summary>
+    /// Whether the selection in <paramref name="fromSide"/>'s pane could be copied to the other
+    /// side: that pane holds a selection and the side receiving it is editable.
+    /// </summary>
+    public bool CanCopySelection(DiffSide fromSide)
+    {
+        DiffSide toSide = Other(fromSide);
+        bool readOnly = toSide == DiffSide.Left ? LeftReadOnly : RightReadOnly;
+        return !readOnly && Document is not null && Pane(fromSide)?.SelectedLines is not null;
+    }
+
+    /// <summary>
+    /// Replaces the other side's lines in the rows <paramref name="fromSide"/>'s selection
+    /// occupies with the selection's own whole lines. It is the block copy's rule over a
+    /// different range: the selection picks the rows, and the rows pick the target. Where the
+    /// other side has no lines in those rows at all, the copy inserts rather than replaces, as a
+    /// one-sided block's copy already does. The edit goes through the editor's own document, so
+    /// undo takes it back like any other.
+    /// </summary>
+    /// <returns>Whether anything was written.</returns>
+    public bool CopySelection(DiffSide fromSide)
+    {
+        if (!CanCopySelection(fromSide) || Pane(fromSide)?.SelectedLines is not { } fromRange)
+        {
+            return false;
+        }
+
+        DiffSide toSide = Other(fromSide);
+        return CopyLines(fromSide, fromRange, toSide, AlignedLinesOf(fromSide, fromRange, toSide));
+    }
+
+    /// <summary>
+    /// The lines <paramref name="toSide"/> holds in the rows <paramref name="fromRange"/>
+    /// occupies — the run a copy of that range replaces. Empty where every one of those rows is
+    /// padding on that side, and then positioned where the insertion belongs: after the last line
+    /// that side has above the run, which is the convention <see cref="ChangeBlock"/>'s own empty
+    /// ranges already carry.
+    /// </summary>
+    private LineRange AlignedLinesOf(DiffSide fromSide, LineRange fromRange, DiffSide toSide)
+    {
+        SideBySideDocument model = Document!;
+        IReadOnlyList<DiffLine> lines = model.Pane(fromSide).Lines;
+        if (lines.Count == 0)
+        {
+            return LineRange.Empty(0);
+        }
+
+        // Between a keystroke and the next build the document has lines the model does not; the
+        // rows this copy can align to are the ones the model knows.
+        int firstRow = lines[Math.Min(fromRange.Start, lines.Count - 1)].Row;
+        int lastRow = lines[Math.Min(fromRange.End - 1, lines.Count - 1)].Row;
+
+        int? first = null;
+        int last = 0;
+        for (int row = firstRow; row <= lastRow; row++)
+        {
+            if (SideBySideDocument.LineOf(model.Rows[row], toSide) is { } line)
+            {
+                first ??= line;
+                last = line;
+            }
+        }
+
+        if (first is { } start)
+        {
+            return new LineRange(start, last - start + 1);
+        }
+
+        for (int row = firstRow - 1; row >= 0; row--)
+        {
+            if (SideBySideDocument.LineOf(model.Rows[row], toSide) is { } line)
+            {
+                return LineRange.Empty(line + 1);
+            }
+        }
+
+        return LineRange.Empty(0);
+    }
+
+    /// <summary>The other side of <paramref name="side"/>.</summary>
+    private static DiffSide Other(DiffSide side) => side == DiffSide.Left ? DiffSide.Right : DiffSide.Left;
+
+    /// <summary>
+    /// Writes <paramref name="fromRange"/>'s whole lines over <paramref name="toRange"/>, an
+    /// empty target being an insertion at its position. Shared by every copy the control makes,
+    /// so a block and a selection differ in the range they name and in nothing else.
+    /// </summary>
+    /// <returns>Whether anything was written.</returns>
+    private bool CopyLines(DiffSide fromSide, LineRange fromRange, DiffSide toSide, LineRange toRange)
+    {
         TextDocument from = fromSide == DiffSide.Left ? LeftDocument : RightDocument;
         TextDocument to = toSide == DiffSide.Left ? LeftDocument : RightDocument;
 
@@ -1590,8 +1684,8 @@ public class SideBySideDiffView : TemplatedControl
         // terminator the copied run's last line may not carry, and a replacement that reaches the
         // end must not leave one behind that the target never had.
         // The copy makes the target's lines the source's lines exactly, terminator included: the
-        // point is for the block to collapse, and trimming the source's own trailing terminator
-        // would leave the very difference the copy was meant to remove.
+        // point is for the difference to collapse, and trimming the source's own trailing
+        // terminator would leave the very difference the copy was meant to remove.
         bool atEnd = offset + length >= to.TextLength;
 
         // Appending past a last line that carries no terminator needs one put in front, or the
@@ -1609,9 +1703,6 @@ public class SideBySideDiffView : TemplatedControl
         to.Replace(offset, length, text);
         return true;
     }
-
-    /// <summary>Copies the current change block onto <paramref name="toSide"/>.</summary>
-    public bool CopyCurrentBlock(DiffSide toSide) => CopyBlock(CurrentChangeIndex, toSide);
 
     /// <summary>The text of <paramref name="range"/>, terminators included; empty for an empty range.</summary>
     private static string LinesOf(TextDocument document, LineRange range)
@@ -2261,6 +2352,7 @@ public class SideBySideDiffView : TemplatedControl
         pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
         pane.RenderFault += OnPaneRenderFault;
         pane.CopyOutRequested += OnPaneCopyOutRequested;
+        pane.CopySelectionRequested += OnPaneCopySelectionRequested;
         pane.TemplateApplied += OnPaneTemplateApplied;
         pane.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         pane.TextArea.GotFocus += OnPaneGotFocus;
@@ -2429,6 +2521,15 @@ public class SideBySideDiffView : TemplatedControl
         // The arrow is in the pane the block is copied *from*, so the target is the other side.
         DiffSide from = sender is DiffPanePresenter pane ? pane.Side : DiffSide.Left;
         CopyBlock(blockIndex, from == DiffSide.Left ? DiffSide.Right : DiffSide.Left);
+    }
+
+    private void OnPaneCopySelectionRequested(object? sender, EventArgs e)
+    {
+        // As with a block: the arrow is in the pane the lines are copied *from*.
+        if (sender is DiffPanePresenter pane)
+        {
+            CopySelection(pane.Side);
+        }
     }
 
     private void OnGutterBlockClicked(object? sender, int blockIndex)

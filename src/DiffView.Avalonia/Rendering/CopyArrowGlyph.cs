@@ -33,12 +33,22 @@ internal static class CopyArrowGlyph
     /// <summary>What the tip inset, the head and the shaft leave unpainted at the trailing edge.</summary>
     public const double InnerGap = Size - TipInset - HeadLength - ShaftLength;
 
+    /// <summary>The tail bar's half-height: the head's, so the bar caps a shaft three times narrower.</summary>
+    private const double BarHalfHeight = HeadHalfHeight;
+
     /// <summary>
     /// Draws one arrow filling <paramref name="zone"/>, pointing left or right: the silhouette in
     /// <paramref name="outline"/> and the interior in <paramref name="fill"/>. Two colours rather
     /// than one because a flat silhouette reads as a mark and an outlined shape reads as a control.
     /// </summary>
-    public static void Draw(DrawingContext context, IBrush fill, IPen outline, Rect zone, bool pointsLeft)
+    /// <remarks>
+    /// <paramref name="tailBar"/> draws a stroke across the shaft's trailing end, which reads as
+    /// "this bounded thing goes that way" against a plain arrow's "that way" and survives a
+    /// reading with no colour at all. Which arrows carry one is the palette's decision and not
+    /// this method's: the caller always lays the bar out and paints it in a token brush, so a
+    /// transparent one simply is not seen.
+    /// </remarks>
+    public static void Draw(DrawingContext context, IBrush fill, IPen outline, Rect zone, bool pointsLeft, IPen? tailBar = null)
     {
         double tipX = pointsLeft ? zone.Left + TipInset : zone.Right - TipInset;
         double inwards = pointsLeft ? 1 : -1;
@@ -60,5 +70,10 @@ internal static class CopyArrowGlyph
         }
 
         context.DrawGeometry(fill, outline, arrow);
+
+        if (tailBar is not null)
+        {
+            context.DrawLine(tailBar, new Point(shaftEndX, centreY - BarHalfHeight), new Point(shaftEndX, centreY + BarHalfHeight));
+        }
     }
 }
