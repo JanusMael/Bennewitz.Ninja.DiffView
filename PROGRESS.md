@@ -161,8 +161,26 @@ logged rather than left dead without a word. Plan 00009 also settles what plan 0
 the chord agrees with the gutter, and `CopyBlockToLeft` / `CopyBlockToRight` keep the old behaviour
 under a name, unbound. That supersedes a non-goal of an approved plan, so *Decisions* carries it.
 
-**[Plan 00010](plans/), the pane context menu, is agreed and not yet drafted.** Nothing else is in
-flight; new work needs a new plan under `plans/`.
+**[Plan 00010](plans/00010-the-pane-context-menu.md) — the pane context menu — is complete.** The
+deliverable is `DiffPaneContext`, not the menu: everything a host would ask about a click lived in
+the internal `PaneMetadata`, so nobody could write a pane menu of their own. The menu hangs off
+`ContextRequested` so the keyboard's Shift+F10 resolves to the caret rather than to nowhere, and a
+right-click **never moves the caret**, which would discard the selection the menu offers to copy. A
+host amends the item list through `PaneContextMenuOpening` or replaces the menu with
+`PaneContextMenu`; either way the context arrives as the menu's `DataContext`. Every entry is present
+on every open, enabled or not — Beyond Compare's own rule, captured for the plan — while a verb the
+*view* lacks is absent rather than greyed, decided by the same `CommandOrNull` the key map reads.
+
+**Every string that names a side is now a whole sentence per direction.** Seven of them built the
+side in by substitution, which no translator can inflect; fourteen keys and six selectors replaced
+them, the rendered English unchanged. `StringCatalogueTests` is the contract this repository lacked —
+every key has English text, reaches the host's resolver, and is named once — adapted from
+ClaudeForge's `LocalizationParityTests`, with a sentinel test that catches a pasted side word coming
+back. Whether the library should ship `.resx` and satellite assemblies of its own, as ClaudeForge
+does, rather than leaving translation to the host's resolver, is **open**; the key structure suits
+either.
+
+Nothing else is in flight; new work needs a new plan under `plans/`.
 
 **`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path**, and `AGENTS.md` §9 is how to
 capture the running window from a session here.
@@ -194,6 +212,33 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00010 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 The context and the seam | done | `DiffPaneContext`, `DiffPaneRegion`, `DiffMenuItem` with its `Icon` slot, `DiffPaneContextMenuEventArgs`; `ContextRequested` on the presenter resolving position-or-caret without moving it; `PaneContextMenuOpening` and `PaneContextMenu` on both views over `DiffPaneMenu`, the one binder; `SelectedLines` made public; 13 cases, ten mutations, ten kills |
+| 2 The items | done | Copy / navigate / find / save / revert on the side-by-side view, navigate and find on the unified one; labels through `DiffViewStrings`, accelerators through `GestureFor`, the absent-vs-disabled rule through `CommandOrNull`; the demo inserts an entry of its own; shorter per-direction labels and the header gap followed; 12 + 4 cases, fifteen mutations, fifteen kills |
+| 3 Evidence | done | The icon-column alignment test; `DECISIONS.md` (including three deviations from the plan), `AGENTS.md` §6 and §7, this file, the changelog |
+
+## Plan 00010 verification
+
+| Done-when item | Result |
+|---|---|
+| The context names what was clicked | pass: `PaneContextMenuTests.A_right_click_reports_the_line_the_side_and_the_block`, and `An_unchanged_line_has_no_block_and_a_line_past_the_end_throws_nothing` for the trailing padding, where row and block are null and nothing throws |
+| The unified view's context has no side | pass: `InlinePaneContextMenuTests.The_unified_context_has_no_side_and_names_the_line_own_file` — `Side` null, `SourceSide` / `SourceLine` naming the line's own file, and `SourceLine` deliberately different from `LineNumber` |
+| **A right-click does not move the caret or drop the selection** | pass: `A_right_click_leaves_the_caret_and_the_selection_where_they_were`. The test was written before the handler; the mutation that moves the caret kills it |
+| The keyboard raises it at the caret | pass: `The_keyboard_asks_at_the_caret` — no position resolves to the caret's line, not line 1 |
+| A host's item survives in the place it was put | pass: the demo inserts *What did I click?* after the copy entries and it is there in both views; `An_emptied_list_opens_no_menu_and_a_host_item_alone_opens_one` covers the amend shape to its limit |
+| The menu's shape does not move with the selection | pass: `The_menu_shape_does_not_move_with_the_selection` — same entries, same order, only `IsEnabled` differing. BC's behaviour, captured with and without a selection while drafting |
+| A verb the view lacks is absent, not disabled | pass: `InlinePaneContextMenuTests.A_verb_this_view_lacks_is_absent_from_the_menu_not_greyed_in_it` for the list, and `A_verb_the_resolver_has_no_command_for_makes_no_item_at_all` for the rule itself. **The rule's own test came later**: the mutation that greys an absent verb survived at first, because the list test would have passed just as well if nothing built the entries — which is in fact why |
+| `PaneContextMenu` replaces, and suppresses the event | pass: `The_replacement_menu_suppresses_the_opening_event`, in both views, which also pins the context arriving as the menu's `DataContext` |
+| Accelerators come from the map | pass: `The_accelerator_follows_the_key_map` — rebinding moves it, unbinding removes it. The dependency on plan 00009 this menu exists downstream of |
+| Labels match the gutter's | **superseded.** Seen at size the copy entry ran to 41 characters with its accelerator against it; the menu has its own shorter wording and the gutter's tooltips are unchanged. *Decisions* carries the reasoning |
+| The icon column is reserved | pass: `The_icon_column_is_reserved_whether_or_not_anything_fills_it` — a solid square in one slot, every row's label still starting at the same x, with a guard against the vacuous version, since an unrealised popup would report every row at zero and agree with itself |
+| Every item carries an automation name | pass: `DiffPaneMenu` sets one from the header where a host gives none; the a11y sweep covers the XAML surface as before |
+| Exercised by hand, not only headless | pass: driven under §9 in both views. The menu opens on a right-click; the demo's own entry reports *left · line 9 (source line 9) · change 3 · no selection*; accelerators read F7 / Shift+F7 / Ctrl+F; the unified pane's menu has no copies and no save at all |
+| Build and tests | pass: `dotnet build DiffView.slnx -warnaserror` clean, zero warnings; `dotnet test --solution DiffView.slnx` **501 passed** (473 before the plan). No theme change, so no audit regeneration |
 
 ## Plan 00009 phases
 
@@ -477,7 +522,7 @@ than deleted, so a reader who remembers them finds out where they went — the s
 | Undo takes a copy back | pass: `A_copy_is_one_undo_away_from_never_having_happened` — the copy goes through the editor's own document, so one undo restores both the text and the change count |
 | A read-only target refuses | pass: `A_read_only_target_refuses_the_copy` — `CanCopyBlock` and `CopyBlock` are both false while the target is read-only, an out-of-range index is refused whatever the flags say, and the target document does not move |
 | Commands follow the current block and the flags | pass: `The_commands_follow_the_current_block_and_the_read_only_flags` — unavailable while there is no current block (`CurrentChangeIndex` is -1), available once navigation picks one and the target is editable, and executing copies the block navigation is sitting on. Alt+Left and Alt+Right are the gestures, so the composite now binds 9 keys rather than 7 |
-| Arrows in the connector gutter | pass: `The_gutter_draws_an_arrow_only_towards_an_editable_side` — no arrows while both sides are read-only, rightward arrows only once the right is editable, both once both are; `An_arrow_is_hit_before_the_polygon_it_sits_inside` pins the hit-test order, which is what decides whether a click copies or merely selects the block |
+| ~~Arrows in the connector gutter~~ — retired by plan 00004 | ~~pass: `The_gutter_draws_an_arrow_only_towards_an_editable_side` — no arrows while both sides are read-only, rightward arrows only once the right is editable, both once both are; `An_arrow_is_hit_before_the_polygon_it_sits_inside` pins the hit-test order~~. Both tests went with the arrows when they moved into the line-number margins; `CopyArrowMarginTests` is where the same questions are asked now. This row read as a live pass for two deleted tests until plan 00010 checked the prose against the test tree |
 | `dotnet build DiffView.slnx -warnaserror` | clean |
 | `dotnet test --solution DiffView.slnx` | 373 passed (363 before the phase) |
 | New tests proven able to fail | five mutations killed: dropping the terminator that an append past an unterminated last line needs; ignoring the read-only flag in `CanCopyBlock`; reading the block's ranges from the wrong side; and drawing arrows towards read-only sides. **Two mutations survived, and both were the point**: they showed that a "copied run needs a terminator" branch was unreachable — a block is a maximal run of changed rows, so a run reaching one side's last line reaches the other's — and that a "trim the stranded terminator" branch was not merely untested but wrong, since keeping the source's terminator is exactly what makes the sides identical. Both were removed, and the second is now pinned by a test |

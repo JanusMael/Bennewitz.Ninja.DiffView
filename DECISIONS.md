@@ -1511,3 +1511,129 @@ The demo carries View ▸ Key bindings, whose accelerators are written from `Ges
 typed into the XAML — a submenu, because that menu already scrolls past its fold. Rebinding
 navigation there moves the labels along with the keys, which is the seam plan 00010's context menu
 will read.
+
+## The pane context menu, and the object that makes a host-written one possible
+
+Plan 00010. The menu is the smaller half: a host could not write its own at all, because everything
+it would ask about a click — which side, which line, which row, which block, is there a selection —
+lived in `PaneMetadata`, which is `internal`. `DiffPaneContext` is the public answer and the menu is
+the first thing built on it.
+
+It is a **snapshot**, deliberately not a live view: a model rebuilt while the menu is open would
+renumber the line the reader is pointing at. The control's own copy commands still re-read the
+selection when they run rather than taking it from the context, which is plan 00006's rule for
+`CopySelectionRequested`, unchanged.
+
+`Side` is **null** in the unified view, whose pane belongs to neither file, and `SourceSide` /
+`SourceLine` name the file the line actually came from. A stand-in `DiffSide.Left` would have been
+wrong for half the lines.
+
+### The menu hangs off `ContextRequested`, and the caret does not move
+
+Not a `ContextMenu` assigned in a template, because Shift+F10 and the Menu key raise the same event
+with no position, and a templated menu would answer them somewhere else. With a position the line
+comes from `TextView.GetDocumentLineByVisualTop` — the reading the margins' tooltips already use —
+and without one it is the caret's.
+
+**A right-click never moves the caret.** It is the default behaviour of a text editor and it would
+discard the selection the menu exists to offer to copy. The test was written before the handler.
+
+The pane marks the routed event handled **only when a menu actually opened**, so a request it
+answers with nothing still reaches a `ContextMenu` a host put on the view itself. That was found by
+reading the diff back rather than by a test, and now has both.
+
+### Two extensibility shapes, and what carries the context into a host's own menu
+
+`PaneContextMenuOpening` hands over the context and a mutable item list — *our menu, plus mine*.
+`PaneContextMenu` replaces the menu outright and **suppresses that event**, there being nothing of
+ours to amend — *my menu, not yours*. Either alone forces the wrong shape on half the hosts.
+
+The plan did not say how a host's own menu would learn what was clicked. It arrives as the menu's
+`DataContext`, so the host's XAML binds to it like anything else.
+
+### Disabled means "not now"; absent means "not ever"
+
+Beyond Compare's pane menu was captured for the plan, with and without a selection: the two are the
+same menu, same items, same order, and only the enabled state moves. That is what makes a host's
+"insert after this item" a stable instruction.
+
+This control has a case BC does not. The unified view has no `CopyToLeft` **at all**, and a greyed
+entry would promise a state that does not exist — so a verb the view lacks is absent. `CommandOrNull`
+decides, the same answer the key map reads, so the menu and the bindings cannot disagree about what
+exists.
+
+That guard was, for a while, unreachable: the unified view omits the copy entries structurally, and
+the test that looked as though it covered the rule was only observing that the unified list is short.
+The mutation that greyed an absent verb **survived**, which is how it was found. The rule now has a
+test that calls it directly.
+
+### Drift from the plan, and why
+
+**Two copy entries, one per scope, not one with a label that changes.** The plan's table had a single
+entry reading *the selected lines* or, with no selection, *this change* — which would have made it
+identical in text to the block entry whenever there was no selection, since the chord's
+selection-or-block rule collapses to the block. Two identically-labelled rows are worse than the
+thing the dynamic label was for. So the selection entry and the block entry, each always present,
+each named for exactly what it copies.
+
+**The block entry copies the block under the pointer**, falling back to the current change only where
+the click lands outside any block. The plan's table named the verb, not the index, and a context menu
+that acted somewhere else would not be one.
+
+**The menu's wording is its own, not the gutter's.** The plan and the decisions behind it said labels
+would reuse the arrows' tooltips so that gutter and menu said the same thing. Seen at size the copy
+entry ran to 41 characters and its accelerator had nowhere to sit. A tooltip can afford the words; a
+menu row sits beside its accelerator. Shorter menu keys, and the gutter's tooltips left as they were.
+
+### A menu row keeps a small gap of its own
+
+The widest row sets the popup's width, so its own accelerator has nowhere to go and the two touch.
+How tight that looks is otherwise entirely the host theme's `MenuItemInputGestureTextMargin` — Semi
+ships 4, Fluent 24. The header is built as a `TextBlock` carrying a small margin, so the control
+guarantees the gap while a host's own value adds to it rather than being replaced. Reaching into the
+`MenuItem` template from a control would have taken the theme's choice away.
+
+### The icon column is reserved and empty
+
+`DiffMenuItem.Icon` is null throughout; the column is laid out regardless, because adding one later
+would otherwise move every label. `The_icon_column_is_reserved_whether_or_not_anything_fills_it`
+fills one slot with a solid square and asserts every row's label still starts at the same x — with a
+guard against the vacuous version of that assertion, since an unrealised popup would report every
+row at zero and agree with itself. BC's own menu is the existence proof: a handful of icons among a
+majority of unicoded rows, all aligned.
+
+## A string that names a side is a whole sentence, one per direction
+
+Seven strings built a side into themselves by substitution — *"Copy this change to the {0} side"*
+filled with the word *right*, *"Line {0} · {1} line {2}"* with *right* in the middle. A translator
+cannot inflect a word dropped into someone else's sentence: German wants *linke Zeile* beside *nach
+links*, and one pasted word cannot be both. ClaudeForge's `LOCALIZATION.md` puts the rule the other
+way round — placeholders carry runtime values, and the string is not built out of parts — and a side
+word is not a runtime value.
+
+Fourteen keys replaced those seven, with selectors that pick between whole sentences: the copy and
+selection arrows, the four line-number tooltips, and the overview map's lane. Only the numbers stay
+placeholders. The rendered English is byte-for-byte what it was, which is why no existing test moved
+— and two mutations that name the wrong side are caught by tests written for earlier plans, which is
+the evidence that this was a refactor and not a rewrite.
+
+**The kind words are deliberately left as placeholders.** *"Row 5 of 100 · inserted · left side"* is
+a label list, not a sentence: between the separators the parts are independent and a translator
+translates each. Only the side sat inside a phrase.
+
+`SideName` stays public for a host that wants the bare word, and carries a remark saying what it is
+not for. `No_string_of_the_library_is_built_by_pasting_a_side_word_into_it` is what stops the pattern
+coming back: it redirects the two bare side words through the resolver to a sentinel and walks every
+line tooltip in both views, both margins and both lanes of the map, so a string that pastes one shows
+the sentinel where the word should be.
+
+`StringCatalogueTests` is the contract this repository did not have, adapted from ClaudeForge's
+`LocalizationParityTests`: every declared key has English text, every key reaches the host's
+resolver, and no two constants name one key. Without the first, a key added without a default renders
+as its own name — a user sees `Menu.CopySelection.Left` where a label should be, and nothing else
+notices.
+
+**Still open**: DiffView localizes through `DiffViewStrings.Resolver`, which a host wires, where
+ClaudeForge ships `.resx` and satellite assemblies that follow `CurrentUICulture` on their own. The
+per-direction key structure above is what either mechanism needs, so nothing here has to be undone if
+the library later ships translations of its own. Whether it should is not decided.

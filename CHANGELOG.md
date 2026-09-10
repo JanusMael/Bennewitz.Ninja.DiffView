@@ -285,6 +285,31 @@ All notable changes to DiffView are recorded here. The format follows
   rebuild, a cleared collection staying cleared, two commands on one gesture, the unified view's
   smaller default, a two-sided verb skipped and logged there, and the copy chord against both the
   selection and the block.
+- Plan 00010, the pane context menu: a right-click — or Shift+F10, or the Menu key — opens a menu
+  of what the control can do to the line under the pointer, on by default in both views.
+  **`DiffPaneContext` is the part that matters**: a public description of what was clicked, carrying
+  the region, the side (**null** in the unified view, which has none), the line and the line's own
+  number on its own file, the row, the `ChangeBlock`, and the selection. Without it nothing outside
+  the library could describe a click at all, because `PaneMetadata` is internal.
+  `SideBySideDiffView.PaneContextMenuOpening` and `InlineDiffView.PaneContextMenuOpening` hand over
+  that context and a mutable item list to amend; `PaneContextMenu` replaces the menu outright and
+  suppresses the event, and either way the context arrives as the menu's `DataContext`. Accelerators
+  are read from `GestureFor`, so a rebind moves them. `DiffPanePresenter.SelectedLines` is now
+  public.
+- The menu's entries are copy-the-selection, copy-the-change, next and previous change, find, save
+  and revert — **all present on every open**, enabled or not, so that a host's "insert after this
+  item" means the same thing every time. A verb the *view* does not have is **absent** rather than
+  greyed: the unified view has no copy, no save and no revert at all, because a greyed entry would
+  promise a state that does not exist. The block entry copies the block **under the pointer**.
+- The demo's pane menu carries an entry of its own, inserted through the opening event, which reports
+  what was clicked in the status strip.
+- Headless tests for the context over changed, unchanged and unmodelled lines; the caret and
+  selection surviving a right-click; the keyboard resolving to the caret; the shape holding still
+  across a selection change; absent-versus-disabled; the replacement menu; accelerators following the
+  key map; and the icon column staying aligned with a solid square in one slot.
+- `StringCatalogueTests`, adapted from ClaudeForge's `LocalizationParityTests`: every declared key
+  has English text, every key reaches the host's resolver, and no two constants name one key —
+  without which a key added with no default renders as its own name.
 - `scripts/run-demo.sh` and `scripts/run-demo.ps1`, which run the demo on a pair with plenty of
   changes and print what is worth trying by hand.
 - Headless, pixel and snapshot tests for the lanes against the model, the combined reading against
@@ -310,6 +335,14 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **Every string that names a side is now a whole sentence per direction**, rather than one sentence
+  with the side substituted into it — *"Copy this change to the left side"* and *"…to the right
+  side"* as separate keys, not *"…to the {0} side"*. A translator cannot inflect a word dropped into
+  someone else's sentence. Fourteen keys replace seven across the copy and selection arrows, the four
+  line-number tooltips and the overview map's lane, with selectors that choose between them; the
+  rendered English is unchanged. Kind words stay placeholders, being labels between separators rather
+  than parts of a phrase. **A host overriding these keys through `DiffViewStrings.Resolver` must
+  supply the new names.**
 - **Alt+Left and Alt+Right copy the selection when there is one**, and the current change block
   otherwise — the rule the gutter already applied when a selection arrow took a block arrow's
   cell, and the rule cut, copy and delete follow everywhere. Before this the gutter drew one

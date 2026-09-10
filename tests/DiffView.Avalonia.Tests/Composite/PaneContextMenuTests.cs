@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
+using Avalonia.VisualTree;
 using Bennewitz.Ninja.DiffView.Core;
 
 namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
@@ -339,6 +341,49 @@ public sealed class PaneContextMenuTests
             TextBlock header = Assert.IsType<TextBlock>(row.Header);
             Assert.True(header.Margin.Right > 0, $"'{header.Text}' has no gap before its accelerator");
         });
+    }
+
+    [AvaloniaFact]
+    public async Task The_icon_column_is_reserved_whether_or_not_anything_fills_it()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        CompositeHost.Layout();
+
+        // No icon set ships, and none is planned yet; the column is laid out now so that adding
+        // one later moves nothing. A solid square is enough to prove it — the future without an
+        // icon set — and every other entry keeps a null slot beside it.
+        host.View.PaneContextMenuOpening += (_, e) =>
+            e.Items.First(i => !i.IsSeparator).Icon = new Border
+            {
+                Width = 12,
+                Height = 12,
+                Background = Brushes.Black,
+            };
+
+        RightClick(host, host.Left, new Point(60, 40));
+        CompositeHost.Layout();
+        Assert.NotNull(host.View.LastPaneMenu);
+
+        List<MenuItem> rows = host.View.LastPaneMenu.Items.OfType<MenuItem>().ToList();
+        Assert.True(rows.Count > 2, "the menu needs several rows for alignment to mean anything");
+
+        List<double> lefts = rows.Select(HeaderLeft).ToList();
+
+        // Guard against the frame that never laid out: all-zero would satisfy "they agree".
+        Assert.True(lefts[0] > 0, "the menu did not lay out, so the alignment assertion would be vacuous");
+        Assert.All(lefts, left => Assert.Equal(lefts[0], left, 1));
+
+        // And the one carrying the square is among them, not off on its own.
+        Assert.Single(rows, r => r.Icon is not null);
+    }
+
+    /// <summary>Where a row's label starts, in the row's own coordinates.</summary>
+    private static double HeaderLeft(MenuItem row)
+    {
+        TextBlock header = row.GetVisualDescendants().OfType<TextBlock>().First(t => !string.IsNullOrEmpty(t.Text));
+        return header.TranslatePoint(default, row)?.X ?? -1;
     }
 
     [AvaloniaFact]
