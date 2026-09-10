@@ -163,6 +163,70 @@ All notable changes to DiffView are recorded here. The format follows
   decorator, an option change, the caret lane, the find scope collapsing, the matches the unified
   view drops and the ones it keeps, and a snapshot of the unified view in both variants.
 
+- Plan 00003, in-pane editing: clearing `LeftReadOnly` / `RightReadOnly` lets a pane take typing,
+  paste, undo and redo — no layer turned out to rely on the document being immutable, and the
+  bounds-checked `PaneMetadata` absorbs a document that has run ahead of the model.
+  `LiveReDiff` / `ReDiffDelay` / `ReDiffNow()` rebuild on a debounce from the pane's live text
+  while the source keeps the encoding, path and title a save writes back with; the previous model
+  stays on screen until the new one lands, the `TextDocument`, caret, selection, scroll offset and
+  undo stack all survive the rebuild, and the matches an edit invalidated are dropped.
+  `IsEdited(side)`, `IsDirty(side)`, `CanSave(side)`, `Save(side)`, `Revert(side)` and the
+  `SaveOutcome` enum (`Saved`, `NotDirty`, `NoPath`, `ChangedOnDisk`, `Failed`); `PaneWriter` in
+  Core, which round-trips the encoding, its byte-order mark and the file's line endings, and a
+  `(LastWriteTimeUtc, Length)` stamp that catches someone else's write and follows our own.
+  `CanCopyBlock` / `CopyBlock` / `CopyCurrentBlock` replace the target's lines over the ranges
+  `ChangeBlock` already carries, through the editor's own document so one undo takes a copy back;
+  `CopyToLeftCommand` / `CopyToRightCommand` on Alt+Left and Alt+Right, and the per-block copy
+  arrows on a new `DiffView.GutterArrowBrush` — drawn in the connector column then, see *Changed*.
+  `ModifiedLines(side)`, maintained from `TextDocument.Changed` so a mark shifts with the text an
+  edit above it moved rather than with the line number, drawn as a bar down the marker margin on a
+  new `DiffView.ModifiedSinceLoadBrush`; `DiffPaneHeader.IsDirty` with its `:dirty` pseudo-class
+  and `PART_Dirty` marker; the strip's lane naming the sides holding unsaved edits; the
+  `Header.Dirty`, `Marker.ModifiedSinceLoad`, `CopyArrow.Tooltip`, `Status.Dirty` and `Save.*`
+  strings.
+- The demo's File menu saves and reverts either side (Ctrl+S for the left), its View menu makes
+  either pane editable, and its status line names the editable sides and the unsaved ones.
+- Headless and unit tests for typing beside a read-only neighbour, typing past what the model
+  knows without a fault, the rebuild's survivors, the debounce and its coalescing, live re-diff
+  turned off, a replaced document that stops arming re-diffs, dirty against edited, every
+  `SaveOutcome`, a copy at either end of a document and under undo, a read-only target refusing,
+  the marks moving with their text and clearing on a revert, and the tooltip on a line the diff
+  has nothing to say about; `PaneWriterTests` round-tripping marked and unmarked UTF-8, UTF-16 LE
+  and BE, UTF-32 and a Latin-1 fallback byte for byte; `EditScalePerfTests` measuring the 200k
+  pair's re-diff, the twenty keystrokes that coalesce into one build and what the escape hatch
+  saves, with the numbers in `PROGRESS.md`; and `EditingSnapshotTests`, the frame in both variants
+  carrying an edit's bar, the header's marker and the strip's lane at once.
+
+- Plan 00004, copy arrows in the panes: `PaneMetadata.BlockAtRow(row)`, which answers for a padded
+  row that has no line to look a block up by, and `ChangeBlock.LinesFor(side)`; the two paths that
+  reach a block the side has no lines in — the padding above the line that follows it, and, past
+  the last line, the trailing padding a walk over the visual lines never gets to; the anchored
+  row's tooltip, carrying the number the arrow stands in for and what it would do; `CopyArrowGlyph`,
+  extracted so the column and the margin drew one arrow rather than two; and
+  `DiffLineNumberMargin.LastColumnRight`, exposed because an arrow's own bounds cannot show that it
+  is where the numbers are — a glyph that strayed would report the place it strayed to. Where the
+  arrows moved to is under *Changed*, and what the connector column gave up under *Removed*.
+- Headless, pixel and snapshot tests for the side that offers an arrow and the row it sits on, the
+  numbers it hides and the ones it leaves alone, a side editable before the template applies, both
+  one-sided-block paths, the width the arrow costs (none, which is the premise of drawing over the
+  number), the click that copies against the click that only moves the caret, the tooltip, and the
+  connector column with both sides editable carrying no arrow pixels at all; `CopyArrowSnapshotTests`,
+  six frames over an editable pair, the same pair read-only and a one-sided block in both variants,
+  with the direction asserted by which half of the zone the glyph's head fills.
+
+- Plan 00005, change-marker chips: `DiffBrushes.MarkerChipFor(kind)` and its `DiffBrush` entries,
+  the accessor a margin reaches for the chip's colour; and the chip's shape rules — one code path
+  for a run and for a lone row, symmetric about the margin's centre, stopping exactly where the
+  modified-since-load bar begins so an edited line inside a changed block paints both, and no
+  rounded end where the run carries on past the viewport, the rectangle running a full row beyond
+  the edge instead. The chips, their tokens and the glyphs drawn on them are under *Changed*.
+- Headless and snapshot tests for the chips being exactly the runs the margin reported, a lone
+  row's badge against a five-row band, a run scrolled past both edges, the glyph's centring weighed
+  as ink either side of the chip's centre line — which the reported rectangles cannot show — the
+  chip stopping at the bar, and the margin not growing; `MarkerGlyphTests` pinning the vocabulary
+  and weighing each marker's ink against a floor, which is the property the new glyphs exist for;
+  and `MarkerChipSnapshotTests`, four frames over two cases in both variants.
+
 - Plan 00006, copying a selection: `SideBySideDiffView.CanCopySelection(DiffSide)` and
   `CopySelection(DiffSide)` send a pane's selected **whole lines** to the other side, over the rows
   those lines occupy — the other side's lines in the same rows are replaced, and where it has none
