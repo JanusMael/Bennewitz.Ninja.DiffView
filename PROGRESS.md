@@ -102,14 +102,25 @@ chip of its kind's colour, shared across a run of same-kind rows, so the gutter 
 extent as well as each row's kind — and the chip is composited over the *pane* background rather
 than blended into the gutter, which is what let every palette colour stay exactly as it was.
 
-**[Plan 00006](plans/00006-copying-a-selection.md) is approved and phase 1 of three has landed.**
-A copy arrow is now drawn with an outline carrying its silhouette and a fill inside it, so it reads
-as a control rather than a mark, and the pointer shows a hand over one. Phase 1 also closed a gap
-it found rather than created: **`contrast-pairs.json` had never scored an arrow at all** — the
-block arrow had been drawn on the gutter since plan 00003 with nothing holding it to a floor. Four
-pairs went in, and the twelve tokens the selection arrow will need are declared and scored ahead of
-the code that draws them. What remains is the feature itself: `CanCopySelection` / `CopySelection`
-over the row mapping, the selection arrow in its own colour, and its evidence.
+**[Plan 00006](plans/00006-copying-a-selection.md) is approved and two phases of three have
+landed.** A copy arrow is now drawn with an outline carrying its silhouette and a fill inside it,
+so it reads as a control rather than a mark, and the pointer shows a hand over one. Phase 1 also
+closed a gap it found rather than created: **`contrast-pairs.json` had never scored an arrow at
+all** — the block arrow had been drawn on the gutter since plan 00003 with nothing holding it to a
+floor. Four pairs went in, and the twelve tokens the selection arrow needed were declared and
+scored ahead of the code that draws them.
+
+**A selection now copies.** `CanCopySelection` / `CopySelection` send a pane's selected whole lines
+to the other side, over the block copy's own rule and a different range: the selection's lines
+occupy a run of rows, the other side's lines in those rows are the target, and where that side has
+no lines there at all the copy inserts rather than replaces. `CopyBlock` and `CopySelection` share
+one writer, so they differ in the range they name and in nothing else. The selection's arrow sits
+in the number cell of the line the selection starts on, in its own colours, and where that row is
+also a block's anchor it takes the cell and the block's arrow is not drawn — the block's copy is
+still on Alt+Left and Alt+Right. Its tail bar is drawn on every frame and seen only where the
+palette gives the bar token a colour, which the colour-blind palette does and the default one does
+not. What remains is phase 3: the rendered evidence in both palettes and both variants, and the
+decisions.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -144,8 +155,27 @@ dotnet run --project src/ThemeAudit -- report
 | Phase | Status | Notes |
 |---|---|---|
 | 1 The arrow reads as a shape | done | `CopyArrowGlyph.Draw` takes a fill and a pen; twelve tokens across both palettes and both variants — the block arrow's fill and the selection arrow's outline, fill and tail bar; four contrast pairs, **two of them for a block arrow that had never been scored**; the hand cursor over an arrow landed just before, in `c88d706` |
-| 2 Copying a selection | not started | `CanCopySelection` / `CopySelection` over the row mapping; the selection arrow, its bar token, first-row placement, the contested-cell rule, `TextArea.SelectionChanged` invalidation |
+| 2 Copying a selection | done | `CanCopySelection` / `CopySelection` over the row mapping, sharing `CopyLines` with `CopyBlock`; `DiffPanePresenter.SelectedLines` and `CopySelectionRequested`; the selection arrow with its own colours and its tail bar; first-row placement, the contested-cell rule, the tooltip, the hand cursor; `TextArea.SelectionChanged` reaching the margin as a counted notice |
 | 3 Evidence | not started | Snapshots in both palettes and variants; the mutations; `DECISIONS.md`, `AGENTS.md`, `PROGRESS.md`, changelog |
+
+## Plan 00006, Phase 2 verification
+
+| Done-when item | Result |
+|---|---|
+| A selection offers an arrow, on its first row | pass: `CopySelectionTests.A_selection_offers_an_arrow_on_its_first_row` — one arrow over the selection's first line, flush with `LastColumnRight`, and that line's number is the only one the frame is missing |
+| No selection, no arrow | pass: `Clearing_the_selection_takes_the_arrow_with_it`. The first version asserted the frame and **passed with the `SelectionChanged` wiring removed**: a headless capture re-renders every visual whether or not it was invalidated, so no frame can show an invalidation. `DiffLineNumberMargin.SelectionNotices` counts the notice instead, and the mutation dies |
+| A read-only neighbour offers nothing | pass: `A_read_only_neighbour_offers_nothing` — no arrow, `CanCopySelection` false, and `CopySelection` writes nothing |
+| The copy takes whole lines | pass: `The_copy_takes_whole_lines` — a selection from inside line 2 to inside line 3 copies both lines whole. `A_selection_reaching_the_next_line_s_first_column_stops_above_it` pins the other end of that rule: a drag onto the next line's first column stops above it |
+| The copy lands in the aligned rows | pass: `The_copy_lands_in_the_aligned_rows` — the other side's lines in those rows are replaced, the line below is untouched, and the re-diff collapses the block |
+| A selection over padding inserts | pass: `A_selection_over_padding_inserts` — two left lines whose rows the right side has no lines in at all land between the right's own lines |
+| The selection arrow wins the cell | pass: `The_selection_arrow_wins_the_contested_cell` — one zone in that cell, the selection's, at exactly the rectangle the block's arrow had, and `LastCopyArrows` is empty. Clearing the selection hands the cell back to the block rather than to the number, which the clearing test asserts |
+| The two arrows are told apart | pass: `The_selection_arrow_is_painted_in_its_own_colours` — each fill is present in its own zone and absent from the other's — and `The_selection_arrow_carries_the_palette_s_share_of_shape`, which reads the tail as luminance so no colour survives: **9 inked rows against the block arrow's 5** in the colour-blind palette, and exactly the block arrow's 5 in the default one, where the bar token is transparent |
+| A click copies, and the pointer says so | pass: `A_click_on_the_selection_arrow_copies_the_selection_out` — a hand over the zone, and a click that lands the selection on the other side |
+| The tooltip names what it copies | pass: `The_selection_arrow_s_tooltip_names_what_it_copies` — the displaced number and *the selected lines*, not the block the row sits in |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 424 passed (411 before the phase); 434 with `-p:IncludePerfTests=true` |
+| New tests proven able to fail | nine mutations, nine kills, after one survivor — the frame-only selection test above, which is why the notice is counted |
+| Snapshot baselines moved | **none.** The block arrow is drawn exactly as it was — the tail bar is absent unless a caller passes one — and no committed frame holds a selection |
 
 ## Plan 00006, Phase 1 verification
 
