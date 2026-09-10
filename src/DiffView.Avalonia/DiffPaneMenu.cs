@@ -1,7 +1,9 @@
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives.PopupPositioning;
+using Avalonia.Input;
 
 namespace Bennewitz.Ninja.DiffView.Avalonia;
 
@@ -95,6 +97,60 @@ internal static class DiffPaneMenu
 
         menu.Open(pane);
         return menu;
+    }
+
+    /// <summary>
+    /// An item for one of the control's own verbs, or <c>null</c> where this view has no such
+    /// verb — which is the **absent, not disabled** half of the rule. A greyed entry promises a
+    /// state in which it would work, and for the unified view's copies there is none.
+    /// <paramref name="command"/> is the view's <c>CommandOrNull</c>, so the menu and the key map
+    /// cannot come to different answers about what exists.
+    /// </summary>
+    public static DiffMenuItem? Verb(
+        string header,
+        DiffCommand verb,
+        Func<DiffCommand, ICommand?> command,
+        Func<DiffCommand, KeyGesture?> gesture,
+        bool enabled)
+    {
+        if (command(verb) is not { } bound)
+        {
+            return null;
+        }
+
+        return new DiffMenuItem
+        {
+            Header = header,
+            Verb = verb,
+            Command = bound,
+            Gesture = gesture(verb),
+            IsEnabled = enabled,
+        };
+    }
+
+    /// <summary>
+    /// The entries both views carry — navigate, and find — appended in order with the separator
+    /// between them. Shared rather than written twice, for §7's usual reason.
+    /// </summary>
+    public static void AddNavigation(
+        List<DiffMenuItem> items,
+        Func<DiffCommand, ICommand?> command,
+        Func<DiffCommand, KeyGesture?> gesture,
+        int changeCount)
+    {
+        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuNextChange), DiffCommand.NextChange, command, gesture, changeCount > 0));
+        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuPreviousChange), DiffCommand.PreviousChange, command, gesture, changeCount > 0));
+        items.Add(DiffMenuItem.Separator());
+        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuFind), DiffCommand.OpenFind, command, gesture, enabled: true));
+    }
+
+    /// <summary>Appends <paramref name="item"/> unless it is <c>null</c>, which means absent.</summary>
+    public static void Add(List<DiffMenuItem> items, DiffMenuItem? item)
+    {
+        if (item is not null)
+        {
+            items.Add(item);
+        }
     }
 
     /// <summary>The caret's box in the pane's own coordinates; the pane's origin where unknown.</summary>

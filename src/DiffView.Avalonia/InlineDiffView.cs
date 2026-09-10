@@ -724,13 +724,22 @@ public class InlineDiffView : TemplatedControl
     public ContextMenu? PaneContextMenu { get; set; }
 
     /// <summary>
-    /// The items the menu would show for <paramref name="context"/>. Empty in phase 1: the seam is
-    /// built and tested before there is anything in it.
+    /// The items the menu shows for <paramref name="context"/>: navigate and find, and nothing
+    /// else. The copies are **absent rather than disabled**, because this view has no such verb at
+    /// all — a greyed <em>copy to the left side</em> would promise a state that does not exist —
+    /// and there is nothing to save or revert over a document composed from both files.
     /// </summary>
+    /// <remarks>
+    /// They are absent because nothing here builds them, and <see cref="DiffPaneMenu.Verb"/> would
+    /// refuse them anyway: it asks <see cref="CommandOrNull"/>, the same answer the key map reads,
+    /// so a copy item added here by mistake vanishes rather than throwing out of a menu.
+    /// </remarks>
     private List<DiffMenuItem> MenuItemsFor(DiffPaneContext context)
     {
         _ = context;
-        return [];
+        List<DiffMenuItem> items = [];
+        DiffPaneMenu.AddNavigation(items, CommandOrNull, GestureFor, ChangeCount);
+        return items;
     }
 
     /// <summary>

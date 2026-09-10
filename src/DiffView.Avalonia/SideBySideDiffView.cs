@@ -1713,14 +1713,72 @@ public class SideBySideDiffView : TemplatedControl
     public ContextMenu? PaneContextMenu { get; set; }
 
     /// <summary>
-    /// The items the menu would show for <paramref name="context"/>. Empty in phase 1: the seam is
-    /// built and tested before there is anything in it.
+    /// The items the menu shows for <paramref name="context"/>. The shape never changes with the
+    /// state — every entry is always here, enabled or not — because a host's "insert after this
+    /// item" has to mean the same thing on every open.
     /// </summary>
     private List<DiffMenuItem> MenuItemsFor(DiffPaneContext context)
     {
-        _ = context;
-        return [];
+        DiffSide side = context.Side ?? DiffSide.Left;
+        DiffSide toSide = Other(side);
+        string toName = DiffViewStrings.SideName(toSide);
+        int block = context.Block?.Index ?? CurrentChangeIndex;
+        List<DiffMenuItem> items = [];
+
+        // Two scopes, each named for exactly what it copies, and the wording is the gutter's own:
+        // the arrow and the entry perform the same operation, and two wordings for one operation
+        // is how a reader learns they are two. The block copied is the one **under the pointer**,
+        // not the current change — a context menu that acted somewhere else would not be one.
+        DiffMenuItem? selection = DiffPaneMenu.Verb(
+            DiffViewStrings.Format(DiffViewStrings.SelectionArrowTooltip, toName),
+            toSide == DiffSide.Left ? DiffCommand.CopyToLeft : DiffCommand.CopyToRight,
+            CommandOrNull,
+            GestureFor,
+            CanCopySelection(side));
+        if (selection is not null)
+        {
+            selection.Command = new DelegateCommand(() => CopySelection(side), () => CanCopySelection(side));
+            items.Add(selection);
+        }
+
+        DiffMenuItem? whole = DiffPaneMenu.Verb(
+            DiffViewStrings.Format(DiffViewStrings.CopyArrowTooltip, toName),
+            toSide == DiffSide.Left ? DiffCommand.CopyBlockToLeft : DiffCommand.CopyBlockToRight,
+            CommandOrNull,
+            GestureFor,
+            CanCopyBlock(block, toSide));
+        if (whole is not null)
+        {
+            whole.Command = new DelegateCommand(() => CopyBlock(block, toSide), () => CanCopyBlock(block, toSide));
+            items.Add(whole);
+        }
+
+        items.Add(DiffMenuItem.Separator());
+        DiffPaneMenu.AddNavigation(items, CommandOrNull, GestureFor, ChangeCount);
+
+        items.Add(DiffMenuItem.Separator());
+        items.Add(new DiffMenuItem
+        {
+            Header = DiffViewStrings.Format(DiffViewStrings.MenuSave, DiffViewStrings.SideName(side)),
+            Command = new DelegateCommand(() => Save(side), () => CanSave(side)),
+            IsEnabled = CanSave(side),
+        });
+        items.Add(new DiffMenuItem
+        {
+            Header = DiffViewStrings.Format(DiffViewStrings.MenuRevert, DiffViewStrings.SideName(side)),
+            Command = new DelegateCommand(() => Revert(side), () => IsEdited(side)),
+            IsEnabled = IsEdited(side),
+        });
+
+        return items;
     }
+
+    /// <summary>
+    /// The command behind <paramref name="command"/>. This view has every verb, so it never
+    /// answers <c>null</c>; the signature matches the unified view's so the menu builder can ask
+    /// both the same question.
+    /// </summary>
+    private ICommand? CommandOrNull(DiffCommand command) => CommandFor(command);
 
     /// <summary>
     /// The menu the last request opened, or <c>null</c> where none did. A test seam, like the

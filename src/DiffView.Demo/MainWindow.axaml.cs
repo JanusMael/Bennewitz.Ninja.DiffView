@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -39,6 +40,12 @@ public sealed partial class MainWindow : Window
         Diff.IsVisible = !DebugFlags.Unified;
 
         RefreshGestureLabels();
+
+        // A host's own entry, through the amend shape: inserted after the control's copy items so
+        // that its position is something the demo can be looked at to check. Both views, because
+        // the seam is the same one on each.
+        Diff.PaneContextMenuOpening += OnPaneContextMenuOpening;
+        Unified.PaneContextMenuOpening += OnPaneContextMenuOpening;
 
         // The sides load when the window opens, so a host of the window — the smoke snapshot
         // test — can configure the control between construction and the first build.
@@ -321,6 +328,47 @@ public sealed partial class MainWindow : Window
     private string Gesture(DiffCommand command)
     {
         return Diff.GestureFor(command)?.ToString() ?? "nothing";
+    }
+
+    /// <summary>
+    /// What a host does with the pane menu: read what was clicked, and add an entry of its own.
+    /// It goes after the control's copy items where there are any, and at the top otherwise —
+    /// which is the unified view, where those verbs do not exist to insert after.
+    /// </summary>
+    private void OnPaneContextMenuOpening(object? sender, DiffPaneContextMenuEventArgs e)
+    {
+        int after = e.Items.ToList().FindLastIndex(i => i.Verb is DiffCommand.CopyToLeft or DiffCommand.CopyToRight
+            or DiffCommand.CopyBlockToLeft or DiffCommand.CopyBlockToRight);
+
+        DiffPaneContext context = e.Context;
+        e.Items.Insert(after + 1, new DiffMenuItem
+        {
+            Header = "What did I click?",
+            Command = new DemoCommand(() => Note(Describe(context))),
+        });
+    }
+
+    /// <summary>The context in one line, which is the point of the entry above.</summary>
+    private static string Describe(DiffPaneContext context)
+    {
+        string side = context.Side is { } s ? s.ToString().ToLowerInvariant() : "unified";
+        string block = context.Block is { } b ? $"change {b.Index + 1}" : "no change";
+        string selection = context.SelectedLines is { } lines ? $"{lines.Count} line(s) selected" : "no selection";
+        return $"{side} · line {context.LineNumber} (source line {context.SourceLine?.ToString(CultureInfo.InvariantCulture) ?? "—"}) · {block} · {selection}";
+    }
+
+    /// <summary>The demo's own command type; the library's is internal, as a host's would be its own.</summary>
+    private sealed class DemoCommand(Action execute) : ICommand
+    {
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => execute();
     }
 
     private void OnSaveLeft(object? sender, RoutedEventArgs e) => Save(DiffSide.Left);

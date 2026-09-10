@@ -208,6 +208,21 @@ public static class DiffViewStrings
     /// <summary>Navigation with no changes.</summary>
     public const string NavigationNoChanges = "Navigation.NoChanges";
 
+    /// <summary>The pane menu's navigation entries.</summary>
+    public const string MenuNextChange = "Menu.NextChange";
+
+    /// <summary>The pane menu's navigation entries.</summary>
+    public const string MenuPreviousChange = "Menu.PreviousChange";
+
+    /// <summary>The pane menu's find entry.</summary>
+    public const string MenuFind = "Menu.Find";
+
+    /// <summary>The pane menu's save entry: <c>{0}</c> this side.</summary>
+    public const string MenuSave = "Menu.Save";
+
+    /// <summary>The pane menu's revert entry: <c>{0}</c> this side.</summary>
+    public const string MenuRevert = "Menu.Revert";
+
     /// <summary>The left side, in a tooltip.</summary>
     public const string SideLeft = "Side.Left";
 
@@ -423,6 +438,11 @@ public static class DiffViewStrings
         [NavigationNoNext] = "No next change",
         [NavigationNoPrevious] = "No previous change",
         [NavigationNoChanges] = "No changes to navigate",
+        [MenuNextChange] = "Next change",
+        [MenuPreviousChange] = "Previous change",
+        [MenuFind] = "Find…",
+        [MenuSave] = "Save the {0} side",
+        [MenuRevert] = "Revert the {0} side",
         [SideLeft] = "left",
         [SideRight] = "right",
         [LineTooltipAligned] = "Line {0} · {1} line {2}",

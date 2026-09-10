@@ -8,9 +8,9 @@ using Bennewitz.Ninja.DiffView.Core;
 namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 
 /// <summary>
-/// Plan 00010 phase 1: the context object a host reads, and the two shapes it can change the menu
-/// through. There are no default items yet — the seam is built and tested before anything is in
-/// it — so every menu here is one a host put there.
+/// Plan 00010: the context object a host reads, the two shapes it can change the menu through,
+/// and the items the side-by-side view puts there — whose shape does not move with the state,
+/// because a host's "insert after this item" has to mean the same thing on every open.
 /// </summary>
 public sealed class PaneContextMenuTests
 {
@@ -132,26 +132,32 @@ public sealed class PaneContextMenuTests
     }
 
     [AvaloniaFact]
-    public async Task A_host_item_alone_makes_the_menu_and_an_empty_list_makes_none()
+    public async Task An_emptied_list_opens_no_menu_and_a_host_item_alone_opens_one()
     {
         using CompositeHost host = new(width: 900, height: 400);
         host.Show();
         await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
         CompositeHost.Layout();
 
+        bool add = false;
         int openings = 0;
         host.View.PaneContextMenuOpening += (_, e) =>
         {
             openings++;
-            Assert.Empty(e.Items);
+            Assert.NotEmpty(e.Items);
+            e.Items.Clear();
+            if (add)
+            {
+                e.Items.Add(new DiffMenuItem { Header = "Mine" });
+            }
         };
 
-        // Nothing added: phase 1 builds no items of its own, so the event fires and no menu opens.
+        // The amend shape reaches as far as removing everything, and nothing left is no menu.
         RightClick(host, host.Left, new Point(60, 40));
         Assert.Equal(1, openings);
         Assert.Null(host.View.LastPaneMenu);
 
-        host.View.PaneContextMenuOpening += (_, e) => e.Items.Add(new DiffMenuItem { Header = "Mine" });
+        add = true;
         RightClick(host, host.Left, new Point(60, 40));
 
         Assert.Equal(2, openings);
@@ -219,6 +225,15 @@ public sealed class PaneContextMenuTests
         ancestor.Items.Add(new MenuItem { Header = "Host" });
         host.View.ContextMenu = ancestor;
 
+        bool empty = true;
+        host.View.PaneContextMenuOpening += (_, e) =>
+        {
+            if (empty)
+            {
+                e.Items.Clear();
+            }
+        };
+
         RightClick(host, host.Left, new Point(60, 40));
         Assert.Null(host.View.LastPaneMenu);
         Assert.True(ancestor.IsOpen);
@@ -227,7 +242,7 @@ public sealed class PaneContextMenuTests
         CompositeHost.Layout();
 
         // With something of ours to show, the pane claims the request and the ancestor stays shut.
-        host.View.PaneContextMenuOpening += (_, e) => e.Items.Add(new DiffMenuItem { Header = "Mine" });
+        empty = false;
         RightClick(host, host.Left, new Point(60, 40));
 
         Assert.NotNull(host.View.LastPaneMenu);
@@ -250,6 +265,143 @@ public sealed class PaneContextMenuTests
         host.Left.LineNumberMargin.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
 
         Assert.False(raised);
+    }
+
+    [AvaloniaFact]
+    public async Task The_menu_shape_does_not_move_with_the_selection()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nTHREE\nfour\n", "one\ntwo\nthree\nfour\n");
+        host.View.RightReadOnly = false;
+        host.Left.TextArea.Focus();
+        CompositeHost.Layout();
+        host.View.NextChange();
+
+        List<DiffMenuItem> without = ItemsAt(host, 2);
+        host.Left.Select(4, 3);
+        CompositeHost.Layout();
+        List<DiffMenuItem> with = ItemsAt(host, 2);
+
+        // Beyond Compare's rule, and the reason "insert after this item" means anything: the same
+        // entries in the same order either way. Only whether they can be invoked moves.
+        Assert.Equal(without.Count, with.Count);
+        Assert.Equal(without.Select(i => i.Header), with.Select(i => i.Header));
+        Assert.Equal(without.Select(i => i.Verb), with.Select(i => i.Verb));
+
+        DiffMenuItem selectionWithout = without.Single(i => i.Verb == DiffCommand.CopyToRight);
+        DiffMenuItem selectionWith = with.Single(i => i.Verb == DiffCommand.CopyToRight);
+        Assert.False(selectionWithout.IsEnabled);
+        Assert.True(selectionWith.IsEnabled);
+    }
+
+    [AvaloniaFact]
+    public async Task The_copy_entries_say_what_the_gutter_says()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+
+        List<DiffMenuItem> items = ItemsAt(host, 2);
+
+        // The arrow and the entry do the same thing, so they say the same thing — two wordings for
+        // one operation is how a reader learns they are two.
+        Assert.Equal(
+            DiffViewStrings.Format(DiffViewStrings.SelectionArrowTooltip, DiffViewStrings.SideName(DiffSide.Right)),
+            items.Single(i => i.Verb == DiffCommand.CopyToRight).Header);
+        Assert.Equal(
+            DiffViewStrings.Format(DiffViewStrings.CopyArrowTooltip, DiffViewStrings.SideName(DiffSide.Right)),
+            items.Single(i => i.Verb == DiffCommand.CopyBlockToRight).Header);
+    }
+
+    [AvaloniaFact]
+    public async Task The_accelerator_follows_the_key_map()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        CompositeHost.Layout();
+
+        Assert.Equal(new KeyGesture(Key.F7), ItemsAt(host, 2).Single(i => i.Verb == DiffCommand.NextChange).Gesture);
+
+        // The reason plan 00009 came first: a literal here would start lying now.
+        host.View.KeyMap[DiffCommand.NextChange] = new KeyGesture(Key.F8);
+        Assert.Equal(new KeyGesture(Key.F8), ItemsAt(host, 2).Single(i => i.Verb == DiffCommand.NextChange).Gesture);
+
+        host.View.KeyMap[DiffCommand.NextChange] = null;
+        Assert.Null(ItemsAt(host, 2).Single(i => i.Verb == DiffCommand.NextChange).Gesture);
+    }
+
+    [AvaloniaFact]
+    public async Task The_block_entry_copies_the_block_that_was_clicked_not_the_current_one()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\nFOUR\nfive\n", "one\ntwo\nthree\nfour\nfive\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+
+        // The current change is the first block; the click is on the second. A context menu that
+        // acted on the current one would not be a context menu.
+        host.View.NextChange();
+        Assert.Equal(0, host.View.CurrentChangeIndex);
+
+        DiffMenuItem copy = ItemsAt(host, 4).Single(i => i.Verb == DiffCommand.CopyBlockToRight);
+        Assert.True(copy.IsEnabled);
+        copy.Command!.Execute(null);
+        await host.WaitForReDiffAsync();
+
+        Assert.Equal("one\ntwo\nthree\nFOUR\nfive\n", host.Right.Document.Text);
+    }
+
+    [AvaloniaFact]
+    public async Task Save_and_revert_are_present_and_disabled_until_there_is_an_edit()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.LeftReadOnly = false;
+        CompositeHost.Layout();
+
+        string revert = DiffViewStrings.Format(DiffViewStrings.MenuRevert, DiffViewStrings.SideName(DiffSide.Left));
+        Assert.False(ItemsAt(host, 1).Single(i => i.Header == revert).IsEnabled);
+
+        host.Left.Document.Insert(0, "edited ");
+        await host.WaitForReDiffAsync();
+
+        // Present the whole time, which is what makes the entry's position stable.
+        Assert.True(ItemsAt(host, 1).Single(i => i.Header == revert).IsEnabled);
+    }
+
+    /// <summary>
+    /// The items the menu would show for <paramref name="line"/> of the left pane. Asked with the
+    /// keyboard, which resolves to the caret, so the caret is moved there first.
+    /// </summary>
+    private static List<DiffMenuItem> ItemsAt(CompositeHost host, int line)
+    {
+        host.Left.TextArea.Caret.Line = line;
+        CompositeHost.Layout();
+
+        List<DiffMenuItem> captured = [];
+        void Capture(object? sender, DiffPaneContextMenuEventArgs e)
+        {
+            captured.AddRange(e.Items);
+            e.Cancel = true;
+        }
+
+        host.View.PaneContextMenuOpening += Capture;
+        try
+        {
+            host.Left.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+        }
+        finally
+        {
+            host.View.PaneContextMenuOpening -= Capture;
+        }
+
+        return captured;
     }
 
     private static void RightClick(CompositeHost host, DiffPanePresenter pane, Point inPane)
