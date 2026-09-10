@@ -24,6 +24,7 @@ public sealed class StatusController : IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly Action<Action> _dispatch;
     private ITimer? _pendingClear;
+    private object? _pendingClearToken;
     private bool _disposed;
 
     /// <param name="timeProvider">The clock the auto-clear delays run on.</param>
@@ -128,8 +129,12 @@ public sealed class StatusController : IDisposable
         };
         if (clearAfter is { } delay)
         {
-            ITimer timer = _timeProvider.CreateTimer(OnClearDue, state: null, delay, Timeout.InfiniteTimeSpan);
-            _pendingClear = timer;
+            // The token identifies the message this clear belongs to. It is created before the
+            // timer because the callback needs something to compare against, and the timer
+            // cannot be its own state.
+            object token = new();
+            _pendingClearToken = token;
+            _pendingClear = _timeProvider.CreateTimer(OnClearDue, token, delay, Timeout.InfiniteTimeSpan);
         }
     }
 
@@ -137,14 +142,16 @@ public sealed class StatusController : IDisposable
     {
         _dispatch(() =>
         {
-            // A later message cancelled and replaced the timer; only the pending one clears.
-            if (_disposed || _pendingClear is null)
+            // The clear belongs to the message that scheduled it. A timer that came due before
+            // this dispatch ran has already been replaced by a later message, and clearing then
+            // would take that message with it — so the token, not merely "is one pending", is
+            // what decides.
+            if (_disposed || !ReferenceEquals(_pendingClearToken, state))
             {
                 return;
             }
 
-            _pendingClear.Dispose();
-            _pendingClear = null;
+            CancelPendingClear();
             Apply(null, StatusKind.None);
         });
     }
@@ -153,6 +160,7 @@ public sealed class StatusController : IDisposable
     {
         _pendingClear?.Dispose();
         _pendingClear = null;
+        _pendingClearToken = null;
     }
 
     private void Apply(string? text, StatusKind kind)

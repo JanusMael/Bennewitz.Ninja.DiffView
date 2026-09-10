@@ -106,4 +106,32 @@ public sealed class StatusControllerTests
         Assert.Equal(0, time.ActiveTimers);
         Assert.Throws<ObjectDisposedException>(() => status.SetSuccess("again"));
     }
+
+    [Fact]
+    public void A_clear_that_came_due_before_the_next_message_does_not_clear_it()
+    {
+        FakeTimeProvider time = new();
+        Queue<Action> posted = new();
+        using StatusController status = new(time, posted.Enqueue);
+
+        status.SetSuccess("first");
+
+        // The timer comes due and posts its clear to the UI thread, which has not run it yet.
+        time.Advance(StatusController.DefaultSuccessAutoClearDelay);
+        Assert.Single(posted);
+        Assert.Equal("first", status.Text);
+
+        // The second message arrives on the UI thread before that post is drained. The clear
+        // already in flight belongs to the first message and must not take the second with it.
+        status.SetWarning("second");
+
+        while (posted.Count > 0)
+        {
+            posted.Dequeue()();
+        }
+
+        Assert.Equal("second", status.Text);
+        Assert.Equal(StatusKind.Warning, status.Kind);
+        Assert.Equal(1, time.ActiveTimers);
+    }
 }
