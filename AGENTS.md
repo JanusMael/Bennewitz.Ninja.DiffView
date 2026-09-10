@@ -298,3 +298,43 @@ commits follow. Say so once at the point of use when a session instruction asks 
 wrong conclusion during the work above: an `ssh` probe that had actually failed was read as having
 succeeded, because `head` exits 0 regardless. Capture the status without a pipe, or read
 `${PIPESTATUS[0]}`. The same trap applies to any pipeline whose last stage always succeeds.
+
+## 9. Looking at the running app on this Linux box
+
+> Written after four plans' worth of UI work had been judged only on headless frames, because
+> `AGENTS.md` and the handoff notes both carried "this box cannot screenshot a window". **That is
+> false**, and the rest of this section is the recipe that works.
+
+- **The session is Wayland (`XDG_SESSION_TYPE=wayland`) with XWayland at `DISPLAY=:0`, and the
+  demo is an XWayland client** — Avalonia's X11 backend — so it has a real X window that can be
+  grabbed. So does Beyond Compare (`/usr/bin/bcompare`).
+- **`import -window root` fails, and that failure is what the false claim was built on.** Under
+  XWayland the root window holds nothing: every client is redirected to a Wayland surface, so the
+  root grab returns nothing and ImageMagick errors with
+  `import: ... @ error/import.c/ImportImageCommand/1289`. Reading that as "the compositor refuses
+  grabs" is the mistake; it refuses *that* grab.
+- **Grab a window by id instead.** `xwininfo` and `xlsclients` are present:
+
+  ```bash
+  DISPLAY=:0 xwininfo -root -children | grep -i diffview
+  DISPLAY=:0 import -window 0x80002c demo.png
+  ```
+
+  The main window is titled `DiffView Demo`; the F12 live-log window is a **second** X window
+  titled `Live Debug Logs`, so match on the title rather than taking the first hit.
+- **Launch the demo detached or it will not survive.** A background command started through the
+  agent harness is reaped at the turn boundary — the first two attempts died with exit 144 before
+  anything could be captured. `nohup dotnet run --project src/DiffView.Demo -- <left> <right> &`
+  followed by `disown`, from a script file, outlives the turn.
+- **Only `import` (ImageMagick 7) is installed.** There is no `grim`, `spectacle`,
+  `gnome-screenshot`, `flameshot`, `maim` or `xwd`.
+- **There is no input-injection tool** (`xdotool` and `wmctrl` are both absent), so the running app
+  can only be *looked at*, never driven. Anything behind a menu cannot be reached, and that
+  includes **in-pane editing and therefore every copy arrow**: the demo's flags are `--theme`,
+  `--variant`, `--left`, `--right`, `--unified` and `--log-level`, with nothing for making a side
+  editable. A demo flag such as `--edit left|right|both`, or `xdotool`, would close that gap.
+- **What this does not change.** A captured window is a look, not a test: it is one machine, one
+  variant and one moment. The snapshot frames under `Snapshots/` with their pixel assertions stay
+  the evidence, per §5. This is for the judgement a frame cannot give — whether a thing reads
+  right at real size, in a real window, at the real DPI — which is what Windows and macOS runs are
+  still owed for.
