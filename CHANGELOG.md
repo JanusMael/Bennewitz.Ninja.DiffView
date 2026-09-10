@@ -250,6 +250,23 @@ All notable changes to DiffView are recorded here. The format follows
   cases in both variants and both palettes — the colour-blind ones being the only committed
   evidence of the tail bar.
 
+- Plan 00007, the overview map: `DiffMinimap` draws **two lanes**, one per side, a bucket inking a
+  lane only where that side has a line in the rows it covers — so a deletion inks the left lane and
+  notches the right, an insertion does the reverse, and a modification inks both.
+  `KindOfBucket(bucket, DiffSide)`, `LaneAt`, `ViewportBounds` and `DiffMinimap.MapWidth` are new;
+  `KindOfBucket(bucket)` keeps its meaning as the stronger of the two lanes. A press inside the
+  viewport box drags it and scrolls continuously where a press outside jumps, and the wheel over
+  the map scrolls the panes. `SideBySideDiffView.ShowMinimap` turns the column off, defaulting on,
+  and the demo's View menu carries it as Show overview map. The column is 22 px — a marker column
+  the current block moved into, two lanes, the gap and the margin — and `Auto`, so hiding it gives
+  the width back to the panes.
+- `scripts/run-demo.sh` and `scripts/run-demo.ps1`, which run the demo on a pair with plenty of
+  changes and print what is worth trying by hand.
+- Headless, pixel and snapshot tests for the lanes against the model, the combined reading against
+  the single-lane one, the toggle on both wiring paths, the drag against the jump, the wheel, the
+  lane-naming tooltip, and `MinimapSnapshotTests` — a left-only block in both variants and both
+  palettes, the drawing asserted against the buckets the map reports.
+
 ### Removed
 
 - `ChangeConnectorGutter.CanCopyToLeft`, `CanCopyToRight`, `LastArrows`, `ArrowAt` and

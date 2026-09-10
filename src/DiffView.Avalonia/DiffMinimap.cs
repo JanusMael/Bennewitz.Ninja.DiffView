@@ -8,11 +8,14 @@ using Bennewitz.Ninja.DiffView.Core;
 namespace Bennewitz.Ninja.DiffView.Avalonia;
 
 /// <summary>
-/// The whole-document overview beside the panes: one pixel row per bucket of rows, each bucket
-/// painted in the marker colour of the strongest change it holds (deleted over inserted over
-/// modified), the viewport as a translucent rectangle that tracks the scroll, the current
-/// change marked at the left edge, a click jumping to the first changed row of its bucket, and
-/// a tooltip naming the row under the pointer. The composite feeds it; it renders.
+/// The whole-document overview beside the panes: one pixel row per bucket of rows, in **two
+/// lanes**, one per side. A bucket inks a lane only where that side has a changed line in the
+/// rows it covers, so a deletion inks the left lane and notches the right, an insertion does the
+/// reverse, and a modification inks both — which is what one lane cannot say. Over them: the
+/// viewport as a translucent rectangle tracking the scroll, the current change marked in its own
+/// column at the left edge, find ticks on the outer edge, a click jumping to the first changed
+/// row of its bucket, a drag of the viewport scrolling continuously, and a tooltip naming the row
+/// and the lane under the pointer. The composite feeds it; it renders.
 /// </summary>
 public class DiffMinimap : Control
 {
@@ -38,11 +41,29 @@ public class DiffMinimap : Control
 
     private const double TickWidth = 4;
 
+    /// <summary>The column the map asks for: the marker column, two lanes, the gap between them and a margin.</summary>
+    public const double MapWidth = MarkerColumnWidth + (2 * LaneWidth) + LaneGap + LaneMargin;
+
+    /// <summary>The current change's own column, at the left edge; it belongs to neither side.</summary>
+    private const double MarkerColumnWidth = 2;
+
+    /// <summary>One side's lane, and the unpainted gap that keeps the two readable as two.</summary>
+    private const double LaneWidth = 8;
+    private const double LaneGap = 2;
+
+    /// <summary>What is left at the outer edge, under the find ticks.</summary>
+    private const double LaneMargin = 2;
+
+    /// <summary>Rows a wheel notch moves the viewport.</summary>
+    private const int WheelRows = 3;
+
     private readonly DiffBrushes _palette = new();
-    private DiffLineKind[]? _bucketKinds;
+    private DiffLineKind[]? _leftKinds;
+    private DiffLineKind[]? _rightKinds;
     private SideBySideDocument? _bucketDocument;
     private int _bucketCountCached;
     private bool[]? _matchBuckets;
+    private bool _dragging;
     private IReadOnlyList<int>? _matchRowsCached;
     private int _matchBucketCountCached;
 
@@ -56,6 +77,9 @@ public class DiffMinimap : Control
     {
         Focusable = false;
         Cursor = new Cursor(StandardCursorType.Hand);
+        // The template's column is Auto so that hiding the control gives the width back to the
+        // panes rather than leaving a gap; the control is what names the width.
+        Width = MapWidth;
     }
 
     /// <summary>A click asked to jump to this row: the first changed row of the clicked bucket, or its first row.</summary>
@@ -148,11 +172,44 @@ public class DiffMinimap : Control
         return bucket >= 0 && bucket < buckets.Length && buckets[bucket];
     }
 
-    /// <summary>The strongest kind in <paramref name="bucket"/>: deleted over inserted over modified over unchanged.</summary>
+    /// <summary>
+    /// The strongest kind in <paramref name="bucket"/> on either side: deleted over inserted over
+    /// modified over unchanged. Every changed row belongs to at least one side's lane, so this is
+    /// the same answer the single-lane map gave.
+    /// </summary>
     public DiffLineKind KindOfBucket(int bucket)
     {
-        DiffLineKind[] kinds = BucketKinds();
+        DiffLineKind left = KindOfBucket(bucket, DiffSide.Left);
+        DiffLineKind right = KindOfBucket(bucket, DiffSide.Right);
+        return Strength(left) >= Strength(right) ? left : right;
+    }
+
+    /// <summary>
+    /// The strongest kind in <paramref name="bucket"/> that <paramref name="side"/> has a line
+    /// for. Rows the side pads are absence, and absence is what a notch in one lane means.
+    /// </summary>
+    public DiffLineKind KindOfBucket(int bucket, DiffSide side)
+    {
+        DiffLineKind[] kinds = BucketKinds(side);
         return bucket >= 0 && bucket < kinds.Length ? kinds[bucket] : DiffLineKind.Unchanged;
+    }
+
+    /// <summary>The lane <paramref name="x"/> falls in, or <c>null</c> for the marker column, the gap or the margin.</summary>
+    public DiffSide? LaneAt(double x)
+    {
+        if (x >= MarkerColumnWidth && x < MarkerColumnWidth + LaneWidth)
+        {
+            return DiffSide.Left;
+        }
+
+        double rightLane = MarkerColumnWidth + LaneWidth + LaneGap;
+        return x >= rightLane && x < rightLane + LaneWidth ? DiffSide.Right : null;
+    }
+
+    /// <summary>Where <paramref name="side"/>'s lane starts, in control coordinates.</summary>
+    private static double LaneLeft(DiffSide side)
+    {
+        return side == DiffSide.Left ? MarkerColumnWidth : MarkerColumnWidth + LaneWidth + LaneGap;
     }
 
     /// <summary>The row a click at pixel row <paramref name="y"/> jumps to: the bucket's first changed row, else its first row.</summary>
@@ -187,12 +244,38 @@ public class DiffMinimap : Control
             return null;
         }
 
+        return TooltipFor(0, y);
+    }
+
+    /// <summary>
+    /// The tooltip at a point: the row under it, and — when the point is inside a lane — that
+    /// side's own kind there, which is the question the two lanes exist to answer.
+    /// </summary>
+    public string? TooltipFor(double x, double y)
+    {
+        SideBySideDocument? document = Document;
+        if (document is null || document.Rows.Count == 0)
+        {
+            return null;
+        }
+
         int row = Math.Min(RowAtPixel(y), document.Rows.Count - 1);
+        int bucket = (int)Math.Floor(y);
+        string number = (row + 1).ToString("N0", System.Globalization.CultureInfo.CurrentCulture);
+        string total = document.Rows.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture);
+
+        if (LaneAt(x) is not { } side)
+        {
+            return DiffViewStrings.Format(
+                DiffViewStrings.MinimapTooltip, number, total, DiffViewStrings.KindName(KindOfBucket(bucket)));
+        }
+
         return DiffViewStrings.Format(
-            DiffViewStrings.MinimapTooltip,
-            (row + 1).ToString("N0", System.Globalization.CultureInfo.CurrentCulture),
-            document.Rows.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture),
-            DiffViewStrings.KindName(KindOfBucket((int)Math.Floor(y))));
+            DiffViewStrings.MinimapLaneTooltip,
+            number,
+            total,
+            DiffViewStrings.KindName(KindOfBucket(bucket, side)),
+            DiffViewStrings.SideName(side));
     }
 
     /// <inheritdoc/>
@@ -207,13 +290,17 @@ public class DiffMinimap : Control
             return;
         }
 
-        DiffLineKind[] kinds = BucketKinds();
         double width = bounds.Width;
-        for (int bucket = 0; bucket < kinds.Length; bucket++)
+        foreach (DiffSide side in (DiffSide[])[DiffSide.Left, DiffSide.Right])
         {
-            if (kinds[bucket] != DiffLineKind.Unchanged)
+            DiffLineKind[] kinds = BucketKinds(side);
+            double left = LaneLeft(side);
+            for (int bucket = 0; bucket < kinds.Length; bucket++)
             {
-                context.FillRectangle(_palette.MarkerFor(kinds[bucket]), new Rect(0, bucket, width, 1));
+                if (kinds[bucket] != DiffLineKind.Unchanged)
+                {
+                    context.FillRectangle(_palette.MarkerFor(kinds[bucket]), new Rect(left, bucket, LaneWidth, 1));
+                }
             }
         }
 
@@ -232,16 +319,39 @@ public class DiffMinimap : Control
             ChangeBlock block = document.Blocks[CurrentChangeIndex];
             int top = BucketOfRow(block.FirstRow);
             int bottom = Math.Max(top + 1, BucketOfRow(block.LastRow) + 1);
-            context.FillRectangle(_palette[DiffBrush.CurrentBlockBorder], new Rect(0, top, 3, bottom - top));
+            // Its own column at the left edge: the current block belongs to the pair, not to a side.
+            context.FillRectangle(_palette[DiffBrush.CurrentBlockBorder], new Rect(0, top, MarkerColumnWidth, bottom - top));
         }
 
-        if (ViewportRowCount > 0)
+        if (ViewportBounds is { } viewport)
         {
-            double top = ViewportStartRow * BucketCount / document.Rows.Count;
-            double height = Math.Max(2, ViewportRowCount * BucketCount / document.Rows.Count);
-            Rect viewport = new(0, Math.Clamp(top, 0, Math.Max(0, bounds.Height - height)), width, Math.Min(height, bounds.Height));
             context.FillRectangle(_palette[DiffBrush.Selection], viewport);
             context.DrawRectangle(new Pen(_palette[DiffBrush.Connector], 1), viewport.Deflate(0.5));
+        }
+    }
+
+    /// <summary>
+    /// The viewport rectangle, or <c>null</c> when there is nothing to show one over. Exposed
+    /// because it is the boundary between the two pointer gestures: a press inside it drags, a
+    /// press outside it jumps, and the two must not be left to reading order.
+    /// </summary>
+    public Rect? ViewportBounds
+    {
+        get
+        {
+            SideBySideDocument? document = Document;
+            if (document is null || document.Rows.Count == 0 || ViewportRowCount <= 0 || Bounds.Height < 1)
+            {
+                return null;
+            }
+
+            double top = ViewportStartRow * BucketCount / document.Rows.Count;
+            double height = Math.Max(2, ViewportRowCount * BucketCount / document.Rows.Count);
+            return new Rect(
+                0,
+                Math.Clamp(top, 0, Math.Max(0, Bounds.Height - height)),
+                Bounds.Width,
+                Math.Min(height, Bounds.Height));
         }
     }
 
@@ -251,7 +361,8 @@ public class DiffMinimap : Control
         base.OnPropertyChanged(change);
         if (change.Property == DocumentProperty || change.Property == BoundsProperty)
         {
-            _bucketKinds = null;
+            _leftKinds = null;
+            _rightKinds = null;
             _matchBuckets = null;
         }
         else if (change.Property == MatchRowsProperty)
@@ -269,15 +380,79 @@ public class DiffMinimap : Control
             return;
         }
 
-        JumpRequested?.Invoke(this, RowForClick(e.GetPosition(this).Y));
+        Point point = e.GetPosition(this);
+
+        // Inside the viewport box the gesture is a drag, outside it a jump. The two never contest
+        // a pixel, because the box is exactly what separates them.
+        if (ViewportBounds is { } viewport && viewport.Contains(point))
+        {
+            _dragging = true;
+            e.Pointer.Capture(this);
+            ScrollTo(point.Y);
+            e.Handled = true;
+            return;
+        }
+
+        JumpRequested?.Invoke(this, RowForClick(point.Y));
         e.Handled = true;
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        if (_dragging)
+        {
+            _dragging = false;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// A notch over the map scrolls the panes rather than the page, by
+    /// <see cref="WheelRows"/> rows — the same event a click raises, so nothing new crosses the
+    /// boundary between the map and the panes.
+    /// </summary>
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        if (Document is not { } document || document.Rows.Count == 0)
+        {
+            return;
+        }
+
+        int centre = (int)Math.Round(ViewportStartRow + (ViewportRowCount / 2));
+        int target = centre - ((int)Math.Round(e.Delta.Y) * WheelRows);
+        JumpRequested?.Invoke(this, Math.Clamp(target, 0, document.Rows.Count - 1));
+        e.Handled = true;
+    }
+
+    /// <summary>Scrolls so the row under <paramref name="y"/> is where the drag put it.</summary>
+    private void ScrollTo(double y)
+    {
+        if (Document is not { } document || document.Rows.Count == 0)
+        {
+            return;
+        }
+
+        int row = Math.Clamp(RowAtPixel(y) - (int)Math.Round(ViewportRowCount / 2), 0, document.Rows.Count - 1);
+        JumpRequested?.Invoke(this, row);
     }
 
     /// <inheritdoc/>
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        ToolTip.SetTip(this, TooltipFor(e.GetPosition(this).Y));
+        Point point = e.GetPosition(this);
+        if (_dragging)
+        {
+            ScrollTo(point.Y);
+            e.Handled = true;
+            return;
+        }
+
+        ToolTip.SetTip(this, TooltipFor(point.X, point.Y));
     }
 
     /// <inheritdoc/>
@@ -322,14 +497,25 @@ public class DiffMinimap : Control
         }
     }
 
-    /// <summary>The strongest kind per bucket, computed once per document and height.</summary>
-    private DiffLineKind[] BucketKinds()
+    /// <summary>
+    /// The strongest kind per bucket that <paramref name="side"/> has a line for, computed once
+    /// per document and height. A row the side pads contributes nothing, which is what leaves the
+    /// other lane's block a notch rather than a band.
+    /// </summary>
+    private DiffLineKind[] BucketKinds(DiffSide side)
     {
         SideBySideDocument? document = Document;
         int buckets = BucketCount;
-        if (_bucketKinds is not null && ReferenceEquals(_bucketDocument, document) && _bucketCountCached == buckets)
+        bool cached = ReferenceEquals(_bucketDocument, document) && _bucketCountCached == buckets;
+        if (cached && (side == DiffSide.Left ? _leftKinds : _rightKinds) is { } hit)
         {
-            return _bucketKinds;
+            return hit;
+        }
+
+        if (!cached)
+        {
+            _leftKinds = null;
+            _rightKinds = null;
         }
 
         DiffLineKind[] kinds = new DiffLineKind[buckets];
@@ -338,21 +524,29 @@ public class DiffMinimap : Control
             int rows = document.Rows.Count;
             for (int row = 0; row < rows; row++)
             {
-                DiffLineKind kind = document.Rows[row].Kind;
-                if (kind == DiffLineKind.Unchanged)
+                AlignedRow aligned = document.Rows[row];
+                if (aligned.Kind == DiffLineKind.Unchanged || SideBySideDocument.LineOf(aligned, side) is null)
                 {
                     continue;
                 }
 
                 int bucket = (int)((long)row * buckets / rows);
-                if (Strength(kind) > Strength(kinds[bucket]))
+                if (Strength(aligned.Kind) > Strength(kinds[bucket]))
                 {
-                    kinds[bucket] = kind;
+                    kinds[bucket] = aligned.Kind;
                 }
             }
         }
 
-        _bucketKinds = kinds;
+        if (side == DiffSide.Left)
+        {
+            _leftKinds = kinds;
+        }
+        else
+        {
+            _rightKinds = kinds;
+        }
+
         _bucketDocument = document;
         _bucketCountCached = buckets;
         return kinds;

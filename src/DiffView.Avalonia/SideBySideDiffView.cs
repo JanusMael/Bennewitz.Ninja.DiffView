@@ -129,6 +129,10 @@ public class SideBySideDiffView : TemplatedControl
     public static readonly StyledProperty<bool> ShowWhitespaceProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowWhitespace));
 
+    /// <summary>Identifies the <see cref="ShowMinimap"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowMinimapProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowMinimap), defaultValue: true);
+
     /// <summary>Identifies the <see cref="ShowLineEndings"/> property.</summary>
     public static readonly StyledProperty<bool> ShowLineEndingsProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowLineEndings));
@@ -501,6 +505,16 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(ShowWhitespaceProperty);
         set => SetValue(ShowWhitespaceProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the overview map is shown beside the panes. On by default. Off, its column takes
+    /// no width at all, so the panes get it back rather than looking at a gap.
+    /// </summary>
+    public bool ShowMinimap
+    {
+        get => GetValue(ShowMinimapProperty);
+        set => SetValue(ShowMinimapProperty, value);
     }
 
     /// <summary>Whether both panes draw a line terminator at the end of each line. Off by default.</summary>
@@ -1097,6 +1111,9 @@ public class SideBySideDiffView : TemplatedControl
         {
             _minimap.Document = Document;
             _minimap.CurrentChangeIndex = CurrentChangeIndex;
+            // Both paths, because a host that sets the flag in XAML is wired here and never
+            // reaches the property-change handler — the gap plan 00004 had to fix for CanCopyOut.
+            _minimap.IsVisible = ShowMinimap;
             _minimap.JumpRequested += OnMinimapJumpRequested;
         }
 
@@ -1180,6 +1197,13 @@ public class SideBySideDiffView : TemplatedControl
         else if (change.Property == UseSyntaxHighlightingProperty)
         {
             ForEachPane(pane => pane.UseSyntaxHighlighting = UseSyntaxHighlighting);
+        }
+        else if (change.Property == ShowMinimapProperty)
+        {
+            if (_minimap is not null)
+            {
+                _minimap.IsVisible = ShowMinimap;
+            }
         }
         else if (change.Property == ShowWhitespaceProperty
                  || change.Property == ShowLineEndingsProperty

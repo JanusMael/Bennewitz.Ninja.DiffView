@@ -315,6 +315,12 @@ public sealed partial class MainWindow : Window
         Unified.UseSyntaxHighlighting = UseSyntax.IsChecked;
     }
 
+    private void OnToggleShowMinimap(object? sender, RoutedEventArgs e)
+    {
+        // The unified view has no minimap, so this reaches the side-by-side control only.
+        Diff.ShowMinimap = ShowMinimap.IsChecked;
+    }
+
     private void OnToggleShowWhitespace(object? sender, RoutedEventArgs e)
     {
         Diff.ShowWhitespace = ShowWhitespace.IsChecked;

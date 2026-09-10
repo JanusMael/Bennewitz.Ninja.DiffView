@@ -165,6 +165,32 @@ dotnet run --project src/ThemeAudit -- report
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
 
+## Plan 00007 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 Two lanes | done | `DiffMinimap.BucketKinds(DiffSide)` over `SideBySideDocument.LineOf`; the 22 px column — a marker column, two 8 px lanes, the gap, the margin — with the template's column now `Auto`; `KindOfBucket(bucket, side)`, `LaneAt`, the lane-naming tooltip on a new `Minimap.LaneTooltip` string |
+| 2 Drag, wheel, toggle | done | `ViewportBounds` public as the boundary between the gestures; drag with pointer capture, `OnPointerWheelChanged`, and `SideBySideDiffView.ShowMinimap` wired on both paths, with the demo's View → Show overview map |
+| 3 Evidence | done | `MinimapSnapshotTests` — a left-only block in both variants and both palettes, the drawing asserted against the buckets the map reports; `MinimapLaneTests`, 9 cases; six mutations, six kills |
+
+## Plan 00007 verification
+
+| Done-when item | Result |
+|---|---|
+| A one-sided block inks one lane and notches the other | pass: `MinimapLaneTests.A_deletion_inks_the_left_lane_and_notches_the_right` and `An_insertion_is_the_mirror`; `A_modification_inks_both_lanes` is the third case |
+| The lanes are the model's | pass: `Every_lane_bucket_is_one_the_model_puts_there` — every bucket of both lanes against the model, plus the independent invariant that the two lanes together equal the single-lane reading the map has always given |
+| The map costs its width, and nothing when off | pass: `The_map_costs_its_width_and_nothing_when_it_is_off` — 22 px on, and the panes gain exactly that when off. `A_host_setting_the_toggle_before_the_template_applies_is_wired_too` covers the XAML path |
+| Drag and jump do not contest a pixel | pass: `A_press_outside_the_viewport_jumps_and_a_press_inside_it_drags` — one jump outside, three from a press-and-two-moves inside, and nothing after the release. The first version of this test read `ViewportBounds` **before** the outside click, which scrolls: the box had moved by the time it pressed "inside", so it pressed outside and saw one jump |
+| The wheel scrolls the panes | pass: `The_wheel_over_the_map_scrolls_the_panes` |
+| The tooltip names the lane | pass: `The_tooltip_names_the_lane` — and `LaneAt` says the marker column belongs to neither side |
+| The rendered evidence | pass: `MinimapSnapshotTests`, 4 frames. **A lane is thin lines, not a band**, whenever rows are sparser than pixels: the assertion is the drawing against the buckets the map reports, after a first version expecting a solid band failed at 58 of 228 |
+| `dotnet build DiffView.slnx -warnaserror` | clean |
+| `dotnet test --solution DiffView.slnx` | 449 passed (436 before the plan) |
+| `theme-audit compat` then `report` | regenerated after the template's column changed: 0 low-contrast findings. **No new token**: the lanes reuse `MarkerFor(kind)`, which both palettes define and `contrast-pairs.json` already scores |
+| New tests proven able to fail | six mutations, six kills: the side filter dropped, the drag branch disabled, the drag's moves dropped, the wheel silenced, and the toggle missing from each of its two paths |
+| Snapshot baselines moved | **44**, every composite frame, because the column grew from 14 px to 22 and the panes are narrower. Genuine failures, not a silent drift — the geometry moved far more than the comparer's tolerance |
+| Seen in a running window | **yes** — the first plan here for which that is true. `AGENTS.md` §9 |
+
 ## Plan 00006 phases
 
 | Phase | Status | Notes |

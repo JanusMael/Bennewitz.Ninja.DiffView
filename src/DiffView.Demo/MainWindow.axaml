@@ -57,6 +57,8 @@
         <MenuItem x:Name="UseSyntax" Header="S_yntax highlighting" ToggleType="CheckBox" IsChecked="True"
                   Click="OnToggleSyntax" AutomationProperties.Name="Colour the panes from a grammar chosen by file extension" />
         <Separator />
+        <MenuItem x:Name="ShowMinimap" Header="Show overview _map" ToggleType="CheckBox" IsChecked="True"
+                  Click="OnToggleShowMinimap" AutomationProperties.Name="Show the two-lane overview map beside the panes" />
         <MenuItem x:Name="ShowWhitespace" Header="Show w_hitespace" ToggleType="CheckBox"
                   Click="OnToggleShowWhitespace" AutomationProperties.Name="Draw spaces and tabs as glyphs" />
         <MenuItem x:Name="ShowLineEndings" Header="Show line _endings" ToggleType="CheckBox"

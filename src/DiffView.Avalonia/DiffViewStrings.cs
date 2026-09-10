@@ -232,6 +232,9 @@ public static class DiffViewStrings
     /// <summary>A minimap tooltip: <c>{0}</c> row (1-based), <c>{1}</c> rows, <c>{2}</c> kind.</summary>
     public const string MinimapTooltip = "Minimap.Tooltip";
 
+    /// <summary>The overview's tooltip inside one side's lane, which names that side.</summary>
+    public const string MinimapLaneTooltip = "Minimap.LaneTooltip";
+
     /// <summary>Automation name of the minimap.</summary>
     public const string MinimapName = "Minimap.Name";
 
@@ -428,6 +431,7 @@ public static class DiffViewStrings
         [LineTooltipUnifiedAlone] = "Line {1} on the {0} · no {2} line",
         [MarkerTooltip] = "Change {0} of {1} · {2}",
         [MinimapTooltip] = "Row {0} of {1} · {2}",
+        [MinimapLaneTooltip] = "Row {0} of {1} · {2} · {3} side",
         [MinimapName] = "Overview",
         [ConnectorGutterName] = "Change connectors",
         [FindBarName] = "Find",

@@ -1364,3 +1364,43 @@ shape rule, so the neutral loses nothing.
 six more for goldenrod to yellow, spanning 0.03 % to 0.11 % against 0.5 % — so not one would have
 failed on its own. They were found with the §5 sweep. A palette change is now the fifth and sixth
 time in this branch that a real change to what the frames depict was invisible to the comparer.
+
+## The overview map is two lanes, and absence is what a lane says
+
+Plan 00007. `DiffMinimap` colours a bucket by the aligned row's kind, which tells a reader that
+something changed and not *where it lives*. It is now two lanes, one per side: a bucket inks a
+lane only where that side **has a line** in the rows it covers, so a deletion inks the left lane
+and leaves the right blank, an insertion does the reverse, and a modification inks both.
+
+**The blank is the point.** A notch in one lane beside a band in the other is a one-sided block,
+read at a glance, and no single-lane map can say it — the colour tells you a deletion happened,
+but only the gap tells you the other file has nothing there at all. `SideBySideDocument.LineOf`
+was already the question; nothing new was needed in Core.
+
+`KindOfBucket(bucket)` keeps its old meaning — the strongest kind on **either** side — and is now
+computed as the stronger of the two lanes. Those are the same answer: every changed row belongs to
+at least one side, so nothing that asked the old question gets a new one. A test asserts that
+equivalence bucket by bucket rather than trusting the argument.
+
+**The drag and the jump are separated by the viewport box, not by an order.** A press inside the
+box drags; a press outside it jumps. They cannot contest a pixel because the box is exactly what
+divides them, and `ViewportBounds` is public so a test can name the boundary rather than infer it
+— the same reason `LastColumnRight` exists one control over. The wheel raises the same
+`JumpRequested` the click does, so nothing new crosses the line between the map and the panes.
+
+The column is 22 px: a 2 px marker column at the left edge that belongs to neither side, two 8 px
+lanes, the 2 px gap that keeps them readable as two, and a 2 px margin under the find ticks. The
+current block moved into that marker column for a reason — at 3 px over the left edge it would
+have read as the left side's, which is exactly the confusion two lanes exist to remove.
+
+`ShowMinimap` defaults on and is applied on **both** paths — template application and property
+change — because a host that sets it in XAML is wired by the first and never reaches the second.
+That is the bug plan 00004 had to fix for `CanCopyOut`, so here it has a test from the start.
+Off, the control's `IsVisible` is false and its `Auto` column takes no width, so the panes get the
+22 px back rather than looking at a gap.
+
+**A lane is thin lines, not a band, whenever rows are sparser than pixels** — which is most pairs
+on most screens, since a bucket is one pixel row and a 140-row pair on a 500 px map leaves four
+buckets in five empty. The rendered evidence asserts the drawing against the buckets the map
+*reports*, not against a guessed fraction of the block's height; the first version of that test
+expected a solid band and failed at 58 of 228.
