@@ -22,7 +22,10 @@ text and not a failure, and a grammar that will not install turns itself off and
 control `Degraded` with the language named. Whitespace glyphs, line-ending glyphs, the tab width
 and the pane font are the view options, each pushed to both panes and none of them touching a
 row's height; the focused pane is accented under its header; each pane copies its own selection
-while read-only holds against typing and pasting; and every decorator announces itself.
+while read-only holds against typing and pasting; and every decorator announces itself. A
+right-click in either pane — or Shift+F10, which resolves to the caret — opens a context menu of
+copy, navigate, find, save and revert, whose entries a host amends or replaces and whose
+accelerators are read from the key map rather than typed in.
 
 `InlineDiffView` is the same model, builder, renderers, margins, find engine and state machine on
 **one** pane, over a document it composes from both sides in `diff -u` order: context rows once,
