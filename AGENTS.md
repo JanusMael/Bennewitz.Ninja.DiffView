@@ -94,6 +94,13 @@ no dates, no counts.
   floor was designed, rendered and reviewed before anything measured it. The pairs holding
   `DiffView.Marker*Brush` against `DiffView.MarkerChip*Brush` are what closes that; anything new
   drawn behind a glyph adds its own.
+- **An outline is scored against the ground; a fill is scored against its outline.** A closed
+  glyph's outline carries the silhouette, so it is what makes the shape visible and it takes the
+  3.0 floor against the gutter. Its fill is interior to the shape, and what has to hold of it is
+  that it reads apart from the outline — 1.5, per the `DiffView.*ArrowFillBrush` pairs. Scoring a
+  fill against the ground instead is a category error with teeth: it ruled every yellow out of the
+  light gutter and so ruled out the hue that separates the two copy arrows, until the pairs were
+  re-aimed. `DiffView.SelectionArrowFillBrush` sits at 1.51 in Dark, so that one is a real edge.
 - The `DiffView.MarkerChip*Brush` tokens are **opaque**, and each is its marker composited over
   that variant's `DiffView.PaneBackgroundBrush` — not over the gutter it is painted on. Over the
   pane because that is the lighter of the two, which is what keeps a marker above its floor; a

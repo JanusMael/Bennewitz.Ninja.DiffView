@@ -124,11 +124,14 @@ not.
 Phase 3 closed it with twelve frames — both arrows at once, a selection whose rows are padding on
 the other side, and the cell both arrows want, in both variants and both palettes. **Brian then
 asked for the block arrow to stand out from the selection's blue the way Beyond Compare's does**,
-and it is goldenrod in the default palette now: `#7A5C00` over `#AB8000` in Light, `#FFD54F` over
-`#DAA520` in Dark. Beyond Compare's own pale yellow fill is not available on a near-white gutter —
-khaki scores 1.16 against a 3.0 floor and even darkgoldenrod is 2.96 — so the light fill is a
-goldenrod rather than a yellow; *Decisions* carries the arithmetic. The colour-blind palette keeps
-its slate arrow, where gold would collide with two Okabe–Ito hues already in use.
+and the default palette's is `#7A5C00` over `#F0E442` in Light, `#FFD54F` over `#DAA520` in Dark.
+Getting there **corrected a contract**: the plan scored each arrow's fill against the gutter at
+3.0, which rules out every yellow on a near-white ground, so the first attempt landed on a
+goldenrod `#AB8000` that Brian rejected on the rendered frames as reading brown. A fill is not text
+on a ground — the outline carries the silhouette — so `contrast-pairs.json` now scores each fill
+against **its own outline** at 1.5, the number the plan named for that relationship and did not
+contract. *Decisions* carries the arithmetic. The colour-blind palette keeps its slate arrow, where
+gold would collide with two Okabe–Ito hues already in use.
 
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
@@ -179,7 +182,7 @@ dotnet run --project src/ThemeAudit -- report
 | `dotnet test --solution DiffView.slnx` | 436 passed (424 before the phase) |
 | `theme-audit compat` then `report` | regenerated after the palette change: **0 low-contrast findings**, drift test passes |
 | New tests proven able to fail | four mutations, three kills — a strayed arrow and an arrow on every row each kill all twelve; the swapped arrow order kills exactly the four collision frames. **The fourth survives on purpose**: removing the tail bar leaves all twelve green, which is §5's trap measured rather than asserted, and is why `CopySelectionTests.The_selection_arrow_carries_the_palette_s_share_of_shape` is the bar's real guard |
-| Snapshot baselines moved | **12 by the palette change**, at 0.05 %–0.11 % against the comparer's 0.5 % — not one would have failed on its own, and they were found with the §5 sweep. Every colour-blind frame is byte-identical, which is the evidence that only the default palette moved |
+| Snapshot baselines moved | **12 by the slate-to-goldenrod change and 6 more by goldenrod-to-yellow**, at 0.03 %–0.11 % against the comparer's 0.5 % — not one would have failed on its own, and both sets were found with the §5 sweep. Every colour-blind frame is byte-identical throughout, which is the evidence that only the default palette moved; the second pass moved Light frames only, which is the evidence that only the Light fill did |
 
 ## Plan 00006, Phase 2 verification
 

@@ -59,7 +59,7 @@
            what makes an arrow read as an object rather than a stencil. The bar across the
            selection arrow's tail is this palette's choice: transparent where colour alone
            tells the two arrows apart, painted where it must not have to. -->
-      <SolidColorBrush x:Key="DiffView.GutterArrowFillBrush" Color="#AB8000" />
+      <SolidColorBrush x:Key="DiffView.GutterArrowFillBrush" Color="#F0E442" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowBrush" Color="#0D47A1" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowFillBrush" Color="#1976D2" />
       <SolidColorBrush x:Key="DiffView.SelectionArrowBarBrush" Color="Transparent" />

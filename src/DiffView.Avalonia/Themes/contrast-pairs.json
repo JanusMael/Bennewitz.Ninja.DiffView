@@ -30,13 +30,20 @@
     { "foreground": "DiffView.MarkerDeletedBrush", "background": "DiffView.MarkerChipDeletedBrush", "floor": 3.0, "purpose": "- marker on its chip" },
     { "foreground": "DiffView.MarkerModifiedBrush", "background": "DiffView.MarkerChipModifiedBrush", "floor": 3.0, "purpose": "~ marker on its chip" },
 
-    // The copy arrows on the gutter they are drawn on. No arrow had a pair at all until plan
-    // 00006 — the block arrow has been drawn there since plan 00003 with nothing holding it
-    // to a floor, which is the omission plan 00005 fixed one control over.
+    // The copy arrows. No arrow had a pair at all until plan 00006 — the block arrow had been
+    // drawn on the gutter since plan 00003 with nothing holding it to a floor, which is the
+    // omission plan 00005 fixed one control over.
+    //
+    // An OUTLINE is scored against the gutter at 3.0: it carries the silhouette, so it is what
+    // makes an arrow visible at all. A FILL is scored against its own outline at 1.5, and not
+    // against the gutter, because a fill is interior to a shape rather than text on a ground.
+    // Scoring it against the gutter was the first draft's mistake and it made the palette the
+    // wrong shape: it ruled out every yellow on a near-white gutter, which is the one hue that
+    // tells a change-block arrow from a selection arrow at a glance. See DECISIONS.md.
     { "foreground": "DiffView.GutterArrowBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "copy arrow outline in the gutter" },
-    { "foreground": "DiffView.GutterArrowFillBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "copy arrow fill in the gutter" },
+    { "foreground": "DiffView.GutterArrowFillBrush", "background": "DiffView.GutterArrowBrush", "floor": 1.5, "purpose": "copy arrow fill inside its own outline" },
     { "foreground": "DiffView.SelectionArrowBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "selection arrow outline in the gutter" },
-    { "foreground": "DiffView.SelectionArrowFillBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "selection arrow fill in the gutter" },
+    { "foreground": "DiffView.SelectionArrowFillBrush", "background": "DiffView.SelectionArrowBrush", "floor": 1.5, "purpose": "selection arrow fill inside its own outline" },
     { "foreground": "DiffView.ConnectorBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "connector in the gutter" },
 
     // Drawn on the host's own page surface: minimap ticks, connectors, the block border.

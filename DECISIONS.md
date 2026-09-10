@@ -1319,28 +1319,40 @@ is the guard: read as luminance against the gutter, with colour discarded, the b
 the 12 px zone against a plain arrow's 5**, and exactly 5 in the default palette, where the token is
 transparent. The PNGs are for a reviewer's eye; that pair of numbers is the contract.
 
-## The change-block arrow is goldenrod, and a pale yellow fill will not fit a light gutter
+## The change-block arrow is yellow, and a fill is scored against its outline
 
 Brian, looking at the plan 00006 frames: the block arrow should stand out from the selection's blue
 the way Beyond Compare's does — a goldenrod outline over a yellowish fill — and the blue should
 stay. The **default** palette's block arrow moved from slate accordingly. This is drift from an
 approved plan, so it is recorded here rather than edited into `plans/00006-copying-a-selection.md`.
 
-| | outline | vs gutter | fill | vs gutter | outline vs fill |
-|---|---|---|---|---|---|
-| Light | `#7A5C00` | 5.68 | `#AB8000` | 3.28 | 1.73 |
-| Dark | `#FFD54F` | 10.85 | `#DAA520` | 6.84 | 1.59 |
+| | outline | vs gutter | fill | vs its outline |
+|---|---|---|---|---|
+| Light | `#7A5C00` | 5.68 | `#F0E442` | 4.73 |
+| Dark | `#FFD54F` | 10.85 | `#DAA520` | 1.59 |
 
-**Beyond Compare's actual fill cannot be used on the light gutter, and the numbers are why.** The
-gutter is `#F3F4F6`, a near-white, and the arrow fill is contracted at 3.0 against it. Khaki is
-1.16 there; Okabe–Ito's yellow `#F0E442` is 1.20; goldenrod `#DAA520` is 2.03; even CSS
-darkgoldenrod `#B8860B` is **2.96 — under the floor by four hundredths**. Nothing that reads as
-*yellow* clears 3.0 on a near-white ground, because that is what "yellow" means. `#AB8000` at 3.28
-is the palest golden fill with headroom, and it reads as goldenrod rather than as mustard only
-because the outline above it is darker still.
+**The first attempt got this wrong, and the way it was wrong is the point.** Plan 00006 contracted
+each arrow's fill against the **gutter** at 3.0. On a near-white gutter that rules out every
+yellow there is: khaki is 1.16, Okabe–Ito's `#F0E442` is 1.20, goldenrod `#DAA520` is 2.03, and
+even CSS darkgoldenrod `#B8860B` is 2.96. Taking the floor as given, the arrow landed on `#AB8000`
+at 3.28 — the palest golden fill with headroom — and it was rendered at four fills side by side
+and put to Brian, who rejected it and the two nearest it as reading brown, and picked the yellow.
 
-The dark variant has no such problem — its gutter is `#252526` — and gets what Beyond Compare
-actually shows: a bright amber outline over a goldenrod fill.
+He was right, and the rejection found the real error rather than a matter of taste. **A fill is not
+text on a ground.** The outline carries the silhouette and is what makes an arrow visible at all;
+the fill is interior to a closed shape, and the thing that must hold of it is that it reads apart
+from the outline around it. `contrast-pairs.json` now scores each arrow's fill against **its own
+outline** at 1.5 — the number the plan itself named for that relationship and then declined to
+contract — while both outlines keep their 3.0 against the gutter. A floor aimed at the wrong pair
+had quietly ruled out the one hue that tells a change-block arrow from a selection arrow at a
+glance.
+
+The new floor bites: a fill moved to `#8A6A0A`, close to its outline, prints **1.23** against 1.5
+and six low-contrast findings. It is also tight where it should be — **Selection Dark is 1.51**,
+one hundredth clear, so `#42A5F5` cannot be darkened without re-scoring.
+
+The dark variant never had the problem — its gutter is `#252526` — and keeps the bright amber
+outline over goldenrod that Beyond Compare shows.
 
 **The colour-blind palette keeps its slate block arrow.** Gold is not free there: `#E69F00` and
 `#D55E00` are already spoken for in the Okabe–Ito set the palette draws from, and a fourth warm
@@ -1348,7 +1360,7 @@ hue in one gutter is exactly the collision that palette exists to avoid. The two
 apart there by the tail bar as well as by hue, which is the whole point of §*A selection copies*'s
 shape rule, so the neutral loses nothing.
 
-**Every one of the twelve frames this moved was under the comparer's tolerance** — 0.05 % to 0.11 %
-against 0.5 % — so not one would have failed on its own. They were found with the §5 sweep. A
-palette change is now the fifth time in this branch that a real change to what the frames depict
-was invisible to the comparer.
+**Every frame this moved was under the comparer's tolerance** — twelve for slate to goldenrod and
+six more for goldenrod to yellow, spanning 0.03 % to 0.11 % against 0.5 % — so not one would have
+failed on its own. They were found with the §5 sweep. A palette change is now the fifth and sixth
+time in this branch that a real change to what the frames depict was invisible to the comparer.
