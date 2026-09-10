@@ -208,6 +208,25 @@ public static class DiffViewStrings
     /// <summary>Navigation with no changes.</summary>
     public const string NavigationNoChanges = "Navigation.NoChanges";
 
+    // The pane menu. Every directional entry is a **whole sentence per direction** rather than one
+    // sentence with the side substituted in: a translator cannot inflect a word dropped into
+    // someone else's sentence, and several languages need a different form of "left" inside a
+    // prepositional phrase than standing alone. Shorter than the gutter's tooltips too — a tooltip
+    // can afford the words, a menu row sits beside its accelerator — and a host that wants the
+    // long wording back resolves these keys to it.
+
+    /// <summary>The pane menu's selection copy, leftwards.</summary>
+    public const string MenuCopySelectionLeft = "Menu.CopySelection.Left";
+
+    /// <summary>The pane menu's selection copy, rightwards.</summary>
+    public const string MenuCopySelectionRight = "Menu.CopySelection.Right";
+
+    /// <summary>The pane menu's block copy, leftwards.</summary>
+    public const string MenuCopyChangeLeft = "Menu.CopyChange.Left";
+
+    /// <summary>The pane menu's block copy, rightwards.</summary>
+    public const string MenuCopyChangeRight = "Menu.CopyChange.Right";
+
     /// <summary>The pane menu's navigation entries.</summary>
     public const string MenuNextChange = "Menu.NextChange";
 
@@ -217,11 +236,17 @@ public static class DiffViewStrings
     /// <summary>The pane menu's find entry.</summary>
     public const string MenuFind = "Menu.Find";
 
-    /// <summary>The pane menu's save entry: <c>{0}</c> this side.</summary>
-    public const string MenuSave = "Menu.Save";
+    /// <summary>The pane menu's save entry, for the left side.</summary>
+    public const string MenuSaveLeft = "Menu.Save.Left";
 
-    /// <summary>The pane menu's revert entry: <c>{0}</c> this side.</summary>
-    public const string MenuRevert = "Menu.Revert";
+    /// <summary>The pane menu's save entry, for the right side.</summary>
+    public const string MenuSaveRight = "Menu.Save.Right";
+
+    /// <summary>The pane menu's revert entry, for the left side.</summary>
+    public const string MenuRevertLeft = "Menu.Revert.Left";
+
+    /// <summary>The pane menu's revert entry, for the right side.</summary>
+    public const string MenuRevertRight = "Menu.Revert.Right";
 
     /// <summary>The left side, in a tooltip.</summary>
     public const string SideLeft = "Side.Left";
@@ -438,11 +463,17 @@ public static class DiffViewStrings
         [NavigationNoNext] = "No next change",
         [NavigationNoPrevious] = "No previous change",
         [NavigationNoChanges] = "No changes to navigate",
+        [MenuCopySelectionLeft] = "Copy selection to the left",
+        [MenuCopySelectionRight] = "Copy selection to the right",
+        [MenuCopyChangeLeft] = "Copy change to the left",
+        [MenuCopyChangeRight] = "Copy change to the right",
         [MenuNextChange] = "Next change",
         [MenuPreviousChange] = "Previous change",
         [MenuFind] = "Find…",
-        [MenuSave] = "Save the {0} side",
-        [MenuRevert] = "Revert the {0} side",
+        [MenuSaveLeft] = "Save the left side",
+        [MenuSaveRight] = "Save the right side",
+        [MenuRevertLeft] = "Revert the left side",
+        [MenuRevertRight] = "Revert the right side",
         [SideLeft] = "left",
         [SideRight] = "right",
         [LineTooltipAligned] = "Line {0} · {1} line {2}",
@@ -510,6 +541,34 @@ public static class DiffViewStrings
     public static string SideName(Core.DiffSide side)
     {
         return Get(side == Core.DiffSide.Left ? SideLeft : SideRight);
+    }
+
+    /// <summary>
+    /// The pane menu's selection copy, worded for the side receiving it. Picking between two whole
+    /// sentences rather than formatting one with a side word in it: the word is part of the
+    /// sentence, not a runtime value, and a translator needs the whole sentence to inflect.
+    /// </summary>
+    public static string MenuCopySelection(Core.DiffSide toSide)
+    {
+        return Get(toSide == Core.DiffSide.Left ? MenuCopySelectionLeft : MenuCopySelectionRight);
+    }
+
+    /// <summary>The pane menu's block copy, worded for the side receiving it.</summary>
+    public static string MenuCopyChange(Core.DiffSide toSide)
+    {
+        return Get(toSide == Core.DiffSide.Left ? MenuCopyChangeLeft : MenuCopyChangeRight);
+    }
+
+    /// <summary>The pane menu's save entry, worded for the side it saves.</summary>
+    public static string MenuSave(Core.DiffSide side)
+    {
+        return Get(side == Core.DiffSide.Left ? MenuSaveLeft : MenuSaveRight);
+    }
+
+    /// <summary>The pane menu's revert entry, worded for the side it reverts.</summary>
+    public static string MenuRevert(Core.DiffSide side)
+    {
+        return Get(side == Core.DiffSide.Left ? MenuRevertLeft : MenuRevertRight);
     }
 
     /// <summary>The active resolver; <c>null</c> for English.</summary>

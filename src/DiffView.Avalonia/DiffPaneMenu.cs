@@ -16,6 +16,13 @@ namespace Bennewitz.Ninja.DiffView.Avalonia;
 internal static class DiffPaneMenu
 {
     /// <summary>
+    /// The gap held between a menu row's label and its accelerator. Small and deliberate: enough
+    /// that the two never touch on the widest row, not so much that it fights a theme with a
+    /// generous margin of its own.
+    /// </summary>
+    internal static readonly Thickness HeaderGap = new(0, 0, 12, 0);
+
+    /// <summary>
     /// Answers a pane's request: opens <paramref name="replacement"/> if a host set one, and
     /// otherwise builds the control's own items, lets <paramref name="opening"/> amend them, and
     /// opens that. **The replacement suppresses the event** — there is nothing of ours to amend —
@@ -176,9 +183,15 @@ internal static class DiffPaneMenu
             return new Separator();
         }
 
+        // The header is a TextBlock rather than the bare string so it can carry a small right
+        // margin. Without one the label and the accelerator touch on whichever row is widest —
+        // that row sets the popup's width, so its own gesture has nowhere to sit — and how tight
+        // that looks is otherwise entirely the host theme's `MenuItemInputGestureTextMargin`,
+        // which Semi ships at 4 and Fluent at 24. This guarantees the gap without taking the
+        // theme's choice away: a host's own value is added to it.
         MenuItem menuItem = new()
         {
-            Header = item.Header,
+            Header = new TextBlock { Text = item.Header, Margin = HeaderGap },
             InputGesture = item.Gesture,
             Icon = item.Icon,
         };

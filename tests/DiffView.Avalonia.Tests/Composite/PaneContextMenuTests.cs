@@ -296,7 +296,7 @@ public sealed class PaneContextMenuTests
     }
 
     [AvaloniaFact]
-    public async Task The_copy_entries_say_what_the_gutter_says()
+    public async Task The_copy_entries_name_their_scope_and_their_direction()
     {
         using CompositeHost host = new(width: 900, height: 400);
         host.Show();
@@ -306,14 +306,66 @@ public sealed class PaneContextMenuTests
 
         List<DiffMenuItem> items = ItemsAt(host, 2);
 
-        // The arrow and the entry do the same thing, so they say the same thing — two wordings for
-        // one operation is how a reader learns they are two.
-        Assert.Equal(
-            DiffViewStrings.Format(DiffViewStrings.SelectionArrowTooltip, DiffViewStrings.SideName(DiffSide.Right)),
-            items.Single(i => i.Verb == DiffCommand.CopyToRight).Header);
-        Assert.Equal(
-            DiffViewStrings.Format(DiffViewStrings.CopyArrowTooltip, DiffViewStrings.SideName(DiffSide.Right)),
-            items.Single(i => i.Verb == DiffCommand.CopyBlockToRight).Header);
+        // Whole sentences per direction, not one sentence with a side word pushed into it: the
+        // word is part of the sentence and a translator needs the whole of it to inflect.
+        Assert.Equal(DiffViewStrings.Get(DiffViewStrings.MenuCopySelectionRight), items.Single(i => i.Verb == DiffCommand.CopyToRight).Header);
+        Assert.Equal(DiffViewStrings.Get(DiffViewStrings.MenuCopyChangeRight), items.Single(i => i.Verb == DiffCommand.CopyBlockToRight).Header);
+
+        // And the right pane's entries point the other way, from their own keys.
+        List<DiffMenuItem> fromRight = ItemsOfRightPaneAt(host, 2);
+        Assert.Equal(DiffViewStrings.Get(DiffViewStrings.MenuCopySelectionLeft), fromRight.Single(i => i.Verb == DiffCommand.CopyToLeft).Header);
+        Assert.Equal(DiffViewStrings.Get(DiffViewStrings.MenuCopyChangeLeft), fromRight.Single(i => i.Verb == DiffCommand.CopyBlockToLeft).Header);
+    }
+
+    [AvaloniaFact]
+    public async Task Every_row_keeps_a_gap_between_its_label_and_its_accelerator()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        CompositeHost.Layout();
+
+        RightClick(host, host.Left, new Point(60, 40));
+        Assert.NotNull(host.View.LastPaneMenu);
+
+        // The widest row sets the popup's width, so its own accelerator has nowhere to sit and the
+        // two touch. How tight that looks is otherwise the host theme's
+        // `MenuItemInputGestureTextMargin` — 4 in Semi, 24 in Fluent — so the control holds a small
+        // gap of its own and a host's value is added to it rather than replaced.
+        List<MenuItem> rows = host.View.LastPaneMenu.Items.OfType<MenuItem>().ToList();
+        Assert.NotEmpty(rows);
+        Assert.All(rows, row =>
+        {
+            TextBlock header = Assert.IsType<TextBlock>(row.Header);
+            Assert.True(header.Margin.Right > 0, $"'{header.Text}' has no gap before its accelerator");
+        });
+    }
+
+    [AvaloniaFact]
+    public async Task A_host_translation_reaches_every_entry_in_the_menu()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+
+        try
+        {
+            // What a localized host does: one resolver over the whole catalogue. Every entry has
+            // to come through it, or a translated application shows English in its context menu.
+            DiffViewStrings.Resolver = key => "»" + key;
+            List<DiffMenuItem> items = ItemsAt(host, 2);
+
+            Assert.NotEmpty(items);
+            Assert.All(
+                items.Where(i => !i.IsSeparator),
+                i => Assert.StartsWith("»", i.Header, StringComparison.Ordinal));
+        }
+        finally
+        {
+            DiffViewStrings.Resolver = null;
+        }
     }
 
     [AvaloniaFact]
@@ -365,7 +417,7 @@ public sealed class PaneContextMenuTests
         host.View.LeftReadOnly = false;
         CompositeHost.Layout();
 
-        string revert = DiffViewStrings.Format(DiffViewStrings.MenuRevert, DiffViewStrings.SideName(DiffSide.Left));
+        string revert = DiffViewStrings.MenuRevert(DiffSide.Left);
         Assert.False(ItemsAt(host, 1).Single(i => i.Header == revert).IsEnabled);
 
         host.Left.Document.Insert(0, "edited ");
@@ -375,13 +427,21 @@ public sealed class PaneContextMenuTests
         Assert.True(ItemsAt(host, 1).Single(i => i.Header == revert).IsEnabled);
     }
 
-    /// <summary>
-    /// The items the menu would show for <paramref name="line"/> of the left pane. Asked with the
-    /// keyboard, which resolves to the caret, so the caret is moved there first.
-    /// </summary>
-    private static List<DiffMenuItem> ItemsAt(CompositeHost host, int line)
+    /// <summary>The same, for the right pane, whose entries point the other way.</summary>
+    private static List<DiffMenuItem> ItemsOfRightPaneAt(CompositeHost host, int line)
     {
-        host.Left.TextArea.Caret.Line = line;
+        return ItemsAt(host, line, host.Right);
+    }
+
+    /// <summary>
+    /// The items the menu would show for <paramref name="line"/> of <paramref name="pane"/>, the
+    /// left one by default. Asked with the keyboard, which resolves to the caret, so the caret is
+    /// moved there first.
+    /// </summary>
+    private static List<DiffMenuItem> ItemsAt(CompositeHost host, int line, DiffPanePresenter? pane = null)
+    {
+        pane ??= host.Left;
+        pane.TextArea.Caret.Line = line;
         CompositeHost.Layout();
 
         List<DiffMenuItem> captured = [];
@@ -394,7 +454,7 @@ public sealed class PaneContextMenuTests
         host.View.PaneContextMenuOpening += Capture;
         try
         {
-            host.Left.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+            pane.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
         }
         finally
         {

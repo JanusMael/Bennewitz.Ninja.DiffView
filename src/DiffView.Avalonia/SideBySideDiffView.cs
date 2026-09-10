@@ -1721,16 +1721,17 @@ public class SideBySideDiffView : TemplatedControl
     {
         DiffSide side = context.Side ?? DiffSide.Left;
         DiffSide toSide = Other(side);
-        string toName = DiffViewStrings.SideName(toSide);
         int block = context.Block?.Index ?? CurrentChangeIndex;
         List<DiffMenuItem> items = [];
 
-        // Two scopes, each named for exactly what it copies, and the wording is the gutter's own:
-        // the arrow and the entry perform the same operation, and two wordings for one operation
-        // is how a reader learns they are two. The block copied is the one **under the pointer**,
-        // not the current change — a context menu that acted somewhere else would not be one.
+        // Two scopes, each named for exactly what it copies. The wording is the menu's own and
+        // shorter than the gutter's — a tooltip can afford the words, a menu row sits beside its
+        // accelerator — and each direction is a whole sentence, so a translator is never handed a
+        // sentence with someone else's word dropped into it. The block copied is the one **under
+        // the pointer**, not the current change: a context menu that acted somewhere else would
+        // not be one.
         DiffMenuItem? selection = DiffPaneMenu.Verb(
-            DiffViewStrings.Format(DiffViewStrings.SelectionArrowTooltip, toName),
+            DiffViewStrings.MenuCopySelection(toSide),
             toSide == DiffSide.Left ? DiffCommand.CopyToLeft : DiffCommand.CopyToRight,
             CommandOrNull,
             GestureFor,
@@ -1742,7 +1743,7 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         DiffMenuItem? whole = DiffPaneMenu.Verb(
-            DiffViewStrings.Format(DiffViewStrings.CopyArrowTooltip, toName),
+            DiffViewStrings.MenuCopyChange(toSide),
             toSide == DiffSide.Left ? DiffCommand.CopyBlockToLeft : DiffCommand.CopyBlockToRight,
             CommandOrNull,
             GestureFor,
@@ -1759,13 +1760,13 @@ public class SideBySideDiffView : TemplatedControl
         items.Add(DiffMenuItem.Separator());
         items.Add(new DiffMenuItem
         {
-            Header = DiffViewStrings.Format(DiffViewStrings.MenuSave, DiffViewStrings.SideName(side)),
+            Header = DiffViewStrings.MenuSave(side),
             Command = new DelegateCommand(() => Save(side), () => CanSave(side)),
             IsEnabled = CanSave(side),
         });
         items.Add(new DiffMenuItem
         {
-            Header = DiffViewStrings.Format(DiffViewStrings.MenuRevert, DiffViewStrings.SideName(side)),
+            Header = DiffViewStrings.MenuRevert(side),
             Command = new DelegateCommand(() => Revert(side), () => IsEdited(side)),
             IsEnabled = IsEdited(side),
         });
