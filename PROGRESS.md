@@ -137,6 +137,29 @@ against **its own outline** at 1.5, the number the plan named for that relations
 contract. *Decisions* carries the arithmetic. The colour-blind palette keeps its slate arrow, where
 gold would collide with two Okabe–Ito hues already in use.
 
+**[Plan 00007](plans/00007-the-overview-map.md) and [plan 00008](plans/00008-docking-the-overview-map.md)
+are complete.** `DiffMinimap` is now the overview map Beyond Compare has: **two lanes**, one per
+side, inking a lane only where that side has a line in the bucket's rows — so a one-sided block
+inks one lane and *notches* the other, which is the thing one lane cannot say. The viewport box
+drags where the rest of the map jumps, the wheel scrolls it, `ShowMinimap` turns the column off,
+and `MinimapPlacement` docks it outside either pane. The lanes do not follow the dock — a lane
+names a file, not an edge — while the current-block marker and the find ticks do, through one
+`MirrorEdges` flag. Plan 00008 also **fixed a defect four plans old**: the headers grid and the
+panes grid never shared a column layout, so a header was the right size in the wrong place;
+*Decisions* has the arithmetic.
+
+**[Plan 00009](plans/00009-configurable-key-bindings.md) is approved and phase 1 of three has
+landed.** `DiffCommand` names the control's verbs and `DiffKeyMap` says which key each is on;
+`SideBySideDiffView.KeyMap` rebuilds the bindings **it owns** and leaves a host's own alone.
+`GestureFor` is the seam plan 00010's context menu will read its accelerators from. It also settles
+what plan 00006 deferred: `CopyToLeft` / `CopyToRight` now copy the selection when there is one and
+the block otherwise, so the chord agrees with the gutter, and `CopyBlockToLeft` / `CopyBlockToRight`
+keep the old behaviour unbound. What remains is phase 2 — `InlineDiffView.KeyMap` and a demo rebind
+— and phase 3, the mutations and the docs.
+
+**`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path**, and `AGENTS.md` §9 is how to
+capture the running window from a session here.
+
 The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
 this order:
 
@@ -164,6 +187,14 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00009 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 The table | done | `DiffCommand`, `DiffKeyMap` + `Default()` / `UnifiedDefault()`; `SideBySideDiffView.KeyMap`, `GestureFor`, `CommandFor`; the owned-binding rebuild; `DiffViewLog.KeyGestureConflict`; `CopyToward` / `CanCopyToward` and the `CopyBlockTo*` pair; 10 cases, six mutations, six kills |
+| 2 The unified view, and the demo | **not started** | `InlineDiffView.KeyMap` consuming `DiffKeyMap.UnifiedDefault()` — the map and its test already exist, the view does not use it yet; a demo menu item that rebinds something visibly |
+| 3 Evidence | **not started** | Phase 2's mutations; `DECISIONS.md` (the key table, the owned-binding rule, and **plan 00006's non-goal being superseded** — drift, so it goes here and not into that plan), `AGENTS.md` §6, this file, the changelog |
 
 ## Plan 00008 phases
 
