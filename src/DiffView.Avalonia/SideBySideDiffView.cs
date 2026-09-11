@@ -3285,6 +3285,23 @@ public class SideBySideDiffView : TemplatedControl
 
     private bool CanExpandFoldAtCaret() => FoldAtCaret() is not null;
 
+    /// <summary>
+    /// Opens the run hiding <paramref name="modelRow"/>, if one is. Find walks to matches the
+    /// model has, and a match the reader is being taken to has to be a match they can see — the
+    /// alternative is a count that means something different once anything is folded.
+    /// </summary>
+    private void RevealRow(int modelRow)
+    {
+        int fold = _projection.FoldContaining(modelRow);
+        if (fold < 0 || _projection.IsPlaceholder(modelRow))
+        {
+            return;
+        }
+
+        _expandedFolds.Add(_projection.FoldAt(fold).FirstRow);
+        RefreshFolds();
+    }
+
     private void ExpandFoldAtCaret()
     {
         if (FoldAtCaret() is { } run)
@@ -3728,6 +3745,9 @@ public class SideBySideDiffView : TemplatedControl
             IReadOnlyList<DiffLine> lines = document.Pane(match.Side).Lines;
             if (match.Line >= 0 && match.Line < lines.Count)
             {
+                // The run first, then the scroll: a row that is still folded projects to its
+                // placeholder, and the pane would stop somewhere the match is not.
+                RevealRow(lines[match.Line].Row);
                 ScrollToRows(lines[match.Line].Row, 1);
             }
         }

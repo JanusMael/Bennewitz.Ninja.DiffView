@@ -357,10 +357,12 @@ succeeded, because `head` exits 0 regardless. Capture the status without a pipe,
 - **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
   bullet claimed the opposite for three plans; check before repeating it. `xdotool key F7` and
   `xdotool key ctrl+Down` into a focused pane both work, and that is how plan 00009's rebind was
-  judged by hand. The demo's flags are `--theme`, `--variant`, `--left`, `--right`, `--unified`
-  and `--log-level`, with nothing for making a side editable, so in-pane editing and the copy
-  arrows still have to be switched on through the View menu — reachable now, but by clicking.
-  A demo flag such as `--edit left|right|both` would still save a menu drive.
+  judged by hand. The demo's flags are `--theme`, `--variant`, `--left`, `--right`, `--unified`,
+  **`--edit left|right|both`** and `--log-level`. `--edit` is the one this bullet asked for over
+  three plans and got on 2026-09-11: in-pane editing and the copy arrows no longer need a menu
+  drive to switch on, which was the slowest part of a by-hand pass and the one most likely to go
+  wrong, the View popup keeping its scroll offset between openings. It sets the same two menu
+  items rather than a second switch beside them, so the flag and the menu cannot disagree.
 - **What this does not change.** A captured window is a look, not a test: it is one machine, one
   variant and one moment. The snapshot frames under `Snapshots/` with their pixel assertions stay
   the evidence, per §5. This is for the judgement a frame cannot give — whether a thing reads

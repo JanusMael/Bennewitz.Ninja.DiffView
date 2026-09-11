@@ -1884,6 +1884,22 @@ public class InlineDiffView : TemplatedControl
 
     private bool CanExpandFoldAtCaret() => FoldAtCaret() is not null;
 
+    /// <summary>
+    /// Opens the run hiding <paramref name="line"/>, if one is — a match the reader is being taken
+    /// to has to be a match they can see.
+    /// </summary>
+    private void RevealLine(int line)
+    {
+        int fold = _projection.FoldContaining(line);
+        if (fold < 0 || _projection.IsPlaceholder(line))
+        {
+            return;
+        }
+
+        _expandedFolds.Add(_projection.FoldAt(fold).FirstRow);
+        RefreshFolds();
+    }
+
     private void ExpandFoldAtCaret()
     {
         if (FoldAtCaret() is { } run)
@@ -2006,6 +2022,10 @@ public class InlineDiffView : TemplatedControl
         }
 
         _pane.TextArea.Focus();
+
+        // The run before the scroll: a line that is still folded projects to its placeholder, and
+        // the pane would stop somewhere the match is not.
+        RevealLine(match.Line);
 
         // Last, so the centring wins over any scroll the caret brought about.
         ScrollToLines(match.Line, 1);

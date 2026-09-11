@@ -51,40 +51,49 @@ public sealed class FoldingReachTests
 
     /// <summary>
     /// A find match is a different matter: it can be on an unchanged row, which is exactly what a
-    /// fold covers. Today such a match is counted, ticked on the map and walked to — and the walk
-    /// lands on the placeholder standing in for it, because that is where the row is drawn.
+    /// fold covers. Walking to one opens the run hiding it, so the count stays the document's and
+    /// every match it reports is a match the reader can see — settled 2026-09-11 over excluding
+    /// folded matches, because a count that changes when you fold describes the view rather than
+    /// the file.
     /// </summary>
-    /// <remarks>
-    /// This records the gap rather than the intent. Plan 00013's testing table asked for a match
-    /// inside a folded run to be "either revealed or excluded, never counted and unreachable", and
-    /// it is currently the third thing. The fix is a decision, not an oversight.
-    /// </remarks>
     [AvaloniaFact]
-    public async Task A_find_match_inside_a_folded_run_is_still_counted_and_still_hidden()
+    public async Task Walking_to_a_match_inside_a_folded_run_opens_it()
     {
         using CompositeHost host = new();
         host.Show();
         (string left, string right) = FoldingFixture.Pair();
         await host.LoadAsync(new PaneSource(left), new PaneSource(right));
 
-        RowProjection projection = host.View.ApplyFolds(contextRows: 0);
+        RowProjection folded = host.View.ApplyFolds(contextRows: 0);
         CompositeHost.Layout();
+        int foldsBefore = folded.FoldCount;
+        Assert.True(foldsBefore > 1);
 
-        // "same" is on every unchanged row, so most matches are behind a placeholder.
+        // "same" is on every unchanged row, so most matches start behind a placeholder.
         host.View.OpenFind();
         await host.FindAsync("same");
         SideBySideDocument document = host.View.Document ?? throw new InvalidOperationException("No model.");
         FindResult result = host.View.FindResult ?? throw new InvalidOperationException("No find result.");
         Assert.NotEmpty(result.Matches);
 
-        int[] rows = [.. result.Matches
-            .Select(match => document.Pane(match.Side).Lines[match.Line].Row)
-            .Distinct()];
+        int RowOf(FindMatch match) => document.Pane(match.Side).Lines[match.Line].Row;
+        Assert.Contains(result.Matches, match => folded.IsHidden(RowOf(match)));
 
-        int hidden = rows.Count(projection.IsHidden);
-        Assert.True(hidden > 0, $"the fixture should put matches inside a fold; {rows.Length} rows, none hidden");
-
-        // Counted all the same — the count is the model's, and the map ticks every one.
+        // The count is the model's, and stays so.
         Assert.Equal(result.Matches.Count, result.LeftCount + result.RightCount);
+
+        // Walk to the first match that was hidden: its run opens, and it is on screen.
+        int index = result.Matches.ToList().FindIndex(match => folded.IsHidden(RowOf(match)));
+        host.View.CurrentFindMatchIndex = index;
+        CompositeHost.Layout();
+
+        RowProjection after = host.View.ApplyFolds(contextRows: 0);
+        int row = RowOf(result.Matches[index]);
+        Assert.False(after.IsHidden(row), "the match's row should be on screen once walked to");
+        Assert.Equal(foldsBefore - 1, after.FoldCount);
+
+        // Only the run holding it opened; the rest are untouched.
+        Assert.Equal(after.FoldCount, host.Left.CollapsedSectionCount);
+        Assert.Equal(host.Left.CollapsedSectionCount, host.Right.CollapsedSectionCount);
     }
 }

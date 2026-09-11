@@ -164,6 +164,22 @@ internal sealed class RowProjection
         return fold >= 0 && modelRow > _foldFirst[fold] && modelRow < _foldFirst[fold] + _foldCount[fold];
     }
 
+    /// <summary>
+    /// The fold <paramref name="modelRow"/> belongs to, or <c>-1</c>. A fold's own first row
+    /// counts: it is the placeholder's row, and revealing a run from it is what a reader clicking
+    /// one asks for.
+    /// </summary>
+    public int FoldContaining(int modelRow)
+    {
+        if (IsIdentity)
+        {
+            return -1;
+        }
+
+        int fold = FoldAtOrBefore(_foldFirst, modelRow);
+        return fold >= 0 && modelRow < _foldFirst[fold] + _foldCount[fold] ? fold : -1;
+    }
+
     /// <summary>Whether a placeholder is drawn at <paramref name="modelRow"/>, which is a fold's first row.</summary>
     public bool IsPlaceholder(int modelRow)
     {

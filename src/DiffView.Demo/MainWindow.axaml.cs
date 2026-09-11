@@ -39,6 +39,14 @@ public sealed partial class MainWindow : Window
         Unified.IsVisible = DebugFlags.Unified;
         Diff.IsVisible = !DebugFlags.Unified;
 
+        // --edit left|right|both starts a side editable, through the same two menu items, so
+        // there is one switch per side rather than a flag and a menu that can disagree. The
+        // names here are the XAML items'; the flags' are DebugFlags'.
+        EditLeft.IsChecked = DebugFlags.EditLeft;
+        EditRight.IsChecked = DebugFlags.EditRight;
+        Diff.LeftReadOnly = !DebugFlags.EditLeft;
+        Diff.RightReadOnly = !DebugFlags.EditRight;
+
         RefreshGestureLabels();
 
         // A host's own entry, through the amend shape: inserted after the control's copy items so

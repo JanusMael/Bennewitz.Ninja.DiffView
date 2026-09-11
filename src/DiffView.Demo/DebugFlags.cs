@@ -34,6 +34,21 @@ internal static class DebugFlags
     /// <summary>Start in the unified (inline) view rather than side by side. <c>--unified</c>.</summary>
     public static bool Unified { get; private set; }
 
+    /// <summary>
+    /// Which sides start editable: <c>left</c>, <c>right</c> or <c>both</c>.
+    /// <c>--edit &lt;side&gt;</c>. Nothing by default, as the View menu's two switches are.
+    /// </summary>
+    /// <remarks>
+    /// `AGENTS.md` §9 has wanted this since plan 00004. Without it the copy arrows and in-pane
+    /// editing can only be switched on by clicking through the View menu, which is the slowest
+    /// part of every by-hand pass and the one most likely to be got wrong — the menu keeps its
+    /// scroll offset between openings, so a coordinate that worked a minute ago lands elsewhere.
+    /// </remarks>
+    public static bool EditLeft { get; private set; }
+
+    /// <inheritdoc cref="EditLeft"/>
+    public static bool EditRight { get; private set; }
+
     /// <summary>Minimum Serilog level. <c>--log-level &lt;verbose|debug|information|warning|error|fatal&gt;</c>.</summary>
     public static LogEventLevel MinimumLevel { get; private set; } = LogEventLevel.Information;
 
@@ -91,6 +106,28 @@ internal static class DebugFlags
                     break;
                 case "--unified":
                     Unified = true;
+                    break;
+                case "--edit":
+                    if (TryTakeValue(args, ref i, flag, out string? sides))
+                    {
+                        switch (sides.ToLowerInvariant())
+                        {
+                            case "left":
+                                EditLeft = true;
+                                break;
+                            case "right":
+                                EditRight = true;
+                                break;
+                            case "both":
+                                EditLeft = true;
+                                EditRight = true;
+                                break;
+                            default:
+                                Deferred.Add($"Unknown side '{sides}'; expected left, right or both. Neither side is editable.");
+                                break;
+                        }
+                    }
+
                     break;
                 case "--log-level":
                     if (TryTakeValue(args, ref i, flag, out string? level))
