@@ -433,11 +433,16 @@ public sealed class PaneContextMenuTests
         await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
         CompositeHost.Layout();
 
-        // No icon set ships, and none is planned yet; the column is laid out now so that adding
-        // one later moves nothing. A solid square is enough to prove it — the future without an
-        // icon set — and every other entry keeps a null slot beside it.
+        // Plan 00010 reserved this column and left it empty, and proved it with a solid square a
+        // handler pushed in — the future without an icon set. Plan 00012 phase 4 shipped the set,
+        // so the square is gone and the column is filled by the control's own entries instead.
+        // The alignment assertion below is 00010's, unchanged; what changed is that it is finally
+        // exercising something.
+        //
+        // A host's own icon still has to land in the same column, so one is added here too, on an
+        // entry the control leaves null — which is the arrangement most likely to misalign.
         host.View.PaneContextMenuOpening += (_, e) =>
-            e.Items.First(i => !i.IsSeparator).Icon = new Border
+            e.Items.Last(i => !i.IsSeparator).Icon = new Border
             {
                 Width = 12,
                 Height = 12,
@@ -457,8 +462,10 @@ public sealed class PaneContextMenuTests
         Assert.True(lefts[0] > 0, "the menu did not lay out, so the alignment assertion would be vacuous");
         Assert.All(lefts, left => Assert.Equal(lefts[0], left, 1));
 
-        // And the one carrying the square is among them, not off on its own.
-        Assert.Single(rows, r => r.Icon is not null);
+        // The column means nothing unless both kinds of row are in this menu: the assertion above
+        // is only about alignment if some rows carry an icon and some do not.
+        Assert.Contains(rows, r => r.Icon is not null);
+        Assert.Contains(rows, r => r.Icon is null);
     }
 
     /// <summary>Where a row's label starts, in the row's own coordinates.</summary>

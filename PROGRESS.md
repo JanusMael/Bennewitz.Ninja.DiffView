@@ -42,7 +42,22 @@ a position — from the same `AddFileVerbs` the text menu uses. The unified view
 for want of a header: it has two, and being read-only it has neither verb, so the list is empty and
 an empty list opens nothing.
 
-**Next is phase 4** — the icon set on the column reserved since 00010 — then phase 5's evidence.
+Phase 4 filled the icon column plan 00010 reserved and left empty. No new visual language: the
+copy entries carry **the gutter's own arrow**, from `CopyArrowGlyph.Geometry` rather than a second
+set of points, pointing the way the text would travel; the entries about a change carry **the
+marker margin's own operator** for that change's kind, `+` `−` `≠` drawn as strokes. Everything
+else — navigate, find, save, revert, go-to-row, hide-the-map — carries nothing, because it has
+nothing in the gutter's vocabulary to show, and a menu where some rows have icons and some do not
+is exactly the arrangement the reserved column exists for. The icons follow the inherited
+`TextElement.Foreground` rather than `DiffBrushes`: the gutter's yellows carry meaning against the
+gutter's own background and would be an unexplained second palette in a host's menu, and following
+the foreground means a theme or variant swap carries them and contrast is already the host's
+problem, solved for its own menu text.
+
+**Next is phase 5**, the evidence: mutations, one rendered frame per new surface, `DECISIONS.md`,
+`AGENTS.md` §6 and §7, this document's full prose, and the changelog. It owes **two Decisions
+entries**, both named above so neither can be quietly forgotten: phase 1's deferral of *"go to this
+change"*, and phase 2's settlement of what a row-shaped context says.
 
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.

@@ -50,10 +50,31 @@ internal static class CopyArrowGlyph
     /// </remarks>
     public static void Draw(DrawingContext context, IBrush fill, IPen outline, Rect zone, bool pointsLeft, IPen? tailBar = null)
     {
+        context.DrawGeometry(fill, outline, Geometry(zone, pointsLeft));
+
+        if (tailBar is not null)
+        {
+            double centreY = zone.Center.Y;
+            double shaftEndX = ShaftEndX(zone, pointsLeft);
+            context.DrawLine(tailBar, new Point(shaftEndX, centreY - BarHalfHeight), new Point(shaftEndX, centreY + BarHalfHeight));
+        }
+    }
+
+    /// <summary>
+    /// The arrow's silhouette filling <paramref name="zone"/>, pointing left or right.
+    /// </summary>
+    /// <remarks>
+    /// Separated from <see cref="Draw"/> in plan 00012 phase 4, when the menu's copy entries
+    /// needed the same shape in a column no <c>DrawingContext</c> reaches. The menu's icon is
+    /// therefore this arrow by construction rather than by resemblance — a second set of points
+    /// would drift the first time either was tuned, which is <c>AGENTS.md</c> §7's usual reason.
+    /// </remarks>
+    public static StreamGeometry Geometry(Rect zone, bool pointsLeft)
+    {
         double tipX = pointsLeft ? zone.Left + TipInset : zone.Right - TipInset;
         double inwards = pointsLeft ? 1 : -1;
         double headBackX = tipX + (inwards * HeadLength);
-        double shaftEndX = pointsLeft ? zone.Right - InnerGap : zone.Left + InnerGap;
+        double shaftEndX = ShaftEndX(zone, pointsLeft);
         double centreY = zone.Center.Y;
 
         StreamGeometry arrow = new();
@@ -69,11 +90,12 @@ internal static class CopyArrowGlyph
             path.EndFigure(isClosed: true);
         }
 
-        context.DrawGeometry(fill, outline, arrow);
+        return arrow;
+    }
 
-        if (tailBar is not null)
-        {
-            context.DrawLine(tailBar, new Point(shaftEndX, centreY - BarHalfHeight), new Point(shaftEndX, centreY + BarHalfHeight));
-        }
+    /// <summary>Where the shaft ends, which is where a tail bar is drawn.</summary>
+    private static double ShaftEndX(Rect zone, bool pointsLeft)
+    {
+        return pointsLeft ? zone.Right - InnerGap : zone.Left + InnerGap;
     }
 }

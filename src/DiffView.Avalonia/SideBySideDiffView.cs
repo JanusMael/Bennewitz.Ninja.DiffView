@@ -1839,6 +1839,7 @@ public class SideBySideDiffView : TemplatedControl
             if (copy is not null)
             {
                 copy.Command = new DelegateCommand(() => CopyBlock(block, target), () => CanCopyBlock(block, target));
+                copy.Icon = DiffMenuIcons.CopyArrow(target);
                 items.Add(copy);
             }
         }
@@ -1911,6 +1912,7 @@ public class SideBySideDiffView : TemplatedControl
         if (selection is not null)
         {
             selection.Command = new DelegateCommand(() => CopySelection(side), () => CanCopySelection(side));
+            selection.Icon = DiffMenuIcons.CopyArrow(toSide);
             items.Add(selection);
         }
 
@@ -1923,6 +1925,7 @@ public class SideBySideDiffView : TemplatedControl
         if (whole is not null)
         {
             whole.Command = new DelegateCommand(() => CopyBlock(block, toSide), () => CanCopyBlock(block, toSide));
+            whole.Icon = DiffMenuIcons.CopyArrow(toSide);
             items.Add(whole);
         }
 
@@ -1967,6 +1970,15 @@ public class SideBySideDiffView : TemplatedControl
     {
         int block = context.Block?.Index ?? -1;
 
+        // The change's own kind, drawn as the marker margin's own operator. Both entries carry it
+        // rather than one, because both are about the same change and a reader should be able to
+        // see at a glance which two rows those are. Off a change it is null, which is the
+        // reserved column doing the job it was reserved for.
+        //
+        // A fresh control per entry, never one shared: a visual has one parent, so assigning the
+        // same instance to two items would take it away from the first.
+        DiffLineKind kind = context.Block?.Kind ?? DiffLineKind.Unchanged;
+
         DiffMenuItem? goTo = DiffPaneMenu.Verb(
             DiffViewStrings.Get(DiffViewStrings.MenuGoToChange),
             DiffCommand.GoToChange,
@@ -1976,6 +1988,7 @@ public class SideBySideDiffView : TemplatedControl
         if (goTo is not null)
         {
             goTo.Command = new DelegateCommand(() => GoToChange(block), () => block >= 0);
+            goTo.Icon = DiffMenuIcons.Operator(kind);
             items.Add(goTo);
         }
 
@@ -1997,6 +2010,7 @@ public class SideBySideDiffView : TemplatedControl
         if (selectBlock is not null)
         {
             selectBlock.Command = new DelegateCommand(() => SelectChange(block, side), () => block >= 0);
+            selectBlock.Icon = DiffMenuIcons.Operator(kind);
             items.Add(selectBlock);
         }
     }
