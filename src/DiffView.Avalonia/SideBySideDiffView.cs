@@ -1757,19 +1757,28 @@ public class SideBySideDiffView : TemplatedControl
         items.Add(DiffMenuItem.Separator());
         DiffPaneMenu.AddNavigation(items, CommandOrNull, GestureFor, ChangeCount);
 
-        items.Add(DiffMenuItem.Separator());
-        items.Add(new DiffMenuItem
+        // Save and revert are the **file's** verbs, not the line's, and a gutter is a position.
+        // They are absent from a margin's menu rather than greyed in it — the same rule plan
+        // 00010 set for a verb a view does not have, where the unified view's menu has no copy
+        // items at all instead of four disabled ones. "Disable, do not hide" governs one menu
+        // changing with state; these are different menus. The header's own menu is where the
+        // file's verbs belong, and phase 3 is where it arrives.
+        if (context.Region is DiffPaneRegion.Text)
         {
-            Header = DiffViewStrings.MenuSave(side),
-            Command = new DelegateCommand(() => Save(side), () => CanSave(side)),
-            IsEnabled = CanSave(side),
-        });
-        items.Add(new DiffMenuItem
-        {
-            Header = DiffViewStrings.MenuRevert(side),
-            Command = new DelegateCommand(() => Revert(side), () => IsEdited(side)),
-            IsEnabled = IsEdited(side),
-        });
+            items.Add(DiffMenuItem.Separator());
+            items.Add(new DiffMenuItem
+            {
+                Header = DiffViewStrings.MenuSave(side),
+                Command = new DelegateCommand(() => Save(side), () => CanSave(side)),
+                IsEnabled = CanSave(side),
+            });
+            items.Add(new DiffMenuItem
+            {
+                Header = DiffViewStrings.MenuRevert(side),
+                Command = new DelegateCommand(() => Revert(side), () => IsEdited(side)),
+                IsEnabled = IsEdited(side),
+            });
+        }
 
         return items;
     }

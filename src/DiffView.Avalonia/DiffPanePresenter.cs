@@ -308,14 +308,32 @@ public class DiffPanePresenter : TextEditor
             return;
         }
 
-        // v1 is the panes. A right-click on a gutter is left alone rather than answered with the
-        // text's menu, because a margin's verbs are its own and are a later plan's.
-        if (e.Source is DiffMargin)
+        // Which surface was clicked. The event's source is the margin itself, so this is a type
+        // test rather than pointer arithmetic against the margins' widths: the margins own those
+        // widths, and a constant here would be the misaligned-header bug of plan 00008 waiting to
+        // happen a second time. A margin the library did not draw — AvaloniaEdit's own, or a
+        // host's — is left alone rather than answered with the text's menu, because its verbs are
+        // not ours to guess.
+        // Matched by identity against this pane's own two margins rather than by type: it says
+        // "our line-number gutter" instead of "any margin of that class", which is the question
+        // actually being asked, and it does not depend on the pane hosting exactly one of each.
+        DiffPaneRegion? resolved = e.Source switch
+        {
+            _ when ReferenceEquals(e.Source, _lineNumberMargin) => DiffPaneRegion.LineNumberMargin,
+            _ when ReferenceEquals(e.Source, _changeMarkerMargin) => DiffPaneRegion.ChangeMarkerMargin,
+            AbstractMargin => null,
+            _ => DiffPaneRegion.Text,
+        };
+        if (resolved is not { } region)
         {
             return;
         }
 
         Point? pointer = e.TryGetPosition(this, out Point point) ? point : null;
+
+        // A margin is as tall as the text beside it and only its width differs, so the line under
+        // the pointer is the same question in all three regions: LineAt reads the y and ignores
+        // the x entirely.
         int line = LineAt(pointer) ?? TextArea.Caret.Line;
         if (line < 1)
         {
@@ -324,7 +342,7 @@ public class DiffPanePresenter : TextEditor
 
         // The caret is deliberately not moved. A right-click that moved it would discard the
         // selection the menu is about to offer to copy, which is the whole point of the menu.
-        PaneContextRequest request = new(ContextAt(line), pointer);
+        PaneContextRequest request = new(ContextAt(line, region), pointer);
         ContextMenuRequested?.Invoke(this, request);
         e.Handled = request.Opened;
     }

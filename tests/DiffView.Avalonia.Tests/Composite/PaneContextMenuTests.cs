@@ -251,8 +251,79 @@ public sealed class PaneContextMenuTests
         Assert.False(ancestor.IsOpen);
     }
 
+    // Plan 00010's `A_right_click_on_a_gutter_is_left_alone` asserted the opposite of the three
+    // tests below: that a margin was NOT answered, because v1 was the panes and a margin's verbs
+    // were "a later plan's". Plan 00012 is that plan, so the assertion is replaced rather than
+    // deleted quietly — what it protected, that the text's menu is never offered in a margin's
+    // place, is now carried by `A_margin_the_library_did_not_draw_is_left_alone`.
+
     [AvaloniaFact]
-    public async Task A_right_click_on_a_gutter_is_left_alone()
+    public async Task Each_gutter_reports_its_own_region_and_the_text_still_reports_text()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        CompositeHost.Layout();
+
+        List<DiffPaneRegion> seen = [];
+        host.View.PaneContextMenuOpening += (_, e) =>
+        {
+            seen.Add(e.Context.Region);
+            e.Cancel = true;
+        };
+
+        // The region is resolved from the event's source, so each gutter answers for itself. It
+        // is not pointer arithmetic against the margins' widths — the margins own those, and a
+        // constant here would be plan 00008's misaligned header a second time.
+        host.Left.LineNumberMargin.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+        host.Left.ChangeMarkerMargin.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+        host.Left.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+
+        Assert.Equal(
+            [DiffPaneRegion.LineNumberMargin, DiffPaneRegion.ChangeMarkerMargin, DiffPaneRegion.Text],
+            seen);
+    }
+
+    [AvaloniaFact]
+    public async Task A_gutter_menu_leaves_the_file_verbs_to_the_file()
+    {
+        using CompositeHost host = new(width: 900, height: 400);
+        host.Show();
+        await host.LoadAsync("one\nTWO\nthree\n", "one\ntwo\nthree\n");
+        CompositeHost.Layout();
+
+        List<string?> headers = [];
+        host.View.PaneContextMenuOpening += (_, e) =>
+        {
+            headers = e.Items.Select(i => i.Header).ToList();
+            e.Cancel = true;
+        };
+
+        // Save and revert are the file's verbs and a gutter is a position, so they are absent
+        // from its menu rather than greyed in it — the rule plan 00010 set for a verb a view does
+        // not have, applied to a region that does not have one.
+        host.Left.LineNumberMargin.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+        List<string?> gutter = headers;
+
+        host.Left.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+        List<string?> text = headers;
+
+        string save = DiffViewStrings.MenuSave(DiffSide.Left);
+        string revert = DiffViewStrings.MenuRevert(DiffSide.Left);
+
+        Assert.DoesNotContain(save, gutter);
+        Assert.DoesNotContain(revert, gutter);
+        Assert.Contains(save, text);
+        Assert.Contains(revert, text);
+
+        // The copy and navigate verbs the gutter IS about are still there, so this is a shorter
+        // menu rather than an emptier one.
+        Assert.NotEmpty(gutter);
+        Assert.Contains(DiffViewStrings.MenuCopyChange(DiffSide.Right), gutter);
+    }
+
+    [AvaloniaFact]
+    public async Task A_margin_the_library_did_not_draw_is_left_alone()
     {
         using CompositeHost host = new(width: 900, height: 400);
         host.Show();
@@ -262,9 +333,20 @@ public sealed class PaneContextMenuTests
         bool raised = false;
         host.View.PaneContextMenuOpening += (_, _) => raised = true;
 
-        // v1 is the panes. A margin's verbs are its own and are a later plan's, so the text's menu
-        // is not offered in their place.
-        host.Left.LineNumberMargin.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
+        // AvaloniaEdit's own margins, and any a host adds, are not ours to answer for: their
+        // verbs are not in DiffCommand and the text's menu would be the wrong menu. Answering
+        // "some margin I do not recognise" with the pane's items is the failure this prevents.
+        //
+        // The margin is added to the text area rather than constructed loose, and the event is
+        // raised ON it, because that is how the real one arrives: RaiseEvent overwrites a Source
+        // set by hand with the control it was raised on, so a detached margin passed as Source
+        // would test nothing — the guard would never see it, and the test would pass for the
+        // wrong reason.
+        AvaloniaEdit.Editing.LineNumberMargin foreign = new();
+        host.Left.TextArea.LeftMargins.Add(foreign);
+        CompositeHost.Layout();
+
+        foreign.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent });
 
         Assert.False(raised);
     }

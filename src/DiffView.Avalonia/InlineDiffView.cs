@@ -736,6 +736,11 @@ public class InlineDiffView : TemplatedControl
     /// </remarks>
     private List<DiffMenuItem> MenuItemsFor(DiffPaneContext context)
     {
+        // The region is deliberately not read. This view's menu is navigation and find, which
+        // belong to every region equally: it has no copy verbs to scope to a line's block and no
+        // save or revert to keep off a gutter, so its margin menu and its text menu are the same
+        // menu — not by oversight but because the difference the side-by-side view draws is a
+        // difference between verbs this view does not have.
         _ = context;
         List<DiffMenuItem> items = [];
         DiffPaneMenu.AddNavigation(items, CommandOrNull, GestureFor, ChangeCount);
