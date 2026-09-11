@@ -53,6 +53,11 @@ public sealed class DiffKeyMap : IEnumerable<KeyValuePair<DiffCommand, KeyGestur
             [DiffCommand.CopyToRight] = new KeyGesture(Key.Right, KeyModifiers.Alt),
             [DiffCommand.CopyBlockToLeft] = null,
             [DiffCommand.CopyBlockToRight] = null,
+            // Both are pointer verbs first: a menu entry carries the block that was clicked. A
+            // gesture is still expressible — it would mean the current block — so they are here
+            // and unbound rather than absent, which is how a host binds one.
+            [DiffCommand.GoToChange] = null,
+            [DiffCommand.SelectBlock] = null,
         };
     }
 

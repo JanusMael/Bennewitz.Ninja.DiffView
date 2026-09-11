@@ -23,7 +23,11 @@ public readonly record struct DiffLine(DiffLineKind Kind, int Row);
 /// One aligned row: the line index on each side, or <c>null</c> where that side has a padding
 /// row, and the row's kind. Never both <c>null</c>.
 /// </summary>
-public readonly record struct AlignedRow(int? LeftLine, int? RightLine, DiffLineKind Kind);
+public readonly record struct AlignedRow(int? LeftLine, int? RightLine, DiffLineKind Kind)
+{
+    /// <summary>The line <paramref name="side"/> has in this row, or <c>null</c> where it pads.</summary>
+    public int? LineOf(DiffSide side) => side == DiffSide.Left ? LeftLine : RightLine;
+}
 
 /// <summary>A contiguous range of lines on one side; <see cref="Count"/> may be zero.</summary>
 public readonly record struct LineRange(int Start, int Count)

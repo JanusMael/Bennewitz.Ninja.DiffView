@@ -29,8 +29,15 @@ internal static class DiffPaneMenu
     /// and that rule lives here so the two views cannot come to disagree about it.
     /// </summary>
     /// <returns>The menu that was opened, or <c>null</c> when none was — cancelled, or empty.</returns>
+    /// <remarks>
+    /// <paramref name="owner"/> is whichever control was right-clicked — a pane, and since plan
+    /// 00012 phase 2 the connector gutter or the overview map. The menu is placed against it and
+    /// opened on it, so a menu about the map does not anchor itself to a pane the pointer was
+    /// never over. Only a pane can be asked from the keyboard, which is the one path that needs
+    /// a caret.
+    /// </remarks>
     public static ContextMenu? Request(
-        DiffPanePresenter pane,
+        Control owner,
         DiffPaneContext context,
         Point? pointer,
         ContextMenu? replacement,
@@ -39,7 +46,7 @@ internal static class DiffPaneMenu
     {
         if (replacement is not null)
         {
-            return Show(pane, context, replacement, [], pointer);
+            return Show(owner, context, replacement, [], pointer);
         }
 
         List<DiffMenuItem> items = defaults(context);
@@ -50,7 +57,7 @@ internal static class DiffPaneMenu
             return null;
         }
 
-        return Show(pane, context, null, items, pointer);
+        return Show(owner, context, null, items, pointer);
     }
 
     /// <summary>
@@ -60,7 +67,7 @@ internal static class DiffPaneMenu
     /// the replacement shape has no opening event to carry it.
     /// </summary>
     private static ContextMenu? Show(
-        DiffPanePresenter pane,
+        Control owner,
         DiffPaneContext context,
         ContextMenu? replacement,
         IList<DiffMenuItem> items,
@@ -82,7 +89,7 @@ internal static class DiffPaneMenu
         }
 
         menu.DataContext = context;
-        menu.PlacementTarget = pane;
+        menu.PlacementTarget = owner;
 
         if (pointer is { } point)
         {
@@ -96,13 +103,15 @@ internal static class DiffPaneMenu
         else
         {
             // Shift+F10 and the Menu key: a keyboard user asking about "here" means the caret.
+            // Only a pane has one — the connector and the map are not focusable, so no keyboard
+            // request can reach them — and a control without one is asked about at its origin.
             menu.Placement = PlacementMode.AnchorAndGravity;
             menu.PlacementAnchor = PopupAnchor.TopLeft;
             menu.PlacementGravity = PopupGravity.BottomRight;
-            menu.PlacementRect = CaretRect(pane);
+            menu.PlacementRect = owner is DiffPanePresenter pane ? CaretRect(pane) : new Rect(default, new Size(1, 1));
         }
 
-        menu.Open(pane);
+        menu.Open(owner);
         return menu;
     }
 

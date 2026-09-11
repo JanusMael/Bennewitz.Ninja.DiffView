@@ -14,16 +14,25 @@ namespace Bennewitz.Ninja.DiffView.Avalonia;
 /// commands re-read the selection when they run rather than taking it from here, the rule plan
 /// 00006 set for <c>CopySelectionRequested</c>.
 /// </remarks>
-/// <param name="Region">Which part of the pane. Only <see cref="DiffPaneRegion.Text"/> in v1.</param>
+/// <param name="Region">Which surface this describes.</param>
 /// <param name="Side">
-/// The side this pane shows, or <c>null</c> in the unified view, which has none. Null rather than
-/// a stand-in: a consumer that read <see cref="DiffSide.Left"/> there and acted on it would be
-/// wrong for half the lines.
+/// The side this surface belongs to, or <c>null</c> where it belongs to neither: the unified
+/// view, whose pane shows both files, and the connector gutter, which sits between them. On the
+/// overview map it is the lane under the pointer, and <c>null</c> over the marker column the two
+/// lanes share. Null rather than a stand-in: a consumer that read <see cref="DiffSide.Left"/>
+/// there and acted on it would be wrong for half the lines.
 /// </param>
-/// <param name="LineNumber">The 1-based line in the pane's own document.</param>
+/// <param name="LineNumber">
+/// The 1-based line in the pane's own document. The connector and the map are not panes and a
+/// row can carry a line on each side, so there they name the row's line on
+/// <paramref name="SourceSide"/> — the lane's own side on the map, and the left's then the
+/// right's where the surface names no side. It is never a stand-in for "no line": every surface
+/// that raises a <see cref="DiffPaneContext"/> has at least one.
+/// </param>
 /// <param name="SourceSide">
-/// The side the line belongs to. The same as <paramref name="Side"/> in the side-by-side view; in
-/// the unified view it is the half of the composed document this line came from.
+/// The side the line belongs to. The same as <paramref name="Side"/> in the side-by-side view's
+/// panes; in the unified view it is the half of the composed document this line came from, and on
+/// the connector and the map it is the side <paramref name="LineNumber"/> was read from.
 /// </param>
 /// <param name="SourceLine">
 /// The 1-based line on <paramref name="SourceSide"/>'s own file — the only numbering the unified

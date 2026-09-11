@@ -789,6 +789,12 @@ public class InlineDiffView : TemplatedControl
             DiffCommand.CopyToRight => null,
             DiffCommand.CopyBlockToLeft => null,
             DiffCommand.CopyBlockToRight => null,
+            // Plan 00012 phase 2's two verbs are the connector's and the map's, and neither
+            // control exists here. Null is "this view has no such verb", which keeps them absent
+            // from its menus rather than greyed in them — not a claim that a single pane over a
+            // composed document could not have them, which is a later phase's call to make.
+            DiffCommand.GoToChange => null,
+            DiffCommand.SelectBlock => null,
             _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Unknown command."),
         };
     }

@@ -289,6 +289,8 @@ public class SideBySideDiffView : TemplatedControl
     private readonly DelegateCommand _copyToRight;
     private readonly DelegateCommand _copyBlockToLeft;
     private readonly DelegateCommand _copyBlockToRight;
+    private readonly DelegateCommand _goToChange;
+    private readonly DelegateCommand _selectBlock;
     private bool _isFindBarOpen;
     private string _findQuery = string.Empty;
     private FindOptions _findOptions = FindOptions.Default;
@@ -384,6 +386,11 @@ public class SideBySideDiffView : TemplatedControl
         _copyToRight = new DelegateCommand(() => CopyToward(DiffSide.Right), () => CanCopyToward(DiffSide.Right));
         _copyBlockToLeft = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Left), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Left));
         _copyBlockToRight = new DelegateCommand(() => CopyCurrentBlock(DiffSide.Right), () => CanCopyBlock(CurrentChangeIndex, DiffSide.Right));
+        // The gesture forms of plan 00012's two block verbs, which mean the *current* block —
+        // the only reading a keyboard has. Their menu entries carry the block that was clicked
+        // instead, the way the copy entries already do.
+        _goToChange = new DelegateCommand(() => GoToChange(CurrentChangeIndex), () => ChangeCount > 0);
+        _selectBlock = new DelegateCommand(() => SelectChange(CurrentChangeIndex, FocusedSide), () => ChangeCount > 0);
         _openFind = new DelegateCommand(OpenFind);
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
@@ -1140,6 +1147,7 @@ public class SideBySideDiffView : TemplatedControl
             _gutter.CurrentChangeIndex = CurrentChangeIndex;
             _gutter.BlockClicked += OnGutterBlockClicked;
             _gutter.ResizeDragged += OnGutterResizeDragged;
+            _gutter.ContextRequested += OnConnectorContextRequested;
         }
 
         if (_minimap is not null)
@@ -1151,6 +1159,7 @@ public class SideBySideDiffView : TemplatedControl
             _minimap.IsVisible = ShowMinimap;
             ApplyMinimapPlacement();
             _minimap.JumpRequested += OnMinimapJumpRequested;
+            _minimap.ContextRequested += OnMinimapContextRequested;
         }
 
         if (_findBar is not null)
@@ -1717,12 +1726,99 @@ public class SideBySideDiffView : TemplatedControl
     /// state — every entry is always here, enabled or not — because a host's "insert after this
     /// item" has to mean the same thing on every open.
     /// </summary>
+    /// <remarks>
+    /// One method per surface rather than one method with five branches through it: what each
+    /// menu is <em>about</em> is the whole design, and a reader should be able to see one menu's
+    /// list without reading the other four's conditions.
+    /// </remarks>
     private List<DiffMenuItem> MenuItemsFor(DiffPaneContext context)
+    {
+        return context.Region switch
+        {
+            DiffPaneRegion.ConnectorGutter => ConnectorMenuItems(context),
+            DiffPaneRegion.OverviewMap => OverviewMapMenuItems(context),
+            _ => PaneMenuItems(context),
+        };
+    }
+
+    /// <summary>
+    /// The connector's menu: a polygon <em>is</em> a change block, so every entry is about that
+    /// block and there is nothing else to be about. Both copy directions, because the column
+    /// belongs to neither side — which is also why selecting from here selects in both panes.
+    /// No find and no navigate: this is not a position in a file.
+    /// </summary>
+    private List<DiffMenuItem> ConnectorMenuItems(DiffPaneContext context)
+    {
+        List<DiffMenuItem> items = [];
+        int block = context.Block?.Index ?? -1;
+        foreach (DiffSide toSide in (DiffSide[])[DiffSide.Left, DiffSide.Right])
+        {
+            DiffSide target = toSide;
+            DiffMenuItem? copy = DiffPaneMenu.Verb(
+                DiffViewStrings.MenuCopyChange(target),
+                target == DiffSide.Left ? DiffCommand.CopyBlockToLeft : DiffCommand.CopyBlockToRight,
+                CommandOrNull,
+                GestureFor,
+                CanCopyBlock(block, target));
+            if (copy is not null)
+            {
+                copy.Command = new DelegateCommand(() => CopyBlock(block, target), () => CanCopyBlock(block, target));
+                items.Add(copy);
+            }
+        }
+
+        AddBlockVerbs(items, context);
+        return items;
+    }
+
+    /// <summary>
+    /// The map's menu: a row, the change at it if there is one, and the map's own way off screen.
+    /// Short by nature — a left-click already does its main verb — and kept anyway, because a
+    /// seam that answers every surface but one is a seam a host has to special-case.
+    /// </summary>
+    private List<DiffMenuItem> OverviewMapMenuItems(DiffPaneContext context)
+    {
+        int? row = context.Row;
+        List<DiffMenuItem> items =
+        [
+            new DiffMenuItem
+            {
+                Header = DiffViewStrings.Get(DiffViewStrings.MenuGoToRow),
+                Command = new DelegateCommand(() => ScrollToRow(row ?? 0), () => row is not null),
+                IsEnabled = row is not null,
+            },
+        ];
+
+        AddBlockVerbs(items, context, select: false);
+        items.Add(DiffMenuItem.Separator());
+        items.Add(new DiffMenuItem
+        {
+            Header = DiffViewStrings.Get(DiffViewStrings.MenuHideOverviewMap),
+            Command = new DelegateCommand(() => ShowMinimap = false, () => ShowMinimap),
+            IsEnabled = ShowMinimap,
+        });
+        return items;
+    }
+
+    /// <summary>
+    /// A pane's menu, and its two gutters'. The copy items are the same three surfaces' business;
+    /// what differs is the block verbs the gutters carry and the file verbs only the text does.
+    /// </summary>
+    private List<DiffMenuItem> PaneMenuItems(DiffPaneContext context)
     {
         DiffSide side = context.Side ?? DiffSide.Left;
         DiffSide toSide = Other(side);
         int block = context.Block?.Index ?? CurrentChangeIndex;
         List<DiffMenuItem> items = [];
+
+        // The marker margin's chip names a run, so the run's verbs lead: this gutter's subject is
+        // the change, and the copy items below it are what you then do with one. The line-number
+        // margin reads the other way round — its glyph is a copy arrow — so its go-to entry comes
+        // after the copies instead, added below.
+        if (context.Region is DiffPaneRegion.ChangeMarkerMargin)
+        {
+            AddBlockVerbs(items, context);
+        }
 
         // Two scopes, each named for exactly what it copies. The wording is the menu's own and
         // shorter than the gutter's — a tooltip can afford the words, a menu row sits beside its
@@ -1754,6 +1850,11 @@ public class SideBySideDiffView : TemplatedControl
             items.Add(whole);
         }
 
+        if (context.Region is DiffPaneRegion.LineNumberMargin)
+        {
+            AddBlockVerbs(items, context, select: false);
+        }
+
         items.Add(DiffMenuItem.Separator());
         DiffPaneMenu.AddNavigation(items, CommandOrNull, GestureFor, ChangeCount);
 
@@ -1782,6 +1883,126 @@ public class SideBySideDiffView : TemplatedControl
 
         return items;
     }
+
+    /// <summary>
+    /// Plan 00012's two block verbs, about the block <em>under the pointer</em> rather than the
+    /// current one — the rule the copy entries already follow, because a context menu that acted
+    /// somewhere else would not be one. Present and disabled outside a change rather than absent:
+    /// whether the pointer is in a change is state, and 00010's shape rule is that a host's
+    /// "insert after this item" means the same thing on every open.
+    /// </summary>
+    /// <param name="items">The list being built, appended to in place.</param>
+    /// <param name="context">What was under the pointer; its <c>Block</c> is the subject.</param>
+    /// <param name="select">
+    /// Whether the selection verb is offered. The map does not offer it: its subject is a row,
+    /// and the lines a block covers are in the panes rather than anywhere the map can show them.
+    /// </param>
+    private void AddBlockVerbs(List<DiffMenuItem> items, DiffPaneContext context, bool select = true)
+    {
+        int block = context.Block?.Index ?? -1;
+
+        DiffMenuItem? goTo = DiffPaneMenu.Verb(
+            DiffViewStrings.Get(DiffViewStrings.MenuGoToChange),
+            DiffCommand.GoToChange,
+            CommandOrNull,
+            GestureFor,
+            block >= 0);
+        if (goTo is not null)
+        {
+            goTo.Command = new DelegateCommand(() => GoToChange(block), () => block >= 0);
+            items.Add(goTo);
+        }
+
+        if (!select)
+        {
+            return;
+        }
+
+        // Which panes the selection lands in is the *surface's* answer, not the focus's. A margin
+        // belongs to one pane and selects there; the connector belongs to neither, and the block
+        // it draws spans both files, so it selects in both rather than picking a side.
+        DiffSide? side = context.Region is DiffPaneRegion.ConnectorGutter ? null : context.Side;
+        DiffMenuItem? selectBlock = DiffPaneMenu.Verb(
+            DiffViewStrings.Get(DiffViewStrings.MenuSelectChange),
+            DiffCommand.SelectBlock,
+            CommandOrNull,
+            GestureFor,
+            block >= 0);
+        if (selectBlock is not null)
+        {
+            selectBlock.Command = new DelegateCommand(() => SelectChange(block, side), () => block >= 0);
+            items.Add(selectBlock);
+        }
+    }
+
+    /// <summary>
+    /// Makes block <paramref name="index"/> the current change and scrolls to it. What the
+    /// connector's left-click has always done, given a name so that a menu can offer it and a
+    /// host can bind it; an index the model does not have does nothing.
+    /// </summary>
+    public void GoToChange(int index)
+    {
+        if (Document is { } model && index >= 0 && index < model.Blocks.Count)
+        {
+            SetCurrentChange(index, scroll: true);
+        }
+    }
+
+    /// <summary>
+    /// Selects block <paramref name="index"/>'s lines on <paramref name="side"/>, or on both
+    /// sides where it is <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// A side the block has no lines on — the near half of an insertion or a deletion — has its
+    /// selection cleared rather than left standing. After "select this change" a selection
+    /// elsewhere would be describing a different change, and the copy arrows read the selection.
+    /// </remarks>
+    public void SelectChange(int index, DiffSide? side)
+    {
+        if (Document is not { } model || index < 0 || index >= model.Blocks.Count)
+        {
+            return;
+        }
+
+        ChangeBlock block = model.Blocks[index];
+        foreach (DiffSide each in (DiffSide[])[DiffSide.Left, DiffSide.Right])
+        {
+            if (side is { } only && only != each)
+            {
+                continue;
+            }
+
+            SelectLines(each, block.LinesFor(each));
+        }
+    }
+
+    /// <summary>
+    /// Selects whole lines <paramref name="lines"/> — the model's 0-based counting — on
+    /// <paramref name="side"/>, clearing the selection for an empty range.
+    /// </summary>
+    private void SelectLines(DiffSide side, LineRange lines)
+    {
+        if (Pane(side) is not { } pane || pane.Document is not { } document)
+        {
+            return;
+        }
+
+        // The model can be ahead of a document an edit has shortened, so the range is clamped
+        // rather than trusted; a range entirely past the end reads as empty.
+        int first = lines.Start + 1;
+        int last = Math.Min(lines.End, document.LineCount);
+        if (lines.IsEmpty || first > last)
+        {
+            pane.TextArea.ClearSelection();
+            return;
+        }
+
+        int start = document.GetLineByNumber(first).Offset;
+        pane.Select(start, document.GetLineByNumber(last).EndOffset - start);
+    }
+
+    /// <summary>Whether <paramref name="side"/> refuses typing.</summary>
+    private bool ReadOnly(DiffSide side) => side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
 
     /// <summary>
     /// The command behind <paramref name="command"/>. This view has every verb, so it never
@@ -1819,6 +2040,8 @@ public class SideBySideDiffView : TemplatedControl
             DiffCommand.CloseFind => _closeFind,
             DiffCommand.CopyToLeft => _copyToLeft,
             DiffCommand.CopyToRight => _copyToRight,
+            DiffCommand.GoToChange => _goToChange,
+            DiffCommand.SelectBlock => _selectBlock,
             DiffCommand.CopyBlockToLeft => _copyBlockToLeft,
             DiffCommand.CopyBlockToRight => _copyBlockToRight,
             _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Unknown command."),
@@ -2682,11 +2905,13 @@ public class SideBySideDiffView : TemplatedControl
         {
             _gutter.BlockClicked -= OnGutterBlockClicked;
             _gutter.ResizeDragged -= OnGutterResizeDragged;
+            _gutter.ContextRequested -= OnConnectorContextRequested;
         }
 
         if (_minimap is not null)
         {
             _minimap.JumpRequested -= OnMinimapJumpRequested;
+            _minimap.ContextRequested -= OnMinimapContextRequested;
         }
 
         if (_findBar is not null)
@@ -2782,6 +3007,110 @@ public class SideBySideDiffView : TemplatedControl
     private void OnGutterBlockClicked(object? sender, int blockIndex)
     {
         SetCurrentChange(blockIndex, scroll: true);
+    }
+
+    /// <summary>
+    /// A right-click on the connector. The block is the one the polygon under the pointer draws,
+    /// from the same hit-test the left-click uses — not the block nearest the pointer's row,
+    /// which is a different answer where a polygon is tall. Off every polygon there is no block
+    /// and so no menu: the empty column is the splitter, and a drag is its only verb.
+    /// </summary>
+    /// <remarks>
+    /// The click itself is untouched. <c>OnPointerPressed</c> there already returns unless the
+    /// left button is down, so a right-click navigates nothing, and this handler does not call
+    /// <see cref="GoToChange"/> — offering the verb is not performing it.
+    /// </remarks>
+    private void OnConnectorContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (e.Handled || _gutter is null || Document is not { } model)
+        {
+            return;
+        }
+
+        // The gutter is not focusable, so every request that reaches it carries a pointer.
+        if (!e.TryGetPosition(_gutter, out Point point) || _gutter.PolygonAt(point) is not { } polygon)
+        {
+            return;
+        }
+
+        ChangeBlock block = model.Blocks[polygon.BlockIndex];
+        int row = Math.Clamp(_gutter.RowAt(point.Y) ?? block.FirstRow, block.FirstRow, block.LastRow);
+        e.Handled = OpenMenu(_gutter, RowContext(DiffPaneRegion.ConnectorGutter, model, row, side: null, block), point);
+    }
+
+    /// <summary>
+    /// A right-click on the overview map. The row is the one a left-click there would jump to, so
+    /// the menu's <em>go to this row</em> and the click cannot come to different answers, and the
+    /// side is the lane under the pointer — <c>null</c> over the marker column the lanes share.
+    /// </summary>
+    /// <remarks>
+    /// As on the connector, the click is untouched: the map's <c>OnPointerPressed</c> returns
+    /// unless the left button is down, so a right-click neither scrolls nor jumps.
+    /// </remarks>
+    private void OnMinimapContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (e.Handled || _minimap is null || Document is not { } model || model.Rows.Count == 0)
+        {
+            return;
+        }
+
+        if (!e.TryGetPosition(_minimap, out Point point))
+        {
+            return;
+        }
+
+        int row = Math.Clamp(_minimap.RowForClick(point.Y), 0, model.Rows.Count - 1);
+        ChangeBlock? block = _leftPane?.Metadata.BlockAtRow(row);
+        e.Handled = OpenMenu(_minimap, RowContext(DiffPaneRegion.OverviewMap, model, row, _minimap.LaneAt(point.X), block), point);
+    }
+
+    /// <summary>
+    /// The context for a surface whose subject is a row rather than a line.
+    /// <paramref name="side"/> is what the surface itself says — the lane on the map, and nothing
+    /// on the connector, which belongs to neither pane.
+    /// </summary>
+    /// <remarks>
+    /// A row always has a line on at least one side, so the line here is real rather than a
+    /// stand-in: the surface's own side where that side has one, and the left then the right
+    /// where it names none or pads. <c>SourceSide</c> says which, exactly as it does for the
+    /// unified view's composed document. The selection is the lane's pane's; the connector names
+    /// no pane, so it reports none rather than one pane's chosen arbitrarily.
+    /// </remarks>
+    private DiffPaneContext RowContext(DiffPaneRegion region, SideBySideDocument model, int row, DiffSide? side, ChangeBlock? block)
+    {
+        AlignedRow aligned = model.Rows[row];
+        DiffSide sourceSide = side is { } lane && aligned.LineOf(lane) is not null ? lane
+            : aligned.LeftLine is not null ? DiffSide.Left
+            : DiffSide.Right;
+        int line = (aligned.LineOf(sourceSide) ?? 0) + 1;
+
+        return new DiffPaneContext(
+            region,
+            side,
+            line,
+            sourceSide,
+            line,
+            row,
+            block,
+            aligned.Kind,
+            side is { } lane2 ? Pane(lane2)?.SelectedLines : null,
+            IsUnified: false,
+            ReadOnly(sourceSide));
+    }
+
+    /// <summary>
+    /// Opens a menu for a surface that is not a pane, through the one implementation the whole
+    /// library shares — so the replacement property and the opening event mean the same thing
+    /// here as they do in the text.
+    /// </summary>
+    /// <returns>
+    /// Whether a menu opened, which is what marks the routed event handled: a request answered
+    /// with nothing still reaches a <c>ContextMenu</c> a host put on an ancestor.
+    /// </returns>
+    private bool OpenMenu(Control owner, DiffPaneContext context, Point pointer)
+    {
+        LastPaneMenu = DiffPaneMenu.Request(owner, context, pointer, PaneContextMenu, MenuItemsFor, args => PaneContextMenuOpening?.Invoke(this, args));
+        return LastPaneMenu is not null;
     }
 
     private void OnGutterResizeDragged(object? sender, double delta)

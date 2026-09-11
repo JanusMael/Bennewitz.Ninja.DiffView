@@ -254,6 +254,18 @@ public static class DiffViewStrings
     /// <summary>The pane menu's revert entry, for the right side.</summary>
     public const string MenuRevertRight = "Menu.Revert.Right";
 
+    /// <summary>Make the change under the pointer the current one — the connector's left-click, named.</summary>
+    public const string MenuGoToChange = "Menu.GoToChange";
+
+    /// <summary>Select the lines of the change under the pointer.</summary>
+    public const string MenuSelectChange = "Menu.SelectChange";
+
+    /// <summary>Scroll to the row under the pointer — the overview map's left-click, named.</summary>
+    public const string MenuGoToRow = "Menu.GoToRow";
+
+    /// <summary>The overview map's own entry for taking itself off screen.</summary>
+    public const string MenuHideOverviewMap = "Menu.HideOverviewMap";
+
     /// <summary>The left side, in a tooltip.</summary>
     public const string SideLeft = "Side.Left";
 
@@ -497,6 +509,13 @@ public static class DiffViewStrings
         [MenuSaveRight] = "Save the right side",
         [MenuRevertLeft] = "Revert the left side",
         [MenuRevertRight] = "Revert the right side",
+        // "Change" and "row" rather than "block": the menu says change everywhere else, and the
+        // map's own tooltip has said "Row n of m" since plan 00007. A menu that named the model's
+        // vocabulary would be the only place in the library that did.
+        [MenuGoToChange] = "Go to this change",
+        [MenuSelectChange] = "Select this change",
+        [MenuGoToRow] = "Go to this row",
+        [MenuHideOverviewMap] = "Hide the overview map",
         [SideLeft] = "left",
         [SideRight] = "right",
         [LineTooltipAlignedLeft] = "Line {0} · left line {1}",

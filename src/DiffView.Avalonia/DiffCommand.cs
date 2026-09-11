@@ -48,4 +48,19 @@ public enum DiffCommand
 
     /// <summary>Copy the current block rightwards whatever is selected.</summary>
     CopyBlockToRight,
+
+    /// <summary>
+    /// Make a change block the current one. Unbound by default, and the verb the connector's own
+    /// left-click already is: a menu entry carries the block under the pointer, and a gesture —
+    /// if a host binds one — means the block the caret is in, which is the only reading a
+    /// keyboard has.
+    /// </summary>
+    GoToChange,
+
+    /// <summary>
+    /// Select a change block's lines. Unbound by default, by the same rule: a menu entry carries
+    /// the block under the pointer, a gesture the current one. From the connector both panes
+    /// select, because the block spans both files and picking a side there would be arbitrary.
+    /// </summary>
+    SelectBlock,
 }

@@ -145,6 +145,22 @@ public class ChangeConnectorGutter : Control
         return row * RowHeight - VerticalOffset + ContentOffset;
     }
 
+    /// <summary>
+    /// The row under <paramref name="y"/> — <see cref="TopOfRow"/> read backwards — or
+    /// <c>null</c> before the first row and before the rows have a height.
+    /// </summary>
+    public int? RowAt(double y)
+    {
+        double rowHeight = RowHeight;
+        if (rowHeight <= 0)
+        {
+            return null;
+        }
+
+        int row = (int)Math.Floor((y + VerticalOffset - ContentOffset) / rowHeight);
+        return row < 0 ? null : row;
+    }
+
     /// <summary>The polygon under <paramref name="point"/> in the last frame, or <c>null</c>.</summary>
     public ConnectorPolygon? PolygonAt(Point point)
     {
