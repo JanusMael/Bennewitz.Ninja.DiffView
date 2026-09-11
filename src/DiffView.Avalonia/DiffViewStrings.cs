@@ -242,6 +242,18 @@ public static class DiffViewStrings
     /// <summary>The pane menu's find entry.</summary>
     public const string MenuFind = "Menu.Find";
 
+    /// <summary>Menu entry: fold nothing.</summary>
+    public const string MenuShowAllRows = "Menu.ShowAllRows";
+
+    /// <summary>Menu entry: fold every unchanged run.</summary>
+    public const string MenuShowDifferencesOnly = "Menu.ShowDifferencesOnly";
+
+    /// <summary>Menu entry: fold the unchanged runs but keep a few rows around each change.</summary>
+    public const string MenuShowContext = "Menu.ShowContext";
+
+    /// <summary>Menu entry: give back the run under the pointer or the caret.</summary>
+    public const string MenuExpandFold = "Menu.ExpandFold";
+
     /// <summary>The pane menu's save entry, for the left side.</summary>
     public const string MenuSaveLeft = "Menu.Save.Left";
 
@@ -511,6 +523,10 @@ public static class DiffViewStrings
         [MenuNextChange] = "Next change",
         [MenuPreviousChange] = "Previous change",
         [MenuFind] = "Find…",
+        [MenuShowAllRows] = "Show all rows",
+        [MenuShowDifferencesOnly] = "Show differences only",
+        [MenuShowContext] = "Show differences with context",
+        [MenuExpandFold] = "Show the rows hidden here",
         [MenuSaveLeft] = "Save the left side",
         [MenuSaveRight] = "Save the right side",
         [MenuRevertLeft] = "Revert the left side",

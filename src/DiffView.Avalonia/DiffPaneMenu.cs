@@ -171,6 +171,38 @@ internal static class DiffPaneMenu
         Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuFind), DiffCommand.OpenFind, command, gesture, enabled: true));
     }
 
+    /// <summary>
+    /// Appends the folding group: the three modes, and the entry that gives back one run. Each
+    /// mode is disabled where it is already in force — a menu that offers the state you are in is
+    /// noise — and <see cref="DiffCommand.ExpandFold"/> is disabled where there is no run to give
+    /// back, which is the disable-do-not-hide rule plan 00010 settled.
+    /// </summary>
+    public static void AddFolding(
+        List<DiffMenuItem> items,
+        Func<DiffCommand, ICommand?> command,
+        Func<DiffCommand, KeyGesture?> gesture)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(command);
+
+        // Absent rather than a separator over nothing: a view with no folding verb at all — a
+        // host that has replaced the command map — should not gain an empty group.
+        if (command(DiffCommand.ShowAllRows) is null)
+        {
+            return;
+        }
+
+        // An item's IsEnabled is a value, not a binding to CanExecute, so each is asked once here
+        // — which is also why a menu is rebuilt per opening rather than kept.
+        bool Enabled(DiffCommand verb) => command(verb)?.CanExecute(null) ?? false;
+
+        items.Add(DiffMenuItem.Separator());
+        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuShowAllRows), DiffCommand.ShowAllRows, command, gesture, Enabled(DiffCommand.ShowAllRows)));
+        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuShowDifferencesOnly), DiffCommand.ShowDifferencesOnly, command, gesture, Enabled(DiffCommand.ShowDifferencesOnly)));
+        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuShowContext), DiffCommand.ShowContext, command, gesture, Enabled(DiffCommand.ShowContext)));
+        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuExpandFold), DiffCommand.ExpandFold, command, gesture, Enabled(DiffCommand.ExpandFold)));
+    }
+
     /// <summary>Appends <paramref name="item"/> unless it is <c>null</c>, which means absent.</summary>
     public static void Add(List<DiffMenuItem> items, DiffMenuItem? item)
     {

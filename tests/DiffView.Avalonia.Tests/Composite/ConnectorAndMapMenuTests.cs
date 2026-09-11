@@ -101,6 +101,12 @@ public sealed class ConnectorAndMapMenuTests
                 DiffViewStrings.MenuCopyChange(DiffSide.Right),
                 DiffViewStrings.Get(DiffViewStrings.MenuGoToChange),
                 DiffViewStrings.Get(DiffViewStrings.MenuSelectChange),
+                // Plan 00013's folding group, last here as on every menu that has it.
+                null,
+                DiffViewStrings.Get(DiffViewStrings.MenuShowAllRows),
+                DiffViewStrings.Get(DiffViewStrings.MenuShowDifferencesOnly),
+                DiffViewStrings.Get(DiffViewStrings.MenuShowContext),
+                DiffViewStrings.Get(DiffViewStrings.MenuExpandFold),
             ],
             items.Select(i => i.Header));
 
@@ -108,7 +114,11 @@ public sealed class ConnectorAndMapMenuTests
         // revert, which are the file's verbs and belong to the header.
         Assert.DoesNotContain(DiffViewStrings.Get(DiffViewStrings.MenuFind), items.Select(i => i.Header));
         Assert.DoesNotContain(DiffViewStrings.Get(DiffViewStrings.MenuNextChange), items.Select(i => i.Header));
-        Assert.All(items, i => Assert.False(i.IsSeparator));
+
+        // The block verbs are one group with no separator among them; the one separator here is
+        // the folding group's, which plan 00013 appends to every menu that carries it.
+        Assert.All(items.Take(4), i => Assert.False(i.IsSeparator));
+        Assert.Single(items, i => i.IsSeparator);
     }
 
     [AvaloniaFact]

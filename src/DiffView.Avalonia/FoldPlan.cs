@@ -60,6 +60,62 @@ internal static class FoldPlan
     }
 
     /// <summary>
+    /// The runs to fold in a unified document, in line order and disjoint. One pane, so there is
+    /// no second side to keep in step and no padding to orphan: the boundary rule has nothing to
+    /// say here, and a run is cut by context and by the floor alone.
+    /// </summary>
+    public static IReadOnlyList<FoldedRun> For(InlineDocument document, int contextRows, int minimumFoldedRows = DefaultMinimumFoldedRows)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentOutOfRangeException.ThrowIfNegative(contextRows);
+
+        IReadOnlyList<InlineLine> lines = document.Lines;
+        List<FoldedRun> folds = [];
+        int runStart = -1;
+        for (int line = 0; line <= lines.Count; line++)
+        {
+            bool unchanged = line < lines.Count && lines[line].Kind == DiffLineKind.Unchanged;
+            if (unchanged)
+            {
+                if (runStart < 0)
+                {
+                    runStart = line;
+                }
+
+                continue;
+            }
+
+            if (runStart >= 0)
+            {
+                int first = runStart + contextRows;
+                int last = line - 1 - contextRows;
+                int count = last - first + 1;
+                if (count >= minimumFoldedRows && count >= 2)
+                {
+                    folds.Add(new FoldedRun(first, count));
+                }
+
+                runStart = -1;
+            }
+        }
+
+        return folds;
+    }
+
+    /// <summary>
+    /// The inclusive line range <paramref name="fold"/> collapses in a unified document: the
+    /// run's own lines less its first, which stays visible to carry the placeholder. In
+    /// AvaloniaEdit's 1-based numbering, which the unified document's own indices are not.
+    /// </summary>
+    public static (int First, int Last)? LinesOf(InlineDocument document, FoldedRun fold)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        int first = fold.FirstRow + 1;
+        int last = fold.EndRow - 1;
+        return first > last || first < 0 || last >= document.Lines.Count ? null : (first + 1, last + 1);
+    }
+
+    /// <summary>
     /// The inclusive line range <paramref name="fold"/> collapses on <paramref name="side"/>, or
     /// <c>null</c> where the run holds no row to hide. The run's first row stays visible and
     /// carries the placeholder, so what collapses begins one row in.

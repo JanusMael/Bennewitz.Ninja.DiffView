@@ -462,6 +462,22 @@ public sealed partial class MainWindow : Window
         Unified.UseSyntaxHighlighting = UseSyntax.IsChecked;
     }
 
+    private void OnShowAllRows(object? sender, RoutedEventArgs e) => SetFolding(null);
+
+    private void OnShowDifferencesOnly(object? sender, RoutedEventArgs e) => SetFolding(0);
+
+    private void OnShowContext(object? sender, RoutedEventArgs e) => SetFolding(DiffKeyMap.DefaultContextRows);
+
+    /// <summary>
+    /// Both views, because the option is either view's and the demo switches between them with
+    /// the comparison already loaded.
+    /// </summary>
+    private void SetFolding(int? contextRows)
+    {
+        Diff.UnchangedContextRows = contextRows;
+        Unified.UnchangedContextRows = contextRows;
+    }
+
     private void OnToggleShowMinimap(object? sender, RoutedEventArgs e)
     {
         // The unified view has no minimap, so this reaches the side-by-side control only.

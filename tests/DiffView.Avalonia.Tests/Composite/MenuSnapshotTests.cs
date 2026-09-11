@@ -104,13 +104,19 @@ public sealed class MenuSnapshotTests
             RightClick(host, gutter, new Point(gutter.Bounds.Width / 2, (polygon.LeftTop.Y + bottom) / 2));
 
             // Both copy directions, because the column belongs to neither side, and the two verbs
-            // about the block the polygon is. Four rows, no separator.
+            // about the block the polygon is — then plan 00013's folding group behind a
+            // separator, because the column is where a run's absence is most visible.
             Assert.Equal(
                 [
                     DiffViewStrings.MenuCopyChange(DiffSide.Left),
                     DiffViewStrings.MenuCopyChange(DiffSide.Right),
                     DiffViewStrings.Get(DiffViewStrings.MenuGoToChange),
                     DiffViewStrings.Get(DiffViewStrings.MenuSelectChange),
+                    null,
+                    DiffViewStrings.Get(DiffViewStrings.MenuShowAllRows),
+                    DiffViewStrings.Get(DiffViewStrings.MenuShowDifferencesOnly),
+                    DiffViewStrings.Get(DiffViewStrings.MenuShowContext),
+                    DiffViewStrings.Get(DiffViewStrings.MenuExpandFold),
                 ],
                 Headers(host));
         });

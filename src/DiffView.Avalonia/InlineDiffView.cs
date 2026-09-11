@@ -88,6 +88,12 @@ public class InlineDiffView : TemplatedControl
     public static readonly StyledProperty<bool> UseSyntaxHighlightingProperty =
         AvaloniaProperty.Register<InlineDiffView, bool>(nameof(UseSyntaxHighlighting), defaultValue: true);
 
+    /// <summary>Identifies the <see cref="UnchangedContextRows"/> property.</summary>
+    public static readonly StyledProperty<int?> UnchangedContextRowsProperty =
+        AvaloniaProperty.Register<InlineDiffView, int?>(
+            nameof(UnchangedContextRows),
+            coerce: static (_, value) => value is { } rows ? Math.Max(0, rows) : null);
+
     /// <summary>Identifies the <see cref="ShowWhitespace"/> property.</summary>
     public static readonly StyledProperty<bool> ShowWhitespaceProperty =
         AvaloniaProperty.Register<InlineDiffView, bool>(nameof(ShowWhitespace));
@@ -209,6 +215,10 @@ public class InlineDiffView : TemplatedControl
     private readonly DelegateCommand _previousChange;
     private readonly DelegateCommand _firstChange;
     private readonly DelegateCommand _lastChange;
+    private readonly DelegateCommand _showAllRows;
+    private readonly DelegateCommand _showDifferencesOnly;
+    private readonly DelegateCommand _showContext;
+    private readonly DelegateCommand _expandFold;
     private readonly DelegateCommand _openFind;
     private readonly DelegateCommand _closeFind;
     private readonly DelegateCommand _findNext;
@@ -229,6 +239,14 @@ public class InlineDiffView : TemplatedControl
     /// How the unified document's lines sit on screen. The identity until something folds them.
     /// </summary>
     private RowProjection _projection = RowProjection.Identity(0);
+
+    /// <summary>Rows either side of a change that stay visible; <c>null</c> folds nothing.</summary>
+    private int? _foldContextRows;
+
+    private int _foldMinimumRows = FoldPlan.DefaultMinimumFoldedRows;
+
+    /// <summary>The first line of every run the reader has opened; cleared with the document.</summary>
+    private readonly HashSet<int> _expandedFolds = [];
     private DiffDiagnostics? _diagnostics;
     private IReadOnlyList<DiffWarning> _warnings = [];
     private int _changeCount;
@@ -278,6 +296,16 @@ public class InlineDiffView : TemplatedControl
         _previousChange = new DelegateCommand(PreviousChange, () => ChangeCount > 0);
         _firstChange = new DelegateCommand(FirstChange, () => ChangeCount > 0);
         _lastChange = new DelegateCommand(LastChange, () => ChangeCount > 0);
+        _showAllRows = new DelegateCommand(
+            () => SetCurrentValue(UnchangedContextRowsProperty, null),
+            () => UnchangedContextRows is not null);
+        _showDifferencesOnly = new DelegateCommand(
+            () => SetCurrentValue(UnchangedContextRowsProperty, 0),
+            () => UnchangedContextRows != 0);
+        _showContext = new DelegateCommand(
+            () => SetCurrentValue(UnchangedContextRowsProperty, DiffKeyMap.DefaultContextRows),
+            () => UnchangedContextRows != DiffKeyMap.DefaultContextRows);
+        _expandFold = new DelegateCommand(ExpandFoldAtCaret, CanExpandFoldAtCaret);
         _openFind = new DelegateCommand(OpenFind);
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
@@ -373,6 +401,18 @@ public class InlineDiffView : TemplatedControl
     {
         get => GetValue(UseSyntaxHighlightingProperty);
         set => SetValue(UseSyntaxHighlightingProperty, value);
+    }
+
+    /// <summary>
+    /// Rows kept either side of every change, with the unchanged runs between them folded behind
+    /// a placeholder. <c>null</c> — the default — folds nothing; <c>0</c> hides every matching
+    /// row. One pane here, so a run is cut by context and by the floor alone: there is no second
+    /// side to keep in step and no padding to orphan.
+    /// </summary>
+    public int? UnchangedContextRows
+    {
+        get => GetValue(UnchangedContextRowsProperty);
+        set => SetValue(UnchangedContextRowsProperty, value);
     }
 
     /// <summary>Whether spaces and tabs are drawn as glyphs.</summary>
@@ -749,6 +789,7 @@ public class InlineDiffView : TemplatedControl
         _ = context;
         List<DiffMenuItem> items = [];
         DiffPaneMenu.AddNavigation(items, CommandOrNull, GestureFor, ChangeCount);
+        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor);
         return items;
     }
 
@@ -818,6 +859,12 @@ public class InlineDiffView : TemplatedControl
             // composed document could not have them, which is a later phase's call to make.
             DiffCommand.GoToChange => null,
             DiffCommand.SelectBlock => null,
+            // Folding is not a two-sided verb. One pane has runs of matching lines like any
+            // other, and hiding them here needs no alignment kept, so all four are present.
+            DiffCommand.ShowAllRows => _showAllRows,
+            DiffCommand.ShowDifferencesOnly => _showDifferencesOnly,
+            DiffCommand.ShowContext => _showContext,
+            DiffCommand.ExpandFold => _expandFold,
             _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Unknown command."),
         };
     }
@@ -1067,6 +1114,13 @@ public class InlineDiffView : TemplatedControl
             {
                 ApplyDisplayOptions(_pane);
             }
+        }
+        else if (change.Property == UnchangedContextRowsProperty)
+        {
+            // A change of option opens every run the reader had opened: they were opened against
+            // a different set of folds.
+            _expandedFolds.Clear();
+            ApplyFolds(UnchangedContextRows);
         }
         else if (change.Property == PaneFontSizeProperty || change.Property == PaneFontFamilyProperty)
         {
@@ -1645,8 +1699,10 @@ public class InlineDiffView : TemplatedControl
             return;
         }
 
-        // A new document is a new row space, and nothing is folded in it until something folds it.
+        // A new document is a new row space, and the runs the reader opened mean nothing in it.
         // The unified view's rows are its own lines: one pane, so no second side to keep in step.
+        _expandedFolds.Clear();
+        _foldContextRows = UnchangedContextRows;
         _projection = RowProjection.Identity(Inline?.Lines.Count ?? 0);
 
         // Unified first: it is what the pane's metadata, its log lines and its gutters follow.
@@ -1667,10 +1723,14 @@ public class InlineDiffView : TemplatedControl
         pane.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
         pane.RenderFault += OnPaneRenderFault;
+        pane.FoldExpandRequested += OnFoldExpandRequested;
         pane.ContextMenuRequested += OnPaneContextMenuRequested;
         pane.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         pane.TextArea.GotFocus += OnPaneGotFocus;
         pane.TextArea.LostFocus += OnPaneLostFocus;
+
+        // The runs are this document's, so they are computed again for it rather than carried.
+        RefreshFolds();
     }
 
     private void ApplyDisplayOptions(DiffPanePresenter pane)
@@ -1756,6 +1816,102 @@ public class InlineDiffView : TemplatedControl
     }
 
     /// <summary>Scrolls the pane so the lines sit at the centre of the viewport; rows are uniform, there being no padding.</summary>
+    /// <summary>
+    /// Folds the unified document's unchanged runs, keeping <paramref name="contextRows"/> lines
+    /// either side of every change; <c>null</c> unfolds everything.
+    /// </summary>
+    internal RowProjection ApplyFolds(int? contextRows, int minimumFoldedRows = FoldPlan.DefaultMinimumFoldedRows)
+    {
+        _foldContextRows = contextRows;
+        _foldMinimumRows = minimumFoldedRows;
+        return RefreshFolds();
+    }
+
+    private RowProjection RefreshFolds()
+    {
+        InlineDocument? inline = Inline;
+        IReadOnlyList<FoldedRun> planned = inline is null || _foldContextRows is null
+            ? []
+            : [.. FoldPlan.For(inline, _foldContextRows.Value, _foldMinimumRows)
+                          .Where(run => !_expandedFolds.Contains(run.FirstRow))];
+
+        _projection = RowProjection.Of(inline?.Lines.Count ?? 0, planned);
+
+        if (_pane is not null)
+        {
+            List<(int First, int Last)> ranges = [];
+            if (inline is not null)
+            {
+                for (int fold = 0; fold < _projection.FoldCount; fold++)
+                {
+                    if (FoldPlan.LinesOf(inline, _projection.FoldAt(fold)) is { } range)
+                    {
+                        ranges.Add(range);
+                    }
+                }
+            }
+
+            _pane.SetCollapsedLines(ranges);
+        }
+
+        _showAllRows.RaiseCanExecuteChanged();
+        _showDifferencesOnly.RaiseCanExecuteChanged();
+        _showContext.RaiseCanExecuteChanged();
+        _expandFold.RaiseCanExecuteChanged();
+        return _projection;
+    }
+
+    /// <summary>The run the caret is on: a hidden line is unreachable, so it is a placeholder's line.</summary>
+    private FoldedRun? FoldAtCaret()
+    {
+        if (Inline is not { } inline || _pane is null)
+        {
+            return null;
+        }
+
+        int caretLine = _pane.TextArea.Caret.Line;
+        for (int fold = 0; fold < _projection.FoldCount; fold++)
+        {
+            FoldedRun run = _projection.FoldAt(fold);
+            if (FoldPlan.LinesOf(inline, run) is { } lines && lines.First - 1 == caretLine)
+            {
+                return run;
+            }
+        }
+
+        return null;
+    }
+
+    private bool CanExpandFoldAtCaret() => FoldAtCaret() is not null;
+
+    private void ExpandFoldAtCaret()
+    {
+        if (FoldAtCaret() is { } run)
+        {
+            _expandedFolds.Add(run.FirstRow);
+            RefreshFolds();
+        }
+    }
+
+    private void OnFoldExpandRequested(object? sender, int firstCollapsedLine)
+    {
+        if (Inline is not { } inline)
+        {
+            return;
+        }
+
+        for (int fold = 0; fold < _projection.FoldCount; fold++)
+        {
+            FoldedRun run = _projection.FoldAt(fold);
+            if (FoldPlan.LinesOf(inline, run) is { } lines && lines.First == firstCollapsedLine)
+            {
+                _expandedFolds.Add(run.FirstRow);
+                RefreshFolds();
+                return;
+            }
+        }
+    }
+
     private void ScrollToLines(int firstLine, int count)
     {
         if (_pane?.PaneScrollViewer is not { } viewer)

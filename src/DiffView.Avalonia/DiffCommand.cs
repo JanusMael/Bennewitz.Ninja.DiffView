@@ -63,4 +63,31 @@ public enum DiffCommand
     /// select, because the block spans both files and picking a side there would be arbitrary.
     /// </summary>
     SelectBlock,
+
+    /// <summary>
+    /// Show every row, folding nothing — <c>UnchangedContextRows</c> set to <c>null</c>. Beyond
+    /// Compare's <i>Show All</i>. Unbound by default: it is a view option, and this library binds
+    /// no gesture a host has not asked for.
+    /// </summary>
+    ShowAllRows,
+
+    /// <summary>
+    /// Fold every unchanged run, keeping no context — <c>UnchangedContextRows</c> set to
+    /// <c>0</c>. Beyond Compare's <i>Show Differences</i>. Unbound by default.
+    /// </summary>
+    ShowDifferencesOnly,
+
+    /// <summary>
+    /// Fold the unchanged runs but keep a few rows around every change —
+    /// <c>UnchangedContextRows</c> set to <see cref="DiffKeyMap.DefaultContextRows"/>. Beyond
+    /// Compare's <i>Show Context</i>. Unbound by default.
+    /// </summary>
+    ShowContext,
+
+    /// <summary>
+    /// Give back the run the caret is inside, leaving the rest folded. The pointer verb is a
+    /// click on the placeholder itself; a gesture means the run at the caret, which is the only
+    /// reading a keyboard has. Unbound by default.
+    /// </summary>
+    ExpandFold,
 }

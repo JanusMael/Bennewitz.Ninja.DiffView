@@ -33,6 +33,13 @@
         <MenuItem x:Name="ColourBlindPalette" Header="Colour-_blind palette" ToggleType="CheckBox"
                   Click="OnToggleColourBlindPalette" AutomationProperties.Name="Use the colour-blind-safe palette" />
         <Separator />
+        <MenuItem x:Name="ShowAllRows" Header="Show _all rows" ToggleType="Radio" GroupName="folding" IsChecked="True"
+                  Click="OnShowAllRows" AutomationProperties.Name="Fold nothing: show every row" />
+        <MenuItem x:Name="ShowDifferencesOnly" Header="Show d_ifferences only" ToggleType="Radio" GroupName="folding"
+                  Click="OnShowDifferencesOnly" AutomationProperties.Name="Fold every run of matching rows" />
+        <MenuItem x:Name="ShowContext" Header="Show differences with _context" ToggleType="Radio" GroupName="folding"
+                  Click="OnShowContext" AutomationProperties.Name="Fold the matching runs but keep three rows around every change" />
+        <Separator />
         <MenuItem x:Name="UnifiedView" Header="_Unified (inline) view" ToggleType="CheckBox"
                   Click="OnToggleUnifiedView" AutomationProperties.Name="Show the comparison unified in one pane" />
         <MenuItem x:Name="ShowMinimap" Header="Show overview _map" ToggleType="CheckBox" IsChecked="True"

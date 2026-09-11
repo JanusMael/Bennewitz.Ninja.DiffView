@@ -58,8 +58,20 @@ public sealed class DiffKeyMap : IEnumerable<KeyValuePair<DiffCommand, KeyGestur
             // and unbound rather than absent, which is how a host binds one.
             [DiffCommand.GoToChange] = null,
             [DiffCommand.SelectBlock] = null,
+            // The three folding modes and the one that opens a run: view options and a pointer
+            // verb, so they are here and unbound rather than absent, which is how a host binds one.
+            [DiffCommand.ShowAllRows] = null,
+            [DiffCommand.ShowDifferencesOnly] = null,
+            [DiffCommand.ShowContext] = null,
+            [DiffCommand.ExpandFold] = null,
         };
     }
+
+    /// <summary>
+    /// The context <see cref="DiffCommand.ShowContext"/> asks for. Three rows either side, which
+    /// is what <c>diff -u</c> has shown since 1990 and what a reader's eye is used to.
+    /// </summary>
+    public const int DefaultContextRows = 3;
 
     /// <summary>
     /// The unified view's defaults: one pane and one document, so there is no pane to switch to

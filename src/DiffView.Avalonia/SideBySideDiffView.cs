@@ -131,6 +131,12 @@ public class SideBySideDiffView : TemplatedControl
     public static readonly StyledProperty<bool> UseSyntaxHighlightingProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(UseSyntaxHighlighting), defaultValue: true);
 
+    /// <summary>Identifies the <see cref="UnchangedContextRows"/> property.</summary>
+    public static readonly StyledProperty<int?> UnchangedContextRowsProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, int?>(
+            nameof(UnchangedContextRows),
+            coerce: static (_, value) => value is { } rows ? Math.Max(0, rows) : null);
+
     /// <summary>Identifies the <see cref="ShowWhitespace"/> property.</summary>
     public static readonly StyledProperty<bool> ShowWhitespaceProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowWhitespace));
@@ -291,6 +297,10 @@ public class SideBySideDiffView : TemplatedControl
     private readonly DelegateCommand _copyBlockToRight;
     private readonly DelegateCommand _goToChange;
     private readonly DelegateCommand _selectBlock;
+    private readonly DelegateCommand _showAllRows;
+    private readonly DelegateCommand _showDifferencesOnly;
+    private readonly DelegateCommand _showContext;
+    private readonly DelegateCommand _expandFold;
     private bool _isFindBarOpen;
     private string _findQuery = string.Empty;
     private FindOptions _findOptions = FindOptions.Default;
@@ -408,6 +418,18 @@ public class SideBySideDiffView : TemplatedControl
         // instead, the way the copy entries already do.
         _goToChange = new DelegateCommand(() => GoToChange(CurrentChangeIndex), () => ChangeCount > 0);
         _selectBlock = new DelegateCommand(() => SelectChange(CurrentChangeIndex, FocusedSide), () => ChangeCount > 0);
+        // The three folding modes are the one option written three ways, and each is disabled
+        // where it is already in force: a menu that offers the state you are in is noise.
+        _showAllRows = new DelegateCommand(
+            () => SetCurrentValue(UnchangedContextRowsProperty, null),
+            () => UnchangedContextRows is not null);
+        _showDifferencesOnly = new DelegateCommand(
+            () => SetCurrentValue(UnchangedContextRowsProperty, 0),
+            () => UnchangedContextRows != 0);
+        _showContext = new DelegateCommand(
+            () => SetCurrentValue(UnchangedContextRowsProperty, DiffKeyMap.DefaultContextRows),
+            () => UnchangedContextRows != DiffKeyMap.DefaultContextRows);
+        _expandFold = new DelegateCommand(ExpandFoldAtCaret, CanExpandFoldAtCaret);
         _openFind = new DelegateCommand(OpenFind);
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
@@ -551,6 +573,23 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(ShowWhitespaceProperty);
         set => SetValue(ShowWhitespaceProperty, value);
+    }
+
+    /// <summary>
+    /// Rows kept either side of every change, with the unchanged runs between them folded behind
+    /// a placeholder. <c>null</c> — the default — folds nothing; <c>0</c> hides every matching
+    /// row. Beyond Compare calls the three <i>Show All</i>, <i>Show Differences</i> and
+    /// <i>Show Context</i>.
+    /// </summary>
+    /// <remarks>
+    /// One property rather than a flag and a count, because a pair can express "folding off with
+    /// three context rows" — a state with no meaning, and therefore a state to document, test and
+    /// get wrong.
+    /// </remarks>
+    public int? UnchangedContextRows
+    {
+        get => GetValue(UnchangedContextRowsProperty);
+        set => SetValue(UnchangedContextRowsProperty, value);
     }
 
     /// <summary>
@@ -1160,6 +1199,9 @@ public class SideBySideDiffView : TemplatedControl
 
         if (_gutter is not null)
         {
+            // Both paths, because a host that sets the option in XAML is wired here and never
+            // reaches the property-change handler — the gap plan 00004 had to fix for CanCopyOut.
+            _foldContextRows = UnchangedContextRows;
             _gutter.Document = Document;
             _gutter.Projection = _projection;
             _gutter.CurrentChangeIndex = CurrentChangeIndex;
@@ -1290,6 +1332,14 @@ public class SideBySideDiffView : TemplatedControl
                  || change.Property == TabWidthProperty)
         {
             ForEachPane(ApplyDisplayOptions);
+        }
+        else if (change.Property == UnchangedContextRowsProperty)
+        {
+            // A change of option opens every run the reader had opened: they were opened against
+            // a different set of folds, and keeping them would leave gaps the option did not ask
+            // for.
+            _expandedFolds.Clear();
+            ApplyFolds(UnchangedContextRows);
         }
         else if (change.Property == PaneFontSizeProperty || change.Property == PaneFontFamilyProperty)
         {
@@ -1826,7 +1876,7 @@ public class SideBySideDiffView : TemplatedControl
     /// menu is <em>about</em> is the whole design, and a reader should be able to see one menu's
     /// list without reading the other four's conditions.
     /// </remarks>
-    private List<DiffMenuItem> MenuItemsFor(DiffPaneContext context)
+    internal List<DiffMenuItem> MenuItemsFor(DiffPaneContext context)
     {
         return context.Region switch
         {
@@ -1864,6 +1914,12 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         AddBlockVerbs(items, context);
+
+        // The connector's column is where a run's absence is most visible — a polygon with a long
+        // gap under it — so the folding modes belong here as well as on the margins. The map's
+        // menu does not get them: it is a navigation surface whose menu plan 00012 kept short on
+        // purpose, and four more entries would double it.
+        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor);
         return items;
     }
 
@@ -1969,6 +2025,10 @@ public class SideBySideDiffView : TemplatedControl
             AddFileVerbs(items, side);
         }
 
+        // Last on every surface that has it. Folding is a view option rather than something done
+        // to what is under the pointer, and a group that is last in one menu and in the middle of
+        // another is a group a host's "insert after" has to find twice.
+        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor);
         return items;
     }
 
@@ -2162,6 +2222,10 @@ public class SideBySideDiffView : TemplatedControl
             DiffCommand.SelectBlock => _selectBlock,
             DiffCommand.CopyBlockToLeft => _copyBlockToLeft,
             DiffCommand.CopyBlockToRight => _copyBlockToRight,
+            DiffCommand.ShowAllRows => _showAllRows,
+            DiffCommand.ShowDifferencesOnly => _showDifferencesOnly,
+            DiffCommand.ShowContext => _showContext,
+            DiffCommand.ExpandFold => _expandFold,
             _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Unknown command."),
         };
     }
@@ -3187,7 +3251,47 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         UpdateOverview();
+        RaiseFoldingCanExecuteChanged();
         return _projection;
+    }
+
+    /// <summary>
+    /// The run the caret is on, which is the only run a keyboard can name: a row behind a
+    /// placeholder is not on screen and the caret cannot reach it, so what the caret can be on is
+    /// the placeholder's own line.
+    /// </summary>
+    private FoldedRun? FoldAtCaret()
+    {
+        // A caret is in exactly one pane; where nothing is focused, the left is the side whose
+        // line numbers the strip and the key map already speak of first.
+        DiffSide side = FocusedSide ?? DiffSide.Left;
+        if (Document is not { } document || Pane(side) is not { } pane)
+        {
+            return null;
+        }
+
+        int caretLine = pane.TextArea.Caret.Line;
+        for (int fold = 0; fold < _projection.FoldCount; fold++)
+        {
+            FoldedRun run = _projection.FoldAt(fold);
+            if (FoldPlan.LinesOf(document, run, side) is { } lines && lines.First - 1 == caretLine)
+            {
+                return run;
+            }
+        }
+
+        return null;
+    }
+
+    private bool CanExpandFoldAtCaret() => FoldAtCaret() is not null;
+
+    private void ExpandFoldAtCaret()
+    {
+        if (FoldAtCaret() is { } run)
+        {
+            _expandedFolds.Add(run.FirstRow);
+            RefreshFolds();
+        }
     }
 
     /// <summary>
@@ -3527,6 +3631,19 @@ public class SideBySideDiffView : TemplatedControl
         // with either side's read-only flag.
         _copyToLeft.RaiseCanExecuteChanged();
         _copyToRight.RaiseCanExecuteChanged();
+
+        // The folding modes turn on which one is in force, and opening a run on where the caret
+        // is — both of which move for reasons the navigation does not always cause, so they are
+        // refreshed here and again whenever the folds are recomputed.
+        RaiseFoldingCanExecuteChanged();
+    }
+
+    private void RaiseFoldingCanExecuteChanged()
+    {
+        _showAllRows.RaiseCanExecuteChanged();
+        _showDifferencesOnly.RaiseCanExecuteChanged();
+        _showContext.RaiseCanExecuteChanged();
+        _expandFold.RaiseCanExecuteChanged();
     }
 
     // ── Find ───────────────────────────────────────────────────────────────────────────────
