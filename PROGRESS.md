@@ -2,6 +2,19 @@
 
 ## Resume
 
+**In flight: [plan 00012](plans/00012-context-menus-beyond-the-pane.md), phase 1 of 5**, on branch
+`feat/menus-beyond-the-pane` — the context menus plan 00010 named as non-goals. Phase 1 landed the
+two gutters: `ContextAt` had taken a `DiffPaneRegion` since 00010 and *nothing had ever passed one*,
+and a right-click on a margin returned early. It now resolves the region from the event's source by
+**identity against the pane's own margins** — not by type, which a same-named property shadows into
+a CS0150, and not by pointer-x against the margins' widths, which would be plan 00008's misaligned
+header a second time. A gutter's menu is the pane's copy and navigate items **without save and
+revert**: those are the file's verbs and a gutter is a position, so they are absent rather than
+greyed. A margin the library did not draw is still left alone. Phase 2 is the connector and the map,
+and it owes the `GoToChange` verb phase 1 deferred — the plan promised *"go to this change"* on the
+gutters, no such verb exists, and the connector needs the identical one, so introducing it there
+serves both. That deferral is drift and owes a *Decisions* entry at phase 5.
+
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.
 
@@ -828,7 +841,10 @@ guess in the filed issue that deleting one would retire its debt for free was wr
 files cannot share keys: the app's 48 go through `Strings.resx` plus eight locales plus the
 designer, the library's 6 through `WrapperStrings` and its host `Resolver` seam. **#45, the
 backfill, is the one still open** — what a screen reader should announce for 23 templated text boxes
-over a property model is a design call, which is why it was filed rather than guessed at.
+over a property model is a design call, which is why it was filed rather than guessed at. As of the
+evening of **2026-09-11** that session has #47 closed by its merged PR #51, and four further pull
+requests open, of which **#53 is #45's backfill**: *"name all 54 interactive controls in both"*. All
+three issues are being worked there; none of them is ours to carry.
 
 ## Measurements
 
