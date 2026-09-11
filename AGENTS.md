@@ -353,7 +353,20 @@ succeeded, because `head` exits 0 regardless. Capture the status without a pipe,
   anything could be captured. `nohup dotnet run --project src/DiffView.Demo -- <left> <right> &`
   followed by `disown`, from a script file, outlives the turn.
 - **Only `import` (ImageMagick 7) is installed.** There is no `grim`, `spectacle`,
-  `gnome-screenshot`, `flameshot`, `maim` or `xwd`.
+  `gnome-screenshot`, `flameshot`, `maim` or `xwd`. `ffmpeg` is present.
+- **The window grab failed on 2026-09-11 and the recipe above is kept anyway**, because it worked
+  on 2026-09-10 and nothing in this repository changed it. What was tried, all against a demo whose
+  window `xwininfo -id` reported `Map State: IsViewable`, 1100×720 at `+10+47`, with the process
+  alive and its log reaching `State "Building" → "Ready"`: `import -window` on the app's own
+  window, on mutter's frame window, and on `root`; `import -screen -window`; and
+  `ffmpeg -f x11grab`, which refused with **`Capture area … outside the screen size 0x0`**. That
+  last one is the useful reading — the X root reports **0×0**, so every grab has nothing to read
+  from, which is the same cause §9 already gives for the `root` failure now reaching the per-window
+  path as well. **Check a grab works before planning a by-hand pass around one**, and do not
+  conclude from a failure that the app is broken: the log said Ready throughout.
+- **A run whose frames fail is still worth doing.** The 2026-09-11 attempt found `--edit` missing
+  from the `[DebugFlags] active:` summary line — a flag the summary does not name is a flag a
+  by-hand pass cannot confirm took effect — which no headless test would have shown.
 - **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
   bullet claimed the opposite for three plans; check before repeating it. `xdotool key F7` and
   `xdotool key ctrl+Down` into a focused pane both work, and that is how plan 00009's rebind was

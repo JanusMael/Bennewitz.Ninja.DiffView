@@ -49,6 +49,18 @@ internal static class DebugFlags
     /// <inheritdoc cref="EditLeft"/>
     public static bool EditRight { get; private set; }
 
+    /// <summary>
+    /// What <c>--edit</c> resolved to, for the summary line. A flag the summary does not name is
+    /// a flag a by-hand pass cannot confirm took effect, which is how this one was found.
+    /// </summary>
+    public static string EditSummary => (EditLeft, EditRight) switch
+    {
+        (true, true) => "both",
+        (true, false) => "left",
+        (false, true) => "right",
+        _ => "(none)",
+    };
+
     /// <summary>Minimum Serilog level. <c>--log-level &lt;verbose|debug|information|warning|error|fatal&gt;</c>.</summary>
     public static LogEventLevel MinimumLevel { get; private set; } = LogEventLevel.Information;
 
@@ -160,8 +172,8 @@ internal static class DebugFlags
 
         Deferred.Clear();
         Log.Information(
-            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} unified={Unified} level={Level}",
-            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", Unified, MinimumLevel);
+            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} unified={Unified} edit={Edit} level={Level}",
+            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", Unified, EditSummary, MinimumLevel);
     }
 
     /// <summary>Restores every flag to its default. Test cleanup hook.</summary>
@@ -172,6 +184,8 @@ internal static class DebugFlags
         LeftPath = null;
         RightPath = null;
         Unified = false;
+        EditLeft = false;
+        EditRight = false;
         MinimumLevel = LogEventLevel.Information;
         Deferred.Clear();
     }
