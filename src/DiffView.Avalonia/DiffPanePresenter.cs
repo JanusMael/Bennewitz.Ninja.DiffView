@@ -139,7 +139,9 @@ public class DiffPanePresenter : TextEditor
         Palette = new DiffBrushes();
         _generator = new PaddingElementGenerator(PaddingForLine, (line, ex) => ReportFault(nameof(PaddingElementGenerator), line, ex));
         TextArea.TextView.ElementGenerators.Add(_generator);
-        _foldGenerator = new FoldPlaceholderGenerator((line, ex) => ReportFault(nameof(FoldPlaceholderGenerator), line, ex));
+        _foldGenerator = new FoldPlaceholderGenerator(
+            (line, ex) => ReportFault(nameof(FoldPlaceholderGenerator), line, ex),
+            line => FoldExpandRequested?.Invoke(this, line));
         TextArea.TextView.ElementGenerators.Add(_foldGenerator);
 
         _backgroundRenderer = new DiffLineBackgroundRenderer(this);
@@ -803,6 +805,13 @@ public class DiffPanePresenter : TextEditor
 
     /// <summary>How many line ranges are collapsed in this pane.</summary>
     internal int CollapsedSectionCount => _collapsed.Count;
+
+    /// <summary>
+    /// A fold's placeholder was clicked; the argument is the run's first collapsed line. The pane
+    /// does not act on it — which rows a fold covers is the composite's to decide, because a run
+    /// is a row range and this pane knows only one side of it.
+    /// </summary>
+    internal event EventHandler<int>? FoldExpandRequested;
 
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {

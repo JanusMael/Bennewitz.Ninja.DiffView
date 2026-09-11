@@ -1,3 +1,4 @@
+using Avalonia.Input;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 
@@ -20,12 +21,15 @@ namespace Bennewitz.Ninja.DiffView.Avalonia;
 internal sealed class FoldPlaceholderGenerator : VisualLineElementGenerator
 {
     private readonly Action<int?, Exception> _onFault;
+    private readonly Action<int> _onExpand;
     private IReadOnlyList<(int First, int Last)> _ranges = [];
 
     /// <param name="onFault">Receives the faulting line, when known, and the exception.</param>
-    public FoldPlaceholderGenerator(Action<int?, Exception> onFault)
+    /// <param name="onExpand">Receives a run's first collapsed line when its placeholder is clicked.</param>
+    public FoldPlaceholderGenerator(Action<int?, Exception> onFault, Action<int> onExpand)
     {
         _onFault = onFault;
+        _onExpand = onExpand;
     }
 
     /// <summary>Whether a fault has disabled the generator.</summary>
@@ -107,7 +111,7 @@ internal sealed class FoldPlaceholderGenerator : VisualLineElementGenerator
                 string text = hidden == 1
                     ? DiffViewStrings.Get(DiffViewStrings.FoldPlaceholderOne)
                     : DiffViewStrings.Format(DiffViewStrings.FoldPlaceholder, hidden.ToString("N0", System.Globalization.CultureInfo.CurrentCulture));
-                return new FormattedTextElement(text, end - offset);
+                return new FoldPlaceholderElement(text, end - offset, first, _onExpand);
             }
 
             return null;
@@ -135,5 +139,36 @@ internal sealed class FoldPlaceholderGenerator : VisualLineElementGenerator
     {
         IsDisabled = true;
         _onFault(lineNumber, exception);
+    }
+
+}
+
+/// <summary>
+/// The run's stand-in: the text a reader sees, and the only affordance for getting the rows back.
+/// The pane's document is untouched — a folded run is still in its text, so what folding takes
+/// away is the drawing and not the content.
+/// </summary>
+internal sealed class FoldPlaceholderElement(string text, int documentLength, int firstCollapsedLine, Action<int> onExpand)
+    : FormattedTextElement(text, documentLength)
+{
+    /// <summary>The text drawn in place of the run, kept because the base class discards it once formatted.</summary>
+    public string PlaceholderText { get; } = text;
+
+    /// <summary>The run's first collapsed line, which names the fold to the composite.</summary>
+    public int FirstCollapsedLine { get; } = firstCollapsedLine;
+
+    /// <summary>Asks for the run back. What a click does, and what a test can do without pixels.</summary>
+    public void Expand()
+    {
+        onExpand(FirstCollapsedLine);
+    }
+
+    // Declared protected, not protected internal: the base member's internal half belongs to
+    // AvaloniaEdit's assembly, so from here only the protected half is inherited.
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        Expand();
+        e.Handled = true;
     }
 }

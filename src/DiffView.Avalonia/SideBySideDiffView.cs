@@ -323,6 +323,17 @@ public class SideBySideDiffView : TemplatedControl
     /// arithmetic every out-of-pane surface did inline before plan 00013.
     /// </summary>
     private RowProjection _projection = RowProjection.Identity(0);
+
+    /// <summary>Rows either side of a change that stay visible; <c>null</c> folds nothing.</summary>
+    private int? _foldContextRows;
+
+    private int _foldMinimumRows = FoldPlan.DefaultMinimumFoldedRows;
+
+    /// <summary>
+    /// The first row of every run the reader has opened. Cleared with the model: a rebuild makes
+    /// new runs, and a row number from the old one means nothing to them.
+    /// </summary>
+    private readonly HashSet<int> _expandedFolds = [];
     private DiffDiagnostics? _diagnostics;
     private IReadOnlyList<DiffWarning> _warnings = [];
     private int _changeCount;
@@ -2584,7 +2595,9 @@ public class SideBySideDiffView : TemplatedControl
             pane.WordDiffLookup = WordDiffLookup;
         }
 
-        // A new model is a new row space, and nothing is folded in it until something folds it.
+        // A new model is a new row space. The option carries over, the runs the reader opened do
+        // not: a row number from the old model names a different run in this one.
+        _expandedFolds.Clear();
         _projection = RowProjection.Identity(document?.Rows.Count ?? 0);
 
         if (_gutter is not null)
@@ -2606,7 +2619,9 @@ public class SideBySideDiffView : TemplatedControl
 
         // The blocks are new: no current change until the user picks one.
         SetCurrentChange(-1, scroll: false);
-        UpdateOverview();
+
+        // And the runs are new, so they are computed again for this model rather than carried.
+        RefreshFolds();
     }
 
     private void CancelBuild()
@@ -2933,6 +2948,7 @@ public class SideBySideDiffView : TemplatedControl
         pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
         pane.RenderFault += OnPaneRenderFault;
         pane.CopyOutRequested += OnPaneCopyOutRequested;
+        pane.FoldExpandRequested += OnFoldExpandRequested;
         pane.CopySelectionRequested += OnPaneCopySelectionRequested;
         pane.ContextMenuRequested += OnPaneContextMenuRequested;
         pane.TemplateApplied += OnPaneTemplateApplied;
@@ -3116,10 +3132,22 @@ public class SideBySideDiffView : TemplatedControl
     /// </summary>
     internal RowProjection ApplyFolds(int? contextRows, int minimumFoldedRows = FoldPlan.DefaultMinimumFoldedRows)
     {
+        _foldContextRows = contextRows;
+        _foldMinimumRows = minimumFoldedRows;
+        return RefreshFolds();
+    }
+
+    /// <summary>
+    /// Recomputes the folds for the current model and the runs the reader has expanded, and
+    /// applies them to the panes and the two surfaces outside them.
+    /// </summary>
+    private RowProjection RefreshFolds()
+    {
         SideBySideDocument? document = Document;
-        IReadOnlyList<FoldedRun> planned = document is null || contextRows is null
+        IReadOnlyList<FoldedRun> planned = document is null || _foldContextRows is null
             ? []
-            : FoldPlan.For(document, contextRows.Value, minimumFoldedRows);
+            : [.. FoldPlan.For(document, _foldContextRows.Value, _foldMinimumRows)
+                          .Where(run => !_expandedFolds.Contains(run.FirstRow))];
 
         _projection = RowProjection.Of(document?.Rows.Count ?? 0, planned);
 
@@ -3160,6 +3188,29 @@ public class SideBySideDiffView : TemplatedControl
 
         UpdateOverview();
         return _projection;
+    }
+
+    /// <summary>
+    /// A placeholder was clicked. The pane reports a line on its own side; which run that is is a
+    /// row range, so the fold is found by asking each taken fold what it collapses on that side.
+    /// </summary>
+    private void OnFoldExpandRequested(object? sender, int firstCollapsedLine)
+    {
+        if (sender is not DiffPanePresenter pane || Document is not { } document)
+        {
+            return;
+        }
+
+        for (int fold = 0; fold < _projection.FoldCount; fold++)
+        {
+            FoldedRun run = _projection.FoldAt(fold);
+            if (FoldPlan.LinesOf(document, run, pane.Side) is { } lines && lines.First == firstCollapsedLine)
+            {
+                _expandedFolds.Add(run.FirstRow);
+                RefreshFolds();
+                return;
+            }
+        }
     }
 
     private void OnPaneCopyOutRequested(object? sender, int blockIndex)
