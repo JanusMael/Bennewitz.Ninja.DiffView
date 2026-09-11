@@ -2,18 +2,16 @@
 
 ## Resume
 
-**[Plan 00013](plans/00013-folding-unchanged-rows.md) is built — all five phases — with one thing
-outstanding**, on `main`: phase 5's `AGENTS.md` §6 and §7 rows are drafted and deliberately
-unwritten, because those sections steer how agents work here and their exact text is approved
-before it lands. Unchanged rows now fold behind a placeholder, with a configurable number of rows
-kept around every change — `UnchangedContextRows`, where `null` folds nothing, `0` hides every
-matching row and `n` keeps `n`, which is Beyond Compare's *Show All*, *Show Differences* and
-*Show Context* in one property. Both views, off by default. The panes stay row-aligned because a
-fold is a **row** range projected onto each side's lines, never read off a document, and because a
-row is foldable only if collapsing its lines removes that row's height and nothing else. A click on
-a placeholder gives its run back. **Two things are not done and are named in the verification table
-below**: navigation and find do not yet cross a fold — F7 or a match inside a folded run lands on
-the placeholder rather than opening it — and the plan has not been driven by hand.
+**[Plan 00013](plans/00013-folding-unchanged-rows.md) is complete** — all five phases — on `main`.
+Unchanged rows now fold behind a placeholder, with a configurable number of rows kept around every
+change — `UnchangedContextRows`, where `null` folds nothing, `0` hides every matching row and `n`
+keeps `n`, which is Beyond Compare's *Show All*, *Show Differences* and *Show Context* in one
+property. Both views, off by default. The panes stay row-aligned because a fold is a **row** range
+projected onto each side's lines, never read off a document, and because a row is foldable only if
+collapsing its lines removes that row's height and nothing else. A click on a placeholder gives its
+run back. **Two things are not done and are named in the verification table below**: navigation and
+find do not yet cross a fold — F7 or a match inside a folded run lands on the placeholder rather
+than opening it — and the plan has not been driven by hand.
 
 **The load-bearing change is not the folding.** The connector gutter and the overview map were fed
 `row × lineHeight`, an equation only accidentally true, and a fold is the first thing in this
@@ -21,9 +19,9 @@ library to break it; `RowProjection` is now the one place a row becomes a pixel.
 as the identity, changing no behaviour, which is why the other 549 tests staying green *is* that
 phase's evidence.
 
-**Next is that `AGENTS.md` commit**, and then the two gaps above — navigation and find across a
-fold, and a by-hand pass under `AGENTS.md` §9, where the question worth answering is whether the
-pane's context menu wants reorganising now that it runs to about fifteen entries.
+**Next are the two gaps above** — navigation and find across a fold, and a by-hand pass under
+`AGENTS.md` §9, where the question worth answering is whether the pane's context menu wants
+reorganising now that it runs to about fifteen entries.
 
 **[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete** — all five phases — and
 `main` carries it: `feat/menus-beyond-the-pane` fast-forwarded in on 2026-09-11 as
@@ -277,7 +275,7 @@ dotnet run --project src/ThemeAudit -- report
 | 2 Folding the runs | M | done | `FoldPlan`: maximal unchanged runs, cut by context, then by the boundary rule, then by a floor of four. `SideBySideDiffView.ApplyFolds` projects each run onto the two line ranges it collapses and each pane collapses them. **`FoldPlaceholderGenerator` landed here rather than in phase 3** — a collapse without a spanning element throws; see *Decisions* |
 | 3 The placeholder row | M | done | The click, the run the reader opened being remembered and forgotten with the model, and the test that the padding generator and the placeholder generator share a document rather than displace one another |
 | 4 The option and the verbs | S | done | `UnchangedContextRows` on both views; `ShowAllRows`, `ShowDifferencesOnly`, `ShowContext` and `ExpandFold` in the key map unbound; the folding group last on the pane's text menu, both margins and the connector, and absent from the map's; the demo's View menu |
-| 5 Evidence | S | done **but for `AGENTS.md`** | Four mutation runs, four rendered frames, `DECISIONS.md` (five sections), this file, the changelog. **`AGENTS.md` §6 and §7 are drafted and unwritten**: those sections steer how agents work here, so their exact text is approved before it lands |
+| 5 Evidence | S | done | Four mutation runs, four rendered frames, `DECISIONS.md` (five sections), `AGENTS.md` §6 (five rows) and §7 (one), this file, the changelog |
 
 ## Plan 00013 verification
 
