@@ -1,4 +1,7 @@
+using Avalonia;
 using Avalonia.Input;
+using Avalonia.Media;
+using Avalonia.Media.TextFormatting;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 
@@ -163,6 +166,13 @@ internal sealed class FoldPlaceholderElement(string text, int documentLength, in
         onExpand(FirstCollapsedLine);
     }
 
+    /// <inheritdoc/>
+    public override TextRun CreateTextRun(int startVisualColumn, ITextRunConstructionContext context)
+    {
+        base.CreateTextRun(startVisualColumn, context);
+        return new FoldPlaceholderRun(this, TextRunProperties);
+    }
+
     // Declared protected, not protected internal: the base member's internal half belongs to
     // AvaloniaEdit's assembly, so from here only the protected half is inherited.
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -170,5 +180,40 @@ internal sealed class FoldPlaceholderElement(string text, int documentLength, in
         base.OnPointerPressed(e);
         Expand();
         e.Handled = true;
+    }
+}
+
+/// <summary>
+/// Draws the placeholder inside a thin outline. Without it the stand-in runs straight on from the
+/// text of the line it shares — "same 1⋯ 19 matching rows hidden" reads as one sentence, where
+/// the first two words are the file's and the rest is the control's. The box is also the only
+/// thing that says the text can be clicked.
+/// </summary>
+/// <remarks>
+/// Drawn from the run's own foreground, which is the pane's, so it follows a theme swap for the
+/// same reason the menu's icons do rather than carrying a colour of its own.
+/// </remarks>
+internal sealed class FoldPlaceholderRun(FormattedTextElement element, TextRunProperties properties)
+    : FormattedTextRun(element, properties)
+{
+    /// <summary>Inset from the run's box, so the outline does not sit on the text's own edge.</summary>
+    private const double Inset = 0.5;
+
+    public override void Draw(DrawingContext drawingContext, Point origin)
+    {
+        base.Draw(drawingContext, origin);
+        if (Properties.ForegroundBrush is not { } brush)
+        {
+            return;
+        }
+
+        (double width, double height) = Size;
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        Rect box = new(origin.X + Inset, origin.Y + Inset, Math.Max(0, width - (2 * Inset)), Math.Max(0, height - (2 * Inset)));
+        drawingContext.DrawRectangle(brush: null, new Pen(brush, 1), box, radiusX: 2, radiusY: 2);
     }
 }

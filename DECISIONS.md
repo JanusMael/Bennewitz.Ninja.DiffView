@@ -1924,3 +1924,55 @@ Getting it wrong is close to invisible: a fold shifted by one collapses the same
 on both sides, so the extents still match and every surviving pair still shares a row top — two
 panes wrong in the same direction agree with each other. `A_fold_leaves_its_first_line_standing_and_takes_every_line_after_it`
 is what catches it, by asserting which lines are left standing rather than how many.
+
+## One option with three values, not a flag and a count
+
+`UnchangedContextRows` is an `int?`: `null` folds nothing, `0` hides every matching row, `n` keeps
+`n` rows around every change — Beyond Compare's *Show All*, *Show Differences* and *Show Context*
+in one property. A `bool` plus an `int` can express "folding off with three context rows", a state
+with no meaning, and a state with no meaning is a state to document, test, and eventually get
+wrong. A negative count is coerced to zero rather than kept or thrown on, which is the same
+treatment `TabWidth` gets.
+
+The three commands are that one option written three ways, and each is **disabled where it is
+already in force**: a menu offering the state you are already in is noise, and this is the one
+place the disable-do-not-hide rule reads oddly until you see it — the entries are always present,
+and exactly one of the three is always grey.
+
+`ExpandFold` means **the run at the caret**, for the reason plan 00012 gave `GoToChange` and
+`SelectBlock`: a pointer verb carries what is under the pointer, and a gesture can only mean where
+the caret is. A row behind a placeholder is not on screen and the caret cannot reach it, so the
+only run a keyboard can name is the one whose placeholder the caret is on. All four arrive in the
+key map **unbound**, which is how a host binds one.
+
+## The folding group is last on every menu that has it, and the map has none
+
+The pane's text menu, both margins and the connector carry the group; the overview map does not.
+The map's menu was kept short on purpose by plan 00012 — a navigation surface whose left-click
+already does its main verb — and four more entries would double it.
+
+Last rather than beside the navigate group, which is where it first went. Folding is a view option
+rather than something done to what is under the pointer, and a group that sits last in one menu
+and mid-list in another is a group a host's "insert after this item" has to find twice. The cost is
+that the pane's text menu is now about fifteen entries and overflows the height the menu snapshots
+capture, so those four frames show a truncated menu with a scroll chevron — flagged rather than
+fixed by repainting all six, because a wholesale regeneration is how plan 00008's 8-px header bug
+survived two plans.
+
+## The unified view folds, unlike the two verbs plan 00012 gave it nothing for
+
+`CommandOrNull` answers `null` for `GoToChange` and `SelectBlock` there, because the connector and
+the map do not exist in that view. Folding is not like them: one pane has runs of matching lines
+like any other, and hiding them needs no alignment kept between two of anything. So the unified
+view answers all four folding commands, and its runs are computed over `InlineDocument.Lines` with
+**no boundary rule at all** — a unified document has no padding to orphan, which `PaneMetadata`
+already says by yielding no padded lines for one.
+
+## The placeholder is drawn in a box
+
+The stand-in shares its line with that line's own text, and without an outline the two run
+together: *same 1⋯ 19 matching rows hidden* reads as one sentence whose first two words belong to
+the file and whose rest belongs to the control. The box — and a leading space, for whatever cannot
+see it — separates them, and is the only thing that says the text can be clicked. Drawn from the
+run's own foreground rather than a colour of its own, so it follows a theme swap for the same
+reason the menu's icons do.

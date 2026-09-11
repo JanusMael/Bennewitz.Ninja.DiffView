@@ -549,8 +549,10 @@ public static class DiffViewStrings
         [LineTooltipUnifiedAloneLeft] = "Line {0} on the left · no right line",
         [LineTooltipUnifiedAloneRight] = "Line {0} on the right · no left line",
         [MarkerTooltip] = "Change {0} of {1} · {2}",
-        [FoldPlaceholder] = "⋯ {0} matching rows hidden",
-        [FoldPlaceholderOne] = "⋯ 1 matching row hidden",
+        // A leading space as well as the outline: the placeholder shares its line with that
+        // line's own text, and the two should not run together even where nothing is drawn.
+        [FoldPlaceholder] = " ⋯ {0} matching rows hidden ",
+        [FoldPlaceholderOne] = " ⋯ 1 matching row hidden ",
         [MinimapTooltip] = "Row {0} of {1} · {2}",
         [MinimapLaneTooltipLeft] = "Row {0} of {1} · {2} · left side",
         [MinimapLaneTooltipRight] = "Row {0} of {1} · {2} · right side",

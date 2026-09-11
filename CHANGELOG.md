@@ -316,6 +316,25 @@ All notable changes to DiffView are recorded here. The format follows
   the single-lane one, the toggle on both wiring paths, the drag against the jump, the wheel, the
   lane-naming tooltip, and `MinimapSnapshotTests` — a left-only block in both variants and both
   palettes, the drawing asserted against the buckets the map reports.
+- Plan 00013, folding unchanged rows: `UnchangedContextRows` on both views collapses the runs of
+  matching rows behind a placeholder, keeping a configurable number of rows around every change.
+  `null` — the default — folds nothing, `0` hides every matching row, and `n` keeps `n`; those are
+  Beyond Compare's *Show All*, *Show Differences* and *Show Context* as one property rather than a
+  flag and a count, which together could express a state with no meaning. A click on a placeholder
+  gives its run back. The commands `ShowAllRows`, `ShowDifferencesOnly`, `ShowContext` and
+  `ExpandFold` arrive in the key map **unbound**, and the three modes appear on the pane's text
+  menu, both margins and the connector — last on each, and absent from the overview map's, which
+  plan 00012 kept short on purpose.
+- The panes stay row-aligned under a fold because a fold is a **row** range projected onto each
+  side's lines rather than a line range read off a document, and because a row is foldable only if
+  collapsing its lines removes that row's height and nothing else — padding is height *on* a line,
+  so a line at a run's edge can be carrying rows the fold does not cover. Hiding what *differs* —
+  Beyond Compare's *Show Same* — is deliberately not here: a change block is lines on one side and
+  padding on the other, and padding has no line to collapse.
+- `RowProjection`, one place where a model row becomes a visible row and a pixel. The connector
+  gutter and the overview map converted rows to pixels by multiplying by the line height, an
+  equation only accidentally true, and the map now buckets the document that is on screen so its
+  viewport box cannot point where the viewport is not.
 - Plan 00012, the context menus beyond the pane: a right-click anywhere the control draws now opens
   a menu about what is under the pointer. The two gutters, the connector column, the overview map
   and the headers, through the same two extensibility shapes plan 00010 built — an opening event

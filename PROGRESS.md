@@ -2,6 +2,29 @@
 
 ## Resume
 
+**[Plan 00013](plans/00013-folding-unchanged-rows.md) is built — all five phases — with one thing
+outstanding**, on `main`: phase 5's `AGENTS.md` §6 and §7 rows are drafted and deliberately
+unwritten, because those sections steer how agents work here and their exact text is approved
+before it lands. Unchanged rows now fold behind a placeholder, with a configurable number of rows
+kept around every change — `UnchangedContextRows`, where `null` folds nothing, `0` hides every
+matching row and `n` keeps `n`, which is Beyond Compare's *Show All*, *Show Differences* and
+*Show Context* in one property. Both views, off by default. The panes stay row-aligned because a
+fold is a **row** range projected onto each side's lines, never read off a document, and because a
+row is foldable only if collapsing its lines removes that row's height and nothing else. A click on
+a placeholder gives its run back. **Two things are not done and are named in the verification table
+below**: navigation and find do not yet cross a fold — F7 or a match inside a folded run lands on
+the placeholder rather than opening it — and the plan has not been driven by hand.
+
+**The load-bearing change is not the folding.** The connector gutter and the overview map were fed
+`row × lineHeight`, an equation only accidentally true, and a fold is the first thing in this
+library to break it; `RowProjection` is now the one place a row becomes a pixel. Phase 1 shipped it
+as the identity, changing no behaviour, which is why the other 549 tests staying green *is* that
+phase's evidence.
+
+**Next is that `AGENTS.md` commit**, and then the two gaps above — navigation and find across a
+fold, and a by-hand pass under `AGENTS.md` §9, where the question worth answering is whether the
+pane's context menu wants reorganising now that it runs to about fifteen entries.
+
 **[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete** — all five phases — and
 `main` carries it: `feat/menus-beyond-the-pane` fast-forwarded in on 2026-09-11 as
 `feat/in-pane-editing` did before it, and the repository still holds no merge commit. A right-click
@@ -245,6 +268,41 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00013 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The row projection | M | done | `RowProjection` and `FoldedRun`, with the three sites that multiplied a row by the line height routed through it — the connector's `TopOfRow` / `RowAt` and the two bounds it culls against, the map's buckets, and both views' scroll-to. Ships as the **identity**, so the phase's evidence is that nothing else moves. Binary search over the fold starts, so the map's per-row work stays logarithmic on the 200k fixture |
+| 2 Folding the runs | M | done | `FoldPlan`: maximal unchanged runs, cut by context, then by the boundary rule, then by a floor of four. `SideBySideDiffView.ApplyFolds` projects each run onto the two line ranges it collapses and each pane collapses them. **`FoldPlaceholderGenerator` landed here rather than in phase 3** — a collapse without a spanning element throws; see *Decisions* |
+| 3 The placeholder row | M | done | The click, the run the reader opened being remembered and forgotten with the model, and the test that the padding generator and the placeholder generator share a document rather than displace one another |
+| 4 The option and the verbs | S | done | `UnchangedContextRows` on both views; `ShowAllRows`, `ShowDifferencesOnly`, `ShowContext` and `ExpandFold` in the key map unbound; the folding group last on the pane's text menu, both margins and the connector, and absent from the map's; the demo's View menu |
+| 5 Evidence | S | done **but for `AGENTS.md`** | Four mutation runs, four rendered frames, `DECISIONS.md` (five sections), this file, the changelog. **`AGENTS.md` §6 and §7 are drafted and unwritten**: those sections steer how agents work here, so their exact text is approved before it lands |
+
+## Plan 00013 verification
+
+| Done-when item | Result |
+|---|---|
+| The projection is the identity when nothing is folded | pass: `RowProjectionTests.Nothing_folded_maps_every_row_to_itself` for the arithmetic, and the whole suite staying green for the wiring — 549 tests that would have moved if any of the three sites had changed answer |
+| A folded pair of panes has equal extents | pass: `FoldingTests.Folding_the_unchanged_runs_takes_the_same_height_out_of_both_panes` and `Every_surviving_pair_still_shares_a_row_top`. **Mutated one row asymmetric, the spike's version of this failed**, which is why it is asserted against row tops and not against heights alone |
+| A fold never starts on a line carrying padding for the rows above it | pass: `FoldingTests.A_fold_never_starts_on_a_line_carrying_padding_for_the_rows_above_it`, at `contextRows: 0` because that is the only value at which the rule fires |
+| A fold never ends on a side's last line while that side has a trailing gap | pass: `FoldingTests.A_fold_never_ends_on_a_sides_last_line_while_that_side_has_a_trailing_gap` — the half the spike did not measure, now measured |
+| A run shorter than the floor does not fold | pass: `FoldingTests.A_run_shorter_than_the_floor_is_left_alone`, against a floor above the run and against context eating the same budget |
+| The placeholder row is one row on each side | pass: `FoldingTests.A_fold_leaves_its_first_line_standing_and_takes_every_line_after_it`. This is the test that catches a fold shifted by one line, which nothing else can: both panes collapse the same *number* of lines, so the extents match and every pair still shares a row top |
+| Expanding a fold restores every row top | pass: `FoldingTests.Every_surviving_pair_still_shares_a_row_top` unfolds and re-asserts; `FoldPlaceholderTests.A_click_on_a_placeholder_gives_that_run_back_and_leaves_the_others_folded` does it through a real pointer press at the placeholder's own visual column |
+| The map's viewport box follows the visible document | pass: `RowProjectionWiringTests.The_maps_viewport_box_is_measured_against_the_visible_document` |
+| The connector still draws what a fold brings into view | pass: `RowProjectionWiringTests.The_connector_still_draws_the_blocks_a_fold_brought_into_view` — the cull's upper bound, which does not misplace a polygon but breaks the loop early and drops every block below the fold |
+| Navigation crosses a fold | **not done.** F7 into a folded run neither expands it nor is refused; `ScrollToRows` projects the row, so the pane scrolls to where that row is drawn, which is the placeholder. Named here rather than left to be found |
+| Find crosses a fold | **not done**, and the same shape: a match inside a folded run is still counted and still ticked on the map, and walking to it lands on the placeholder |
+| The unified view folds the same runs | pass: `FoldingOptionTests.The_unified_view_folds_its_own_runs` |
+| The option's three values | pass: `FoldingOptionTests.The_option_folds_and_the_default_folds_nothing`, `The_three_modes_are_the_one_option_written_three_ways`, `A_negative_context_is_coerced_rather_than_kept` |
+| Every folding verb is in the key map and unbound | pass: `FoldingOptionTests.All_four_folding_verbs_arrive_in_the_key_map_unbound` |
+| The folding group's shape, on every surface that has it | pass: `FoldingOptionTests.Every_surface_that_names_a_run_offers_the_folding_group_and_the_map_does_not` — the separator, the three modes in order, then `ExpandFold`, asserted for four surfaces and denied for the map |
+| A rebuild keeps the option and forgets what was opened | pass: `FoldingOptionTests.A_rebuild_keeps_the_option_and_forgets_the_runs_the_reader_opened`. Its first version rebuilt nothing at all: `PaneSource` is a record, so reloading the same text is not a property change |
+| Rendered frames, folded and unfolded | pass: `FoldingSnapshotTests`, four frames — folded in both variants, unfolded, and folded with context. Four of the six `MenuSnapshotTests` frames also moved, and **the two that did not are the map's and the header's**, which is exactly the set that should not have |
+| Mutations | pass: 7/7 on `RowProjection`, 7/7 on the phase 1 wiring, 7/8 on `FoldPlan`, 6/6 on the placeholder and the expand path. The two survivors are equivalent mutants and are named in the phase commits: an unreachable defensive guard, and a cull bound that only ever under-culls |
+| Build and tests | pass: `dotnet build DiffView.slnx -warnaserror` clean, zero warnings; `dotnet test --solution DiffView.slnx` **578 passed** (556 before the plan's first phase) |
+| Exercised by hand | **not done** — owed, like plan 00012's was until it was driven under `AGENTS.md` §9 |
 
 ## Folding spike
 
