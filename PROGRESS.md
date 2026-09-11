@@ -2,11 +2,8 @@
 
 ## Resume
 
-**[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is built — all five phases — with one
-thing outstanding**, on branch `feat/menus-beyond-the-pane`, unmerged: phase 5's `AGENTS.md` §6 and
-§7 rows are drafted and deliberately unwritten, because those sections steer how agents work here
-and their exact text is approved before it lands. Everything else in the plan is done. A
-right-click anywhere the control draws now opens a
+**[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete** — all five phases — on
+branch `feat/menus-beyond-the-pane`, unmerged. A right-click anywhere the control draws now opens a
 menu about what is under the pointer: the two gutters, the connector column, the overview map and
 the headers, through the two extensibility shapes plan 00010 built. **No left-click changed** —
 neither the connector's jump nor the map's scroll — and off every polygon the connector opens
@@ -17,13 +14,14 @@ unbound. The icon column 00010 reserved is filled from the vocabulary already on
 gutter's arrow and the marker margin's `+` `−` `≠`, on the theme's foreground. *Plan 00012 phases*
 and *verification* below carry the detail, and *Decisions* the three arguments worth keeping.
 
-**Next is that `AGENTS.md` commit, and then the question of whether this branch fast-forwards into
-`main`** as `feat/in-pane-editing` did. After that, **the folding spike** — Beyond Compare's *Show Differences / Show Same / Show Context*, the
-largest functional delta left — asked for explicitly on 2026-09-11 and to be run before any plan
-00013 is written. AvaloniaEdit ships a whole folding stack (`FoldingManager`, `FoldingSection`,
-`FoldingElementGenerator`, `FoldingMargin`) that this library references nowhere; the spike's real
-question is whether a fold can keep both panes row-aligned, which is the same constraint that forced
-word wrap off.
+**Next is the question of whether this branch fast-forwards into `main`** as `feat/in-pane-editing`
+did — thirteen commits, the whole of plan 00012 plus a ClaudeForge pin bump; history here is linear
+and `--ff-only` is the convention. After that, **the folding spike** — Beyond Compare's *Show
+Differences / Show Same / Show Context*, the largest functional delta left — asked for explicitly on
+2026-09-11 and to be run before any plan 00013 is written. AvaloniaEdit ships a whole folding stack
+(`FoldingManager`, `FoldingSection`, `FoldingElementGenerator`, `FoldingMargin`) that this library
+references nowhere; the spike's real question is whether a fold can keep both panes row-aligned,
+which is the same constraint that forced word wrap off.
 
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.
@@ -251,7 +249,7 @@ dotnet run --project src/ThemeAudit -- report
 | 2 The connector and the map | done | `DiffPaneRegion.ConnectorGutter` and `OverviewMap`; a `ContextRequested` handler on each control built from its existing hit-test; **a right-click navigates nothing**, and off every polygon nothing opens. `GoToChange` and `SelectBlock`, both in the key map and unbound, and with them the item lists the plan wrote for the two margins; 13 cases, eleven mutations, eleven kills |
 | 3 The header | done | `DiffHeaderContext` and `DiffHeaderContextMenuEventArgs`, `HeaderContextMenuOpening`, `HeaderContextMenu`, `HeaderContextAt`; `DiffPaneMenu.Request` generalised to carry either context type without the menu's behaviour forking. Save and revert from the same `AddFileVerbs` the text menu uses. `LastPaneMenu` renamed `LastMenu`, true since phase 2; 11 cases, ten mutations, ten kills |
 | 4 The icon set | done | `CopyArrowGlyph.Geometry` split out so the menu's arrow is the gutter's by construction; `DiffMenuIcons` with the marker margin's `+` `−` `≠` as strokes; both on the inherited `TextElement.Foreground`. 00010's alignment assertion unchanged, its stand-in square moved to an entry the control leaves null; 5 cases, nine mutations, nine kills |
-| 5 Evidence | done **but for `AGENTS.md`** | `MenuSnapshotTests`, the first snapshots here to capture a popup — six frames; `DECISIONS.md` (three sections, covering both pieces of drift the earlier phases owed), this file, the changelog; the by-hand drive that found the demo's stale label. **`AGENTS.md` §6 and §7 are drafted and unwritten**: those sections steer how agents work here, so their exact text is approved before it lands |
+| 5 Evidence | done | `MenuSnapshotTests`, the first snapshots here to capture a popup — six frames; `DECISIONS.md` (three sections, covering both pieces of drift the earlier phases owed), `AGENTS.md` §6 (six rows) and §7 (one), this file, the changelog; the by-hand drive that found the demo's stale label |
 
 ## Plan 00012 verification
 
