@@ -80,7 +80,7 @@ public sealed class ConnectorAndMapMenuTests
         RightClick(host, gutter, empty);
 
         Assert.False(raised);
-        Assert.Null(host.View.LastPaneMenu);
+        Assert.Null(host.View.LastMenu);
     }
 
     [AvaloniaFact]
@@ -381,13 +381,13 @@ public sealed class ConnectorAndMapMenuTests
                  ])
         {
             RightClick(host, control, point);
-            Assert.NotNull(host.View.LastPaneMenu);
+            Assert.NotNull(host.View.LastMenu);
 
-            List<MenuItem> rows = host.View.LastPaneMenu.Items.OfType<MenuItem>().ToList();
+            List<MenuItem> rows = host.View.LastMenu.Items.OfType<MenuItem>().ToList();
             Assert.NotEmpty(rows);
             Assert.All(rows, row => Assert.False(string.IsNullOrEmpty(AutomationProperties.GetName(row))));
 
-            host.View.LastPaneMenu.Close();
+            host.View.LastMenu.Close();
             CompositeHost.Layout();
         }
     }

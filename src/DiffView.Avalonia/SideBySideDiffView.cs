@@ -1150,6 +1150,16 @@ public class SideBySideDiffView : TemplatedControl
             _gutter.ContextRequested += OnConnectorContextRequested;
         }
 
+        if (_leftHeader is not null)
+        {
+            _leftHeader.ContextRequested += OnLeftHeaderContextRequested;
+        }
+
+        if (_rightHeader is not null)
+        {
+            _rightHeader.ContextRequested += OnRightHeaderContextRequested;
+        }
+
         if (_minimap is not null)
         {
             _minimap.Document = Document;
@@ -1722,6 +1732,72 @@ public class SideBySideDiffView : TemplatedControl
     public ContextMenu? PaneContextMenu { get; set; }
 
     /// <summary>
+    /// A header's context menu is about to open, with which side and file was clicked and the
+    /// items that will be shown, which a handler may insert into, remove from or retitle in place.
+    /// </summary>
+    /// <remarks>
+    /// A second event rather than a second region on the first, because a header's subject differs
+    /// in kind from a line's — see <see cref="DiffHeaderContext"/>. Not raised while
+    /// <see cref="HeaderContextMenu"/> is set, for the same reason its pane counterpart is not.
+    /// </remarks>
+    public event EventHandler<DiffHeaderContextMenuEventArgs>? HeaderContextMenuOpening;
+
+    /// <summary>
+    /// A menu to open in place of the control's own header menu. The
+    /// <see cref="DiffHeaderContext"/> reaches it as its <c>DataContext</c>.
+    /// </summary>
+    public ContextMenu? HeaderContextMenu { get; set; }
+
+    /// <summary>
+    /// Describes <paramref name="side"/>'s header — what is on screen above that pane, and the
+    /// state of the file behind it. Public for the same reason <c>ContextAt</c> is: without it a
+    /// host replacing the menu has nothing to write one against.
+    /// </summary>
+    public DiffHeaderContext HeaderContextAt(DiffSide side)
+    {
+        DiffPaneHeader? header = side == DiffSide.Left ? _leftHeader : _rightHeader;
+        return new DiffHeaderContext(
+            side,
+            header?.Title ?? string.Empty,
+            header?.Detail,
+            IsDirty(side),
+            ReadOnly(side));
+    }
+
+    /// <summary>
+    /// A header's menu: the file's two verbs, and nothing else. **No copy and no navigate** — a
+    /// header is not a position, and the entries are already named per side, which is the only
+    /// thing distinguishing the two headers' menus.
+    /// </summary>
+    private List<DiffMenuItem> HeaderMenuItems(DiffHeaderContext context)
+    {
+        List<DiffMenuItem> items = [];
+        AddFileVerbs(items, context.Side);
+        return items;
+    }
+
+    /// <summary>
+    /// Save and revert for <paramref name="side"/>, shared by the header's menu and the text's
+    /// rather than written twice — §7's usual reason, and these two are the pair most likely to
+    /// drift, being the only entries that write to disk.
+    /// </summary>
+    private void AddFileVerbs(List<DiffMenuItem> items, DiffSide side)
+    {
+        items.Add(new DiffMenuItem
+        {
+            Header = DiffViewStrings.MenuSave(side),
+            Command = new DelegateCommand(() => Save(side), () => CanSave(side)),
+            IsEnabled = CanSave(side),
+        });
+        items.Add(new DiffMenuItem
+        {
+            Header = DiffViewStrings.MenuRevert(side),
+            Command = new DelegateCommand(() => Revert(side), () => IsEdited(side)),
+            IsEnabled = IsEdited(side),
+        });
+    }
+
+    /// <summary>
     /// The items the menu shows for <paramref name="context"/>. The shape never changes with the
     /// state — every entry is always here, enabled or not — because a host's "insert after this
     /// item" has to mean the same thing on every open.
@@ -1863,22 +1939,12 @@ public class SideBySideDiffView : TemplatedControl
         // 00010 set for a verb a view does not have, where the unified view's menu has no copy
         // items at all instead of four disabled ones. "Disable, do not hide" governs one menu
         // changing with state; these are different menus. The header's own menu is where the
-        // file's verbs belong, and phase 3 is where it arrives.
+        // file's verbs belong, and as of phase 3 that menu exists — the same two entries, from
+        // the same AddFileVerbs, so the two places that offer to write a file cannot drift.
         if (context.Region is DiffPaneRegion.Text)
         {
             items.Add(DiffMenuItem.Separator());
-            items.Add(new DiffMenuItem
-            {
-                Header = DiffViewStrings.MenuSave(side),
-                Command = new DelegateCommand(() => Save(side), () => CanSave(side)),
-                IsEnabled = CanSave(side),
-            });
-            items.Add(new DiffMenuItem
-            {
-                Header = DiffViewStrings.MenuRevert(side),
-                Command = new DelegateCommand(() => Revert(side), () => IsEdited(side)),
-                IsEnabled = IsEdited(side),
-            });
+            AddFileVerbs(items, side);
         }
 
         return items;
@@ -2015,15 +2081,34 @@ public class SideBySideDiffView : TemplatedControl
     /// The menu the last request opened, or <c>null</c> where none did. A test seam, like the
     /// margins' <c>LastCopyArrows</c>: a menu that did not open leaves no mark a frame could show.
     /// </summary>
-    internal ContextMenu? LastPaneMenu { get; private set; }
+    internal ContextMenu? LastMenu { get; private set; }
 
     private void OnPaneContextMenuRequested(object? sender, DiffPanePresenter.PaneContextRequest e)
     {
         if (sender is DiffPanePresenter pane)
         {
-            LastPaneMenu = DiffPaneMenu.Request(pane, e.Context, e.Pointer, PaneContextMenu, MenuItemsFor, args => PaneContextMenuOpening?.Invoke(this, args));
-            e.Opened = LastPaneMenu is not null;
+            e.Opened = OpenMenu(pane, e.Context, e.Pointer);
         }
+    }
+
+    /// <summary>
+    /// Raises <see cref="PaneContextMenuOpening"/> over <paramref name="items"/> and says whether
+    /// a handler cancelled. The seam takes this rather than the event itself, because the header's
+    /// event carries a context of a different type and the two cannot share one delegate.
+    /// </summary>
+    private bool RaisePaneMenuOpening(DiffPaneContext context, IList<DiffMenuItem> items)
+    {
+        DiffPaneContextMenuEventArgs args = new(context, items);
+        PaneContextMenuOpening?.Invoke(this, args);
+        return args.Cancel;
+    }
+
+    /// <summary>The same for <see cref="HeaderContextMenuOpening"/>.</summary>
+    private bool RaiseHeaderMenuOpening(DiffHeaderContext context, IList<DiffMenuItem> items)
+    {
+        DiffHeaderContextMenuEventArgs args = new(context, items);
+        HeaderContextMenuOpening?.Invoke(this, args);
+        return args.Cancel;
     }
 
     /// <summary>The command object behind <paramref name="command"/>, for a host that wants to invoke it.</summary>
@@ -2908,6 +2993,16 @@ public class SideBySideDiffView : TemplatedControl
             _gutter.ContextRequested -= OnConnectorContextRequested;
         }
 
+        if (_leftHeader is not null)
+        {
+            _leftHeader.ContextRequested -= OnLeftHeaderContextRequested;
+        }
+
+        if (_rightHeader is not null)
+        {
+            _rightHeader.ContextRequested -= OnRightHeaderContextRequested;
+        }
+
         if (_minimap is not null)
         {
             _minimap.JumpRequested -= OnMinimapJumpRequested;
@@ -3107,10 +3202,67 @@ public class SideBySideDiffView : TemplatedControl
     /// Whether a menu opened, which is what marks the routed event handled: a request answered
     /// with nothing still reaches a <c>ContextMenu</c> a host put on an ancestor.
     /// </returns>
-    private bool OpenMenu(Control owner, DiffPaneContext context, Point pointer)
+    private bool OpenMenu(Control owner, DiffPaneContext context, Point? pointer)
     {
-        LastPaneMenu = DiffPaneMenu.Request(owner, context, pointer, PaneContextMenu, MenuItemsFor, args => PaneContextMenuOpening?.Invoke(this, args));
-        return LastPaneMenu is not null;
+        LastMenu = DiffPaneMenu.Request(
+            owner,
+            context,
+            pointer,
+            PaneContextMenu,
+            () => MenuItemsFor(context),
+            items => RaisePaneMenuOpening(context, items));
+        return LastMenu is not null;
+    }
+
+    /// <summary>The same for a header, whose context and whose two host hooks are its own.</summary>
+    private bool OpenMenu(Control owner, DiffHeaderContext context, Point? pointer)
+    {
+        LastMenu = DiffPaneMenu.Request(
+            owner,
+            context,
+            pointer,
+            HeaderContextMenu,
+            () => HeaderMenuItems(context),
+            items => RaiseHeaderMenuOpening(context, items));
+        return LastMenu is not null;
+    }
+
+    private void OnLeftHeaderContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        OnHeaderContextRequested(DiffSide.Left, sender, e);
+    }
+
+    private void OnRightHeaderContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        OnHeaderContextRequested(DiffSide.Right, sender, e);
+    }
+
+    /// <summary>A right-click on <paramref name="side"/>'s header: the file's menu, about that file.</summary>
+    /// <remarks>
+    /// <para>
+    /// The side comes from <em>which handler was attached</em> rather than from a test on the
+    /// event. Phase 1's margin handler is attached to the pane, so it has several possible
+    /// sources and has to resolve one — including a margin the library did not draw, which it
+    /// leaves alone. A header handler is attached to the header, so it has exactly one, and there
+    /// is correspondingly no foreign-header guard to write: a header this view did not build
+    /// never reaches here at all.
+    /// </para>
+    /// <para>
+    /// The event bubbles, so a click on the title or the detail line <em>inside</em> the header
+    /// arrives here as a click on the header, which is what makes the whole strip answer rather
+    /// than the gaps between its text. A header is not focusable, so a request here always
+    /// carries a pointer; a keyboard user asking about "here" is asking about the pane.
+    /// </para>
+    /// </remarks>
+    private void OnHeaderContextRequested(DiffSide side, object? sender, ContextRequestedEventArgs e)
+    {
+        if (e.Handled || sender is not Control header)
+        {
+            return;
+        }
+
+        Point? pointer = e.TryGetPosition(header, out Point point) ? point : null;
+        e.Handled = OpenMenu(header, HeaderContextAt(side), pointer);
     }
 
     private void OnGutterResizeDragged(object? sender, double delta)

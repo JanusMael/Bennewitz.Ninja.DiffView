@@ -23,36 +23,47 @@ internal static class DiffPaneMenu
     internal static readonly Thickness HeaderGap = new(0, 0, 12, 0);
 
     /// <summary>
-    /// Answers a pane's request: opens <paramref name="replacement"/> if a host set one, and
-    /// otherwise builds the control's own items, lets <paramref name="opening"/> amend them, and
-    /// opens that. **The replacement suppresses the event** — there is nothing of ours to amend —
-    /// and that rule lives here so the two views cannot come to disagree about it.
+    /// Answers a request: opens <paramref name="replacement"/> if a host set one, and otherwise
+    /// builds the control's own items, lets <paramref name="opening"/> amend them, and opens
+    /// that. **The replacement suppresses the event** — there is nothing of ours to amend — and
+    /// that rule lives here so no two surfaces can come to disagree about it.
     /// </summary>
     /// <returns>The menu that was opened, or <c>null</c> when none was — cancelled, or empty.</returns>
     /// <remarks>
+    /// <para>
     /// <paramref name="owner"/> is whichever control was right-clicked — a pane, and since plan
-    /// 00012 phase 2 the connector gutter or the overview map. The menu is placed against it and
-    /// opened on it, so a menu about the map does not anchor itself to a pane the pointer was
-    /// never over. Only a pane can be asked from the keyboard, which is the one path that needs
-    /// a caret.
+    /// 00012 the connector gutter, the overview map or a header. The menu is placed against it
+    /// and opened on it, so a menu about the map does not anchor itself to a pane the pointer was
+    /// never over. Only a pane can be asked from the keyboard, which is the one path needing a
+    /// caret.
+    /// </para>
+    /// <para>
+    /// <paramref name="context"/> is <c>object</c> because two kinds reach here — a
+    /// <see cref="DiffPaneContext"/> and a <see cref="DiffHeaderContext"/>, whose subjects differ
+    /// in kind — and all this method does with one is hand it to the menu as its
+    /// <c>DataContext</c>. Which items an amender sees, and which event carries them, belong to
+    /// the caller: <paramref name="defaults"/> and <paramref name="opening"/> close over the
+    /// context they know the type of, and <paramref name="opening"/> answers whether the request
+    /// was cancelled. That is what keeps the *menu's* behaviour in one place while the contexts
+    /// stay two types — <c>AGENTS.md</c> §7's rule, applied to a seam that now has a second
+    /// shape.
+    /// </para>
     /// </remarks>
     public static ContextMenu? Request(
         Control owner,
-        DiffPaneContext context,
+        object context,
         Point? pointer,
         ContextMenu? replacement,
-        Func<DiffPaneContext, List<DiffMenuItem>> defaults,
-        Action<DiffPaneContextMenuEventArgs> opening)
+        Func<List<DiffMenuItem>> defaults,
+        Func<IList<DiffMenuItem>, bool> opening)
     {
         if (replacement is not null)
         {
             return Show(owner, context, replacement, [], pointer);
         }
 
-        List<DiffMenuItem> items = defaults(context);
-        DiffPaneContextMenuEventArgs args = new(context, items);
-        opening(args);
-        if (args.Cancel)
+        List<DiffMenuItem> items = defaults();
+        if (opening(items))
         {
             return null;
         }
@@ -68,7 +79,7 @@ internal static class DiffPaneMenu
     /// </summary>
     private static ContextMenu? Show(
         Control owner,
-        DiffPaneContext context,
+        object context,
         ContextMenu? replacement,
         IList<DiffMenuItem> items,
         Point? pointer)

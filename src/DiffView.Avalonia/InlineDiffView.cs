@@ -751,15 +751,33 @@ public class InlineDiffView : TemplatedControl
     /// The menu the last request opened, or <c>null</c> where none did. A test seam, like the
     /// margins' <c>LastCopyArrows</c>: a menu that did not open leaves no mark a frame could show.
     /// </summary>
-    internal ContextMenu? LastPaneMenu { get; private set; }
+    internal ContextMenu? LastMenu { get; private set; }
 
     private void OnPaneContextMenuRequested(object? sender, DiffPanePresenter.PaneContextRequest e)
     {
         if (sender is DiffPanePresenter pane)
         {
-            LastPaneMenu = DiffPaneMenu.Request(pane, e.Context, e.Pointer, PaneContextMenu, MenuItemsFor, args => PaneContextMenuOpening?.Invoke(this, args));
-            e.Opened = LastPaneMenu is not null;
+            LastMenu = DiffPaneMenu.Request(
+                pane,
+                e.Context,
+                e.Pointer,
+                PaneContextMenu,
+                () => MenuItemsFor(e.Context),
+                items => RaisePaneMenuOpening(e.Context, items));
+            e.Opened = LastMenu is not null;
         }
+    }
+
+    /// <summary>
+    /// Raises <see cref="PaneContextMenuOpening"/> over <paramref name="items"/> and says whether
+    /// a handler cancelled. The seam takes this rather than the event itself, because the header's
+    /// event in the side-by-side view carries a different context type.
+    /// </summary>
+    private bool RaisePaneMenuOpening(DiffPaneContext context, IList<DiffMenuItem> items)
+    {
+        DiffPaneContextMenuEventArgs args = new(context, items);
+        PaneContextMenuOpening?.Invoke(this, args);
+        return args.Cancel;
     }
 
     /// <summary>The command object behind <paramref name="command"/>, for a host that wants to invoke it.</summary>

@@ -157,15 +157,15 @@ public sealed class PaneContextMenuTests
         // The amend shape reaches as far as removing everything, and nothing left is no menu.
         RightClick(host, host.Left, new Point(60, 40));
         Assert.Equal(1, openings);
-        Assert.Null(host.View.LastPaneMenu);
+        Assert.Null(host.View.LastMenu);
 
         add = true;
         RightClick(host, host.Left, new Point(60, 40));
 
         Assert.Equal(2, openings);
-        Assert.NotNull(host.View.LastPaneMenu);
-        Assert.True(host.View.LastPaneMenu.IsOpen);
-        Assert.Single(host.View.LastPaneMenu.Items);
+        Assert.NotNull(host.View.LastMenu);
+        Assert.True(host.View.LastMenu.IsOpen);
+        Assert.Single(host.View.LastMenu.Items);
     }
 
     [AvaloniaFact]
@@ -185,11 +185,11 @@ public sealed class PaneContextMenuTests
 
         // The same item list either way, so the only thing under test is the flag.
         RightClick(host, host.Left, new Point(60, 40));
-        Assert.NotNull(host.View.LastPaneMenu);
+        Assert.NotNull(host.View.LastMenu);
 
         cancel = true;
         RightClick(host, host.Left, new Point(60, 40));
-        Assert.Null(host.View.LastPaneMenu);
+        Assert.Null(host.View.LastMenu);
     }
 
     [AvaloniaFact]
@@ -237,7 +237,7 @@ public sealed class PaneContextMenuTests
         };
 
         RightClick(host, host.Left, new Point(60, 40));
-        Assert.Null(host.View.LastPaneMenu);
+        Assert.Null(host.View.LastMenu);
         Assert.True(ancestor.IsOpen);
 
         ancestor.Close();
@@ -247,7 +247,7 @@ public sealed class PaneContextMenuTests
         empty = false;
         RightClick(host, host.Left, new Point(60, 40));
 
-        Assert.NotNull(host.View.LastPaneMenu);
+        Assert.NotNull(host.View.LastMenu);
         Assert.False(ancestor.IsOpen);
     }
 
@@ -410,13 +410,13 @@ public sealed class PaneContextMenuTests
         CompositeHost.Layout();
 
         RightClick(host, host.Left, new Point(60, 40));
-        Assert.NotNull(host.View.LastPaneMenu);
+        Assert.NotNull(host.View.LastMenu);
 
         // The widest row sets the popup's width, so its own accelerator has nowhere to sit and the
         // two touch. How tight that looks is otherwise the host theme's
         // `MenuItemInputGestureTextMargin` — 4 in Semi, 24 in Fluent — so the control holds a small
         // gap of its own and a host's value is added to it rather than replaced.
-        List<MenuItem> rows = host.View.LastPaneMenu.Items.OfType<MenuItem>().ToList();
+        List<MenuItem> rows = host.View.LastMenu.Items.OfType<MenuItem>().ToList();
         Assert.NotEmpty(rows);
         Assert.All(rows, row =>
         {
@@ -446,9 +446,9 @@ public sealed class PaneContextMenuTests
 
         RightClick(host, host.Left, new Point(60, 40));
         CompositeHost.Layout();
-        Assert.NotNull(host.View.LastPaneMenu);
+        Assert.NotNull(host.View.LastMenu);
 
-        List<MenuItem> rows = host.View.LastPaneMenu.Items.OfType<MenuItem>().ToList();
+        List<MenuItem> rows = host.View.LastMenu.Items.OfType<MenuItem>().ToList();
         Assert.True(rows.Count > 2, "the menu needs several rows for alignment to mean anything");
 
         List<double> lefts = rows.Select(HeaderLeft).ToList();
