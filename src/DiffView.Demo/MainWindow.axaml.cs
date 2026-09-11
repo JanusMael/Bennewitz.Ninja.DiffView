@@ -46,6 +46,7 @@ public sealed partial class MainWindow : Window
         // the seam is the same one on each.
         Diff.PaneContextMenuOpening += OnPaneContextMenuOpening;
         Unified.PaneContextMenuOpening += OnPaneContextMenuOpening;
+        Diff.HeaderContextMenuOpening += OnHeaderContextMenuOpening;
 
         // The sides load when the window opens, so a host of the window — the smoke snapshot
         // test — can configure the control between construction and the first build.
@@ -349,12 +350,44 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>The context in one line, which is the point of the entry above.</summary>
+    /// <remarks>
+    /// A null <c>Side</c> used to mean the unified view and nothing else. Since plan 00012 it also
+    /// means a surface that belongs to neither pane — the connector, and the map's marker column
+    /// between its two lanes — so the two have to be told apart or this reports "unified" in the
+    /// side-by-side view. That is what it did the first time the connector's menu was driven by
+    /// hand, which is the sort of thing only driving it by hand finds.
+    /// </remarks>
     private static string Describe(DiffPaneContext context)
     {
-        string side = context.Side is { } s ? s.ToString().ToLowerInvariant() : "unified";
+        string side = context.Side is { } s ? s.ToString().ToLowerInvariant()
+            : context.IsUnified ? "unified"
+            : "neither side";
         string block = context.Block is { } b ? $"change {b.Index + 1}" : "no change";
         string selection = context.SelectedLines is { } lines ? $"{lines.Count} line(s) selected" : "no selection";
-        return $"{side} · line {context.LineNumber} (source line {context.SourceLine?.ToString(CultureInfo.InvariantCulture) ?? "—"}) · {block} · {selection}";
+        return $"{context.Region} · {side} · line {context.LineNumber} (source line {context.SourceLine?.ToString(CultureInfo.InvariantCulture) ?? "—"}) · {block} · {selection}";
+    }
+
+    /// <summary>
+    /// The header's menu is the plan's second context type, so the demo reads that one too —
+    /// otherwise it would demonstrate half the seam and a host would have only the pane's shape
+    /// to copy.
+    /// </summary>
+    private void OnHeaderContextMenuOpening(object? sender, DiffHeaderContextMenuEventArgs e)
+    {
+        DiffHeaderContext context = e.Context;
+        e.Items.Add(DiffMenuItem.Separator());
+        e.Items.Add(new DiffMenuItem
+        {
+            Header = "What did I click?",
+            Command = new DemoCommand(() => Note(Describe(context))),
+        });
+    }
+
+    /// <summary>A header's context in one line. No line number on it to report — that is the point.</summary>
+    private static string Describe(DiffHeaderContext context)
+    {
+        string state = context.IsDirty ? "unsaved edits" : "saved";
+        return $"header · {context.Side.ToString().ToLowerInvariant()} · {context.Title} · {context.Detail ?? "—"} · {state}";
     }
 
     /// <summary>The demo's own command type; the library's is internal, as a host's would be its own.</summary>

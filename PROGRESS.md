@@ -2,62 +2,24 @@
 
 ## Resume
 
-**In flight: [plan 00012](plans/00012-context-menus-beyond-the-pane.md), phases 1 and 2 of 5**, on
-branch `feat/menus-beyond-the-pane` — the context menus plan 00010 named as non-goals. Phase 1
-landed the two gutters: `ContextAt` had taken a `DiffPaneRegion` since 00010 and *nothing had ever
-passed one*, and a right-click on a margin returned early. It now resolves the region from the
-event's source by **identity against the pane's own margins** — not by type, which a same-named
-property shadows into a CS0150, and not by pointer-x against the margins' widths, which would be
-plan 00008's misaligned header a second time. A gutter's menu is the pane's copy and navigate items
-**without save and revert**: those are the file's verbs and a gutter is a position, so they are
-absent rather than greyed. A margin the library did not draw is still left alone.
+**[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete — all five phases**, on
+branch `feat/menus-beyond-the-pane`, unmerged. A right-click anywhere the control draws now opens a
+menu about what is under the pointer: the two gutters, the connector column, the overview map and
+the headers, through the two extensibility shapes plan 00010 built. **No left-click changed** —
+neither the connector's jump nor the map's scroll — and off every polygon the connector opens
+nothing, because the empty column is the splitter. The header carries its own context type, a side
+and its file with no line at all; both types go through the one menu implementation, so the contexts
+differ and the menu's behaviour cannot. `GoToChange` and `SelectBlock` arrive in the key map
+unbound. The icon column 00010 reserved is filled from the vocabulary already on screen — the
+gutter's arrow and the marker margin's `+` `−` `≠`, on the theme's foreground. *Plan 00012 phases*
+and *verification* below carry the detail, and *Decisions* the three arguments worth keeping.
 
-Phase 2 added the connector and the map, each raising its menu from the hit-test it already
-performs for its own left-click, and **neither click changed**: a right-click navigates nothing,
-and off every polygon there is no block and so no menu, because the empty column is the splitter.
-It brought the two verbs with it — `GoToChange`, which phase 1 deferred on purpose, and
-`SelectBlock`, which the plan's item table named and phase 1 passed over — so the two margins also
-gained the lists the plan wrote for them. Both verbs are **unbound in the key map rather than
-absent from it**: they are pointer verbs first, but a gesture would mean the current block, and
-that is how a host binds one.
-
-The plan called these two surfaces "a new `Region` value and a constructor call", which is nearly
-true. What it did not confront is that `DiffPaneContext.LineNumber` is a non-nullable `int` and
-neither surface is a pane — `AlignedRow` carries a nullable line per side, so a row has up to two
-and at least one. **Settled by Brian, 2026-09-11**, against a sibling record and against relaxing
-`LineNumber` to `int?`: the surface says what it is about, so `Side` is the lane on the map and
-nothing on the connector, and `LineNumber` is the row's line on that side where it has one and the
-left's then the right's where it does not, with `SourceSide` naming which. That, and phase 1's
-deferral, are the two pieces of drift owing a *Decisions* entry at phase 5.
-
-Phase 3 gave the header its own kind of context. Five surfaces share `DiffPaneContext` because
-each is line-, row- or block-shaped and the type carries all three; a header is none of them, and
-`LineNumber` is a non-nullable `int`. So **`DiffHeaderContext`**, a five-member sibling record with
-its own opening event and its own replace-property — settled before the plan was approved, against
-a synthetic line and against `int?`. The *menu* stayed one implementation:
-`DiffPaneMenu.Request` takes the context as `object` and two callbacks the caller closes over its
-own type with, so placement, the disabled-item rule and the replacement rule cannot diverge. The
-header's menu is **save and revert and nothing else** — no copy and no navigate, a header not being
-a position — from the same `AddFileVerbs` the text menu uses. The unified view raises none, and not
-for want of a header: it has two, and being read-only it has neither verb, so the list is empty and
-an empty list opens nothing.
-
-Phase 4 filled the icon column plan 00010 reserved and left empty. No new visual language: the
-copy entries carry **the gutter's own arrow**, from `CopyArrowGlyph.Geometry` rather than a second
-set of points, pointing the way the text would travel; the entries about a change carry **the
-marker margin's own operator** for that change's kind, `+` `−` `≠` drawn as strokes. Everything
-else — navigate, find, save, revert, go-to-row, hide-the-map — carries nothing, because it has
-nothing in the gutter's vocabulary to show, and a menu where some rows have icons and some do not
-is exactly the arrangement the reserved column exists for. The icons follow the inherited
-`TextElement.Foreground` rather than `DiffBrushes`: the gutter's yellows carry meaning against the
-gutter's own background and would be an unexplained second palette in a host's menu, and following
-the foreground means a theme or variant swap carries them and contrast is already the host's
-problem, solved for its own menu text.
-
-**Next is phase 5**, the evidence: mutations, one rendered frame per new surface, `DECISIONS.md`,
-`AGENTS.md` §6 and §7, this document's full prose, and the changelog. It owes **two Decisions
-entries**, both named above so neither can be quietly forgotten: phase 1's deferral of *"go to this
-change"*, and phase 2's settlement of what a row-shaped context says.
+**Next is the folding spike** — Beyond Compare's *Show Differences / Show Same / Show Context*, the
+largest functional delta left — asked for explicitly on 2026-09-11 and to be run before any plan
+00013 is written. AvaloniaEdit ships a whole folding stack (`FoldingManager`, `FoldingSection`,
+`FoldingElementGenerator`, `FoldingMargin`) that this library references nowhere; the spike's real
+question is whether a fold can keep both panes row-aligned, which is the same constraint that forced
+word wrap off.
 
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.
@@ -82,7 +44,11 @@ row's height; the focused pane is accented under its header; each pane copies it
 while read-only holds against typing and pasting; and every decorator announces itself. A
 right-click in either pane — or Shift+F10, which resolves to the caret — opens a context menu of
 copy, navigate, find, save and revert, whose entries a host amends or replaces and whose
-accelerators are read from the key map rather than typed in.
+accelerators are read from the key map rather than typed in. **So does a right-click on either
+gutter, on the connector column, on the map and on a header**, each menu about what that surface
+is about: a line, the block a polygon draws, the row under the pointer, the side and its file. No
+left-click changed. The entries that have a mark in the gutter's vocabulary carry it — the copy
+arrow, and `+` `−` `≠` for the change's kind — on the theme's foreground.
 
 `InlineDiffView` is the same model, builder, renderers, margins, find engine and state machine on
 **one** pane, over a document it composes from both sides in `diff -u` order: context rows once,
@@ -272,6 +238,33 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00012 phases
+
+| Phase | Status | Notes |
+|---|---|---|
+| 1 The margins | done | The region resolved from the event's **source** rather than from pointer-x against the margins' widths, and by identity against the pane's own two rather than by type — which a same-named property shadows into a CS0150. `ContextAt`'s region argument, defaulted since 00010, finally gets a caller. A gutter's menu is the pane's copy and navigate items without save and revert. A margin the library did not draw is left alone; 3 cases |
+| 2 The connector and the map | done | `DiffPaneRegion.ConnectorGutter` and `OverviewMap`; a `ContextRequested` handler on each control built from its existing hit-test; **a right-click navigates nothing**, and off every polygon nothing opens. `GoToChange` and `SelectBlock`, both in the key map and unbound, and with them the item lists the plan wrote for the two margins; 13 cases, eleven mutations, eleven kills |
+| 3 The header | done | `DiffHeaderContext` and `DiffHeaderContextMenuEventArgs`, `HeaderContextMenuOpening`, `HeaderContextMenu`, `HeaderContextAt`; `DiffPaneMenu.Request` generalised to carry either context type without the menu's behaviour forking. Save and revert from the same `AddFileVerbs` the text menu uses. `LastPaneMenu` renamed `LastMenu`, true since phase 2; 11 cases, ten mutations, ten kills |
+| 4 The icon set | done | `CopyArrowGlyph.Geometry` split out so the menu's arrow is the gutter's by construction; `DiffMenuIcons` with the marker margin's `+` `−` `≠` as strokes; both on the inherited `TextElement.Foreground`. 00010's alignment assertion unchanged, its stand-in square moved to an entry the control leaves null; 5 cases, nine mutations, nine kills |
+| 5 Evidence | done | `MenuSnapshotTests`, the first snapshots here to capture a popup — six frames; `DECISIONS.md` (three sections, covering both pieces of drift the earlier phases owed), `AGENTS.md` §6 and §7, this file, the changelog; the by-hand drive that found the demo's stale label |
+
+## Plan 00012 verification
+
+| Done-when item | Result |
+|---|---|
+| Each margin reports its own region | pass: `PaneContextMenuTests.Each_gutter_reports_its_own_region_and_the_text_still_reports_text`. **The plan's "the boundary pixel belongs to exactly one of them" is not tested, because the implementation made it meaningless**: the region comes from the event's source, so there is no boundary to fall the wrong side of. The pointer-x version the plan imagined is the one that would have needed it, and is the one plan 00008's misaligned header argues against |
+| A right-click on the connector does not jump | pass: `ConnectorAndMapMenuTests.A_right_click_on_the_connector_names_the_polygons_own_block_and_jumps_nowhere`, which also asserts a left-click at the same point still does. The map's half is `A_right_click_on_the_map_names_the_row_it_reports_and_scrolls_nothing` |
+| The connector's context names the polygon's own block | pass: same test — the block the polygon draws, not the block nearest the pointer's row, which differs wherever a polygon is tall. The mutation that swaps them kills it |
+| The map's context names the row under the pointer | pass: `The_maps_row_is_the_one_a_click_goes_to_not_the_one_the_pixel_starts_at` — against what the map *reports*, and the row a click goes to rather than the row the pixel starts at. **This assertion was vacuous when first written**: on a short fixture every bucket holds at most one row, so `RowForClick` and `RowAtPixel` never disagree and the mutation between them survived. It now runs over 4,000 rows on a 300-pixel map |
+| A header's context has no line | pass: `HeaderMenuTests.A_headers_context_names_the_side_and_its_file` — there is no `LineNumber` on the type to be wrong. **This one was vacuous too**: with both sides read-only and neither dirty, a context reading the *other* side passed unchanged. The fixture now differs on every member it asserts |
+| The unified view has no connector, map or header menu | pass: `ConnectorAndMapMenuTests.The_unified_view_has_no_connector_and_no_map_to_ask` for the two controls and the two verbs, and `HeaderMenuTests.The_unified_views_headers_raise_no_menu` for the headers — which it *has*, two of them, and answers with nothing because being read-only it has neither verb |
+| Every new menu goes through the one implementation | pass: `The_replacement_menu_suppresses_the_opening_event_on_both_new_surfaces` and `The_replacement_menu_suppresses_the_opening_event_on_a_header_too`, the standing test the plan named for the seam; beside it `The_two_replacement_properties_govern_their_own_surface_only`, because one property governing both would be the seam quietly becoming one surface again |
+| The icon column still does not move labels | pass: `The_icon_column_is_reserved_whether_or_not_anything_fills_it`, 00010's assertion unchanged, now with real icons in it. It also asserts both kinds of row are present, since alignment means nothing in a menu where every row carries one |
+| Every new item carries an automation name | pass: `Every_entry_of_the_two_new_menus_announces_itself` and `Every_entry_of_a_header_menu_announces_itself`. They are built in code, so the XAML sweep cannot see them |
+| One rendered frame per new surface | pass: `MenuSnapshotTests`, six frames — each margin, the connector, the map, the header, and the change-marker margin again in Dark. **The first popup captures in this repository**: plan 00010 shipped the pane menu with no frame at all. Opening a menu moves about 8% of a frame's pixels against a comparer that tolerates half a percent, so unlike a chip or an arrow these can fail on their own |
+| Exercised by hand, not only headless | pass: driven under §9. The connector, the map and the header each open their menu on a right-click; the connector's is four rows with both arrows pointing opposite ways; the map's showed **`+` Go to this change** over an inserted row; the header's is save, revert and the demo's own entry. **Two findings.** A right-click on the empty connector column opens nothing, which is the rule working and looked like a failure until the polygon's edge was measured. And the demo's status line reported *"unified"* on the connector — its own label, written when a null `Side` could only mean the unified view — now `ConnectorGutter · neither side · line 18 (source line 18) · change 5 · no selection` |
+| Build and tests | pass: `dotnet build DiffView.slnx -warnaserror` clean, zero warnings; `dotnet test --solution DiffView.slnx` **539 passed** (504 before the plan). No theme change, so no audit regeneration beyond the ClaudeForge pin bump this branch already carried |
 
 ## Plan 00010 phases
 

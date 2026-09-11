@@ -1687,3 +1687,142 @@ pill and >= 7.3:1 on the page. Recheck both numbers if you retint either half"* 
 a manual step. It is now a test there, reading those brush values out of the AXAML so a retint is
 measured rather than assumed. The margin it protects is thinner than the prose suggests: the worst
 pill pair clears by 0.07 and the worst page pair by 0.05.
+
+## A row-shaped context names the line the row has, and the surface says whose
+
+Plan 00012 described the connector and the overview map as *"a new `Region` value and a constructor
+call — precisely the shape plan 00010 bought"*. That is nearly true and it skips a question.
+`DiffPaneContext.LineNumber` is a **non-nullable `int`** documented as *"the 1-based line in the
+pane's own document"*, and neither surface is a pane: the connector sits between them and the map
+beside them. Worse, `AlignedRow` carries `int? LeftLine` and `int? RightLine`, so a row has **up to
+two lines and at least one** — there is no single line to name even in principle.
+
+Three ways out, and the plan had already rejected two of them for the header. A synthetic `0` is a
+lie a consumer reads as truth. Relaxing the field to `int?` charges the five regions that *do* have
+a line for the two that are shaped differently. A third context type would give `DiffPaneRegion` two
+members its own context type cannot describe — which is the exact thing the plan refused to do for
+`Header`, and would have made "two new enum members, not three" incoherent.
+
+**The surface answers for itself.** `Side` is what the surface says it is about: the lane under the
+pointer on the map, from the `LaneAt` hit-test the map already performs, and `null` over the marker
+column the two lanes share; `null` on the connector, which belongs to neither pane. `LineNumber` is
+the row's line on that side where that side has one, and the left's then the right's where the
+surface names none or that side pads — with `SourceSide` saying which file it came from. That is
+exactly how the unified view has used `Side`, `SourceSide` and `SourceLine` since plan 00001: a pane
+belonging to neither side, over lines that each belong to one. `IsReadOnly` follows `SourceSide` for
+the same reason. The connector reports **no selection at all**, because it names no pane and one
+pane's chosen arbitrarily would be worse than none.
+
+Decided by Brian, 2026-09-11, during phase 2 and against the sibling record and the nullable.
+`The_maps_context_names_the_lane_under_the_pointer_and_the_line_that_row_has` is the assertion.
+
+**The block is the polygon's, not the pointer row's.** On the connector these differ wherever a
+polygon is tall, and the hit-test that already exists answers the right one:
+`A_right_click_on_the_connector_names_the_polygons_own_block_and_jumps_nowhere`. On the map the row
+is `RowForClick` — the row a *click* there would jump to, the bucket's first changed row — and not
+`RowAtPixel`, so the menu's *go to this row* and the left-click cannot come to different answers.
+
+**Off every polygon there is no menu.** The empty connector column is the splitter, whose verb is a
+drag; every entry the connector's menu has is about a block, and four greyed rows would be worse
+than none, because a greyed row promises a state in which it would work.
+
+### The verb phase 1 deferred, and the one it passed over
+
+Plan 00012's item table lists *"go to this change"* on both gutters, and phase 1 shipped the gutters
+without it. That was deliberate: no such verb existed — `DiffCommand` had `NextChange` and
+`PreviousChange`, not "the block under the pointer" — and the connector in phase 2 needed the
+identical one, its left-click already being exactly that. Introducing a verb in the phase that
+needed it least, and binding it in the key map twice, was the worse order. Phase 2 added
+`GoToChange` and both gutters got their entry.
+
+The same table lists *"select this block"* for the change-marker margin and the connector, and phase
+1 passed over that one **without saying so**, which the deferral above at least did. Phase 2 added
+`SelectBlock` too, and both margins then got the item lists the plan wrote for them.
+
+Both verbs are **in the key map and unbound**, not absent from it. They are pointer verbs first — a
+menu entry carries the block that was clicked, the rule the copy entries already follow — but a
+gesture is still expressible, meaning the *current* block, which is the only reading a keyboard has.
+That is how a host binds one.
+
+**Selecting from the connector selects in both panes.** The block spans both files, and picking one
+on the strength of which pane happened to have focus is the arbitrary choice the context object
+exists to avoid; from a margin it is that margin's pane. A side the block has no lines in — the near
+half of an insertion — has its selection **cleared** rather than left standing, because the copy
+arrows read the selection and a stale one would change what a copy copies:
+`Selecting_a_block_one_side_has_no_lines_in_clears_that_sides_selection`.
+
+## A header is not a region of a pane, so it carries its own context
+
+This amends the plan 00010 decision recorded above — *"adding them later must not change
+`DiffPaneContext`, which is why `Region` is an enum with room"* — and only where that decision was
+not aimed. Plan 00010 is not edited.
+
+For the two margins, the connector and the map the decision holds exactly: each is line-, row- or
+block-shaped, and `DiffPaneContext` already carries `LineNumber`, `Row` and `Block`. **A header is
+none of those.** Its subject is a side and its file, with no line at all, and its verbs are the
+file's — save, revert — not the line's.
+
+So `DiffHeaderContext`, a five-member sibling record — `Side`, `Title`, `Detail`, `IsDirty`,
+`IsReadOnly` — with its own opening event and its own replace-property. `Side` is non-nullable here,
+unlike on `DiffPaneContext`, because a header always belongs to one file. Decided by Brian on
+2026-09-11, *before* the plan was approved, against a synthetic line number and against relaxing
+`LineNumber` to `int?`, on the grounds that the header's subject differs in kind and the five
+line-shaped regions should not pay for the one that is not.
+
+`DiffPaneRegion` therefore gains `ConnectorGutter` and `OverviewMap` and **no `Header` member**: an
+enum value its own context type cannot describe is how an enum starts lying.
+
+**The two context types must not become two menus.** `DiffPaneMenu.Request` takes the context as
+`object` — all it does with one is hand it to the menu as its `DataContext` — and takes two
+callbacks the caller closes over its own type with: one that builds the items, one that raises the
+right event and answers whether a handler cancelled. Placement, the disabled-item rule and the
+replacement rule stay in the one place. The standing test is that the replacement property
+suppresses the opening event on **both** types — `The_replacement_menu_suppresses_the_opening_event_on_both_new_surfaces`
+and `The_replacement_menu_suppresses_the_opening_event_on_a_header_too` — and, beside it, that the
+two replacement properties govern their own surface only:
+`The_two_replacement_properties_govern_their_own_surface_only`. One property governing both would be
+the seam quietly becoming one surface again.
+
+**The unified view raises no header menu, and not for want of a header.** It has two, above its one
+pane. It is read-only, so it has neither of the two verbs a header menu is, and an empty list opens
+nothing: `The_unified_views_headers_raise_no_menu`. Absent, not empty.
+
+**There is no foreign-header guard, and that is not an oversight.** Phase 1's margin handler is
+attached to the *pane*, so it has several possible sources — including a margin this library did not
+draw, which it leaves alone rather than answering with the text's menu. A header handler is attached
+to the *header*, so it has exactly one source and a fallback branch would be unreachable. What is
+worth asserting instead is that the event bubbles, so a right-click on the title inside the header is
+a right-click on the header: `A_click_on_the_title_inside_the_header_is_a_click_on_the_header`.
+
+## The menu's icons are the gutter's own marks, on the theme's foreground
+
+Plan 00010 laid out an icon column, left every slot null, and proved the column with a solid square a
+test pushed in. Filling it invents nothing: **the copy entries carry the gutter's own arrow and the
+entries about a change carry the change-marker margin's own operator for that change's kind.**
+
+The arrow is the gutter's *by construction*. `CopyArrowGlyph` laid its points out and drew them in
+one method, which no menu column can reach — there is no `DrawingContext` there — so the points are
+now `CopyArrowGlyph.Geometry` and `Draw` calls it. A second set of points tuned separately would
+drift the first time either was.
+
+The operators are **strokes rather than text**, which is the one place this departs from the gutter.
+The margin chose `+`, `−` and `≠` by weighing them in the *pane* font — 41, 25 and 56 pixels of ink,
+against a hyphen's 5 — and a menu is drawn in the host theme's font, so that measurement does not
+carry. Drawing them as geometry keeps the same three marks without depending on a font this library
+does not choose.
+
+Both follow the inherited `TextElement.Foreground` rather than `DiffBrushes`. The gutter's yellows
+and blues carry meaning against the gutter's own background and would be an unexplained second
+palette in a host's menu; following the foreground means a theme or variant swap carries the icons
+with it, a disabled row greys its icon with its label, and contrast is the host's — already solved
+for its own menu text. `An_icon_follows_the_foreground_rather_than_the_gutters_palette` asserts it,
+and the change-marker margin's frame is captured in both variants to show it.
+
+**Only the rows with something to show carry one.** Navigate, find, save, revert, *go to this row*
+and *hide the overview map* are null, because none has a mark in the vocabulary already on screen
+and inventing one would be starting an icon set rather than finishing this one. An unchanged line
+has no kind, so its two change entries are present, disabled and unillustrated. A menu where some
+rows carry an icon and some do not is exactly the arrangement the reserved column exists for, and
+`The_icon_column_is_reserved_whether_or_not_anything_fills_it` is 00010's assertion, unchanged —
+what changed is that it is finally exercising something. Its stand-in square moved to an entry the
+control leaves null, because a host's own icon still has to land in the same column.

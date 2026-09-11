@@ -316,6 +316,50 @@ All notable changes to DiffView are recorded here. The format follows
   the single-lane one, the toggle on both wiring paths, the drag against the jump, the wheel, the
   lane-naming tooltip, and `MinimapSnapshotTests` — a left-only block in both variants and both
   palettes, the drawing asserted against the buckets the map reports.
+- Plan 00012, the context menus beyond the pane: a right-click anywhere the control draws now opens
+  a menu about what is under the pointer. The two gutters, the connector column, the overview map
+  and the headers, through the same two extensibility shapes plan 00010 built — an opening event
+  carrying the context and a mutable item list, and a property that replaces the menu outright.
+  `DiffPaneRegion` gains `ConnectorGutter` and `OverviewMap`; each control builds its context from
+  the hit-test it already performs for its own left-click, and **a right-click navigates nothing**:
+  the connector does not jump and the map does not scroll. Off every polygon the connector opens no
+  menu at all, because the empty column is the splitter and every entry that menu has is about a
+  block.
+- `DiffHeaderContext`, a public sibling record — `Side`, `Title`, `Detail`, `IsDirty`, `IsReadOnly`
+  — with `SideBySideDiffView.HeaderContextMenuOpening` and `HeaderContextMenu` beside the pane's
+  pair, and `HeaderContextAt(side)` for a host writing its own. A header's subject is a side and its
+  file with no line at all, so it is a second context type rather than a sixth region over a
+  synthetic line; `DiffPaneContext` is untouched. Both types go through the one menu implementation,
+  so the contexts differ and the menu's behaviour cannot. The header's menu is save and revert and
+  nothing else — no copy and no navigate, a header not being a position. The unified view raises no
+  header menu: it has two headers but, being read-only, neither of the verbs one would offer.
+- `DiffCommand.GoToChange` and `DiffCommand.SelectBlock`, both **present in the key map and unbound**
+  rather than absent from it. A menu entry carries the block that was clicked, as the copy entries
+  already did; a gesture — if a host binds one — means the current block, which is the only reading
+  a keyboard has. Selecting from the connector selects in **both** panes, because the block spans
+  both files, and a side the block has no lines in has its selection cleared rather than left
+  standing. The unified view answers `null` for both, so they are absent from its menus.
+- The icon column plan 00010 reserved is filled, from the vocabulary already on screen: the copy
+  entries carry the gutter's own arrow — the same geometry, now shared rather than redrawn —
+  pointing the way the text would travel, and the entries about a change carry the change-marker
+  margin's own `+`, `−` and `≠` for that change's kind, as strokes. Both follow the inherited
+  `TextElement.Foreground`, so a theme or variant swap carries them and a disabled row greys its
+  icon with its label. Navigate, find, save, revert, *go to this row* and *hide the overview map*
+  carry none, having no mark in that vocabulary. 00010's alignment assertion is unchanged; its
+  stand-in square moved to an entry the control leaves null, so a host's own icon is still proved to
+  land in the same column.
+- Headless tests for each new surface: the region each gutter reports, the block a polygon names
+  against the block nearest the pointer's row, the row the map reports against the pixel the pointer
+  is on, the lane under the pointer and the line that row has, a right-click that navigates nothing,
+  the splitter that opens nothing, the replacement property suppressing the opening event on every
+  surface and on both context types, the two replacement properties governing their own surface
+  only, every new entry carrying an automation name, and the icons against the gutter's own geometry
+  and the theme's foreground.
+- `MenuSnapshotTests`, the first snapshots in the repository to capture a popup: one frame per
+  surface the plan gave a menu, and the change-marker margin's in both variants because that is the
+  menu carrying both kinds of icon at once. Opening a menu moves about 8% of a frame's pixels, well
+  past the comparer's half-a-percent tolerance, so unlike a chip or an arrow these frames can fail
+  on their own.
 
 ### Removed
 
