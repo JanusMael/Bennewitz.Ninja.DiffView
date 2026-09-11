@@ -2,8 +2,10 @@
 
 ## Resume
 
-**[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete** — all five phases — on
-branch `feat/menus-beyond-the-pane`, unmerged. A right-click anywhere the control draws now opens a
+**[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete** — all five phases — and
+`main` carries it: `feat/menus-beyond-the-pane` fast-forwarded in on 2026-09-11 as
+`feat/in-pane-editing` did before it, and the repository still holds no merge commit. A right-click
+anywhere the control draws now opens a
 menu about what is under the pointer: the two gutters, the connector column, the overview map and
 the headers, through the two extensibility shapes plan 00010 built. **No left-click changed** —
 neither the connector's jump nor the map's scroll — and off every polygon the connector opens
@@ -14,14 +16,17 @@ unbound. The icon column 00010 reserved is filled from the vocabulary already on
 gutter's arrow and the marker margin's `+` `−` `≠`, on the theme's foreground. *Plan 00012 phases*
 and *verification* below carry the detail, and *Decisions* the three arguments worth keeping.
 
-**Next is the question of whether this branch fast-forwards into `main`** as `feat/in-pane-editing`
-did — thirteen commits, the whole of plan 00012 plus a ClaudeForge pin bump; history here is linear
-and `--ff-only` is the convention. After that, **the folding spike** — Beyond Compare's *Show
-Differences / Show Same / Show Context*, the largest functional delta left — asked for explicitly on
-2026-09-11 and to be run before any plan 00013 is written. AvaloniaEdit ships a whole folding stack
-(`FoldingManager`, `FoldingSection`, `FoldingElementGenerator`, `FoldingMargin`) that this library
-references nowhere; the spike's real question is whether a fold can keep both panes row-aligned,
-which is the same constraint that forced word wrap off.
+**The folding spike has run, and its verdict is split.** Beyond Compare's *Show Differences* and
+*Show Context* — hiding rows that match — are feasible: a fold taken symmetrically over unchanged
+aligned rows keeps both panes aligned, and `TextView.CollapseLines` needs none of AvaloniaEdit's
+folding stack, whose margin and index-0 generator would each collide with what the panes already
+install. *Show Same* is not that in mirror image: a change block that is lines on one side is
+padding on the other, and padding has no line to collapse, so hiding what differs would need
+`PaddingSpec` to become a function of what is folded. The cost is elsewhere anyway — the connector
+gutter and the overview map are fed `row × lineHeight`, and a fold is the first thing in this
+library to break that equation, so a folding plan is mostly a plan about one row-to-pixel
+projection. *Folding spike* below and *Decisions* carry it. **Whether plan 00013 is written, and
+which of the three modes it takes, is the open question.**
 
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.
@@ -240,6 +245,30 @@ dotnet run --project src/ThemeAudit -- report
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Folding spike
+
+Run on 2026-09-11, before any plan 00013 is written, on branch `spike/folding-feasibility`. Five
+headless items in `tests/DiffView.Avalonia.Tests/Spike/FoldingSpikeTests.cs`, against the same two
+plain `TextEditor`s and the same padding mechanism as the Phase 1 padding spike — the question was
+never whether AvaloniaEdit can fold. *Decisions*, "Folding: go for hiding what matches, and the
+price is a row projection", carries the verdict and its reasoning.
+
+| Question | Answer |
+|---|---|
+| Can a fold keep both panes row-aligned? | **Yes, taken symmetrically over unchanged rows**: `Item1_a_symmetric_fold_of_an_unchanged_run_keeps_both_panes_aligned` — equal extents, every surviving pair still sharing a row top, rows above the fold unmoved and rows below it moved up by the fold on *both* sides. Made one row asymmetric, it fails, so the alignment it asserts is not equal heights by coincidence |
+| Can a fold's range be read off a document? | **No**: `Item2_a_fold_that_starts_at_a_padded_line_swallows_padding_belonging_to_the_rows_above_it` — padding is height on a line, so a fold beginning at a padded line takes padding that stands in for rows above it and the panes diverge by exactly that. The range is one row range projected twice |
+| Is *Show Same* the same problem mirrored? | **No**: `Item3_a_change_block_has_no_line_to_collapse_on_the_padded_side` — a change block is lines on one side and padding on the other, and padding has no line to collapse. It also shows equal heights are not alignment: the pairs below the block are out by the block |
+| What does a fold cost the rest of the control? | **The row-to-pixel equation**: `Item4_rows_and_pixels_stop_sharing_one_scale_once_anything_is_folded` — in-pane drawing walks `TextView.VisualLines` and reads `VisualTop`, so it is unaffected; the connector gutter and the overview map are fed `row × DefaultLineHeight` and are not |
+| Is AvaloniaEdit's folding stack wanted? | **No — only its primitive**: `Item5_collapsing_is_a_text_view_primitive_that_needs_no_folding_manager` — `TextView.CollapseLines` writes the height tree and hands back something that uncollapses, while `FoldingManager.Install` would claim a slot in `TextArea.LeftMargins` and generator index 0, which is where the padding generator lives |
+| Build and tests | pass: `dotnet build DiffView.slnx -warnaserror` clean, zero warnings; `dotnet test --solution DiffView.slnx` **544 passed** (539 before the spike) |
+
+Two of the five passed for the wrong reason first. The extent assertions were reading a stale
+`ExtentHeight`, because collapsing writes the height tree and leaves both the visual lines and the
+published extent behind until a redraw and a measure pass — the two steps `PaddingHeightPrimer`
+already takes for that reason. And the first fold landed at the top of the document, where a row
+that moved cannot be told from a row that never moved; the run is now taken from the second
+unpadded block, so the fold has aligned rows on both sides of it.
 
 ## Plan 00012 phases
 

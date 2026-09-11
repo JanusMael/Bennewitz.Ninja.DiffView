@@ -1826,3 +1826,60 @@ rows carry an icon and some do not is exactly the arrangement the reserved colum
 `The_icon_column_is_reserved_whether_or_not_anything_fills_it` is 00010's assertion, unchanged —
 what changed is that it is finally exercising something. Its stand-in square moved to an entry the
 control leaves null, because a host's own icon still has to land in the same column.
+
+## Folding: go for hiding what matches, and the price is a row projection
+
+The folding spike (`tests/DiffView.Avalonia.Tests/Spike`, `FoldingSpikeTests`, five items) ran
+against the same two plain `TextEditor`s and the same padding mechanism as the Phase 1 spike,
+because the question was never whether AvaloniaEdit can fold. It ships `FoldingManager`,
+`FoldingSection`, `FoldingElementGenerator` and `FoldingMargin`, none of which this library
+references. The question was whether a fold can keep two padded panes row-aligned — the same
+constraint that forced word wrap off — and the answer differs by direction.
+
+**Beyond Compare's *Show Differences* is feasible and cheap.** Collapsing the same run of
+unchanged aligned rows in both panes takes exactly the same height out of each: the extents stay
+equal, every surviving pair still shares a row top, rows above the fold do not move and rows below
+it move up by the fold on both sides
+(`Item1_a_symmetric_fold_of_an_unchanged_run_keeps_both_panes_aligned`). Made asymmetric by one
+row, that test fails — the alignment it asserts is real and not a coincidence of equal heights.
+*Show Context* is the same mechanism with the run shortened at both ends.
+
+**Its mirror, *Show Same*, is not the same problem wearing a different hat.** A change block that
+is lines on one side is *padding* on the other, and padding has no line to collapse: it is height
+on the line that follows, not lines of its own. Collapsing the side that has lines moves that pane
+alone, by exactly the block
+(`Item3_a_change_block_has_no_line_to_collapse_on_the_padded_side`). Hiding what differs therefore
+needs `PaddingSpec` to become a function of what is folded rather than of the model alone — a
+change to the mechanism plan 00001 built, not an addition beside it. It is out of scope for a first
+folding plan and should be said so explicitly rather than discovered in its last phase.
+
+**A fold's boundaries belong to the aligned model, never to a document.** Because padding is height
+on a line, a fold that begins at a padded line swallows the padding standing in for rows *above*
+it — rows the other side still shows — and the panes diverge by exactly that padding
+(`Item2_a_fold_that_starts_at_a_padded_line_swallows_padding_belonging_to_the_rows_above_it`). The
+two line ranges are not derivable from either side's line numbers; they are two projections of one
+row range.
+
+**The collapse is a text-view primitive, and the folding stack is not wanted.**
+`TextView.CollapseLines` writes the height tree directly and returns a `CollapsedLineSection` that
+uncollapses, which is what a view option needs. `FoldingManager.Install` would add a `FoldingMargin`
+to `TextArea.LeftMargins` and insert its generator at index 0 — "folding only works correctly when
+it has highest priority", a claim on the slot `PaddingElementGenerator` occupies. Taking the
+primitive and leaving the stack keeps the panes' own margins and generator order untouched
+(`Item5_collapsing_is_a_text_view_primitive_that_needs_no_folding_manager`).
+
+**What it costs is the assumption every out-of-pane surface is built on.** In-pane drawing needs
+nothing: the line-number margin, the change-marker margin, the background renderer and the search
+renderer all walk `TextView.VisualLines` and read `VisualLine.VisualTop`, and the height tree
+already answers both under a fold. The connector gutter and the overview map do not — they are fed
+`row × DefaultLineHeight` from `SideBySideDiffView`, along with `ViewportStartRow =
+VerticalOffset / lineHeight`, and that equation is exactly what a fold breaks: after one, the
+division answers the *visible* row and the model row is unreachable from a pixel without asking
+what is folded (`Item4_rows_and_pixels_stop_sharing_one_scale_once_anything_is_folded`). A folding
+plan is therefore mostly a plan about introducing one row-to-pixel projection and routing those
+surfaces through it; the folding itself is the small part.
+
+**And the extent is not the height tree.** Collapsing updates `DocumentHeight` at once and leaves
+both the visual lines and the published scroll extent stale until a redraw and a measure pass —
+the same two steps `PaddingHeightPrimer` takes for the same reason. Two of the spike's assertions
+passed vacuously against a stale extent before that was found.
