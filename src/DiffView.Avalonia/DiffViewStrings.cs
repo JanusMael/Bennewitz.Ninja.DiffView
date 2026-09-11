@@ -299,6 +299,12 @@ public static class DiffViewStrings
     /// <summary>A marker or connector tooltip: <c>{0}</c> change (1-based), <c>{1}</c> total, <c>{2}</c> the block's counts.</summary>
     public const string MarkerTooltip = "Marker.Tooltip";
 
+    /// <summary>The placeholder standing for a folded run: <c>{0}</c> rows hidden behind it.</summary>
+    public const string FoldPlaceholder = "Fold.Placeholder";
+
+    /// <summary>The same where exactly one row is hidden, which no plural rule covers for free.</summary>
+    public const string FoldPlaceholderOne = "Fold.Placeholder.One";
+
     /// <summary>A minimap tooltip: <c>{0}</c> row (1-based), <c>{1}</c> rows, <c>{2}</c> kind.</summary>
     public const string MinimapTooltip = "Minimap.Tooltip";
 
@@ -527,6 +533,8 @@ public static class DiffViewStrings
         [LineTooltipUnifiedAloneLeft] = "Line {0} on the left · no right line",
         [LineTooltipUnifiedAloneRight] = "Line {0} on the right · no left line",
         [MarkerTooltip] = "Change {0} of {1} · {2}",
+        [FoldPlaceholder] = "⋯ {0} matching rows hidden",
+        [FoldPlaceholderOne] = "⋯ 1 matching row hidden",
         [MinimapTooltip] = "Row {0} of {1} · {2}",
         [MinimapLaneTooltipLeft] = "Row {0} of {1} · {2} · left side",
         [MinimapLaneTooltipRight] = "Row {0} of {1} · {2} · right side",

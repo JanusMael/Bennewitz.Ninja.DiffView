@@ -79,6 +79,7 @@ public class DiffPanePresenter : TextEditor
             coerce: static (_, value) => Math.Max(1, value));
 
     private readonly PaddingElementGenerator _generator;
+    private readonly FoldPlaceholderGenerator _foldGenerator;
     private readonly PaddingHeightPrimer _primer = new();
     private readonly DiffLineBackgroundRenderer _backgroundRenderer;
     private readonly SearchMatchRenderer _searchRenderer;
@@ -87,6 +88,7 @@ public class DiffPanePresenter : TextEditor
     private readonly DiffLineNumberMargin _lineNumberMargin;
     private readonly ChangeMarkerMargin _changeMarkerMargin;
     private IReadOnlySet<int> _modifiedLines = new HashSet<int>();
+    private readonly List<CollapsedLineSection> _collapsed = [];
     private readonly List<RenderFaultEventArgs> _faults = [];
     private SyntaxHighlighting? _syntax;
     private bool _syntaxDisabled;
@@ -137,6 +139,8 @@ public class DiffPanePresenter : TextEditor
         Palette = new DiffBrushes();
         _generator = new PaddingElementGenerator(PaddingForLine, (line, ex) => ReportFault(nameof(PaddingElementGenerator), line, ex));
         TextArea.TextView.ElementGenerators.Add(_generator);
+        _foldGenerator = new FoldPlaceholderGenerator((line, ex) => ReportFault(nameof(FoldPlaceholderGenerator), line, ex));
+        TextArea.TextView.ElementGenerators.Add(_foldGenerator);
 
         _backgroundRenderer = new DiffLineBackgroundRenderer(this);
         _searchRenderer = new SearchMatchRenderer(this);
@@ -745,10 +749,60 @@ public class DiffPanePresenter : TextEditor
 
     private void OnDocumentSwapped(object? sender, EventArgs e)
     {
-        // A new document has a new height tree; the old primed set means nothing to it.
+        // A new document has a new height tree; the old primed set and the old collapsed
+        // sections mean nothing to it.
         _primer.Forget();
+        _collapsed.Clear();
         RequestPrime();
     }
+
+    /// <summary>
+    /// Collapses exactly these 1-based inclusive line ranges, replacing whatever was collapsed
+    /// before. Returns how many ranges were taken.
+    /// </summary>
+    /// <remarks>
+    /// Collapsing writes the height tree, which answers <c>DocumentHeight</c> at once — the
+    /// visual lines and the published scroll extent follow only from a redraw and a measure pass,
+    /// the same two steps <see cref="PaddingHeightPrimer"/> takes for the same reason.
+    /// </remarks>
+    internal int SetCollapsedLines(IReadOnlyList<(int First, int Last)> ranges)
+    {
+        ArgumentNullException.ThrowIfNull(ranges);
+        foreach (CollapsedLineSection section in _collapsed)
+        {
+            section.Uncollapse();
+        }
+
+        _collapsed.Clear();
+
+        TextView textView = TextArea.TextView;
+        List<(int First, int Last)> taken = [];
+        if (Document is { } document)
+        {
+            foreach ((int first, int last) in ranges)
+            {
+                if (first < 1 || last < first || last > document.LineCount)
+                {
+                    continue;
+                }
+
+                _collapsed.Add(textView.CollapseLines(document.GetLineByNumber(first), document.GetLineByNumber(last)));
+                taken.Add((first, last));
+            }
+        }
+
+        // The generator spans exactly what was collapsed. Without it the text view walks from a
+        // visual line to the next document line, finds it collapsed, and throws.
+        _foldGenerator.Reset();
+        _foldGenerator.SetRanges(taken);
+
+        textView.Redraw();
+        textView.InvalidateMeasure();
+        return _collapsed.Count;
+    }
+
+    /// <summary>How many line ranges are collapsed in this pane.</summary>
+    internal int CollapsedSectionCount => _collapsed.Count;
 
     private void OnLayoutUpdated(object? sender, EventArgs e)
     {

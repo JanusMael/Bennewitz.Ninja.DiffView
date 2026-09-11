@@ -1883,3 +1883,44 @@ surfaces through it; the folding itself is the small part.
 both the visual lines and the published scroll extent stale until a redraw and a measure pass —
 the same two steps `PaddingHeightPrimer` takes for the same reason. Two of the spike's assertions
 passed vacuously against a stale extent before that was found.
+
+## The placeholder is not phase 3's to add, because a collapse without it throws
+
+Plan 00013 put `CollapseLines` in phase 2 and the placeholder element in phase 3 — "still no UI and
+no placeholder — a method and a test". That split is not available, and the plan is not edited:
+this is the drift.
+
+`TextView.CreateAndMeasureVisualLines` walks from one visual line to the next with
+`nextLine = visualLine.LastDocumentLine.NextLine`, which does **not** skip what is collapsed;
+`BuildVisualLine` then throws *"Trying to build visual line from collapsed line"*. The element that
+makes one visual line span the whole run is what keeps that walk on a line it can build — which is
+exactly what `TextView.CollapseLines` means by "do not call it without providing a corresponding
+VisualLineElementGenerator", a sentence that reads like advice until the measure pass reaches the
+fold. Collapsing is a height-tree operation; being *hidden* is the generator's doing.
+
+The folding spike did not find this, and the reason is worth keeping: its folds were never in view.
+`Item1` folded rows 35–53 with the viewport at the top of a 300 px window showing about fifteen
+rows, so the measure pass never walked into the collapsed range — it only ever read `DocumentHeight`
+and `GetVisualTopByDocumentLine`, both of which the height tree answers whether or not anything can
+be drawn. **A fold that is off screen is not a fold that has been rendered**, and the spike's
+verdict stands only because the alignment question it asked is answered by the height tree.
+
+So phase 2 carries `FoldPlaceholderGenerator`: the spanning element, and the two strings it needs.
+It is interested in the **end** offset of the line before a collapsed range, where
+`PaddingElementGenerator` is interested in a line's start, so the two do not compete for an offset —
+except on an empty line, and a run's first line carries no padding by the boundary rule that chose
+it. What is left for phase 3 is what the plan wanted it for: click-to-expand, the automation name,
+and the test that the two generators compose rather than displace one another.
+
+## A model line index is not an AvaloniaEdit line number
+
+`AlignedRow.LeftLine` and `RightLine` are **0-based** indices into that side's `DiffPane.Lines`;
+AvaloniaEdit numbers document lines from **1**. `PaneMetadata` has always undone the offset at its
+own boundary (`_lines[lineNumber - 1]`), and `FoldPlan.LinesOf` does the same in the other
+direction, which its remarks say out loud because the two numbers are both "the line" in prose and
+differ by one in fact.
+
+Getting it wrong is close to invisible: a fold shifted by one collapses the same *number* of lines
+on both sides, so the extents still match and every surviving pair still shares a row top — two
+panes wrong in the same direction agree with each other. `A_fold_leaves_its_first_line_standing_and_takes_every_line_after_it`
+is what catches it, by asserting which lines are left standing rather than how many.

@@ -3110,6 +3110,58 @@ public class SideBySideDiffView : TemplatedControl
         }
     }
 
+    /// <summary>
+    /// Folds the model's unchanged runs, keeping <paramref name="contextRows"/> rows either side
+    /// of every change; <c>null</c> unfolds everything. Returns the projection now in force.
+    /// </summary>
+    internal RowProjection ApplyFolds(int? contextRows, int minimumFoldedRows = FoldPlan.DefaultMinimumFoldedRows)
+    {
+        SideBySideDocument? document = Document;
+        IReadOnlyList<FoldedRun> planned = document is null || contextRows is null
+            ? []
+            : FoldPlan.For(document, contextRows.Value, minimumFoldedRows);
+
+        _projection = RowProjection.Of(document?.Rows.Count ?? 0, planned);
+
+        // The line ranges come from the projection's own folds rather than from the plan. A run
+        // the projection declined is a run neither pane may collapse, and taking them from two
+        // different lists is how the panes would come to disagree.
+        foreach (DiffPanePresenter? pane in new[] { _leftPane, _rightPane })
+        {
+            if (pane is null)
+            {
+                continue;
+            }
+
+            List<(int First, int Last)> ranges = [];
+            if (document is not null)
+            {
+                for (int fold = 0; fold < _projection.FoldCount; fold++)
+                {
+                    if (FoldPlan.LinesOf(document, _projection.FoldAt(fold), pane.Side) is { } range)
+                    {
+                        ranges.Add(range);
+                    }
+                }
+            }
+
+            pane.SetCollapsedLines(ranges);
+        }
+
+        if (_gutter is not null)
+        {
+            _gutter.Projection = _projection;
+        }
+
+        if (_minimap is not null)
+        {
+            _minimap.Projection = _projection;
+        }
+
+        UpdateOverview();
+        return _projection;
+    }
+
     private void OnPaneCopyOutRequested(object? sender, int blockIndex)
     {
         // The arrow is in the pane the block is copied *from*, so the target is the other side.
