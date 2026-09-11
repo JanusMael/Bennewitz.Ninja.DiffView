@@ -9,9 +9,10 @@ keeps `n`, which is Beyond Compare's *Show All*, *Show Differences* and *Show Co
 property. Both views, off by default. The panes stay row-aligned because a fold is a **row** range
 projected onto each side's lines, never read off a document, and because a row is foldable only if
 collapsing its lines removes that row's height and nothing else. A click on a placeholder gives its
-run back. **Two things are not done and are named in the verification table below**: navigation and
-find do not yet cross a fold — F7 or a match inside a folded run lands on the placeholder rather
-than opening it — and the plan has not been driven by hand.
+run back. **Two things are not done and are named in the verification table below**: find does not
+cross a fold — a match on an unchanged row is counted, ticked and walked to, and the walk lands on
+the placeholder — and the plan has not been driven by hand. *Navigation* crosses a fold fine, and
+needed no work to: a fold only covers unchanged rows and a change block has none.
 
 **The load-bearing change is not the folding.** The connector gutter and the overview map were fed
 `row × lineHeight`, an equation only accidentally true, and a fold is the first thing in this
@@ -19,9 +20,9 @@ library to break it; `RowProjection` is now the one place a row becomes a pixel.
 as the identity, changing no behaviour, which is why the other 549 tests staying green *is* that
 phase's evidence.
 
-**Next are the two gaps above** — navigation and find across a fold, and a by-hand pass under
-`AGENTS.md` §9, where the question worth answering is whether the pane's context menu wants
-reorganising now that it runs to about fifteen entries.
+**Next are the two gaps above** — find across a fold, and a by-hand pass under `AGENTS.md` §9,
+where the question worth answering is whether the pane's context menu wants reorganising now that
+it runs to about fifteen entries.
 
 **[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete** — all five phases — and
 `main` carries it: `feat/menus-beyond-the-pane` fast-forwarded in on 2026-09-11 as
@@ -290,8 +291,8 @@ dotnet run --project src/ThemeAudit -- report
 | Expanding a fold restores every row top | pass: `FoldingTests.Every_surviving_pair_still_shares_a_row_top` unfolds and re-asserts; `FoldPlaceholderTests.A_click_on_a_placeholder_gives_that_run_back_and_leaves_the_others_folded` does it through a real pointer press at the placeholder's own visual column |
 | The map's viewport box follows the visible document | pass: `RowProjectionWiringTests.The_maps_viewport_box_is_measured_against_the_visible_document` |
 | The connector still draws what a fold brings into view | pass: `RowProjectionWiringTests.The_connector_still_draws_the_blocks_a_fold_brought_into_view` — the cull's upper bound, which does not misplace a polygon but breaks the loop early and drops every block below the fold |
-| Navigation crosses a fold | **not done.** F7 into a folded run neither expands it nor is refused; `ScrollToRows` projects the row, so the pane scrolls to where that row is drawn, which is the placeholder. Named here rather than left to be found |
-| Find crosses a fold | **not done**, and the same shape: a match inside a folded run is still counted and still ticked on the map, and walking to it lands on the placeholder |
+| Navigation crosses a fold | pass, and **there was nothing to do**: a fold only ever covers `Unchanged` rows and a change block has none, so F7 cannot aim into one. `FoldingReachTests.No_fold_can_hide_a_change_so_navigation_is_never_aimed_into_one` asserts it over every block rather than leaving it to be assumed — *"F7 into a folded run"* is a sentence that sounds like it describes something. **An earlier version of this row said "not done" and was wrong**, on that sentence alone |
+| Find crosses a fold | **not done**, and unlike navigation it is real: a match can be on an unchanged row, which is exactly what a fold covers. Such a match is still counted, still ticked on the map and still walked to, and the walk lands on the placeholder standing in for its row. `FoldingReachTests.A_find_match_inside_a_folded_run_is_still_counted_and_still_hidden` records the gap; whether to reveal the run or exclude the match is a decision, not an oversight |
 | The unified view folds the same runs | pass: `FoldingOptionTests.The_unified_view_folds_its_own_runs` |
 | The option's three values | pass: `FoldingOptionTests.The_option_folds_and_the_default_folds_nothing`, `The_three_modes_are_the_one_option_written_three_ways`, `A_negative_context_is_coerced_rather_than_kept` |
 | Every folding verb is in the key map and unbound | pass: `FoldingOptionTests.All_four_folding_verbs_arrive_in_the_key_map_unbound` |
