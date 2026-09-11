@@ -2,18 +2,36 @@
 
 ## Resume
 
-**In flight: [plan 00012](plans/00012-context-menus-beyond-the-pane.md), phase 1 of 5**, on branch
-`feat/menus-beyond-the-pane` — the context menus plan 00010 named as non-goals. Phase 1 landed the
-two gutters: `ContextAt` had taken a `DiffPaneRegion` since 00010 and *nothing had ever passed one*,
-and a right-click on a margin returned early. It now resolves the region from the event's source by
-**identity against the pane's own margins** — not by type, which a same-named property shadows into
-a CS0150, and not by pointer-x against the margins' widths, which would be plan 00008's misaligned
-header a second time. A gutter's menu is the pane's copy and navigate items **without save and
-revert**: those are the file's verbs and a gutter is a position, so they are absent rather than
-greyed. A margin the library did not draw is still left alone. Phase 2 is the connector and the map,
-and it owes the `GoToChange` verb phase 1 deferred — the plan promised *"go to this change"* on the
-gutters, no such verb exists, and the connector needs the identical one, so introducing it there
-serves both. That deferral is drift and owes a *Decisions* entry at phase 5.
+**In flight: [plan 00012](plans/00012-context-menus-beyond-the-pane.md), phases 1 and 2 of 5**, on
+branch `feat/menus-beyond-the-pane` — the context menus plan 00010 named as non-goals. Phase 1
+landed the two gutters: `ContextAt` had taken a `DiffPaneRegion` since 00010 and *nothing had ever
+passed one*, and a right-click on a margin returned early. It now resolves the region from the
+event's source by **identity against the pane's own margins** — not by type, which a same-named
+property shadows into a CS0150, and not by pointer-x against the margins' widths, which would be
+plan 00008's misaligned header a second time. A gutter's menu is the pane's copy and navigate items
+**without save and revert**: those are the file's verbs and a gutter is a position, so they are
+absent rather than greyed. A margin the library did not draw is still left alone.
+
+Phase 2 added the connector and the map, each raising its menu from the hit-test it already
+performs for its own left-click, and **neither click changed**: a right-click navigates nothing,
+and off every polygon there is no block and so no menu, because the empty column is the splitter.
+It brought the two verbs with it — `GoToChange`, which phase 1 deferred on purpose, and
+`SelectBlock`, which the plan's item table named and phase 1 passed over — so the two margins also
+gained the lists the plan wrote for them. Both verbs are **unbound in the key map rather than
+absent from it**: they are pointer verbs first, but a gesture would mean the current block, and
+that is how a host binds one.
+
+The plan called these two surfaces "a new `Region` value and a constructor call", which is nearly
+true. What it did not confront is that `DiffPaneContext.LineNumber` is a non-nullable `int` and
+neither surface is a pane — `AlignedRow` carries a nullable line per side, so a row has up to two
+and at least one. **Settled by Brian, 2026-09-11**, against a sibling record and against relaxing
+`LineNumber` to `int?`: the surface says what it is about, so `Side` is the lane on the map and
+nothing on the connector, and `LineNumber` is the row's line on that side where it has one and the
+left's then the right's where it does not, with `SourceSide` naming which. That, and phase 1's
+deferral, are the two pieces of drift owing a *Decisions* entry at phase 5.
+
+**Next is phase 3** — the header and `DiffHeaderContext` — then phase 4's icon set and phase 5's
+evidence.
 
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.
