@@ -9,10 +9,9 @@ keeps `n`, which is Beyond Compare's *Show All*, *Show Differences* and *Show Co
 property. Both views, off by default. The panes stay row-aligned because a fold is a **row** range
 projected onto each side's lines, never read off a document, and because a row is foldable only if
 collapsing its lines removes that row's height and nothing else. A click on a placeholder gives its
-run back. **Two things are not done and are named in the verification table below**: find does not
-cross a fold — a match on an unchanged row is counted, ticked and walked to, and the walk lands on
-the placeholder — and the plan has not been driven by hand. *Navigation* crosses a fold fine, and
-needed no work to: a fold only covers unchanged rows and a change block has none.
+run back, and so does walking a find match into one — chosen over excluding folded matches,
+because a count that changes when you fold describes the view rather than the file. *Navigation*
+needed nothing and never did: a fold only covers unchanged rows and a change block has none.
 
 **The load-bearing change is not the folding.** The connector gutter and the overview map were fed
 `row × lineHeight`, an equation only accidentally true, and a fold is the first thing in this
@@ -20,9 +19,14 @@ library to break it; `RowProjection` is now the one place a row becomes a pixel.
 as the identity, changing no behaviour, which is why the other 549 tests staying green *is* that
 phase's evidence.
 
-**Next are the two gaps above** — find across a fold, and a by-hand pass under `AGENTS.md` §9,
-where the question worth answering is whether the pane's context menu wants reorganising now that
-it runs to about fifteen entries.
+**Driven by hand on 2026-09-11**, which found three things no headless frame could: `--edit` was
+missing from the demo's flag summary; the pane's context menu **fits** at real size, so the
+overflow its snapshot shows is the 600 px capture window rather than the app and the question of
+reorganising it answers itself as *no*; and the menu's *"Show the rows hidden here"* acted on the
+caret while saying "here", now the run under the pointer as plan 00010's rule has it. The capture
+recipe in `AGENTS.md` §9 was wrong and is rewritten: `import` does not work on this box at all and
+`ffmpeg`'s `x11grab` does, against the client's own window rather than the root, which under
+XWayland holds nothing.
 
 **[Plan 00012](plans/00012-context-menus-beyond-the-pane.md) is complete** — all five phases — and
 `main` carries it: `feat/menus-beyond-the-pane` fast-forwarded in on 2026-09-11 as
@@ -301,7 +305,8 @@ dotnet run --project src/ThemeAudit -- report
 | Rendered frames, folded and unfolded | pass: `FoldingSnapshotTests`, four frames — folded in both variants, unfolded, and folded with context. Four of the six `MenuSnapshotTests` frames also moved, and **the two that did not are the map's and the header's**, which is exactly the set that should not have |
 | Mutations | pass: 7/7 on `RowProjection`, 7/7 on the phase 1 wiring, 7/8 on `FoldPlan`, 6/6 on the placeholder and the expand path. The two survivors are equivalent mutants and are named in the phase commits: an unreachable defensive guard, and a cull bound that only ever under-culls |
 | Build and tests | pass: `dotnet build DiffView.slnx -warnaserror` clean, zero warnings; `dotnet test --solution DiffView.slnx` **578 passed** (556 before the plan's first phase) |
-| Exercised by hand | **not done** — owed, like plan 00012's was until it was driven under `AGENTS.md` §9 |
+| Exercised by hand | pass: driven under §9 on 2026-09-11, against `PaneSource.cs` vs `TextProbe.cs` with `--edit both`, in Dark. Folding reads right at real size — boxed placeholders, both panes level, the line numbers jumping — and the View menu's three modes are a radio group with the one in force selected. **Three findings, all of them things a headless frame could not have given.** `--edit` was missing from the `[DebugFlags] active:` line, so the flag could not be confirmed from the log. The pane's context menu **fits**, twelve entries and no scroll chevron: the overflow its snapshot shows is the 600 px capture window, not the 720 px app, and the reorganising question answers itself as *no*. And *"Show the rows hidden here"* was enabled from the **caret** while the pointer was elsewhere — the entry says "here", and plan 00010's rule is that a menu entry carries what was clicked |
+| The menu's expand entry means the pointer, not the caret | pass: `FoldingReachTests.The_menus_expand_entry_is_the_run_under_the_pointer_not_the_one_at_the_caret`, which is the by-hand finding above turned into an assertion. The gesture still means the caret's run, which is the only run a keyboard can name |
 
 ## Folding spike
 

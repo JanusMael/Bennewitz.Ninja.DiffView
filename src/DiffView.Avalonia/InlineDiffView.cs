@@ -786,10 +786,13 @@ public class InlineDiffView : TemplatedControl
         // save or revert to keep off a gutter, so its margin menu and its text menu are the same
         // menu — not by oversight but because the difference the side-by-side view draws is a
         // difference between verbs this view does not have.
-        _ = context;
         List<DiffMenuItem> items = [];
         DiffPaneMenu.AddNavigation(items, CommandOrNull, GestureFor, ChangeCount);
-        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor);
+
+        // The expand entry is the run under the pointer. Here that is the clicked *line* of the
+        // unified document, which is this view's row — the context's LineNumber, 1-based as
+        // AvaloniaEdit counts and 0-based as a fold does.
+        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor, ExpandHere(context.LineNumber - 1));
         return items;
     }
 
@@ -1890,14 +1893,35 @@ public class InlineDiffView : TemplatedControl
     /// </summary>
     private void RevealLine(int line)
     {
+        // A match on a placeholder's own line is already on screen, so nothing needs opening.
+        if (_projection.IsHidden(line))
+        {
+            ExpandFoldContaining(line);
+        }
+    }
+
+    /// <summary>
+    /// Opens the run <paramref name="line"/> belongs to, the placeholder's own line included —
+    /// which is the line a reader points at when they ask for the rows hidden <em>here</em>.
+    /// </summary>
+    private void ExpandFoldContaining(int line)
+    {
         int fold = _projection.FoldContaining(line);
-        if (fold < 0 || _projection.IsPlaceholder(line))
+        if (fold < 0)
         {
             return;
         }
 
         _expandedFolds.Add(_projection.FoldAt(fold).FirstRow);
         RefreshFolds();
+    }
+
+    /// <summary>The menu's own expand verb: the run under the pointer rather than at the caret.</summary>
+    private ICommand? ExpandHere(int line)
+    {
+        return new DelegateCommand(
+            () => ExpandFoldContaining(line),
+            () => _projection.FoldContaining(line) >= 0);
     }
 
     private void ExpandFoldAtCaret()

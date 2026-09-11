@@ -50,6 +50,70 @@ public sealed class FoldingReachTests
     }
 
     /// <summary>
+    /// The menu's expand entry says "here", so it means the run under the pointer — plan 00010's
+    /// rule, the one the copy entries and plan 00012's block verbs already follow. A gesture means
+    /// the caret's run, which is the only run a keyboard can name. Found by driving the demo: the
+    /// entry was enabled from the caret while the pointer was somewhere else entirely.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task The_menus_expand_entry_is_the_run_under_the_pointer_not_the_one_at_the_caret()
+    {
+        using CompositeHost host = new();
+        host.Show();
+        (string left, string right) = FoldingFixture.Pair();
+        await host.LoadAsync(new PaneSource(left), new PaneSource(right));
+
+        SideBySideDocument document = host.View.Document ?? throw new InvalidOperationException("No model.");
+        RowProjection projection = host.View.ApplyFolds(contextRows: 0);
+        CompositeHost.Layout();
+        Assert.True(projection.FoldCount > 1);
+
+        FoldedRun run = projection.FoldAt(1);
+        ChangeBlock block = document.Blocks[0];
+
+        // The caret goes inside a change block, which no fold can cover, so the view's own verb
+        // is unavailable. Line 1 would not do: it is the first run's placeholder.
+        host.Left.TextArea.Caret.Line = block.LeftLines.Start + 1;
+        CompositeHost.Layout();
+        Assert.False(host.View.CommandFor(DiffCommand.ExpandFold).CanExecute(null));
+
+        // The menu built over a row inside the second fold offers it all the same, and opens
+        // that run rather than the caret's.
+        DiffMenuItem entry = ExpandEntry(host, run.FirstRow + 1);
+        Assert.True(entry.IsEnabled);
+        entry.Command!.Execute(null);
+        CompositeHost.Layout();
+
+        RowProjection after = host.View.ApplyFolds(contextRows: 0);
+        Assert.Equal(projection.FoldCount - 1, after.FoldCount);
+        Assert.False(after.IsHidden(run.FirstRow + 1));
+
+        // And over a row in no fold at all it is present and disabled, not absent: the menu's
+        // shape does not change with the state.
+        DiffMenuItem outside = ExpandEntry(host, block.FirstRow);
+        Assert.False(outside.IsEnabled);
+    }
+
+    private static DiffMenuItem ExpandEntry(CompositeHost host, int row)
+    {
+        DiffPaneContext context = new(
+            DiffPaneRegion.Text,
+            DiffSide.Left,
+            LineNumber: 1,
+            SourceSide: DiffSide.Left,
+            SourceLine: 1,
+            Row: row,
+            Block: null,
+            Kind: DiffLineKind.Unchanged,
+            SelectedLines: null,
+            IsUnified: false,
+            IsReadOnly: false);
+
+        string header = DiffViewStrings.Get(DiffViewStrings.MenuExpandFold);
+        return host.View.MenuItemsFor(context).Single(item => item.Header == header);
+    }
+
+    /// <summary>
     /// A find match is a different matter: it can be on an unchanged row, which is exactly what a
     /// fold covers. Walking to one opens the run hiding it, so the count stays the document's and
     /// every match it reports is a match the reader can see — settled 2026-09-11 over excluding

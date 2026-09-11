@@ -334,39 +334,51 @@ succeeded, because `head` exits 0 regardless. Capture the status without a pipe,
 - **The session is Wayland (`XDG_SESSION_TYPE=wayland`) with XWayland at `DISPLAY=:0`, and the
   demo is an XWayland client** — Avalonia's X11 backend — so it has a real X window that can be
   grabbed. So does Beyond Compare (`/usr/bin/bcompare`).
-- **`import -window root` fails, and that failure is what the false claim was built on.** Under
-  XWayland the root window holds nothing: every client is redirected to a Wayland surface, so the
-  root grab returns nothing and ImageMagick errors with
-  `import: ... @ error/import.c/ImportImageCommand/1289`. Reading that as "the compositor refuses
-  grabs" is the mistake; it refuses *that* grab.
-- **Grab a window by id instead.** `xwininfo` and `xlsclients` are present:
+- **Nothing can grab the root, and that is XWayland rather than a refusal.** Every client is
+  redirected to a Wayland surface, so the X root holds no client pixels: a root or region grab
+  comes back **solid black**, and `import -window root` errors outright with
+  `import: ... @ error/import.c/ImportImageCommand/1289`. Reading either as "the compositor
+  refuses grabs" is the mistake. `xdpyinfo` reports the real geometry (2304×1296 here) all the
+  same, so a grab that *succeeds* and is black is the same finding as one that fails.
+- **`import` does not work on this box at all, and `ffmpeg` does.** ImageMagick 7.1.1-43 is built
+  with the `x` delegate but lists no X coder, and every form fails — `import -window <id>`,
+  `magick import`, `magick x:root`, with and without `-screen`. **Grab a window by id with
+  `ffmpeg`'s `x11grab`**, which reads that window's own backing store:
 
   ```bash
-  DISPLAY=:0 xwininfo -root -children | grep -i diffview
-  DISPLAY=:0 import -window 0x80002c demo.png
+  DISPLAY=:0 XAUTHORITY=$XAUTHORITY ffmpeg -hide_banner -loglevel error \
+      -f x11grab -window_id 0x1200017 -video_size 1100x720 -i :0.0 -frames:v 1 -y demo.png
   ```
 
-  The main window is titled `DiffView Demo`; the F12 live-log window is a **second** X window
-  titled `Live Debug Logs`, so match on the title rather than taking the first hit.
+  `-video_size` must be that window's own size, from `xwininfo -id <id>`; a mismatch silently
+  crops or pads. `XAUTHORITY` matters — without it `x11grab` reports
+  **`outside the screen size 0x0`**, which reads like a compositor problem and is an auth one.
+  `scripts`-adjacent throwaway: the wrapper used on 2026-09-11 took an id and an output path and
+  read the geometry itself, which is the shape to reuse.
+- **Grab the client's window, not the frame.** `xwininfo -root -tree | grep -i "DiffView Demo"`
+  gives two: mutter's decoration (`("mutter-x11-frames" ...)`) and the app's own
+  (`("DiffView.Demo" "DiffView.Demo")`, 1100×720). Only the second has content. The main window
+  is titled `DiffView Demo`; the F12 live-log window is a **second** X window titled
+  `Live Debug Logs`, so match on the title rather than taking the first hit.
+- **A black frame means the session is not presenting, not that the app is broken.** An RDP session
+  that has closed leaves XWayland up and its clients running with nothing composited: on
+  2026-09-11 the demo reached `State "Building" → "Ready"` in its log while every capture came back
+  black. **Check `mean` on a grab before believing it** —
+  `magick shot.png -format "%[fx:mean]" info:` near zero is a black frame — and check the log
+  rather than concluding from pixels.
 - **Launch the demo detached or it will not survive.** A background command started through the
   agent harness is reaped at the turn boundary — the first two attempts died with exit 144 before
   anything could be captured. `nohup dotnet run --project src/DiffView.Demo -- <left> <right> &`
   followed by `disown`, from a script file, outlives the turn.
-- **Only `import` (ImageMagick 7) is installed.** There is no `grim`, `spectacle`,
-  `gnome-screenshot`, `flameshot`, `maim` or `xwd`. `ffmpeg` is present.
-- **The window grab failed on 2026-09-11 and the recipe above is kept anyway**, because it worked
-  on 2026-09-10 and nothing in this repository changed it. What was tried, all against a demo whose
-  window `xwininfo -id` reported `Map State: IsViewable`, 1100×720 at `+10+47`, with the process
-  alive and its log reaching `State "Building" → "Ready"`: `import -window` on the app's own
-  window, on mutter's frame window, and on `root`; `import -screen -window`; and
-  `ffmpeg -f x11grab`, which refused with **`Capture area … outside the screen size 0x0`**. That
-  last one is the useful reading — the X root reports **0×0**, so every grab has nothing to read
-  from, which is the same cause §9 already gives for the `root` failure now reaching the per-window
-  path as well. **Check a grab works before planning a by-hand pass around one**, and do not
-  conclude from a failure that the app is broken: the log said Ready throughout.
-- **A run whose frames fail is still worth doing.** The 2026-09-11 attempt found `--edit` missing
-  from the `[DebugFlags] active:` summary line — a flag the summary does not name is a flag a
-  by-hand pass cannot confirm took effect — which no headless test would have shown.
+- **Of the screenshot tools, only `import` is installed and it does not work** — there is no
+  `grim`, `spectacle`, `gnome-screenshot`, `flameshot`, `maim` or `xwd`. `ffmpeg` is present and
+  is the one that does, per the recipe above.
+- **A run whose frames fail is still worth doing, and a run whose frames work is worth more.** The
+  2026-09-11 pass found `--edit` missing from the `[DebugFlags] active:` summary line before a
+  single frame was captured, and then, once frames worked, that the pane's context menu fits at
+  real size with no scroll chevron — the opposite of what its headless snapshot suggested, that
+  window being 600 px tall where the demo's is 720 — and that the expand entry said "here" while
+  acting on the caret. None of the three would have come from a headless test.
 - **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
   bullet claimed the opposite for three plans; check before repeating it. `xdotool key F7` and
   `xdotool key ctrl+Down` into a focused pane both work, and that is how plan 00009's rebind was

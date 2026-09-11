@@ -1919,7 +1919,7 @@ public class SideBySideDiffView : TemplatedControl
         // gap under it — so the folding modes belong here as well as on the margins. The map's
         // menu does not get them: it is a navigation surface whose menu plan 00012 kept short on
         // purpose, and four more entries would double it.
-        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor);
+        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor, ExpandHere(context.Row));
         return items;
     }
 
@@ -2027,8 +2027,10 @@ public class SideBySideDiffView : TemplatedControl
 
         // Last on every surface that has it. Folding is a view option rather than something done
         // to what is under the pointer, and a group that is last in one menu and in the middle of
-        // another is a group a host's "insert after" has to find twice.
-        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor);
+        // another is a group a host's "insert after" has to find twice. Its expand entry is the
+        // run under the pointer — the entry says "here", and a menu that meant the caret would be
+        // answering a question nobody asked it.
+        DiffPaneMenu.AddFolding(items, CommandOrNull, GestureFor, ExpandHere(context.Row));
         return items;
     }
 
@@ -3292,14 +3294,45 @@ public class SideBySideDiffView : TemplatedControl
     /// </summary>
     private void RevealRow(int modelRow)
     {
+        // A match on a placeholder's own row is already on screen, so nothing needs opening.
+        if (!_projection.IsHidden(modelRow))
+        {
+            return;
+        }
+
+        ExpandFoldContaining(modelRow);
+    }
+
+    /// <summary>
+    /// Opens the run <paramref name="modelRow"/> belongs to, the placeholder's own row included —
+    /// which is the row a reader points at when they ask for the rows hidden <em>here</em>.
+    /// </summary>
+    private void ExpandFoldContaining(int modelRow)
+    {
         int fold = _projection.FoldContaining(modelRow);
-        if (fold < 0 || _projection.IsPlaceholder(modelRow))
+        if (fold < 0)
         {
             return;
         }
 
         _expandedFolds.Add(_projection.FoldAt(fold).FirstRow);
         RefreshFolds();
+    }
+
+    /// <summary>
+    /// The menu's own <see cref="DiffCommand.ExpandFold"/>: the run under the pointer rather than
+    /// the one at the caret, per plan 00010's rule that a menu entry carries what was clicked.
+    /// </summary>
+    private ICommand? ExpandHere(int? row)
+    {
+        if (row is not { } modelRow)
+        {
+            return null;
+        }
+
+        return new DelegateCommand(
+            () => ExpandFoldContaining(modelRow),
+            () => _projection.FoldContaining(modelRow) >= 0);
     }
 
     private void ExpandFoldAtCaret()

@@ -177,10 +177,20 @@ internal static class DiffPaneMenu
     /// noise — and <see cref="DiffCommand.ExpandFold"/> is disabled where there is no run to give
     /// back, which is the disable-do-not-hide rule plan 00010 settled.
     /// </summary>
+    /// <param name="items">The list being built, appended to in place.</param>
+    /// <param name="command">The view's command for a verb, or <c>null</c> where it has none.</param>
+    /// <param name="gesture">The key map's gesture for a verb.</param>
+    /// <param name="expandHere">
+    /// The command behind <see cref="DiffCommand.ExpandFold"/> <em>in this menu</em>: the run
+    /// under the pointer, not the one at the caret. Plan 00010's rule — a menu entry carries what
+    /// was clicked, a gesture means the current one — and the entry says "here". <c>null</c>
+    /// falls back to the view's own, which is the caret's.
+    /// </param>
     public static void AddFolding(
         List<DiffMenuItem> items,
         Func<DiffCommand, ICommand?> command,
-        Func<DiffCommand, KeyGesture?> gesture)
+        Func<DiffCommand, KeyGesture?> gesture,
+        ICommand? expandHere = null)
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentNullException.ThrowIfNull(command);
@@ -200,7 +210,18 @@ internal static class DiffPaneMenu
         Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuShowAllRows), DiffCommand.ShowAllRows, command, gesture, Enabled(DiffCommand.ShowAllRows)));
         Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuShowDifferencesOnly), DiffCommand.ShowDifferencesOnly, command, gesture, Enabled(DiffCommand.ShowDifferencesOnly)));
         Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuShowContext), DiffCommand.ShowContext, command, gesture, Enabled(DiffCommand.ShowContext)));
-        Add(items, Verb(DiffViewStrings.Get(DiffViewStrings.MenuExpandFold), DiffCommand.ExpandFold, command, gesture, Enabled(DiffCommand.ExpandFold)));
+        DiffMenuItem? expand = Verb(
+            DiffViewStrings.Get(DiffViewStrings.MenuExpandFold),
+            DiffCommand.ExpandFold,
+            command,
+            gesture,
+            expandHere is null ? Enabled(DiffCommand.ExpandFold) : expandHere.CanExecute(null));
+        if (expand is not null && expandHere is not null)
+        {
+            expand.Command = expandHere;
+        }
+
+        Add(items, expand);
     }
 
     /// <summary>Appends <paramref name="item"/> unless it is <c>null</c>, which means absent.</summary>
