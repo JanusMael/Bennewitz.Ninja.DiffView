@@ -75,6 +75,7 @@ public class ChangeConnectorGutter : Control
 
     private readonly DiffBrushes _palette = new();
     private readonly List<ConnectorPolygon> _lastPolygons = [];
+    private RowProjection? _projection;
     private bool _dragging;
     private double _dragLastX;
 
@@ -139,15 +140,34 @@ public class ChangeConnectorGutter : Control
     /// <summary>The polygons of the last frame, in block order.</summary>
     public IReadOnlyList<ConnectorPolygon> LastPolygons => _lastPolygons;
 
-    /// <summary>The gutter-relative y of the top of <paramref name="row"/>.</summary>
+    /// <summary>
+    /// How the panes' model rows sit on screen. Null is the identity, which is what a gutter with
+    /// nothing folded has always assumed.
+    /// </summary>
+    internal RowProjection? Projection
+    {
+        get => _projection;
+        set
+        {
+            if (!ReferenceEquals(_projection, value))
+            {
+                _projection = value;
+                InvalidateVisual();
+            }
+        }
+    }
+
+    /// <summary>The gutter-relative y of the top of model row <paramref name="row"/>.</summary>
     public double TopOfRow(int row)
     {
-        return row * RowHeight - VerticalOffset + ContentOffset;
+        return VisibleRowOf(row) * RowHeight - VerticalOffset + ContentOffset;
     }
 
     /// <summary>
-    /// The row under <paramref name="y"/> — <see cref="TopOfRow"/> read backwards — or
-    /// <c>null</c> before the first row and before the rows have a height.
+    /// The model row under <paramref name="y"/> — <see cref="TopOfRow"/> read backwards — or
+    /// <c>null</c> before the first row and before the rows have a height. A row behind a
+    /// placeholder is not under any y, so what comes back there is the run the placeholder stands
+    /// for.
     /// </summary>
     public int? RowAt(double y)
     {
@@ -157,8 +177,18 @@ public class ChangeConnectorGutter : Control
             return null;
         }
 
-        int row = (int)Math.Floor((y + VerticalOffset - ContentOffset) / rowHeight);
-        return row < 0 ? null : row;
+        int visible = (int)Math.Floor((y + VerticalOffset - ContentOffset) / rowHeight);
+        return visible < 0 ? null : ModelRowOf(visible);
+    }
+
+    private int VisibleRowOf(int row)
+    {
+        return _projection?.VisibleRowOf(row) ?? row;
+    }
+
+    private int ModelRowOf(int visibleRow)
+    {
+        return _projection?.ModelRowOf(visibleRow) ?? visibleRow;
     }
 
     /// <summary>The polygon under <paramref name="point"/> in the last frame, or <c>null</c>.</summary>
@@ -198,8 +228,9 @@ public class ChangeConnectorGutter : Control
             return;
         }
 
-        int firstVisible = Math.Max(0, (int)Math.Floor((VerticalOffset - ContentOffset) / rowHeight) - 1);
-        int lastVisible = (int)Math.Ceiling((VerticalOffset - ContentOffset + bounds.Height) / rowHeight) + 1;
+        // The bounds are pixels and therefore visible rows; the blocks below are model rows.
+        int firstVisible = ModelRowOf(Math.Max(0, (int)Math.Floor((VerticalOffset - ContentOffset) / rowHeight) - 1));
+        int lastVisible = ModelRowOf((int)Math.Ceiling((VerticalOffset - ContentOffset + bounds.Height) / rowHeight) + 1);
         double width = bounds.Width;
         Pen outline = new(_palette[DiffBrush.CurrentBlockBorder], CurrentOutlineThickness);
 

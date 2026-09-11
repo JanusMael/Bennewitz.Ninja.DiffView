@@ -62,6 +62,7 @@ public class DiffMinimap : Control
     private const int WheelRows = 3;
 
     private readonly DiffBrushes _palette = new();
+    private RowProjection? _projection;
     private DiffLineKind[]? _leftKinds;
     private DiffLineKind[]? _rightKinds;
     private SideBySideDocument? _bucketDocument;
@@ -137,42 +138,80 @@ public class DiffMinimap : Control
         set => SetValue(MatchRowsProperty, value);
     }
 
-    /// <summary>Rows in the model.</summary>
+    /// <summary>Rows in the model, folded or not.</summary>
     public int RowCount => Document?.Rows.Count ?? 0;
+
+    /// <summary>
+    /// How the model's rows sit on screen. Null is the identity, which is what a map with nothing
+    /// folded has always assumed. The map draws the <i>visible</i> document: a bucket over rows
+    /// the panes are not showing would put the viewport box where the viewport is not.
+    /// </summary>
+    internal RowProjection? Projection
+    {
+        get => _projection;
+        set
+        {
+            if (!ReferenceEquals(_projection, value))
+            {
+                _projection = value;
+                _leftKinds = null;
+                _rightKinds = null;
+                _matchBuckets = null;
+                InvalidateVisual();
+            }
+        }
+    }
+
+    /// <summary>Rows on screen: <see cref="RowCount"/> less what the folds hide.</summary>
+    internal int VisibleRowCount => _projection?.VisibleRowCount ?? RowCount;
 
     /// <summary>Buckets: one per pixel row of the control's height, at least one.</summary>
     public int BucketCount => Math.Max(1, (int)Math.Floor(Bounds.Height));
 
-    /// <summary>The first row of <paramref name="bucket"/>.</summary>
+    /// <summary>The first row of <paramref name="bucket"/>, as a model row.</summary>
     public int FirstRowOfBucket(int bucket)
     {
         int buckets = BucketCount;
         int clamped = Math.Clamp(bucket, 0, buckets - 1);
-        return (int)((long)clamped * RowCount / buckets);
+        return ModelRowOf((int)((long)clamped * VisibleRowCount / buckets));
     }
 
-    /// <summary>One past the last row of <paramref name="bucket"/>; equal to its first row when the bucket holds no row.</summary>
+    private int VisibleRowOf(int modelRow)
+    {
+        return _projection?.VisibleRowOf(modelRow) ?? modelRow;
+    }
+
+    private int ModelRowOf(int visibleRow)
+    {
+        return _projection?.ModelRowOf(visibleRow) ?? visibleRow;
+    }
+
+    /// <summary>
+    /// One past the last model row of <paramref name="bucket"/>; equal to its first row when the
+    /// bucket holds no row. A bucket ending past the last visible row ends at the model's end.
+    /// </summary>
     public int EndRowOfBucket(int bucket)
     {
         int buckets = BucketCount;
         int clamped = Math.Clamp(bucket, 0, buckets - 1);
-        return (int)((long)(clamped + 1) * RowCount / buckets);
+        int visible = (int)((long)(clamped + 1) * VisibleRowCount / buckets);
+        return visible >= VisibleRowCount ? RowCount : ModelRowOf(visible);
     }
 
     /// <summary>
-    /// The bucket <paramref name="row"/> falls in: the largest bucket whose first row is at or
-    /// before it, so the mapping inverts <see cref="FirstRowOfBucket"/> exactly.
+    /// The bucket model row <paramref name="row"/> falls in: the largest bucket whose first row is
+    /// at or before it, so the mapping inverts <see cref="FirstRowOfBucket"/> exactly.
     /// </summary>
     public int BucketOfRow(int row)
     {
-        int rows = RowCount;
+        int rows = VisibleRowCount;
         if (rows == 0)
         {
             return 0;
         }
 
         int buckets = BucketCount;
-        int clamped = Math.Clamp(row, 0, rows - 1);
+        int clamped = Math.Clamp(VisibleRowOf(row), 0, rows - 1);
         return (int)Math.Min(buckets - 1, ((long)clamped * buckets + buckets - 1) / rows);
     }
 
@@ -378,8 +417,11 @@ public class DiffMinimap : Control
                 return null;
             }
 
-            double top = ViewportStartRow * BucketCount / document.Rows.Count;
-            double height = Math.Max(2, ViewportRowCount * BucketCount / document.Rows.Count);
+            // The viewport's start and count are pixels over the line height, so they are visible
+            // rows already, and the buckets they scale into are the visible document's.
+            int rows = Math.Max(1, VisibleRowCount);
+            double top = ViewportStartRow * BucketCount / rows;
+            double height = Math.Max(2, ViewportRowCount * BucketCount / rows);
             return new Rect(
                 0,
                 Math.Clamp(top, 0, Math.Max(0, Bounds.Height - height)),
@@ -455,9 +497,10 @@ public class DiffMinimap : Control
             return;
         }
 
+        // The viewport is in visible rows; the jump is asked for in model rows.
         int centre = (int)Math.Round(ViewportStartRow + (ViewportRowCount / 2));
         int target = centre - ((int)Math.Round(e.Delta.Y) * WheelRows);
-        JumpRequested?.Invoke(this, Math.Clamp(target, 0, document.Rows.Count - 1));
+        JumpRequested?.Invoke(this, ModelRowOf(Math.Clamp(target, 0, Math.Max(0, VisibleRowCount - 1))));
         e.Handled = true;
     }
 
@@ -469,8 +512,8 @@ public class DiffMinimap : Control
             return;
         }
 
-        int row = Math.Clamp(RowAtPixel(y) - (int)Math.Round(ViewportRowCount / 2), 0, document.Rows.Count - 1);
-        JumpRequested?.Invoke(this, row);
+        int visible = VisibleRowOf(RowAtPixel(y)) - (int)Math.Round(ViewportRowCount / 2);
+        JumpRequested?.Invoke(this, ModelRowOf(Math.Clamp(visible, 0, Math.Max(0, VisibleRowCount - 1))));
     }
 
     /// <inheritdoc/>
@@ -552,7 +595,8 @@ public class DiffMinimap : Control
         }
 
         DiffLineKind[] kinds = new DiffLineKind[buckets];
-        if (document is not null && document.Rows.Count > 0)
+        int visibleRows = VisibleRowCount;
+        if (document is not null && document.Rows.Count > 0 && visibleRows > 0)
         {
             int rows = document.Rows.Count;
             for (int row = 0; row < rows; row++)
@@ -563,7 +607,14 @@ public class DiffMinimap : Control
                     continue;
                 }
 
-                int bucket = (int)((long)row * buckets / rows);
+                // A row behind a placeholder is not on screen, so it colours no bucket. A folded
+                // run is unchanged by construction, so this only ever skips rows already skipped.
+                if (_projection?.IsHidden(row) == true)
+                {
+                    continue;
+                }
+
+                int bucket = (int)((long)VisibleRowOf(row) * buckets / visibleRows);
                 if (Strength(aligned.Kind) > Strength(kinds[bucket]))
                 {
                     kinds[bucket] = aligned.Kind;
@@ -596,7 +647,7 @@ public class DiffMinimap : Control
         }
 
         bool[] marked = new bool[buckets];
-        if (rows is not null && RowCount > 0)
+        if (rows is not null && VisibleRowCount > 0)
         {
             foreach (int row in rows)
             {

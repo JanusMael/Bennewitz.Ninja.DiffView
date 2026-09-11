@@ -317,6 +317,12 @@ public class SideBySideDiffView : TemplatedControl
     private DiffViewState _state = DiffViewState.Empty;
     private string? _stateMessage;
     private SideBySideDocument? _document;
+
+    /// <summary>
+    /// How the model's rows sit on screen. The identity until something folds them, which is the
+    /// arithmetic every out-of-pane surface did inline before plan 00013.
+    /// </summary>
+    private RowProjection _projection = RowProjection.Identity(0);
     private DiffDiagnostics? _diagnostics;
     private IReadOnlyList<DiffWarning> _warnings = [];
     private int _changeCount;
@@ -1144,6 +1150,7 @@ public class SideBySideDiffView : TemplatedControl
         if (_gutter is not null)
         {
             _gutter.Document = Document;
+            _gutter.Projection = _projection;
             _gutter.CurrentChangeIndex = CurrentChangeIndex;
             _gutter.BlockClicked += OnGutterBlockClicked;
             _gutter.ResizeDragged += OnGutterResizeDragged;
@@ -1163,6 +1170,7 @@ public class SideBySideDiffView : TemplatedControl
         if (_minimap is not null)
         {
             _minimap.Document = Document;
+            _minimap.Projection = _projection;
             _minimap.CurrentChangeIndex = CurrentChangeIndex;
             // Both paths, because a host that sets the flag in XAML is wired here and never
             // reaches the property-change handler — the gap plan 00004 had to fix for CanCopyOut.
@@ -2576,14 +2584,19 @@ public class SideBySideDiffView : TemplatedControl
             pane.WordDiffLookup = WordDiffLookup;
         }
 
+        // A new model is a new row space, and nothing is folded in it until something folds it.
+        _projection = RowProjection.Identity(document?.Rows.Count ?? 0);
+
         if (_gutter is not null)
         {
             _gutter.Document = document;
+            _gutter.Projection = _projection;
         }
 
         if (_minimap is not null)
         {
             _minimap.Document = document;
+            _minimap.Projection = _projection;
         }
 
         // The matches were found over rows the old model defined; the search runs again against
@@ -3377,7 +3390,10 @@ public class SideBySideDiffView : TemplatedControl
         RaiseNavigationCanExecuteChanged();
     }
 
-    /// <summary>Scrolls both panes so the rows sit at the centre of the viewport; rows are uniform once primed.</summary>
+    /// <summary>
+    /// Scrolls both panes so the rows sit at the centre of the viewport. Every <i>visible</i> row
+    /// is one line height once primed, so the rows are projected before they are multiplied.
+    /// </summary>
     private void ScrollToRows(int firstRow, int rowCount)
     {
         if (_leftPane?.PaneScrollViewer is not { } viewer)
@@ -3388,8 +3404,10 @@ public class SideBySideDiffView : TemplatedControl
         double lineHeight = _leftPane.TextArea.TextView.DefaultLineHeight;
         double viewport = viewer.Viewport.Height;
         double extent = viewer.Extent.Height;
-        double top = firstRow * lineHeight;
-        double height = rowCount * lineHeight;
+        int firstVisible = _projection.VisibleRowOf(firstRow);
+        int endVisible = _projection.VisibleRowOf(Math.Max(firstRow, firstRow + rowCount - 1)) + 1;
+        double top = firstVisible * lineHeight;
+        double height = Math.Max(0, endVisible - firstVisible) * lineHeight;
         double target = top - Math.Max(0, (viewport - height) / 2);
         target = Math.Clamp(target, 0, Math.Max(0, extent - viewport));
         viewer.Offset = new Vector(viewer.Offset.X, target);

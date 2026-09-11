@@ -224,6 +224,11 @@ public class InlineDiffView : TemplatedControl
     private string? _stateMessage;
     private SideBySideDocument? _document;
     private InlineDocument? _inline;
+
+    /// <summary>
+    /// How the unified document's lines sit on screen. The identity until something folds them.
+    /// </summary>
+    private RowProjection _projection = RowProjection.Identity(0);
     private DiffDiagnostics? _diagnostics;
     private IReadOnlyList<DiffWarning> _warnings = [];
     private int _changeCount;
@@ -1640,6 +1645,10 @@ public class InlineDiffView : TemplatedControl
             return;
         }
 
+        // A new document is a new row space, and nothing is folded in it until something folds it.
+        // The unified view's rows are its own lines: one pane, so no second side to keep in step.
+        _projection = RowProjection.Identity(Inline?.Lines.Count ?? 0);
+
         // Unified first: it is what the pane's metadata, its log lines and its gutters follow.
         pane.IsUnified = true;
         pane.Document = _paneDocument;
@@ -1757,8 +1766,10 @@ public class InlineDiffView : TemplatedControl
         double lineHeight = _pane.TextArea.TextView.DefaultLineHeight;
         double viewport = viewer.Viewport.Height;
         double extent = viewer.Extent.Height;
-        double top = firstLine * lineHeight;
-        double height = count * lineHeight;
+        int firstVisible = _projection.VisibleRowOf(firstLine);
+        int endVisible = _projection.VisibleRowOf(Math.Max(firstLine, firstLine + count - 1)) + 1;
+        double top = firstVisible * lineHeight;
+        double height = Math.Max(0, endVisible - firstVisible) * lineHeight;
         double target = top - Math.Max(0, (viewport - height) / 2);
         target = Math.Clamp(target, 0, Math.Max(0, extent - viewport));
         viewer.Offset = new Vector(viewer.Offset.X, target);
