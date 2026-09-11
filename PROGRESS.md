@@ -30,8 +30,19 @@ nothing on the connector, and `LineNumber` is the row's line on that side where 
 left's then the right's where it does not, with `SourceSide` naming which. That, and phase 1's
 deferral, are the two pieces of drift owing a *Decisions* entry at phase 5.
 
-**Next is phase 3** — the header and `DiffHeaderContext` — then phase 4's icon set and phase 5's
-evidence.
+Phase 3 gave the header its own kind of context. Five surfaces share `DiffPaneContext` because
+each is line-, row- or block-shaped and the type carries all three; a header is none of them, and
+`LineNumber` is a non-nullable `int`. So **`DiffHeaderContext`**, a five-member sibling record with
+its own opening event and its own replace-property — settled before the plan was approved, against
+a synthetic line and against `int?`. The *menu* stayed one implementation:
+`DiffPaneMenu.Request` takes the context as `object` and two callbacks the caller closes over its
+own type with, so placement, the disabled-item rule and the replacement rule cannot diverge. The
+header's menu is **save and revert and nothing else** — no copy and no navigate, a header not being
+a position — from the same `AddFileVerbs` the text menu uses. The unified view raises none, and not
+for want of a header: it has two, and being read-only it has neither verb, so the list is empty and
+an empty list opens nothing.
+
+**Next is phase 4** — the icon set on the column reserved since 00010 — then phase 5's evidence.
 
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.
