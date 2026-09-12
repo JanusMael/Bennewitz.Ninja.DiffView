@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- zh-CN. MACHINE-GENERATED, PENDING NATIVE REVIEW — see DECISIONS.md. The parity gate (LocaleParityTests) proves every key is present and every placeholder preserved; it proves nothing about whether the wording is right. Do not ship a release on these without a speaker of the language reading them. Strings naming a side are whole sentences per direction, never one sentence with a side word substituted in: a translator cannot inflect a word dropped into someone else's sentence. -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Banner.Force" xml:space="preserve">
+    <value>强制对齐</value>
+  </data>
+  <data name="Banner.Identical" xml:space="preserve">
+    <value>文件完全相同</value>
+  </data>
+  <data name="Banner.Retry" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="Build.Completed" xml:space="preserve">
+    <value>已比较 {0} 行，用时 {1} 毫秒</value>
+  </data>
+  <data name="Build.Identical" xml:space="preserve">
+    <value>文件完全相同</value>
+  </data>
+  <data name="Build.Running" xml:space="preserve">
+    <value>正在比较…</value>
+  </data>
+  <data name="ChangeMarkersMargin.Name" xml:space="preserve">
+    <value>更改标记</value>
+  </data>
+  <data name="ConnectorGutter.Name" xml:space="preserve">
+    <value>更改连接线</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Left" xml:space="preserve">
+    <value>将此更改复制到左侧</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Right" xml:space="preserve">
+    <value>将此更改复制到右侧</value>
+  </data>
+  <data name="DiffView.Name" xml:space="preserve">
+    <value>并排比较</value>
+  </data>
+  <data name="Find.ChangedRowsOnly" xml:space="preserve">
+    <value>已更改</value>
+  </data>
+  <data name="Find.ChangedRowsOnly.Name" xml:space="preserve">
+    <value>仅已更改的行</value>
+  </data>
+  <data name="Find.Close" xml:space="preserve">
+    <value>×</value>
+  </data>
+  <data name="Find.Close.Name" xml:space="preserve">
+    <value>关闭查找栏</value>
+  </data>
+  <data name="Find.Failed" xml:space="preserve">
+    <value>无法执行搜索。</value>
+  </data>
+  <data name="Find.MatchCase" xml:space="preserve">
+    <value>Aa</value>
+  </data>
+  <data name="Find.MatchCase.Name" xml:space="preserve">
+    <value>区分大小写</value>
+  </data>
+  <data name="Find.MatchOf" xml:space="preserve">
+    <value>第 {0} 项，共 {1} 项 (左 {2} · 右 {3})</value>
+  </data>
+  <data name="Find.Matches" xml:space="preserve">
+    <value>{0} 项匹配 (左 {1} · 右 {2})</value>
+  </data>
+  <data name="Find.Name" xml:space="preserve">
+    <value>查找</value>
+  </data>
+  <data name="Find.Next" xml:space="preserve">
+    <value>下一个</value>
+  </data>
+  <data name="Find.Next.Name" xml:space="preserve">
+    <value>下一项匹配</value>
+  </data>
+  <data name="Find.NoMatches" xml:space="preserve">
+    <value>无匹配项</value>
+  </data>
+  <data name="Find.Previous" xml:space="preserve">
+    <value>上一个</value>
+  </data>
+  <data name="Find.Previous.Name" xml:space="preserve">
+    <value>上一项匹配</value>
+  </data>
+  <data name="Find.Query.Name" xml:space="preserve">
+    <value>查找内容</value>
+  </data>
+  <data name="Find.Query.Placeholder" xml:space="preserve">
+    <value>查找</value>
+  </data>
+  <data name="Find.Regex" xml:space="preserve">
+    <value>.*</value>
+  </data>
+  <data name="Find.Regex.Name" xml:space="preserve">
+    <value>正则表达式</value>
+  </data>
+  <data name="Find.Scope.Both" xml:space="preserve">
+    <value>两侧</value>
+  </data>
+  <data name="Find.Scope.Both.Name" xml:space="preserve">
+    <value>搜索两个窗格</value>
+  </data>
+  <data name="Find.Scope.Both.Word" xml:space="preserve">
+    <value>两侧</value>
+  </data>
+  <data name="Find.Scope.Left" xml:space="preserve">
+    <value>左</value>
+  </data>
+  <data name="Find.Scope.Left.Name" xml:space="preserve">
+    <value>搜索左侧窗格</value>
+  </data>
+  <data name="Find.Scope.Right" xml:space="preserve">
+    <value>右</value>
+  </data>
+  <data name="Find.Scope.Right.Name" xml:space="preserve">
+    <value>搜索右侧窗格</value>
+  </data>
+  <data name="Find.Truncated" xml:space="preserve">
+    <value>正在显示前 {0} 项匹配</value>
+  </data>
+  <data name="Find.WholeWord" xml:space="preserve">
+    <value>单词</value>
+  </data>
+  <data name="Find.WholeWord.Name" xml:space="preserve">
+    <value>全字匹配</value>
+  </data>
+  <data name="Fold.Placeholder" xml:space="preserve">
+    <value> ⋯ 已隐藏 {0} 行相同内容 </value>
+  </data>
+  <data name="Fold.Placeholder.One" xml:space="preserve">
+    <value> ⋯ 已隐藏 1 行相同内容 </value>
+  </data>
+  <data name="Header.Badge.Binary" xml:space="preserve">
+    <value>二进制</value>
+  </data>
+  <data name="Header.Badge.Empty" xml:space="preserve">
+    <value>空</value>
+  </data>
+  <data name="Header.Badge.Identical" xml:space="preserve">
+    <value>相同</value>
+  </data>
+  <data name="Header.Chars" xml:space="preserve">
+    <value>{0} 个字符</value>
+  </data>
+  <data name="Header.Detail" xml:space="preserve">
+    <value>{0} · {1} · {2} · {3}</value>
+  </data>
+  <data name="Header.Dirty" xml:space="preserve">
+    <value>未保存</value>
+  </data>
+  <data name="Header.Encoding.Text" xml:space="preserve">
+    <value>文本</value>
+  </data>
+  <data name="Header.Left.Title" xml:space="preserve">
+    <value>左侧</value>
+  </data>
+  <data name="Header.LineEnding.Cr" xml:space="preserve">
+    <value>CR</value>
+  </data>
+  <data name="Header.LineEnding.CrLf" xml:space="preserve">
+    <value>CRLF</value>
+  </data>
+  <data name="Header.LineEnding.Lf" xml:space="preserve">
+    <value>LF</value>
+  </data>
+  <data name="Header.LineEnding.Mixed" xml:space="preserve">
+    <value>换行符混用</value>
+  </data>
+  <data name="Header.LineEnding.None" xml:space="preserve">
+    <value>无换行符</value>
+  </data>
+  <data name="Header.Lines" xml:space="preserve">
+    <value>{0} 行</value>
+  </data>
+  <data name="Header.Lines.One" xml:space="preserve">
+    <value>1 行</value>
+  </data>
+  <data name="Header.NoContent" xml:space="preserve">
+    <value>无内容</value>
+  </data>
+  <data name="Header.Right.Title" xml:space="preserve">
+    <value>右侧</value>
+  </data>
+  <data name="Kind.Deleted" xml:space="preserve">
+    <value>已删除</value>
+  </data>
+  <data name="Kind.Inserted" xml:space="preserve">
+    <value>已插入</value>
+  </data>
+  <data name="Kind.Modified" xml:space="preserve">
+    <value>已修改</value>
+  </data>
+  <data name="Kind.Unchanged" xml:space="preserve">
+    <value>未更改</value>
+  </data>
+  <data name="LineNumbersMargin.Name" xml:space="preserve">
+    <value>行号</value>
+  </data>
+  <data name="LineTooltip.Aligned.Left" xml:space="preserve">
+    <value>第 {0} 行 · 左侧第 {1} 行</value>
+  </data>
+  <data name="LineTooltip.Aligned.Right" xml:space="preserve">
+    <value>第 {0} 行 · 右侧第 {1} 行</value>
+  </data>
+  <data name="LineTooltip.Alone.Left" xml:space="preserve">
+    <value>第 {0} 行 · 左侧无对应行</value>
+  </data>
+  <data name="LineTooltip.Alone.Right" xml:space="preserve">
+    <value>第 {0} 行 · 右侧无对应行</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Left" xml:space="preserve">
+    <value>左侧第 {0} 行 · 右侧第 {1} 行</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Right" xml:space="preserve">
+    <value>右侧第 {0} 行 · 左侧第 {1} 行</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Left" xml:space="preserve">
+    <value>左侧第 {0} 行 · 右侧无对应行</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Right" xml:space="preserve">
+    <value>右侧第 {0} 行 · 左侧无对应行</value>
+  </data>
+  <data name="Marker.ModifiedSinceLoad" xml:space="preserve">
+    <value>本次会话中已编辑</value>
+  </data>
+  <data name="Marker.Tooltip" xml:space="preserve">
+    <value>第 {0} 处更改，共 {1} 处 · {2}</value>
+  </data>
+  <data name="Menu.CopyChange.Left" xml:space="preserve">
+    <value>将更改复制到左侧</value>
+  </data>
+  <data name="Menu.CopyChange.Right" xml:space="preserve">
+    <value>将更改复制到右侧</value>
+  </data>
+  <data name="Menu.CopySelection.Left" xml:space="preserve">
+    <value>将所选内容复制到左侧</value>
+  </data>
+  <data name="Menu.CopySelection.Right" xml:space="preserve">
+    <value>将所选内容复制到右侧</value>
+  </data>
+  <data name="Menu.ExpandFold" xml:space="preserve">
+    <value>显示此处隐藏的行</value>
+  </data>
+  <data name="Menu.Find" xml:space="preserve">
+    <value>查找…</value>
+  </data>
+  <data name="Menu.GoToChange" xml:space="preserve">
+    <value>转到此更改</value>
+  </data>
+  <data name="Menu.GoToRow" xml:space="preserve">
+    <value>转到此行</value>
+  </data>
+  <data name="Menu.HideOverviewMap" xml:space="preserve">
+    <value>隐藏概览图</value>
+  </data>
+  <data name="Menu.NextChange" xml:space="preserve">
+    <value>下一处更改</value>
+  </data>
+  <data name="Menu.PreviousChange" xml:space="preserve">
+    <value>上一处更改</value>
+  </data>
+  <data name="Menu.Revert.Left" xml:space="preserve">
+    <value>还原左侧</value>
+  </data>
+  <data name="Menu.Revert.Right" xml:space="preserve">
+    <value>还原右侧</value>
+  </data>
+  <data name="Menu.Save.Left" xml:space="preserve">
+    <value>保存左侧</value>
+  </data>
+  <data name="Menu.Save.Right" xml:space="preserve">
+    <value>保存右侧</value>
+  </data>
+  <data name="Menu.SelectChange" xml:space="preserve">
+    <value>选择此更改</value>
+  </data>
+  <data name="Menu.ShowAllRows" xml:space="preserve">
+    <value>显示所有行</value>
+  </data>
+  <data name="Menu.ShowContext" xml:space="preserve">
+    <value>显示差异及上下文</value>
+  </data>
+  <data name="Menu.ShowDifferencesOnly" xml:space="preserve">
+    <value>仅显示差异</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Left" xml:space="preserve">
+    <value>第 {0} 行，共 {1} 行 · {2} · 左侧</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Right" xml:space="preserve">
+    <value>第 {0} 行，共 {1} 行 · {2} · 右侧</value>
+  </data>
+  <data name="Minimap.Name" xml:space="preserve">
+    <value>概览</value>
+  </data>
+  <data name="Minimap.Tooltip" xml:space="preserve">
+    <value>第 {0} 行，共 {1} 行 · {2}</value>
+  </data>
+  <data name="Navigation.NoChanges" xml:space="preserve">
+    <value>没有可浏览的更改</value>
+  </data>
+  <data name="Navigation.NoNext" xml:space="preserve">
+    <value>没有下一处更改</value>
+  </data>
+  <data name="Navigation.NoPrevious" xml:space="preserve">
+    <value>没有上一处更改</value>
+  </data>
+  <data name="Option.ForceAlignment" xml:space="preserve">
+    <value>强制对齐</value>
+  </data>
+  <data name="Option.IgnoreCase" xml:space="preserve">
+    <value>忽略大小写</value>
+  </data>
+  <data name="Option.IgnoreWhitespace" xml:space="preserve">
+    <value>忽略空白</value>
+  </data>
+  <data name="Option.WordDiff.Character" xml:space="preserve">
+    <value>按字符比较</value>
+  </data>
+  <data name="Option.WordDiff.Off" xml:space="preserve">
+    <value>不按单词比较</value>
+  </data>
+  <data name="Pane.Left.Name" xml:space="preserve">
+    <value>左侧窗格</value>
+  </data>
+  <data name="Pane.Right.Name" xml:space="preserve">
+    <value>右侧窗格</value>
+  </data>
+  <data name="Pane.Unified.Name" xml:space="preserve">
+    <value>统一窗格</value>
+  </data>
+  <data name="RenderFault" xml:space="preserve">
+    <value>{0} 失败并已禁用：{1}</value>
+  </data>
+  <data name="RenderFault.OnLine" xml:space="preserve">
+    <value>{0} 在第 {1} 行失败并已禁用：{2}</value>
+  </data>
+  <data name="RenderFault.OnSubject" xml:space="preserve">
+    <value>{0} 处理 {1} 时失败并已禁用：{2}</value>
+  </data>
+  <data name="Save.ChangedOnDisk" xml:space="preserve">
+    <value>{0} 自读取以来已在磁盘上更改；未写入任何内容。</value>
+  </data>
+  <data name="Save.Failed" xml:space="preserve">
+    <value>无法保存 {0}：{1}</value>
+  </data>
+  <data name="Save.NoPath" xml:space="preserve">
+    <value>{0} 并非来自文件，因此没有保存位置。</value>
+  </data>
+  <data name="Save.Succeeded" xml:space="preserve">
+    <value>已保存 {0}</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Left" xml:space="preserve">
+    <value>将所选行复制到左侧</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Right" xml:space="preserve">
+    <value>将所选行复制到右侧</value>
+  </data>
+  <data name="Side.Left" xml:space="preserve">
+    <value>左侧</value>
+  </data>
+  <data name="Side.Right" xml:space="preserve">
+    <value>右侧</value>
+  </data>
+  <data name="State.Building" xml:space="preserve">
+    <value>正在构建…</value>
+  </data>
+  <data name="State.Degraded" xml:space="preserve">
+    <value>功能受限</value>
+  </data>
+  <data name="State.Empty" xml:space="preserve">
+    <value>空</value>
+  </data>
+  <data name="State.Empty.Message" xml:space="preserve">
+    <value>加载两侧内容以进行比较</value>
+  </data>
+  <data name="State.Failed" xml:space="preserve">
+    <value>失败</value>
+  </data>
+  <data name="State.Ready" xml:space="preserve">
+    <value>就绪</value>
+  </data>
+  <data name="Status.BuildTime" xml:space="preserve">
+    <value>{0} 毫秒</value>
+  </data>
+  <data name="Status.Caret" xml:space="preserve">
+    <value>行 {0}，列 {1}</value>
+  </data>
+  <data name="Status.Changes" xml:space="preserve">
+    <value>{0} 处更改</value>
+  </data>
+  <data name="Status.Changes.None" xml:space="preserve">
+    <value>无更改</value>
+  </data>
+  <data name="Status.Changes.Of" xml:space="preserve">
+    <value>第 {0} 处更改，共 {1} 处</value>
+  </data>
+  <data name="Status.Changes.One" xml:space="preserve">
+    <value>1 处更改</value>
+  </data>
+  <data name="Status.Counts" xml:space="preserve">
+    <value>+{0} −{1} ~{2}</value>
+  </data>
+  <data name="Status.Dirty" xml:space="preserve">
+    <value>{0} 中有未保存的更改</value>
+  </data>
+  <data name="Status.Dismiss" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Status.Find" xml:space="preserve">
+    <value>查找 {0} · {1}</value>
+  </data>
+  <data name="Status.Find.MatchOf" xml:space="preserve">
+    <value>第 {0} 项，共 {1} 项</value>
+  </data>
+  <data name="Status.Find.Matches" xml:space="preserve">
+    <value>{0} 项匹配</value>
+  </data>
+  <data name="Status.Find.NoScope" xml:space="preserve">
+    <value>查找 {0}</value>
+  </data>
+  <data name="Status.Find.Scope" xml:space="preserve">
+    <value>查找 · {0}</value>
+  </data>
+  <data name="Status.Progress.Name" xml:space="preserve">
+    <value>正在构建</value>
+  </data>
+  <data name="Status.Stale" xml:space="preserve">
+    <value>已过期</value>
+  </data>
+  <data name="StatusStrip.Name" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="WordDiff.Skipped" xml:space="preserve">
+    <value>已跳过按单词高亮：有一行超过 {0} 个字符</value>
+  </data>
+</root>

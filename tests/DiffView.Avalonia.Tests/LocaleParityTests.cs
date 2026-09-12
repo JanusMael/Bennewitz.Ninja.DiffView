@@ -17,12 +17,13 @@ public sealed class LocaleParityTests
     private const string FixtureDirectory = "fixtures/locales";
 
     /// <summary>
-    /// The cultures the library ships. **Empty until plan 00014 phase 3**, and that is the point:
-    /// a locale file appearing without a line here fails
+    /// The cultures the library ships — ClaudeForge's set, so a host localised for one is localised
+    /// for both. A locale file appearing without a line here fails
     /// <see cref="The_shipped_locales_are_exactly_the_declared_set"/>, so shipping a translation
     /// stays a decision rather than a side effect of adding a file.
     /// </summary>
-    private static readonly string[] DeclaredLocales = [];
+    private static readonly string[] DeclaredLocales =
+        ["de-DE", "es-ES", "fr-FR", "ja-JP", "ko-KR", "pt-BR", "ru-RU", "zh-CN"];
 
     private static Dictionary<string, string> English => new(StringComparer.Ordinal)
     {

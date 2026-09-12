@@ -9,6 +9,11 @@
          DiffViewStrings.EnglishDefaults by scripts/gen-strings.cs; the locale files beside it are
          authored translations. -->
     <NeutralLanguage>en</NeutralLanguage>
+    <!-- The eight the library ships, named rather than left to discovery: a consumer publishing
+         trimmed keeps exactly these satellites, and a locale added without a line here would be
+         built and then silently dropped from the published output. Matches the set asserted by
+         LocaleParityTests.The_shipped_locales_are_exactly_the_declared_set. -->
+    <SatelliteResourceLanguages>en;de-DE;es-ES;fr-FR;ja-JP;ko-KR;pt-BR;ru-RU;zh-CN</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

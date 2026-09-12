@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- ru-RU. MACHINE-GENERATED, PENDING NATIVE REVIEW — see DECISIONS.md. The parity gate (LocaleParityTests) proves every key is present and every placeholder preserved; it proves nothing about whether the wording is right. Do not ship a release on these without a speaker of the language reading them. Strings naming a side are whole sentences per direction, never one sentence with a side word substituted in: a translator cannot inflect a word dropped into someone else's sentence. -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Banner.Force" xml:space="preserve">
+    <value>Принудительное выравнивание</value>
+  </data>
+  <data name="Banner.Identical" xml:space="preserve">
+    <value>Файлы идентичны</value>
+  </data>
+  <data name="Banner.Retry" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="Build.Completed" xml:space="preserve">
+    <value>Сравнено строк: {0} за {1} мс</value>
+  </data>
+  <data name="Build.Identical" xml:space="preserve">
+    <value>Файлы идентичны</value>
+  </data>
+  <data name="Build.Running" xml:space="preserve">
+    <value>Сравнение…</value>
+  </data>
+  <data name="ChangeMarkersMargin.Name" xml:space="preserve">
+    <value>Маркеры изменений</value>
+  </data>
+  <data name="ConnectorGutter.Name" xml:space="preserve">
+    <value>Соединители изменений</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Left" xml:space="preserve">
+    <value>Копировать это изменение на левую сторону</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Right" xml:space="preserve">
+    <value>Копировать это изменение на правую сторону</value>
+  </data>
+  <data name="DiffView.Name" xml:space="preserve">
+    <value>Параллельное сравнение</value>
+  </data>
+  <data name="Find.ChangedRowsOnly" xml:space="preserve">
+    <value>Изменённые</value>
+  </data>
+  <data name="Find.ChangedRowsOnly.Name" xml:space="preserve">
+    <value>Только изменённые строки</value>
+  </data>
+  <data name="Find.Close" xml:space="preserve">
+    <value>×</value>
+  </data>
+  <data name="Find.Close.Name" xml:space="preserve">
+    <value>Закрыть панель поиска</value>
+  </data>
+  <data name="Find.Failed" xml:space="preserve">
+    <value>Не удалось выполнить поиск.</value>
+  </data>
+  <data name="Find.MatchCase" xml:space="preserve">
+    <value>Aa</value>
+  </data>
+  <data name="Find.MatchCase.Name" xml:space="preserve">
+    <value>Учитывать регистр</value>
+  </data>
+  <data name="Find.MatchOf" xml:space="preserve">
+    <value>совпадение {0} из {1} (Л {2} · П {3})</value>
+  </data>
+  <data name="Find.Matches" xml:space="preserve">
+    <value>совпадений: {0} (Л {1} · П {2})</value>
+  </data>
+  <data name="Find.Name" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="Find.Next" xml:space="preserve">
+    <value>Далее</value>
+  </data>
+  <data name="Find.Next.Name" xml:space="preserve">
+    <value>Следующее совпадение</value>
+  </data>
+  <data name="Find.NoMatches" xml:space="preserve">
+    <value>совпадений нет</value>
+  </data>
+  <data name="Find.Previous" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="Find.Previous.Name" xml:space="preserve">
+    <value>Предыдущее совпадение</value>
+  </data>
+  <data name="Find.Query.Name" xml:space="preserve">
+    <value>Что искать</value>
+  </data>
+  <data name="Find.Query.Placeholder" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="Find.Regex" xml:space="preserve">
+    <value>.*</value>
+  </data>
+  <data name="Find.Regex.Name" xml:space="preserve">
+    <value>Регулярное выражение</value>
+  </data>
+  <data name="Find.Scope.Both" xml:space="preserve">
+    <value>Обе</value>
+  </data>
+  <data name="Find.Scope.Both.Name" xml:space="preserve">
+    <value>Искать в обеих областях</value>
+  </data>
+  <data name="Find.Scope.Both.Word" xml:space="preserve">
+    <value>обе</value>
+  </data>
+  <data name="Find.Scope.Left" xml:space="preserve">
+    <value>Л</value>
+  </data>
+  <data name="Find.Scope.Left.Name" xml:space="preserve">
+    <value>Искать в левой области</value>
+  </data>
+  <data name="Find.Scope.Right" xml:space="preserve">
+    <value>П</value>
+  </data>
+  <data name="Find.Scope.Right.Name" xml:space="preserve">
+    <value>Искать в правой области</value>
+  </data>
+  <data name="Find.Truncated" xml:space="preserve">
+    <value>Показаны первые совпадения: {0}</value>
+  </data>
+  <data name="Find.WholeWord" xml:space="preserve">
+    <value>Слово</value>
+  </data>
+  <data name="Find.WholeWord.Name" xml:space="preserve">
+    <value>Слово целиком</value>
+  </data>
+  <data name="Fold.Placeholder" xml:space="preserve">
+    <value> ⋯ скрыто совпадающих строк: {0} </value>
+  </data>
+  <data name="Fold.Placeholder.One" xml:space="preserve">
+    <value> ⋯ скрыта 1 совпадающая строка </value>
+  </data>
+  <data name="Header.Badge.Binary" xml:space="preserve">
+    <value>двоичный</value>
+  </data>
+  <data name="Header.Badge.Empty" xml:space="preserve">
+    <value>пусто</value>
+  </data>
+  <data name="Header.Badge.Identical" xml:space="preserve">
+    <value>идентичны</value>
+  </data>
+  <data name="Header.Chars" xml:space="preserve">
+    <value>символов: {0}</value>
+  </data>
+  <data name="Header.Detail" xml:space="preserve">
+    <value>{0} · {1} · {2} · {3}</value>
+  </data>
+  <data name="Header.Dirty" xml:space="preserve">
+    <value>Не сохранено</value>
+  </data>
+  <data name="Header.Encoding.Text" xml:space="preserve">
+    <value>текст</value>
+  </data>
+  <data name="Header.Left.Title" xml:space="preserve">
+    <value>Слева</value>
+  </data>
+  <data name="Header.LineEnding.Cr" xml:space="preserve">
+    <value>CR</value>
+  </data>
+  <data name="Header.LineEnding.CrLf" xml:space="preserve">
+    <value>CRLF</value>
+  </data>
+  <data name="Header.LineEnding.Lf" xml:space="preserve">
+    <value>LF</value>
+  </data>
+  <data name="Header.LineEnding.Mixed" xml:space="preserve">
+    <value>смешанные концы строк</value>
+  </data>
+  <data name="Header.LineEnding.None" xml:space="preserve">
+    <value>нет конца строки</value>
+  </data>
+  <data name="Header.Lines" xml:space="preserve">
+    <value>строк: {0}</value>
+  </data>
+  <data name="Header.Lines.One" xml:space="preserve">
+    <value>1 строка</value>
+  </data>
+  <data name="Header.NoContent" xml:space="preserve">
+    <value>Нет содержимого</value>
+  </data>
+  <data name="Header.Right.Title" xml:space="preserve">
+    <value>Справа</value>
+  </data>
+  <data name="Kind.Deleted" xml:space="preserve">
+    <value>удалена</value>
+  </data>
+  <data name="Kind.Inserted" xml:space="preserve">
+    <value>вставлена</value>
+  </data>
+  <data name="Kind.Modified" xml:space="preserve">
+    <value>изменена</value>
+  </data>
+  <data name="Kind.Unchanged" xml:space="preserve">
+    <value>без изменений</value>
+  </data>
+  <data name="LineNumbersMargin.Name" xml:space="preserve">
+    <value>Номера строк</value>
+  </data>
+  <data name="LineTooltip.Aligned.Left" xml:space="preserve">
+    <value>Строка {0} · строка {1} слева</value>
+  </data>
+  <data name="LineTooltip.Aligned.Right" xml:space="preserve">
+    <value>Строка {0} · строка {1} справа</value>
+  </data>
+  <data name="LineTooltip.Alone.Left" xml:space="preserve">
+    <value>Строка {0} · слева строки нет</value>
+  </data>
+  <data name="LineTooltip.Alone.Right" xml:space="preserve">
+    <value>Строка {0} · справа строки нет</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Left" xml:space="preserve">
+    <value>Строка {0} слева · строка {1} справа</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Right" xml:space="preserve">
+    <value>Строка {0} справа · строка {1} слева</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Left" xml:space="preserve">
+    <value>Строка {0} слева · справа строки нет</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Right" xml:space="preserve">
+    <value>Строка {0} справа · слева строки нет</value>
+  </data>
+  <data name="Marker.ModifiedSinceLoad" xml:space="preserve">
+    <value>Изменено в этом сеансе</value>
+  </data>
+  <data name="Marker.Tooltip" xml:space="preserve">
+    <value>Изменение {0} из {1} · {2}</value>
+  </data>
+  <data name="Menu.CopyChange.Left" xml:space="preserve">
+    <value>Копировать изменение влево</value>
+  </data>
+  <data name="Menu.CopyChange.Right" xml:space="preserve">
+    <value>Копировать изменение вправо</value>
+  </data>
+  <data name="Menu.CopySelection.Left" xml:space="preserve">
+    <value>Копировать выделенное влево</value>
+  </data>
+  <data name="Menu.CopySelection.Right" xml:space="preserve">
+    <value>Копировать выделенное вправо</value>
+  </data>
+  <data name="Menu.ExpandFold" xml:space="preserve">
+    <value>Показать скрытые здесь строки</value>
+  </data>
+  <data name="Menu.Find" xml:space="preserve">
+    <value>Найти…</value>
+  </data>
+  <data name="Menu.GoToChange" xml:space="preserve">
+    <value>Перейти к этому изменению</value>
+  </data>
+  <data name="Menu.GoToRow" xml:space="preserve">
+    <value>Перейти к этой строке</value>
+  </data>
+  <data name="Menu.HideOverviewMap" xml:space="preserve">
+    <value>Скрыть обзорную карту</value>
+  </data>
+  <data name="Menu.NextChange" xml:space="preserve">
+    <value>Следующее изменение</value>
+  </data>
+  <data name="Menu.PreviousChange" xml:space="preserve">
+    <value>Предыдущее изменение</value>
+  </data>
+  <data name="Menu.Revert.Left" xml:space="preserve">
+    <value>Отменить правки слева</value>
+  </data>
+  <data name="Menu.Revert.Right" xml:space="preserve">
+    <value>Отменить правки справа</value>
+  </data>
+  <data name="Menu.Save.Left" xml:space="preserve">
+    <value>Сохранить левую сторону</value>
+  </data>
+  <data name="Menu.Save.Right" xml:space="preserve">
+    <value>Сохранить правую сторону</value>
+  </data>
+  <data name="Menu.SelectChange" xml:space="preserve">
+    <value>Выделить это изменение</value>
+  </data>
+  <data name="Menu.ShowAllRows" xml:space="preserve">
+    <value>Показать все строки</value>
+  </data>
+  <data name="Menu.ShowContext" xml:space="preserve">
+    <value>Различия с контекстом</value>
+  </data>
+  <data name="Menu.ShowDifferencesOnly" xml:space="preserve">
+    <value>Только различия</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Left" xml:space="preserve">
+    <value>Строка {0} из {1} · {2} · левая сторона</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Right" xml:space="preserve">
+    <value>Строка {0} из {1} · {2} · правая сторона</value>
+  </data>
+  <data name="Minimap.Name" xml:space="preserve">
+    <value>Обзор</value>
+  </data>
+  <data name="Minimap.Tooltip" xml:space="preserve">
+    <value>Строка {0} из {1} · {2}</value>
+  </data>
+  <data name="Navigation.NoChanges" xml:space="preserve">
+    <value>Изменений для перехода нет</value>
+  </data>
+  <data name="Navigation.NoNext" xml:space="preserve">
+    <value>Следующего изменения нет</value>
+  </data>
+  <data name="Navigation.NoPrevious" xml:space="preserve">
+    <value>Предыдущего изменения нет</value>
+  </data>
+  <data name="Option.ForceAlignment" xml:space="preserve">
+    <value>принудительное выравнивание</value>
+  </data>
+  <data name="Option.IgnoreCase" xml:space="preserve">
+    <value>игнорировать регистр</value>
+  </data>
+  <data name="Option.IgnoreWhitespace" xml:space="preserve">
+    <value>игнорировать пробелы</value>
+  </data>
+  <data name="Option.WordDiff.Character" xml:space="preserve">
+    <value>посимвольное сравнение</value>
+  </data>
+  <data name="Option.WordDiff.Off" xml:space="preserve">
+    <value>без сравнения по словам</value>
+  </data>
+  <data name="Pane.Left.Name" xml:space="preserve">
+    <value>Левая область</value>
+  </data>
+  <data name="Pane.Right.Name" xml:space="preserve">
+    <value>Правая область</value>
+  </data>
+  <data name="Pane.Unified.Name" xml:space="preserve">
+    <value>Объединённая область</value>
+  </data>
+  <data name="RenderFault" xml:space="preserve">
+    <value>Сбой в {0}, компонент отключён: {1}</value>
+  </data>
+  <data name="RenderFault.OnLine" xml:space="preserve">
+    <value>Сбой в {0} на строке {1}, компонент отключён: {2}</value>
+  </data>
+  <data name="RenderFault.OnSubject" xml:space="preserve">
+    <value>Сбой в {0} для {1}, компонент отключён: {2}</value>
+  </data>
+  <data name="Save.ChangedOnDisk" xml:space="preserve">
+    <value>Файл {0} изменился на диске после чтения; ничего не записано.</value>
+  </data>
+  <data name="Save.Failed" xml:space="preserve">
+    <value>Не удалось сохранить {0}: {1}</value>
+  </data>
+  <data name="Save.NoPath" xml:space="preserve">
+    <value>{0} получен не из файла, поэтому сохранять некуда.</value>
+  </data>
+  <data name="Save.Succeeded" xml:space="preserve">
+    <value>Сохранено: {0}</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Left" xml:space="preserve">
+    <value>Копировать выделенные строки на левую сторону</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Right" xml:space="preserve">
+    <value>Копировать выделенные строки на правую сторону</value>
+  </data>
+  <data name="Side.Left" xml:space="preserve">
+    <value>слева</value>
+  </data>
+  <data name="Side.Right" xml:space="preserve">
+    <value>справа</value>
+  </data>
+  <data name="State.Building" xml:space="preserve">
+    <value>Построение…</value>
+  </data>
+  <data name="State.Degraded" xml:space="preserve">
+    <value>Ограниченно</value>
+  </data>
+  <data name="State.Empty" xml:space="preserve">
+    <value>Пусто</value>
+  </data>
+  <data name="State.Empty.Message" xml:space="preserve">
+    <value>Загрузите обе стороны для сравнения</value>
+  </data>
+  <data name="State.Failed" xml:space="preserve">
+    <value>Сбой</value>
+  </data>
+  <data name="State.Ready" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="Status.BuildTime" xml:space="preserve">
+    <value>{0} мс</value>
+  </data>
+  <data name="Status.Caret" xml:space="preserve">
+    <value>Стр {0}, Стлб {1}</value>
+  </data>
+  <data name="Status.Changes" xml:space="preserve">
+    <value>изменений: {0}</value>
+  </data>
+  <data name="Status.Changes.None" xml:space="preserve">
+    <value>изменений нет</value>
+  </data>
+  <data name="Status.Changes.Of" xml:space="preserve">
+    <value>изменение {0} из {1}</value>
+  </data>
+  <data name="Status.Changes.One" xml:space="preserve">
+    <value>1 изменение</value>
+  </data>
+  <data name="Status.Counts" xml:space="preserve">
+    <value>+{0} −{1} ~{2}</value>
+  </data>
+  <data name="Status.Dirty" xml:space="preserve">
+    <value>Несохранённые изменения в {0}</value>
+  </data>
+  <data name="Status.Dismiss" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="Status.Find" xml:space="preserve">
+    <value>поиск {0} · {1}</value>
+  </data>
+  <data name="Status.Find.MatchOf" xml:space="preserve">
+    <value>{0} из {1}</value>
+  </data>
+  <data name="Status.Find.Matches" xml:space="preserve">
+    <value>совпадений: {0}</value>
+  </data>
+  <data name="Status.Find.NoScope" xml:space="preserve">
+    <value>поиск {0}</value>
+  </data>
+  <data name="Status.Find.Scope" xml:space="preserve">
+    <value>поиск · {0}</value>
+  </data>
+  <data name="Status.Progress.Name" xml:space="preserve">
+    <value>Построение</value>
+  </data>
+  <data name="Status.Stale" xml:space="preserve">
+    <value>устарело</value>
+  </data>
+  <data name="StatusStrip.Name" xml:space="preserve">
+    <value>Состояние</value>
+  </data>
+  <data name="WordDiff.Skipped" xml:space="preserve">
+    <value>Пословная подсветка пропущена: строка длиннее {0} символов</value>
+  </data>
+</root>

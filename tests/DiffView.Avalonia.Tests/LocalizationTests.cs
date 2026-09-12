@@ -100,6 +100,63 @@ public sealed class LocalizationTests
     }
 
     [Fact]
+    public void The_bundled_translation_answers_when_the_library_ships_the_culture()
+    {
+        // Phase 1 could not assert this and its mutation survived: with no satellite on disk the
+        // bundled lookup and the compiled table both returned the same English, so deleting the
+        // step from Get changed nothing any test could see. A shipped locale is what makes it
+        // visible, and this is the test that now kills that mutation.
+        using (DiffViewStrings.Override(new DiffViewLocalization { Culture = CultureInfo.GetCultureInfo("de-DE") }))
+        {
+            Assert.Equal("Bereit", DiffViewStrings.Get(DiffViewStrings.StateReady));
+        }
+    }
+
+    [Fact]
+    public void A_culture_the_library_ships_nothing_for_falls_back_to_English()
+    {
+        using (DiffViewStrings.Override(new DiffViewLocalization { Culture = CultureInfo.GetCultureInfo("fi-FI") }))
+        {
+            Assert.Equal(
+                DiffViewStrings.EnglishDefaults[DiffViewStrings.StateReady],
+                DiffViewStrings.Get(DiffViewStrings.StateReady));
+        }
+    }
+
+    [Fact]
+    public void A_host_resolver_outranks_the_bundled_translation()
+    {
+        // The load-bearing guarantee of plan 00014: a host that wires a resolver wins even for a
+        // culture the library ships. Without this the library would be deciding policy for an
+        // application that has already made the decision itself.
+        using (DiffViewStrings.Override(new DiffViewLocalization
+        {
+            Culture = CultureInfo.GetCultureInfo("de-DE"),
+            Resolver = (key, _) => key == DiffViewStrings.StateReady ? "Host wins" : null,
+        }))
+        {
+            Assert.Equal("Host wins", DiffViewStrings.Get(DiffViewStrings.StateReady));
+        }
+    }
+
+    [Fact]
+    public void A_partial_resolver_falls_through_to_the_resolved_culture_not_the_machines()
+    {
+        // The defect that put the culture in the resolver's signature. This host answers for
+        // Japanese and covers one key of 143; the rest must come back Japanese, never in whatever
+        // language the machine happens to be set to — which here is the en-US HeadlessTestApp pins.
+        using (DiffViewStrings.Override(new DiffViewLocalization
+        {
+            Culture = CultureInfo.GetCultureInfo("ja-JP"),
+            Resolver = (key, _) => key == DiffViewStrings.StateReady ? "準備OK" : null,
+        }))
+        {
+            Assert.Equal("準備OK", DiffViewStrings.Get(DiffViewStrings.StateReady));
+            Assert.Equal("左ペイン", DiffViewStrings.Get(DiffViewStrings.LeftPaneName));
+        }
+    }
+
+    [Fact]
     public void Override_restores_the_previous_state_when_the_body_throws()
     {
         DiffViewLocalization before = new() { Culture = CultureInfo.GetCultureInfo("fr-FR") };

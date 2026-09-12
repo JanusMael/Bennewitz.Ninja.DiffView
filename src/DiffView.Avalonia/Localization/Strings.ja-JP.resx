@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- ja-JP. MACHINE-GENERATED, PENDING NATIVE REVIEW — see DECISIONS.md. The parity gate (LocaleParityTests) proves every key is present and every placeholder preserved; it proves nothing about whether the wording is right. Do not ship a release on these without a speaker of the language reading them. Strings naming a side are whole sentences per direction, never one sentence with a side word substituted in: a translator cannot inflect a word dropped into someone else's sentence. -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Banner.Force" xml:space="preserve">
+    <value>強制的に整列する</value>
+  </data>
+  <data name="Banner.Identical" xml:space="preserve">
+    <value>ファイルは同一です</value>
+  </data>
+  <data name="Banner.Retry" xml:space="preserve">
+    <value>再試行</value>
+  </data>
+  <data name="Build.Completed" xml:space="preserve">
+    <value>{0} 行を {1} ミリ秒で比較しました</value>
+  </data>
+  <data name="Build.Identical" xml:space="preserve">
+    <value>ファイルは同一です</value>
+  </data>
+  <data name="Build.Running" xml:space="preserve">
+    <value>比較中…</value>
+  </data>
+  <data name="ChangeMarkersMargin.Name" xml:space="preserve">
+    <value>変更マーカー</value>
+  </data>
+  <data name="ConnectorGutter.Name" xml:space="preserve">
+    <value>変更コネクタ</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Left" xml:space="preserve">
+    <value>この変更を左側にコピーします</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Right" xml:space="preserve">
+    <value>この変更を右側にコピーします</value>
+  </data>
+  <data name="DiffView.Name" xml:space="preserve">
+    <value>左右差分</value>
+  </data>
+  <data name="Find.ChangedRowsOnly" xml:space="preserve">
+    <value>変更行</value>
+  </data>
+  <data name="Find.ChangedRowsOnly.Name" xml:space="preserve">
+    <value>変更された行のみ</value>
+  </data>
+  <data name="Find.Close" xml:space="preserve">
+    <value>×</value>
+  </data>
+  <data name="Find.Close.Name" xml:space="preserve">
+    <value>検索バーを閉じる</value>
+  </data>
+  <data name="Find.Failed" xml:space="preserve">
+    <value>検索を実行できませんでした。</value>
+  </data>
+  <data name="Find.MatchCase" xml:space="preserve">
+    <value>Aa</value>
+  </data>
+  <data name="Find.MatchCase.Name" xml:space="preserve">
+    <value>大文字と小文字を区別する</value>
+  </data>
+  <data name="Find.MatchOf" xml:space="preserve">
+    <value>{1} 件中 {0} 件目 (左 {2} · 右 {3})</value>
+  </data>
+  <data name="Find.Matches" xml:space="preserve">
+    <value>{0} 件 (左 {1} · 右 {2})</value>
+  </data>
+  <data name="Find.Name" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="Find.Next" xml:space="preserve">
+    <value>次へ</value>
+  </data>
+  <data name="Find.Next.Name" xml:space="preserve">
+    <value>次の一致</value>
+  </data>
+  <data name="Find.NoMatches" xml:space="preserve">
+    <value>一致なし</value>
+  </data>
+  <data name="Find.Previous" xml:space="preserve">
+    <value>前へ</value>
+  </data>
+  <data name="Find.Previous.Name" xml:space="preserve">
+    <value>前の一致</value>
+  </data>
+  <data name="Find.Query.Name" xml:space="preserve">
+    <value>検索する文字列</value>
+  </data>
+  <data name="Find.Query.Placeholder" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="Find.Regex" xml:space="preserve">
+    <value>.*</value>
+  </data>
+  <data name="Find.Regex.Name" xml:space="preserve">
+    <value>正規表現</value>
+  </data>
+  <data name="Find.Scope.Both" xml:space="preserve">
+    <value>両方</value>
+  </data>
+  <data name="Find.Scope.Both.Name" xml:space="preserve">
+    <value>両方のペインを検索する</value>
+  </data>
+  <data name="Find.Scope.Both.Word" xml:space="preserve">
+    <value>両方</value>
+  </data>
+  <data name="Find.Scope.Left" xml:space="preserve">
+    <value>左</value>
+  </data>
+  <data name="Find.Scope.Left.Name" xml:space="preserve">
+    <value>左のペインを検索する</value>
+  </data>
+  <data name="Find.Scope.Right" xml:space="preserve">
+    <value>右</value>
+  </data>
+  <data name="Find.Scope.Right.Name" xml:space="preserve">
+    <value>右のペインを検索する</value>
+  </data>
+  <data name="Find.Truncated" xml:space="preserve">
+    <value>最初の {0} 件を表示しています</value>
+  </data>
+  <data name="Find.WholeWord" xml:space="preserve">
+    <value>単語</value>
+  </data>
+  <data name="Find.WholeWord.Name" xml:space="preserve">
+    <value>単語単位</value>
+  </data>
+  <data name="Fold.Placeholder" xml:space="preserve">
+    <value> ⋯ 一致する {0} 行を非表示 </value>
+  </data>
+  <data name="Fold.Placeholder.One" xml:space="preserve">
+    <value> ⋯ 一致する 1 行を非表示 </value>
+  </data>
+  <data name="Header.Badge.Binary" xml:space="preserve">
+    <value>バイナリ</value>
+  </data>
+  <data name="Header.Badge.Empty" xml:space="preserve">
+    <value>空</value>
+  </data>
+  <data name="Header.Badge.Identical" xml:space="preserve">
+    <value>同一</value>
+  </data>
+  <data name="Header.Chars" xml:space="preserve">
+    <value>{0} 文字</value>
+  </data>
+  <data name="Header.Detail" xml:space="preserve">
+    <value>{0} · {1} · {2} · {3}</value>
+  </data>
+  <data name="Header.Dirty" xml:space="preserve">
+    <value>未保存</value>
+  </data>
+  <data name="Header.Encoding.Text" xml:space="preserve">
+    <value>テキスト</value>
+  </data>
+  <data name="Header.Left.Title" xml:space="preserve">
+    <value>左</value>
+  </data>
+  <data name="Header.LineEnding.Cr" xml:space="preserve">
+    <value>CR</value>
+  </data>
+  <data name="Header.LineEnding.CrLf" xml:space="preserve">
+    <value>CRLF</value>
+  </data>
+  <data name="Header.LineEnding.Lf" xml:space="preserve">
+    <value>LF</value>
+  </data>
+  <data name="Header.LineEnding.Mixed" xml:space="preserve">
+    <value>改行コードが混在</value>
+  </data>
+  <data name="Header.LineEnding.None" xml:space="preserve">
+    <value>改行なし</value>
+  </data>
+  <data name="Header.Lines" xml:space="preserve">
+    <value>{0} 行</value>
+  </data>
+  <data name="Header.Lines.One" xml:space="preserve">
+    <value>1 行</value>
+  </data>
+  <data name="Header.NoContent" xml:space="preserve">
+    <value>内容なし</value>
+  </data>
+  <data name="Header.Right.Title" xml:space="preserve">
+    <value>右</value>
+  </data>
+  <data name="Kind.Deleted" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Kind.Inserted" xml:space="preserve">
+    <value>挿入</value>
+  </data>
+  <data name="Kind.Modified" xml:space="preserve">
+    <value>変更</value>
+  </data>
+  <data name="Kind.Unchanged" xml:space="preserve">
+    <value>変更なし</value>
+  </data>
+  <data name="LineNumbersMargin.Name" xml:space="preserve">
+    <value>行番号</value>
+  </data>
+  <data name="LineTooltip.Aligned.Left" xml:space="preserve">
+    <value>{0} 行目 · 左の {1} 行目</value>
+  </data>
+  <data name="LineTooltip.Aligned.Right" xml:space="preserve">
+    <value>{0} 行目 · 右の {1} 行目</value>
+  </data>
+  <data name="LineTooltip.Alone.Left" xml:space="preserve">
+    <value>{0} 行目 · 左に対応する行なし</value>
+  </data>
+  <data name="LineTooltip.Alone.Right" xml:space="preserve">
+    <value>{0} 行目 · 右に対応する行なし</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Left" xml:space="preserve">
+    <value>左の {0} 行目 · 右の {1} 行目</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Right" xml:space="preserve">
+    <value>右の {0} 行目 · 左の {1} 行目</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Left" xml:space="preserve">
+    <value>左の {0} 行目 · 右に対応する行なし</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Right" xml:space="preserve">
+    <value>右の {0} 行目 · 左に対応する行なし</value>
+  </data>
+  <data name="Marker.ModifiedSinceLoad" xml:space="preserve">
+    <value>このセッションで編集</value>
+  </data>
+  <data name="Marker.Tooltip" xml:space="preserve">
+    <value>{1} 件中 {0} 件目の変更 · {2}</value>
+  </data>
+  <data name="Menu.CopyChange.Left" xml:space="preserve">
+    <value>変更を左へコピー</value>
+  </data>
+  <data name="Menu.CopyChange.Right" xml:space="preserve">
+    <value>変更を右へコピー</value>
+  </data>
+  <data name="Menu.CopySelection.Left" xml:space="preserve">
+    <value>選択範囲を左へコピー</value>
+  </data>
+  <data name="Menu.CopySelection.Right" xml:space="preserve">
+    <value>選択範囲を右へコピー</value>
+  </data>
+  <data name="Menu.ExpandFold" xml:space="preserve">
+    <value>ここで非表示の行を表示</value>
+  </data>
+  <data name="Menu.Find" xml:space="preserve">
+    <value>検索…</value>
+  </data>
+  <data name="Menu.GoToChange" xml:space="preserve">
+    <value>この変更へ移動</value>
+  </data>
+  <data name="Menu.GoToRow" xml:space="preserve">
+    <value>この行へ移動</value>
+  </data>
+  <data name="Menu.HideOverviewMap" xml:space="preserve">
+    <value>概要マップを非表示</value>
+  </data>
+  <data name="Menu.NextChange" xml:space="preserve">
+    <value>次の変更</value>
+  </data>
+  <data name="Menu.PreviousChange" xml:space="preserve">
+    <value>前の変更</value>
+  </data>
+  <data name="Menu.Revert.Left" xml:space="preserve">
+    <value>左側を元に戻す</value>
+  </data>
+  <data name="Menu.Revert.Right" xml:space="preserve">
+    <value>右側を元に戻す</value>
+  </data>
+  <data name="Menu.Save.Left" xml:space="preserve">
+    <value>左側を保存</value>
+  </data>
+  <data name="Menu.Save.Right" xml:space="preserve">
+    <value>右側を保存</value>
+  </data>
+  <data name="Menu.SelectChange" xml:space="preserve">
+    <value>この変更を選択</value>
+  </data>
+  <data name="Menu.ShowAllRows" xml:space="preserve">
+    <value>すべての行を表示</value>
+  </data>
+  <data name="Menu.ShowContext" xml:space="preserve">
+    <value>前後を含めて差分表示</value>
+  </data>
+  <data name="Menu.ShowDifferencesOnly" xml:space="preserve">
+    <value>差分のみ表示</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Left" xml:space="preserve">
+    <value>{1} 行中 {0} 行目 · {2} · 左側</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Right" xml:space="preserve">
+    <value>{1} 行中 {0} 行目 · {2} · 右側</value>
+  </data>
+  <data name="Minimap.Name" xml:space="preserve">
+    <value>概要</value>
+  </data>
+  <data name="Minimap.Tooltip" xml:space="preserve">
+    <value>{1} 行中 {0} 行目 · {2}</value>
+  </data>
+  <data name="Navigation.NoChanges" xml:space="preserve">
+    <value>移動できる変更がありません</value>
+  </data>
+  <data name="Navigation.NoNext" xml:space="preserve">
+    <value>次の変更はありません</value>
+  </data>
+  <data name="Navigation.NoPrevious" xml:space="preserve">
+    <value>前の変更はありません</value>
+  </data>
+  <data name="Option.ForceAlignment" xml:space="preserve">
+    <value>強制整列</value>
+  </data>
+  <data name="Option.IgnoreCase" xml:space="preserve">
+    <value>大文字と小文字を無視</value>
+  </data>
+  <data name="Option.IgnoreWhitespace" xml:space="preserve">
+    <value>空白を無視</value>
+  </data>
+  <data name="Option.WordDiff.Character" xml:space="preserve">
+    <value>文字単位の差分</value>
+  </data>
+  <data name="Option.WordDiff.Off" xml:space="preserve">
+    <value>単語単位の差分なし</value>
+  </data>
+  <data name="Pane.Left.Name" xml:space="preserve">
+    <value>左ペイン</value>
+  </data>
+  <data name="Pane.Right.Name" xml:space="preserve">
+    <value>右ペイン</value>
+  </data>
+  <data name="Pane.Unified.Name" xml:space="preserve">
+    <value>統合ペイン</value>
+  </data>
+  <data name="RenderFault" xml:space="preserve">
+    <value>{0} が失敗したため無効にしました: {1}</value>
+  </data>
+  <data name="RenderFault.OnLine" xml:space="preserve">
+    <value>{0} が {1} 行目で失敗したため無効にしました: {2}</value>
+  </data>
+  <data name="RenderFault.OnSubject" xml:space="preserve">
+    <value>{0} が {1} で失敗したため無効にしました: {2}</value>
+  </data>
+  <data name="Save.ChangedOnDisk" xml:space="preserve">
+    <value>{0} は読み込み後にディスク上で変更されました。何も書き込んでいません。</value>
+  </data>
+  <data name="Save.Failed" xml:space="preserve">
+    <value>{0} を保存できませんでした: {1}</value>
+  </data>
+  <data name="Save.NoPath" xml:space="preserve">
+    <value>{0} はファイル由来ではないため、保存先がありません。</value>
+  </data>
+  <data name="Save.Succeeded" xml:space="preserve">
+    <value>{0} を保存しました</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Left" xml:space="preserve">
+    <value>選択した行を左側にコピーします</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Right" xml:space="preserve">
+    <value>選択した行を右側にコピーします</value>
+  </data>
+  <data name="Side.Left" xml:space="preserve">
+    <value>左</value>
+  </data>
+  <data name="Side.Right" xml:space="preserve">
+    <value>右</value>
+  </data>
+  <data name="State.Building" xml:space="preserve">
+    <value>構築中…</value>
+  </data>
+  <data name="State.Degraded" xml:space="preserve">
+    <value>機能制限</value>
+  </data>
+  <data name="State.Empty" xml:space="preserve">
+    <value>空</value>
+  </data>
+  <data name="State.Empty.Message" xml:space="preserve">
+    <value>比較するには両側を読み込んでください</value>
+  </data>
+  <data name="State.Failed" xml:space="preserve">
+    <value>失敗</value>
+  </data>
+  <data name="State.Ready" xml:space="preserve">
+    <value>準備完了</value>
+  </data>
+  <data name="Status.BuildTime" xml:space="preserve">
+    <value>{0} ミリ秒</value>
+  </data>
+  <data name="Status.Caret" xml:space="preserve">
+    <value>{0} 行, {1} 列</value>
+  </data>
+  <data name="Status.Changes" xml:space="preserve">
+    <value>{0} 件の変更</value>
+  </data>
+  <data name="Status.Changes.None" xml:space="preserve">
+    <value>変更なし</value>
+  </data>
+  <data name="Status.Changes.Of" xml:space="preserve">
+    <value>{1} 件中 {0} 件目の変更</value>
+  </data>
+  <data name="Status.Changes.One" xml:space="preserve">
+    <value>1 件の変更</value>
+  </data>
+  <data name="Status.Counts" xml:space="preserve">
+    <value>+{0} −{1} ~{2}</value>
+  </data>
+  <data name="Status.Dirty" xml:space="preserve">
+    <value>{0} に未保存の変更があります</value>
+  </data>
+  <data name="Status.Dismiss" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="Status.Find" xml:space="preserve">
+    <value>検索 {0} · {1}</value>
+  </data>
+  <data name="Status.Find.MatchOf" xml:space="preserve">
+    <value>{1} 件中 {0} 件目</value>
+  </data>
+  <data name="Status.Find.Matches" xml:space="preserve">
+    <value>{0} 件</value>
+  </data>
+  <data name="Status.Find.NoScope" xml:space="preserve">
+    <value>検索 {0}</value>
+  </data>
+  <data name="Status.Find.Scope" xml:space="preserve">
+    <value>検索 · {0}</value>
+  </data>
+  <data name="Status.Progress.Name" xml:space="preserve">
+    <value>構築中</value>
+  </data>
+  <data name="Status.Stale" xml:space="preserve">
+    <value>古い状態</value>
+  </data>
+  <data name="StatusStrip.Name" xml:space="preserve">
+    <value>ステータス</value>
+  </data>
+  <data name="WordDiff.Skipped" xml:space="preserve">
+    <value>単語単位の強調表示を省略しました: {0} 文字を超える行があります</value>
+  </data>
+</root>

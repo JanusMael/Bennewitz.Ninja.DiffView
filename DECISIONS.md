@@ -2084,3 +2084,70 @@ This is the repository's existing rule — *when two implementations would both 
 what is wrong* — arriving through a different door. There the two implementations agreed; here one
 implementation is wrong twice and its errors annihilate. **Whenever a test asserts that two things
 match, ask what a bug affecting both of them would look like.**
+
+## The eight locales, and what they are and are not evidence of
+
+Plan 00014 phase 3 ships `de-DE`, `es-ES`, `fr-FR`, `ja-JP`, `ko-KR`, `pt-BR`, `ru-RU`, `zh-CN` —
+ClaudeForge's set, so a host localised for one is localised for both. 143 keys each.
+
+**They are machine-generated and have not been read by a speaker of any of the eight languages.**
+Every file says so in its header. The parity gate proves each one carries every key, no undeclared
+key, and the same placeholder set per key as English; the untranslated share runs 5.6% to 8.4%,
+against a threshold of 80%, and the twelve highest are the strings that are the same in every
+language — `×`, `Aa`, `.*`, `CR`, `CRLF`, `LF`, `{0} ms`, `+{0} −{1} ~{2}`, the separator-only
+`Header.Detail`, and German `L`/`R` sharing initials with English. None of that is evidence about
+whether the wording is *right*. `CHANGELOG.md` holds only `[Unreleased]`, so native review gates the
+first release rather than this plan.
+
+The resx files are the authored artifact. Their first cut was emitted from a working JSON so that
+formatting would match the generated neutral file rather than being hand-typed as XML; the emitter
+is deliberately not a repo tool, because keeping it would imply these files are generated and
+invite someone to regenerate over a correction.
+
+## Phase 1's surviving mutation dies here, as promised
+
+*"The satellite step cannot be killed in phase 1, and that is structural"* recorded that deleting
+`?? Translation(key, culture)` from `Get` failed no test, because with no satellite on disk the
+bundled lookup returned the neutral resource — byte-identical to the compiled table by the drift
+gate's own design.
+
+Re-run against the shipped locales, that mutation is **KILLED**, by
+`LocalizationTests.The_bundled_translation_answers_when_the_library_ships_the_culture` and
+`A_partial_resolver_falls_through_to_the_resolved_culture_not_the_machines`. The second is the one
+worth having: a resolver answering for Japanese and covering one key of 143 must see the other 142
+come back Japanese, never in the machine's language. That is the defect the culture in the
+resolver's signature exists to prevent, and it could not be written until a locale existed to
+prevent it with.
+
+## The suite is culture-dependent in 94 places, and only 32 of them are defects
+
+`HeadlessTestApp` honours `DIFFVIEW_TEST_UI_CULTURE`, and running the whole suite under `de-DE`
+fails **94 of 606**. The split matters more than the number:
+
+| | Count | Verdict |
+|---|---|---|
+| Snapshot tests | 62 | **Correct behaviour.** A committed frame is a picture of English chrome; rendering German changes pixels, and a comparer that tolerated that would be asserting nothing |
+| Behavioural assertions of English text | 32 | **Real.** These read a tooltip, a status line or a header and compare it to an English literal without pinning a culture |
+
+**The `de-DE` CI leg the plan called for is therefore not written**, because as a gate over the whole
+suite it would be permanently red for a reason that is not a defect, and a permanently red gate is
+one nobody reads. What it needs first is for the 62 snapshot tests to pin `en-US` for their own
+duration — a frame is English by definition, and saying so in one place is the fix — after which the
+remaining 32 become a finite list worth working through, and the leg becomes a gate that means
+something.
+
+That is the audit the plan wanted and it is larger than the phase that found it. Recorded here
+rather than started, because half of it would be worse than none: the snapshot pinning and the
+32 corrections have to land together or the leg cannot go green either way.
+
+## `SatelliteResourceLanguages` names the eight rather than leaving them to discovery
+
+Deferred from phase 1, where it could only have restricted an empty set. It is now
+`en;de-DE;es-ES;fr-FR;ja-JP;ko-KR;pt-BR;ru-RU;zh-CN`, matching
+`LocaleParityTests.The_shipped_locales_are_exactly_the_declared_set`.
+
+Naming them is the point: a consumer publishing trimmed keeps exactly this set, and a ninth locale
+added without a line here would be compiled into a satellite and then silently dropped from the
+published output — which renders as English for that culture and nothing anywhere reports it. The
+trim canary confirms the current eight survive `dotnet publish -c Release -r linux-x64
+--self-contained true`, with no `IL2xxx`.

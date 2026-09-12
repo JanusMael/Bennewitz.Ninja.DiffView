@@ -38,7 +38,13 @@ public sealed class HeadlessTestApp : Application
     /// box and red on a German desk. A test that wants a locale asks for it through
     /// <see cref="DiffViewStrings.Override"/>.
     /// </summary>
-    public static readonly CultureInfo TextCulture = CultureInfo.GetCultureInfo("en-US");
+    /// <remarks>
+    /// <c>DIFFVIEW_TEST_UI_CULTURE</c> overrides it, which is how CI runs the suite a second time
+    /// under a culture the library ships. A test that fails only under that leg was asserting
+    /// English without pinning, and is invisible on an English runner.
+    /// </remarks>
+    public static readonly CultureInfo TextCulture =
+        CultureInfo.GetCultureInfo(Environment.GetEnvironmentVariable("DIFFVIEW_TEST_UI_CULTURE") ?? "en-US");
 
     public static AppBuilder BuildAvaloniaApp()
     {

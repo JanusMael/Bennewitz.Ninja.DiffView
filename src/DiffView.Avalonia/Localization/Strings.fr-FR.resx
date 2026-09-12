@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- fr-FR. MACHINE-GENERATED, PENDING NATIVE REVIEW — see DECISIONS.md. The parity gate (LocaleParityTests) proves every key is present and every placeholder preserved; it proves nothing about whether the wording is right. Do not ship a release on these without a speaker of the language reading them. Strings naming a side are whole sentences per direction, never one sentence with a side word substituted in: a translator cannot inflect a word dropped into someone else's sentence. -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Banner.Force" xml:space="preserve">
+    <value>Forcer l'alignement</value>
+  </data>
+  <data name="Banner.Identical" xml:space="preserve">
+    <value>Les fichiers sont identiques</value>
+  </data>
+  <data name="Banner.Retry" xml:space="preserve">
+    <value>Réessayer</value>
+  </data>
+  <data name="Build.Completed" xml:space="preserve">
+    <value>{0} lignes comparées en {1} ms</value>
+  </data>
+  <data name="Build.Identical" xml:space="preserve">
+    <value>Les fichiers sont identiques</value>
+  </data>
+  <data name="Build.Running" xml:space="preserve">
+    <value>Comparaison…</value>
+  </data>
+  <data name="ChangeMarkersMargin.Name" xml:space="preserve">
+    <value>Marqueurs de modification</value>
+  </data>
+  <data name="ConnectorGutter.Name" xml:space="preserve">
+    <value>Connecteurs de modification</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Left" xml:space="preserve">
+    <value>Copier cette modification vers le côté gauche</value>
+  </data>
+  <data name="CopyArrow.Tooltip.Right" xml:space="preserve">
+    <value>Copier cette modification vers le côté droit</value>
+  </data>
+  <data name="DiffView.Name" xml:space="preserve">
+    <value>Comparaison côte à côte</value>
+  </data>
+  <data name="Find.ChangedRowsOnly" xml:space="preserve">
+    <value>Modifiées</value>
+  </data>
+  <data name="Find.ChangedRowsOnly.Name" xml:space="preserve">
+    <value>Lignes modifiées uniquement</value>
+  </data>
+  <data name="Find.Close" xml:space="preserve">
+    <value>×</value>
+  </data>
+  <data name="Find.Close.Name" xml:space="preserve">
+    <value>Fermer la barre de recherche</value>
+  </data>
+  <data name="Find.Failed" xml:space="preserve">
+    <value>La recherche n'a pas pu s'exécuter.</value>
+  </data>
+  <data name="Find.MatchCase" xml:space="preserve">
+    <value>Aa</value>
+  </data>
+  <data name="Find.MatchCase.Name" xml:space="preserve">
+    <value>Respecter la casse</value>
+  </data>
+  <data name="Find.MatchOf" xml:space="preserve">
+    <value>résultat {0} sur {1} (G {2} · D {3})</value>
+  </data>
+  <data name="Find.Matches" xml:space="preserve">
+    <value>{0} résultats (G {1} · D {2})</value>
+  </data>
+  <data name="Find.Name" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="Find.Next" xml:space="preserve">
+    <value>Suivant</value>
+  </data>
+  <data name="Find.Next.Name" xml:space="preserve">
+    <value>Résultat suivant</value>
+  </data>
+  <data name="Find.NoMatches" xml:space="preserve">
+    <value>aucun résultat</value>
+  </data>
+  <data name="Find.Previous" xml:space="preserve">
+    <value>Précéd.</value>
+  </data>
+  <data name="Find.Previous.Name" xml:space="preserve">
+    <value>Résultat précédent</value>
+  </data>
+  <data name="Find.Query.Name" xml:space="preserve">
+    <value>Texte à rechercher</value>
+  </data>
+  <data name="Find.Query.Placeholder" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="Find.Regex" xml:space="preserve">
+    <value>.*</value>
+  </data>
+  <data name="Find.Regex.Name" xml:space="preserve">
+    <value>Expression régulière</value>
+  </data>
+  <data name="Find.Scope.Both" xml:space="preserve">
+    <value>Les deux</value>
+  </data>
+  <data name="Find.Scope.Both.Name" xml:space="preserve">
+    <value>Rechercher dans les deux volets</value>
+  </data>
+  <data name="Find.Scope.Both.Word" xml:space="preserve">
+    <value>les deux</value>
+  </data>
+  <data name="Find.Scope.Left" xml:space="preserve">
+    <value>G</value>
+  </data>
+  <data name="Find.Scope.Left.Name" xml:space="preserve">
+    <value>Rechercher dans le volet gauche</value>
+  </data>
+  <data name="Find.Scope.Right" xml:space="preserve">
+    <value>D</value>
+  </data>
+  <data name="Find.Scope.Right.Name" xml:space="preserve">
+    <value>Rechercher dans le volet droit</value>
+  </data>
+  <data name="Find.Truncated" xml:space="preserve">
+    <value>Affichage des {0} premiers résultats</value>
+  </data>
+  <data name="Find.WholeWord" xml:space="preserve">
+    <value>Mot</value>
+  </data>
+  <data name="Find.WholeWord.Name" xml:space="preserve">
+    <value>Mot entier</value>
+  </data>
+  <data name="Fold.Placeholder" xml:space="preserve">
+    <value> ⋯ {0} lignes identiques masquées </value>
+  </data>
+  <data name="Fold.Placeholder.One" xml:space="preserve">
+    <value> ⋯ 1 ligne identique masquée </value>
+  </data>
+  <data name="Header.Badge.Binary" xml:space="preserve">
+    <value>binaire</value>
+  </data>
+  <data name="Header.Badge.Empty" xml:space="preserve">
+    <value>vide</value>
+  </data>
+  <data name="Header.Badge.Identical" xml:space="preserve">
+    <value>identiques</value>
+  </data>
+  <data name="Header.Chars" xml:space="preserve">
+    <value>{0} caractères</value>
+  </data>
+  <data name="Header.Detail" xml:space="preserve">
+    <value>{0} · {1} · {2} · {3}</value>
+  </data>
+  <data name="Header.Dirty" xml:space="preserve">
+    <value>Non enregistré</value>
+  </data>
+  <data name="Header.Encoding.Text" xml:space="preserve">
+    <value>texte</value>
+  </data>
+  <data name="Header.Left.Title" xml:space="preserve">
+    <value>Gauche</value>
+  </data>
+  <data name="Header.LineEnding.Cr" xml:space="preserve">
+    <value>CR</value>
+  </data>
+  <data name="Header.LineEnding.CrLf" xml:space="preserve">
+    <value>CRLF</value>
+  </data>
+  <data name="Header.LineEnding.Lf" xml:space="preserve">
+    <value>LF</value>
+  </data>
+  <data name="Header.LineEnding.Mixed" xml:space="preserve">
+    <value>fins de ligne mixtes</value>
+  </data>
+  <data name="Header.LineEnding.None" xml:space="preserve">
+    <value>aucune fin de ligne</value>
+  </data>
+  <data name="Header.Lines" xml:space="preserve">
+    <value>{0} lignes</value>
+  </data>
+  <data name="Header.Lines.One" xml:space="preserve">
+    <value>1 ligne</value>
+  </data>
+  <data name="Header.NoContent" xml:space="preserve">
+    <value>Aucun contenu</value>
+  </data>
+  <data name="Header.Right.Title" xml:space="preserve">
+    <value>Droite</value>
+  </data>
+  <data name="Kind.Deleted" xml:space="preserve">
+    <value>supprimée</value>
+  </data>
+  <data name="Kind.Inserted" xml:space="preserve">
+    <value>insérée</value>
+  </data>
+  <data name="Kind.Modified" xml:space="preserve">
+    <value>modifiée</value>
+  </data>
+  <data name="Kind.Unchanged" xml:space="preserve">
+    <value>inchangée</value>
+  </data>
+  <data name="LineNumbersMargin.Name" xml:space="preserve">
+    <value>Numéros de ligne</value>
+  </data>
+  <data name="LineTooltip.Aligned.Left" xml:space="preserve">
+    <value>Ligne {0} · ligne {1} à gauche</value>
+  </data>
+  <data name="LineTooltip.Aligned.Right" xml:space="preserve">
+    <value>Ligne {0} · ligne {1} à droite</value>
+  </data>
+  <data name="LineTooltip.Alone.Left" xml:space="preserve">
+    <value>Ligne {0} · aucune ligne à gauche</value>
+  </data>
+  <data name="LineTooltip.Alone.Right" xml:space="preserve">
+    <value>Ligne {0} · aucune ligne à droite</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Left" xml:space="preserve">
+    <value>Ligne {0} à gauche · ligne {1} à droite</value>
+  </data>
+  <data name="LineTooltip.Unified.Aligned.Right" xml:space="preserve">
+    <value>Ligne {0} à droite · ligne {1} à gauche</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Left" xml:space="preserve">
+    <value>Ligne {0} à gauche · aucune ligne à droite</value>
+  </data>
+  <data name="LineTooltip.Unified.Alone.Right" xml:space="preserve">
+    <value>Ligne {0} à droite · aucune ligne à gauche</value>
+  </data>
+  <data name="Marker.ModifiedSinceLoad" xml:space="preserve">
+    <value>Modifié durant cette session</value>
+  </data>
+  <data name="Marker.Tooltip" xml:space="preserve">
+    <value>Modification {0} sur {1} · {2}</value>
+  </data>
+  <data name="Menu.CopyChange.Left" xml:space="preserve">
+    <value>Copier la modification à gauche</value>
+  </data>
+  <data name="Menu.CopyChange.Right" xml:space="preserve">
+    <value>Copier la modification à droite</value>
+  </data>
+  <data name="Menu.CopySelection.Left" xml:space="preserve">
+    <value>Copier la sélection à gauche</value>
+  </data>
+  <data name="Menu.CopySelection.Right" xml:space="preserve">
+    <value>Copier la sélection à droite</value>
+  </data>
+  <data name="Menu.ExpandFold" xml:space="preserve">
+    <value>Afficher les lignes masquées ici</value>
+  </data>
+  <data name="Menu.Find" xml:space="preserve">
+    <value>Rechercher…</value>
+  </data>
+  <data name="Menu.GoToChange" xml:space="preserve">
+    <value>Aller à cette modification</value>
+  </data>
+  <data name="Menu.GoToRow" xml:space="preserve">
+    <value>Aller à cette ligne</value>
+  </data>
+  <data name="Menu.HideOverviewMap" xml:space="preserve">
+    <value>Masquer la vue d'ensemble</value>
+  </data>
+  <data name="Menu.NextChange" xml:space="preserve">
+    <value>Modification suivante</value>
+  </data>
+  <data name="Menu.PreviousChange" xml:space="preserve">
+    <value>Modification précédente</value>
+  </data>
+  <data name="Menu.Revert.Left" xml:space="preserve">
+    <value>Rétablir le côté gauche</value>
+  </data>
+  <data name="Menu.Revert.Right" xml:space="preserve">
+    <value>Rétablir le côté droit</value>
+  </data>
+  <data name="Menu.Save.Left" xml:space="preserve">
+    <value>Enregistrer le côté gauche</value>
+  </data>
+  <data name="Menu.Save.Right" xml:space="preserve">
+    <value>Enregistrer le côté droit</value>
+  </data>
+  <data name="Menu.SelectChange" xml:space="preserve">
+    <value>Sélectionner cette modification</value>
+  </data>
+  <data name="Menu.ShowAllRows" xml:space="preserve">
+    <value>Afficher toutes les lignes</value>
+  </data>
+  <data name="Menu.ShowContext" xml:space="preserve">
+    <value>Différences avec contexte</value>
+  </data>
+  <data name="Menu.ShowDifferencesOnly" xml:space="preserve">
+    <value>Différences uniquement</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Left" xml:space="preserve">
+    <value>Ligne {0} sur {1} · {2} · côté gauche</value>
+  </data>
+  <data name="Minimap.LaneTooltip.Right" xml:space="preserve">
+    <value>Ligne {0} sur {1} · {2} · côté droit</value>
+  </data>
+  <data name="Minimap.Name" xml:space="preserve">
+    <value>Vue d'ensemble</value>
+  </data>
+  <data name="Minimap.Tooltip" xml:space="preserve">
+    <value>Ligne {0} sur {1} · {2}</value>
+  </data>
+  <data name="Navigation.NoChanges" xml:space="preserve">
+    <value>Aucune modification à parcourir</value>
+  </data>
+  <data name="Navigation.NoNext" xml:space="preserve">
+    <value>Aucune modification suivante</value>
+  </data>
+  <data name="Navigation.NoPrevious" xml:space="preserve">
+    <value>Aucune modification précédente</value>
+  </data>
+  <data name="Option.ForceAlignment" xml:space="preserve">
+    <value>alignement forcé</value>
+  </data>
+  <data name="Option.IgnoreCase" xml:space="preserve">
+    <value>ignorer la casse</value>
+  </data>
+  <data name="Option.IgnoreWhitespace" xml:space="preserve">
+    <value>ignorer les espaces</value>
+  </data>
+  <data name="Option.WordDiff.Character" xml:space="preserve">
+    <value>comparaison par caractère</value>
+  </data>
+  <data name="Option.WordDiff.Off" xml:space="preserve">
+    <value>aucune comparaison par mot</value>
+  </data>
+  <data name="Pane.Left.Name" xml:space="preserve">
+    <value>Volet gauche</value>
+  </data>
+  <data name="Pane.Right.Name" xml:space="preserve">
+    <value>Volet droit</value>
+  </data>
+  <data name="Pane.Unified.Name" xml:space="preserve">
+    <value>Volet unifié</value>
+  </data>
+  <data name="RenderFault" xml:space="preserve">
+    <value>{0} a échoué et a été désactivé : {1}</value>
+  </data>
+  <data name="RenderFault.OnLine" xml:space="preserve">
+    <value>{0} a échoué à la ligne {1} et a été désactivé : {2}</value>
+  </data>
+  <data name="RenderFault.OnSubject" xml:space="preserve">
+    <value>{0} a échoué pour {1} et a été désactivé : {2}</value>
+  </data>
+  <data name="Save.ChangedOnDisk" xml:space="preserve">
+    <value>{0} a changé sur le disque depuis sa lecture ; rien n'a été écrit.</value>
+  </data>
+  <data name="Save.Failed" xml:space="preserve">
+    <value>{0} n'a pas pu être enregistré : {1}</value>
+  </data>
+  <data name="Save.NoPath" xml:space="preserve">
+    <value>{0} ne provient pas d'un fichier, il n'y a donc nulle part où l'enregistrer.</value>
+  </data>
+  <data name="Save.Succeeded" xml:space="preserve">
+    <value>{0} enregistré</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Left" xml:space="preserve">
+    <value>Copier les lignes sélectionnées vers le côté gauche</value>
+  </data>
+  <data name="SelectionArrow.Tooltip.Right" xml:space="preserve">
+    <value>Copier les lignes sélectionnées vers le côté droit</value>
+  </data>
+  <data name="Side.Left" xml:space="preserve">
+    <value>gauche</value>
+  </data>
+  <data name="Side.Right" xml:space="preserve">
+    <value>droite</value>
+  </data>
+  <data name="State.Building" xml:space="preserve">
+    <value>Construction…</value>
+  </data>
+  <data name="State.Degraded" xml:space="preserve">
+    <value>Dégradé</value>
+  </data>
+  <data name="State.Empty" xml:space="preserve">
+    <value>Vide</value>
+  </data>
+  <data name="State.Empty.Message" xml:space="preserve">
+    <value>Chargez les deux côtés pour comparer</value>
+  </data>
+  <data name="State.Failed" xml:space="preserve">
+    <value>Échec</value>
+  </data>
+  <data name="State.Ready" xml:space="preserve">
+    <value>Prêt</value>
+  </data>
+  <data name="Status.BuildTime" xml:space="preserve">
+    <value>{0} ms</value>
+  </data>
+  <data name="Status.Caret" xml:space="preserve">
+    <value>Lig {0}, Col {1}</value>
+  </data>
+  <data name="Status.Changes" xml:space="preserve">
+    <value>{0} modifications</value>
+  </data>
+  <data name="Status.Changes.None" xml:space="preserve">
+    <value>aucune modification</value>
+  </data>
+  <data name="Status.Changes.Of" xml:space="preserve">
+    <value>modification {0} sur {1}</value>
+  </data>
+  <data name="Status.Changes.One" xml:space="preserve">
+    <value>1 modification</value>
+  </data>
+  <data name="Status.Counts" xml:space="preserve">
+    <value>+{0} −{1} ~{2}</value>
+  </data>
+  <data name="Status.Dirty" xml:space="preserve">
+    <value>Modifications non enregistrées dans {0}</value>
+  </data>
+  <data name="Status.Dismiss" xml:space="preserve">
+    <value>Ignorer</value>
+  </data>
+  <data name="Status.Find" xml:space="preserve">
+    <value>recherche {0} · {1}</value>
+  </data>
+  <data name="Status.Find.MatchOf" xml:space="preserve">
+    <value>{0} sur {1}</value>
+  </data>
+  <data name="Status.Find.Matches" xml:space="preserve">
+    <value>{0} résultats</value>
+  </data>
+  <data name="Status.Find.NoScope" xml:space="preserve">
+    <value>recherche {0}</value>
+  </data>
+  <data name="Status.Find.Scope" xml:space="preserve">
+    <value>recherche · {0}</value>
+  </data>
+  <data name="Status.Progress.Name" xml:space="preserve">
+    <value>Construction</value>
+  </data>
+  <data name="Status.Stale" xml:space="preserve">
+    <value>obsolète</value>
+  </data>
+  <data name="StatusStrip.Name" xml:space="preserve">
+    <value>État</value>
+  </data>
+  <data name="WordDiff.Skipped" xml:space="preserve">
+    <value>Surlignage par mot ignoré : une ligne dépasse {0} caractères</value>
+  </data>
+</root>
