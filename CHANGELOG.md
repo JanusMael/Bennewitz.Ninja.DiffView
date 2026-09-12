@@ -331,6 +331,15 @@ All notable changes to DiffView are recorded here. The format follows
   so a line at a run's edge can be carrying rows the fold does not cover. Hiding what *differs* —
   Beyond Compare's *Show Same* — is deliberately not here: a change block is lines on one side and
   padding on the other, and padding has no line to collapse.
+- Walking a find match into a folded run opens that run, in both views: a match the reader is being
+  taken to has to be a match they can see. Chosen over excluding folded matches from the count,
+  because a count that changes when you fold describes the view rather than the file. The menu's
+  *"Show the rows hidden here"* means the run under the **pointer**, as every other menu entry in
+  the library does, while the unbound `ExpandFold` gesture means the run at the caret — the only
+  run a keyboard can name. Navigation needed nothing: a fold covers only unchanged rows, and a
+  change block has none.
+- The demo takes `--edit left|right|both`, so a side starts editable without a drive through the
+  View menu, and its View menu carries the three folding modes as a radio group.
 - `RowProjection`, one place where a model row becomes a visible row and a pixel. The connector
   gutter and the overview map converted rows to pixels by multiplying by the line height, an
   equation only accidentally true, and the map now buckets the document that is on screen so its
