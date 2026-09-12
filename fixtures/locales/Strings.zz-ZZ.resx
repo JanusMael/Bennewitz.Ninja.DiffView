@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wrong on purpose, one instance of each defect the parity gate exists to catch:
+       Fixture.Count      drops the {0} it must keep
+       Fixture.Pair       renumbers {1} to {2}, which throws FormatException at runtime
+       Fixture.Technical  is absent, so it would silently fall back to English
+       Fixture.Leftover   is not a declared key, the shape a rename leaves behind
+     zz-ZZ is not a real culture, so nothing can mistake this for a shipped translation. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data name="Fixture.Greeting" xml:space="preserve">
+    <value>Bereit</value>
+  </data>
+  <data name="Fixture.Count" xml:space="preserve">
+    <value>Änderungen</value>
+  </data>
+  <data name="Fixture.Pair" xml:space="preserve">
+    <value>Zeile {0} · {2}</value>
+  </data>
+  <data name="Fixture.Leftover" xml:space="preserve">
+    <value>übrig</value>
+  </data>
+</root>

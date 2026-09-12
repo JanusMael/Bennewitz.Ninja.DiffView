@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A miniature neutral catalogue, paired with Strings.zz-ZZ.resx beside it. Not shipped and not
+     related to the real one in src/DiffView.Avalonia/Localization: these two exist so the locale
+     parity checks can be aimed at a file that is wrong on purpose, and seen to fail. -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data name="Fixture.Greeting" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Fixture.Count" xml:space="preserve">
+    <value>{0} changes</value>
+  </data>
+  <data name="Fixture.Pair" xml:space="preserve">
+    <value>Line {0} · {1}</value>
+  </data>
+  <data name="Fixture.Technical" xml:space="preserve">
+    <value>UTF-8</value>
+  </data>
+</root>

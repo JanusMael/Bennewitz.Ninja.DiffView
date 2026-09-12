@@ -2041,3 +2041,46 @@ identical to English*, which catches a resx copied from the neutral file and nev
 00014's phase 2 gate did not have that contract and should: it is the exact failure mode of
 machine-generated locales, where a model that declines to translate a term quietly returns the
 English one, and neither key parity nor placeholder parity notices.
+
+## A locale cannot paste a side word without adding a placeholder, so parity is the sentinel
+
+Plan 00014 phase 2 listed *"the side-word sentinel per locale"* as its own check. It is not one, and
+writing it separately would have made it weaker.
+
+`No_string_of_the_library_is_built_by_pasting_a_side_word_into_it` works by redirecting `SideLeft`
+and `SideRight` through the resolver to a sentinel and walking every tooltip, which catches *English*
+being assembled from parts. A locale file is not assembled — it is a table of finished sentences, so
+there is nothing to walk. The way a translator reintroduces the defect is by putting a hole in a
+sentence English authors whole: *"Copy this change to the {0} side"* where English has
+*"Copy this change to the right side"*.
+
+That is an **added placeholder**, and `PlaceholderMismatches` already fails it — same set comparison,
+no special case. `A_locale_that_adds_a_placeholder_is_caught` is the test, and it names plan 00010's
+rule so the connection survives. A separate string-matching sentinel would have had to guess at
+translated side words in eight languages to find the same thing.
+
+## "A trimmed publish carries the satellites" waits for satellites
+
+Phase 2's list included it. With no locale files there is nothing for the trimmer to keep or drop, so
+the assertion can only pass vacuously. It moves to **phase 3**, beside the
+`SatelliteResourceLanguages` wiring that moved there for the same reason. Phase 1's canary already
+proved the part that does not need a locale: the neutral resource survives a trimmed publish.
+
+## A defect that lands on both sides of a comparison cancels, and a symmetric fixture cannot see it
+
+`An_escaped_brace_is_not_a_placeholder` passed on its first run and survived the mutation that
+blinds the placeholder regex to `{{` and `}}`. The fixture was the problem, not the assertion.
+
+It compared English *"use {{0}} to escape"* against a locale *"mit {{0}} maskieren"*. A reader that
+does not understand escaping finds `{0}` in **both**, and the sets compare equal — so a correct
+reader and a broken one produce the identical verdict. The check under test is a *comparison*, and a
+defect applied evenly to both of its inputs is invisible to it by construction.
+
+The fix is an asymmetric fixture: English with the braces escaped, the locale with a live `{0}` in
+the same place. Correct behaviour is *no placeholders* against *one*, which is a mismatch; the blind
+reader sees one against one and reports agreement. That mutation now dies.
+
+This is the repository's existing rule — *when two implementations would both pass, the fixture is
+what is wrong* — arriving through a different door. There the two implementations agreed; here one
+implementation is wrong twice and its errors annihilate. **Whenever a test asserts that two things
+match, ask what a bug affecting both of them would look like.**
