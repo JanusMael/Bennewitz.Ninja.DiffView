@@ -2,12 +2,13 @@
 
 ## Resume
 
-**`main` is at `2af45d6` with a clean working tree and no remote. `dotnet build DiffView.slnx
--warnaserror` is clean and `dotnet test --solution DiffView.slnx` is 581 passed / 0 failed / 0
+**`main` is at `259111b` with a clean working tree and no remote. `dotnet build DiffView.slnx
+-warnaserror` is clean and `dotnet test --solution DiffView.slnx` is 606 passed / 0 failed / 0
 skipped.** Plans 00001 and 00003–00013 are complete and closed; plan 00002 was rejected on its own
-review before any code was written. *History — plan by plan* below records how each one went and
-what each corrected, `DECISIONS.md` holds the arguments worth keeping, and `AGENTS.md` the
-cross-file contracts.
+review before any code was written. **[Plan 00014](plans/00014-the-library-ships-its-own-translations.md)
+is under way — phases 1, 2 and 3 are in, phase 4 is not.** *History — plan by plan* below records how
+each one went and what each corrected, `DECISIONS.md` holds the arguments worth keeping, and
+`AGENTS.md` the cross-file contracts.
 
 ### What ships
 
@@ -51,17 +52,36 @@ always in one `DiffViewState`; every user-visible string goes through `DiffViewS
 log line through `DiffViewLog`, which never carries document text. `DiffCommand` names the verbs and
 `DiffKeyMap` says which key each is on, so a rebind moves the context menu's accelerators with it.
 
+**Text resolves through `DiffViewStrings.Localization`** — one record carrying an optional host
+resolver and an optional culture, because two statics that must agree are a bug waiting on someone's
+ordering. The chain is the host's resolver, then the bundled translation for the resolved culture,
+then the compiled English table: a host that wires nothing gets its own language out of the box, and
+a host that wires something outranks the library by construction. The resolver is *handed* the
+culture rather than reading it, so returning `null` for a key is a decision made knowing which
+language will answer instead. Eight locales ship — `de-DE`, `es-ES`, `fr-FR`, `ja-JP`, `ko-KR`,
+`pt-BR`, `ru-RU`, `zh-CN` — **machine-generated and not yet read by a native speaker**, which every
+file header says and *Decisions* records; the parity gate proves keys and placeholders, never
+wording.
+
 ### Open
 
-1. **Whether the library ships its own translations.** DiffView localizes through
-   `DiffViewStrings.Resolver`, which a host wires; ClaudeForge ships `.resx` and satellite
-   assemblies that follow `CurrentUICulture` on their own. The per-direction key structure suits
-   either, so nothing has to be undone whichever way it goes. `DECISIONS.md` states it and leaves it
-   **undecided**.
-2. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
+1. **[Plan 00014](plans/00014-the-library-ships-its-own-translations.md) phase 4 — evidence, and the
+   layout the translations break.** `de-DE` and `ja-JP` rendered at real size and **driven by hand**
+   under `AGENTS.md` §9: the pane menu, the header detail line, the status strip and the gutter
+   tooltips. The menu was already narrowed once for length on 2026-09-10, German runs about a third
+   longer than English, and a 600 px capture window has lied about this exact menu before — so this
+   is a by-hand pass, not a headless frame. `AGENTS.md` §6 rows are owed with it.
+2. **The suite is culture-dependent in 94 places**, found by phase 3 and larger than the phase that
+   found it. Under `DIFFVIEW_TEST_UI_CULTURE=de-DE` the suite fails 94 of 606: **62 are snapshot
+   tests and are correct** — a committed frame is a picture of English chrome — and **32 are
+   assertions of English text that forgot to pin a culture**. The `de-DE` CI leg plan 00014 asked
+   for is deliberately **not written** until the 62 pin `en-US` themselves, because a gate that is
+   permanently red for a non-defect is one nobody reads. *Decisions* carries the reasoning; the two
+   halves have to land together.
+3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012 and 00013 were both driven by hand here, on 2026-09-11 and 2026-09-12.
 
-Nothing else is in flight; new work needs a new plan under `plans/`.
+Nothing else is in flight; new work beyond plan 00014 needs a new plan under `plans/`.
 
 ### Running it
 

@@ -404,3 +404,34 @@ succeeded, because `head` exits 0 regardless. Capture the status without a pipe,
   again afterwards, because every position has moved. **New demo items belong in a submenu** for
   the same reason — a submenu is one more row here and its own popup to grab, where four more
   rows push something else off the end.
+
+### When the whole session is wedged rather than not presenting
+
+§9 already says a **black frame** means the session is not presenting, which is what a closed RDP
+connection leaves behind. There is a second, worse state that looks similar from a distance and is
+not the same thing, and on **2026-09-12** it cost a session's afternoon to work out from scratch.
+
+The signature, all four together:
+
+| Symptom | Why it misleads |
+|---|---|
+| `xdpyinfo` answers, and reports `dimensions: 0x0 pixels` | Display `:0` exists, so the usual "no display" checks all pass |
+| `ps` hangs while `cat /proc/loadavg` is instant | It blocks reading one wedged process's `/proc/<pid>/stat`. `/proc/<pid>/comm` still reads |
+| Load average climbs past 20 with `procs_running 1` and `procs_blocked 0` | Load counts `TASK_UNINTERRUPTIBLE`; `procs_blocked` counts only **iowait**. Tasks stuck on a `dma_fence` are neither running nor iowait, so they are invisible in the obvious counter |
+| SSH accepts the TCP connection and then hangs before the prompt | `sshd` authenticates, then PAM calls `systemd-logind`, which is wedged. "SSH is up" is true and useless |
+
+That is a **GPU hang**, not a display problem. Confirm it with `sudo journalctl -k` — `dmesg` is
+refused here, `kernel.dmesg_restrict` is 1 — and look for `ring <engine> timeout` followed by
+`GPU reset begin!`. If `MES(...) failed to respond` and `psp gfx command LOAD_IP_FW failed` follow,
+the device reset has itself failed and **there is no software recovery**: every outstanding
+`dma_fence` is unsignallable, so anything that touches the GPU blocks forever. A power cycle is the
+only way out and nothing is lost by taking it — the journal is persistent (`/var/log/journal` is its
+own btrfs subvolume), so the whole failure can be reconstructed afterwards from `journalctl -b -1`.
+
+**Do not conclude anything about the app from this.** Its window is gone because the compositor is,
+and a run that ends this way has produced no evidence either way.
+
+The two machine-level mitigations that exist as of 2026-09-12 — a udev rule that saves the device
+coredump before it expires, and `kernel.hung_task_panic` with `kernel.panic=20` — are configuration
+of this host, not of this repository. They are documented in the `lmstudio-opencode` repo, which is
+where machine and GPU configuration lives.
