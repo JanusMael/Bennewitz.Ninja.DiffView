@@ -2,6 +2,89 @@
 
 ## Resume
 
+**`main` is at `2af45d6` with a clean working tree and no remote. `dotnet build DiffView.slnx
+-warnaserror` is clean and `dotnet test --solution DiffView.slnx` is 581 passed / 0 failed / 0
+skipped.** Plans 00001 and 00003–00013 are complete and closed; plan 00002 was rejected on its own
+review before any code was written. *History — plan by plan* below records how each one went and
+what each corrected, `DECISIONS.md` holds the arguments worth keeping, and `AGENTS.md` the
+cross-file contracts.
+
+### What ships
+
+`SideBySideDiffView` compares two `PaneSource`s over two `DiffPanePresenter`s, with rendered padding
+holding the rows level. It carries row and word-level highlights, line-number and change-marker
+gutters, headers, a banner for what failed or was skipped, a status strip, a connector gutter
+between the panes and an overview map beside them; vertical scrolling is coupled 1:1, F7 and
+Shift+F7 walk the changes and F6 switches panes. Above the panes sits the find bar — the query box,
+the Match case / Whole word / Regex / Changed rows only toggles, the L / R / Both scope, the count,
+previous / next / close, and an inline line for a bad pattern or a truncated result — with matches
+highlighted in both panes, ticked down the map, and Ctrl+F / F3 / Enter / Escape driving it. Each
+pane colours its text from a TextMate grammar chosen by the side's file extension, under everything
+the diff draws.
+
+Either side can be made editable. An edit rests for `ReDiffDelay` and rebuilds through the same
+latest-wins worker without replacing the document, so the caret, the selection, the scroll offset
+and the undo stack all survive; `IsDirty`, `Save` and `Revert` round-trip the encoding, the
+byte-order mark and the line-terminator convention the file arrived with; and a copy arrow in each
+number margin sends a block or a whole-line selection to the other side, as Alt+Left and Alt+Right
+also do.
+
+Unchanged rows fold behind a placeholder under `UnchangedContextRows` — `null`, `0` and `n` being
+Beyond Compare's *Show All*, *Show Differences* and *Show Context* in one property, off by default.
+A fold is a **row** range projected onto each side's lines through `RowProjection`, never read off a
+document, which is what keeps the panes aligned; a click on a placeholder gives its run back, and so
+does walking a find match into one.
+
+A right-click anywhere the control draws opens a menu about what is under the pointer — either
+gutter, the connector column, the overview map, a header or the text — through a public context
+object (`DiffPaneContext`, or `DiffHeaderContext` for a header) that a host amends through an
+opening event or replaces outright. No left-click behaviour changed to make room for it.
+
+`InlineDiffView` is the same model, builder, renderers, margins, find engine and state machine on
+**one** read-only pane, over a document it composes from both sides in `diff -u` order: context rows
+once, then every removal of a change block before every addition. The gutter carries a number column
+per side, the find bar loses its scope group, and there is no minimap, no connector gutter and no
+F6. The demo hosts both, switched by View ▸ Unified (inline) view or the `--unified` flag.
+
+Builds and searches run latest-wins on a worker over text captured on the UI thread; the control is
+always in one `DiffViewState`; every user-visible string goes through `DiffViewStrings` and every
+log line through `DiffViewLog`, which never carries document text. `DiffCommand` names the verbs and
+`DiffKeyMap` says which key each is on, so a rebind moves the context menu's accelerators with it.
+
+### Open
+
+1. **Whether the library ships its own translations.** DiffView localizes through
+   `DiffViewStrings.Resolver`, which a host wires; ClaudeForge ships `.resx` and satellite
+   assemblies that follow `CurrentUICulture` on their own. The per-direction key structure suits
+   either, so nothing has to be undone whichever way it goes. `DECISIONS.md` states it and leaves it
+   **undecided**.
+2. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
+   plans 00012 and 00013 were both driven by hand here, on 2026-09-11 and 2026-09-12.
+
+Nothing else is in flight; new work needs a new plan under `plans/`.
+
+### Running it
+
+**`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path.** `--edit left|right|both` starts
+a side editable so a run no longer opens with a menu drive, `--unified` opens the inline view, and
+`AGENTS.md` §9 is how to capture and drive the running window from a session here.
+
+The theme audit regenerates after a ClaudeForge pin bump or a change under
+`src/DiffView.Avalonia/Themes`, in this order:
+
+```bash
+dotnet run --project src/ThemeAudit -- compat
+```
+
+```bash
+dotnet run --project src/ThemeAudit -- report
+```
+
+## History — plan by plan
+
+Written as each plan closed, newest first, and left as written except where a later plan falsified a
+sentence outright. What is true *now* is in *Resume* above; this is the record of how it got there.
+
 **[Plan 00013](plans/00013-folding-unchanged-rows.md) is complete** — all five phases — on `main`.
 Unchanged rows now fold behind a placeholder, with a configurable number of rows kept around every
 change — `UnchangedContextRows`, where `null` folds nothing, `0` hides every matching row and `n`
@@ -51,8 +134,8 @@ padding on the other, and padding has no line to collapse, so hiding what differ
 `PaddingSpec` to become a function of what is folded. The cost is elsewhere anyway — the connector
 gutter and the overview map are fed `row × lineHeight`, and a fold is the first thing in this
 library to break that equation, so a folding plan is mostly a plan about one row-to-pixel
-projection. *Folding spike* below and *Decisions* carry it. **Whether plan 00013 is written, and
-which of the three modes it takes, is the open question.**
+projection. *Folding spike* below and *Decisions* carry it. **Plan 00013 answered that question**:
+all three modes, as the one `UnchangedContextRows` property.
 
 **Every phase of [plan 00001](plans/00001-side-by-side-diff-control.md) is complete**, Phase 11 —
 the optional inline view — included. The library ships two controls over one model.
@@ -105,12 +188,13 @@ Linux run is no longer owed — the demo is an XWayland client and its window **
 from a session here, by window id rather than from the root; `AGENTS.md` §9 carries the recipe and
 the mistake it corrects. The app can also be **driven** here: `xdotool` and `wmctrl` are installed,
 clicks reach menu items and keys reach a focused pane, which is how plan 00009's rebind was judged
-by hand. The demo still has no flag for making a side editable, so in-pane editing and the copy
-arrows have to be switched on through the View menu rather than at launch. All three ClaudeForge
+by hand. The demo had no flag for making a side editable when this was written, so in-pane editing
+and the copy arrows were switched on through the View menu; `--edit left|right|both` landed with
+plan 00013's follow-ups. All three ClaudeForge
 contributions (PR #37, #38 and #44) are merged and the ClaudeForge pin follows (see *Upstreamed to
 ClaudeForge*).
 
-**[Plan 00003](plans/00003-in-pane-editing.md) — in-pane editing — is under way.** Phase 1,
+**[Plan 00003](plans/00003-in-pane-editing.md) — in-pane editing.** Phase 1,
 typing, took no source change at all: `LeftReadOnly` and `RightReadOnly` already reached the
 panes, and no renderer, margin or sync turned out to depend on the document holding still.
 Phase 2, live re-diff, is done too: an edit rests for `ReDiffDelay` and then rebuilds through
@@ -138,8 +222,8 @@ Copy block to left/right sits on the Alt+Left and Alt+Right the composite binds,
 Save and Revert per side report each `SaveOutcome` in the status line. The unified view stays
 read-only whatever the menu says.
 
-**Plan 00003 lives on `feat/in-pane-editing`, unmerged**, awaiting review, and
-**[plan 00004](plans/00004-copy-arrows-in-the-panes.md) is complete on the same branch.** Plan
+**Plan 00003 landed on `feat/in-pane-editing`**, which fast-forwarded into `main` on 2026-09-10,
+and **[plan 00004](plans/00004-copy-arrows-in-the-panes.md) is complete on the same branch.** Plan
 00003's rendered evidence landed first: `EditingSnapshotTests` captured the marks an edit leaves,
 in both variants, and the modified-since-load bar proved to run down the marker margin's inner
 edge beside the diff's `~` rather than over it, which reads as intended. The copy arrows did not
@@ -239,22 +323,6 @@ back. Whether the library should ship `.resx` and satellite assemblies of its ow
 does, rather than leaving translation to the host's resolver, is **open**; the key structure suits
 either.
 
-Nothing else is in flight; new work needs a new plan under `plans/`.
-
-**`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path**, and `AGENTS.md` §9 is how to
-capture the running window from a session here.
-
-The theme audit regenerates after a pin bump or a change under `src/DiffView.Avalonia/Themes`, in
-this order:
-
-```bash
-dotnet run --project src/ThemeAudit -- compat
-```
-
-```bash
-dotnet run --project src/ThemeAudit -- report
-```
-
 ## Phases
 
 | Phase | Status | Notes |
@@ -296,7 +364,7 @@ dotnet run --project src/ThemeAudit -- report
 | The map's viewport box follows the visible document | pass: `RowProjectionWiringTests.The_maps_viewport_box_is_measured_against_the_visible_document` |
 | The connector still draws what a fold brings into view | pass: `RowProjectionWiringTests.The_connector_still_draws_the_blocks_a_fold_brought_into_view` — the cull's upper bound, which does not misplace a polygon but breaks the loop early and drops every block below the fold |
 | Navigation crosses a fold | pass, and **there was nothing to do**: a fold only ever covers `Unchanged` rows and a change block has none, so F7 cannot aim into one. `FoldingReachTests.No_fold_can_hide_a_change_so_navigation_is_never_aimed_into_one` asserts it over every block rather than leaving it to be assumed — *"F7 into a folded run"* is a sentence that sounds like it describes something. **An earlier version of this row said "not done" and was wrong**, on that sentence alone |
-| Find crosses a fold | **not done**, and unlike navigation it is real: a match can be on an unchanged row, which is exactly what a fold covers. Such a match is still counted, still ticked on the map and still walked to, and the walk lands on the placeholder standing in for its row. `FoldingReachTests.A_find_match_inside_a_folded_run_is_still_counted_and_still_hidden` records the gap; whether to reveal the run or exclude the match is a decision, not an oversight |
+| Find crosses a fold | **done in `429b4e0`**, after phase 5 recorded it as the one real gap: a match can be on an unchanged row, which is exactly what a fold covers. Walking to such a match now **reveals** its run, chosen over excluding the match, because a count that changes when you fold describes the view rather than the file. `FoldingReachTests.Walking_to_a_match_inside_a_folded_run_opens_it` |
 | The unified view folds the same runs | pass: `FoldingOptionTests.The_unified_view_folds_its_own_runs` |
 | The option's three values | pass: `FoldingOptionTests.The_option_folds_and_the_default_folds_nothing`, `The_three_modes_are_the_one_option_written_three_ways`, `A_negative_context_is_coerced_rather_than_kept` |
 | Every folding verb is in the key map and unbound | pass: `FoldingOptionTests.All_four_folding_verbs_arrive_in_the_key_map_unbound` |
