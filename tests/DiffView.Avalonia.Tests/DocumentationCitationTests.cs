@@ -16,8 +16,19 @@ public sealed class DocumentationCitationTests
 {
     private static readonly string[] Documents = ["PROGRESS.md", "AGENTS.md", "DECISIONS.md", "CHANGELOG.md", "README.md"];
 
-    /// <summary>Snake_case with at least four words: a test name, not a type or a member.</summary>
-    private static readonly Regex Citation = new(@"`([A-Z][A-Za-z0-9]*(?:_[A-Za-z0-9]+){3,})`", RegexOptions.Compiled);
+    /// <summary>
+    /// Snake_case with at least four words: a test name, not a type or a member. The documents cite
+    /// a test both bare and qualified, so the dotted prefix — optional, and repeating for a nested
+    /// type — is matched but deliberately not captured: what has to resolve is the name after it.
+    /// No example is spelled out here, because <see cref="AllTestSource"/> is a substring search
+    /// over this file too, and a name written in a comment would resolve itself.
+    /// </summary>
+    /// <remarks>
+    /// The prefix was not admitted at first, and a character class holding no <c>.</c> cannot match
+    /// across one, so every qualified citation — 155 of them — was silently skipped. One of them had
+    /// named a deleted test for four commits by the time this was widened.
+    /// </remarks>
+    private static readonly Regex Citation = new(@"`(?:[A-Z][A-Za-z0-9]*\.)*([A-Z][A-Za-z0-9]*(?:_[A-Za-z0-9]+){3,})`", RegexOptions.Compiled);
 
     /// <summary>Wording that marks a citation as history rather than as evidence.</summary>
     private static readonly string[] Retired =
@@ -59,7 +70,7 @@ public sealed class DocumentationCitationTests
                     string name = match.Groups[1].Value;
                     if (!tests.Contains(name, StringComparison.Ordinal))
                     {
-                        stale.Add($"{document}:{number} cites {name}");
+                        stale.Add($"{document}:{number} cites {match.Value.Trim('`')}");
                     }
                 }
             }
