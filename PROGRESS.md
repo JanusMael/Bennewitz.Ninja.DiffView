@@ -1044,6 +1044,20 @@ evening of **2026-09-11** that session has #47 closed by its merged PR #51, and 
 requests open, of which **#53 is #45's backfill**: *"name all 54 interactive controls in both"*. All
 three issues are being worked there; none of them is ours to carry.
 
+**Two more filed, 2026-09-12**, from plan 00014 phase 1 — both about the *packable* library's
+string seam rather than the app, both left for the session working in that checkout:
+[#56](https://github.com/JanusMael/ClaudeForge/issues/56), `WrapperStrings` binding through
+`{x:Static}`, which dereferences at parse time and caches — so the resolver has to be assigned
+before any wrapper XAML is parsed, a constraint `Program.cs` honours and an external consumer with a
+language picker cannot, and which is why that library has no equivalent of
+`SideBySideDiffViewTests.Swapping_the_string_resolver_before_load_changes_the_rendered_strings`;
+and [#57](https://github.com/JanusMael/ClaudeForge/issues/57), `Resolver` being
+`Func<string, string>` with a private default, so a host cannot answer *"use your own"* for one key
+and ClaudeForge's own `var _ => key` fallback renders the key on screen for anything its switch does
+not cover. The `string?` fall-through is source-compatible; nothing gates the host's coverage
+against the library's key set, where
+`StringCatalogueTests.Every_declared_key_goes_through_the_resolver` is the shape that would.
+
 ## Measurements
 
 | What | Value | Where |
