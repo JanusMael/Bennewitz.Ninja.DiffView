@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Headless;
@@ -348,16 +349,19 @@ public sealed class DiffPanePresenterTests
     [AvaloniaFact]
     public void Margins_carry_automation_names_through_the_string_resolver()
     {
-        DiffViewStrings.Resolver = key => key == DiffViewStrings.LineNumbersMarginName ? "Zeilennummern" : null;
-        try
+        // A partial resolver: one key answered, 142 returning null. The culture is pinned because
+        // the second assertion is about what a *null* falls through to, and leaving that to the
+        // machine's UI culture is how this test would read English here and a bundled translation
+        // on someone else's desk.
+        using (DiffViewStrings.Override(new DiffViewLocalization
+        {
+            Culture = CultureInfo.InvariantCulture,
+            Resolver = (key, _) => key == DiffViewStrings.LineNumbersMarginName ? "Zeilennummern" : null,
+        }))
         {
             DiffPanePresenter pane = new();
             Assert.Equal("Zeilennummern", AutomationProperties.GetName(pane.LineNumberMargin));
             Assert.Equal("Change markers", AutomationProperties.GetName(pane.ChangeMarkerMargin));
-        }
-        finally
-        {
-            DiffViewStrings.ResetForTesting();
         }
     }
 

@@ -1,13 +1,19 @@
 using System.Globalization;
+using System.Resources;
 
 namespace Bennewitz.Ninja.DiffView.Avalonia;
 
 /// <summary>
-/// Every user-visible string of the library, behind a swappable <see cref="Resolver"/>. The
-/// resolver receives a key and returns the localised text, or <c>null</c> to fall back to the
-/// English default. Keys are the constants on this class; the placeholders each takes are in
-/// its summary.
+/// Every user-visible string of the library, behind a swappable <see cref="Localization"/>. A
+/// host's resolver receives a key and the culture being resolved for, and returns the localised
+/// text or <c>null</c> to fall through to the bundled translations and then to English. Keys are
+/// the constants on this class; the placeholders each takes are in its summary.
 /// </summary>
+/// <remarks>
+/// Nothing here is read at type initialisation on a consumer's behalf: every string is resolved at
+/// the moment it is used, so swapping <see cref="Localization"/> after a control is built changes
+/// what the next layout renders. <c>AGENTS.md</c> §6 holds that contract.
+/// </remarks>
 public static class DiffViewStrings
 {
     /// <summary>Automation name of the composite control.</summary>
@@ -694,14 +700,69 @@ public static class DiffViewStrings
         return Get(side == Core.DiffSide.Left ? MenuRevertLeft : MenuRevertRight);
     }
 
-    /// <summary>The active resolver; <c>null</c> for English.</summary>
-    public static Func<string, string?>? Resolver { get; set; }
+    /// <summary>
+    /// The English defaults, keyed by the constants on this class. The neutral resource the
+    /// satellite assemblies hang off is generated from this — <c>scripts/gen-strings</c> writes it
+    /// and a drift test holds the two together — and a host writing its own resolver can read it to
+    /// see what there is to cover.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> EnglishDefaults => English;
 
-    /// <summary>The text for <paramref name="key"/>; the key itself when neither the resolver nor the defaults know it.</summary>
+    /// <summary>
+    /// How text is resolved: the host's resolver and the culture, as one value. Replacing it is a
+    /// single assignment, so the two can never disagree and can never be half-restored.
+    /// </summary>
+    public static DiffViewLocalization Localization { get; set; } = DiffViewLocalization.Default;
+
+    /// <summary>
+    /// Applies <paramref name="localization"/> until the returned scope is disposed, then puts back
+    /// what was there before. A <c>using</c> survives an exception and an early return, where a
+    /// <c>finally</c> has to be remembered.
+    /// </summary>
+    public static IDisposable Override(DiffViewLocalization localization)
+    {
+        ArgumentNullException.ThrowIfNull(localization);
+        return new LocalizationScope(localization);
+    }
+
+    /// <summary>The text for <paramref name="key"/>; the key itself when nothing knows it.</summary>
+    /// <remarks>
+    /// The host's resolver, then the bundled translation for the resolved culture, then the compiled
+    /// English table, which cannot fail to load. <see cref="Localization"/> is read once: a swap
+    /// between the resolver and the translation would otherwise answer one key out of two cultures.
+    /// </remarks>
     public static string Get(string key)
     {
         ArgumentNullException.ThrowIfNull(key);
-        return Resolver?.Invoke(key) ?? (English.TryGetValue(key, out string? text) ? text : key);
+
+        DiffViewLocalization localization = Localization;
+        CultureInfo culture = localization.Culture ?? CultureInfo.CurrentUICulture;
+
+        return localization.Resolver?.Invoke(key, culture)
+            ?? Translation(key, culture)
+            ?? (English.TryGetValue(key, out string? text) ? text : key);
+    }
+
+    /// <summary>
+    /// The bundled translation for <paramref name="key"/> in <paramref name="culture"/>, or
+    /// <c>null</c> where the resources cannot answer at all.
+    /// </summary>
+    /// <remarks>
+    /// The neutral resource is English, so a culture the library ships no satellite for resolves
+    /// back to it rather than to nothing — which is why a host that pins a culture never sees the
+    /// machine's language leak in. <see cref="MissingManifestResourceException"/> is the trimmed or
+    /// mispackaged build, and the compiled table is what stands behind it.
+    /// </remarks>
+    private static string? Translation(string key, CultureInfo culture)
+    {
+        try
+        {
+            return Resources.GetString(key, culture);
+        }
+        catch (MissingManifestResourceException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The text for <paramref name="key"/> formatted with <paramref name="arguments"/> in the current culture.</summary>
@@ -710,9 +771,37 @@ public static class DiffViewStrings
         return string.Format(CultureInfo.CurrentCulture, Get(key), arguments);
     }
 
-    /// <summary>Restores English. Test cleanup hook.</summary>
+    /// <summary>Restores the default localisation. Test cleanup hook.</summary>
     public static void ResetForTesting()
     {
-        Resolver = null;
+        Localization = DiffViewLocalization.Default;
+    }
+
+    /// <summary>The bundled resources; the neutral set is English and each satellite is one culture.</summary>
+    private static readonly ResourceManager Resources =
+        new("Bennewitz.Ninja.DiffView.Avalonia.Localization.Strings", typeof(DiffViewStrings).Assembly);
+
+    /// <summary>What <see cref="Override"/> hands back: puts the previous value on, once.</summary>
+    private sealed class LocalizationScope : IDisposable
+    {
+        private readonly DiffViewLocalization _previous;
+        private bool _disposed;
+
+        internal LocalizationScope(DiffViewLocalization localization)
+        {
+            _previous = Localization;
+            Localization = localization;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            Localization = _previous;
+        }
     }
 }

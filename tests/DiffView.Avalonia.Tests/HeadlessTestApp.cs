@@ -31,9 +31,20 @@ public sealed class HeadlessTestApp : Application
         Resources[DiffViewResources.MonospaceFontFamilyKey] = new FontFamily(TestFonts.MonoFamilyName);
     }
 
+    /// <summary>
+    /// The UI culture every test resolves text in. Pinned for the same reason the theme's
+    /// <c>Locale</c> is: once the library ships satellite assemblies, an assertion of English text
+    /// is an assertion about the machine unless something says otherwise — green on an English CI
+    /// box and red on a German desk. A test that wants a locale asks for it through
+    /// <see cref="DiffViewStrings.Override"/>.
+    /// </summary>
+    public static readonly CultureInfo TextCulture = CultureInfo.GetCultureInfo("en-US");
+
     public static AppBuilder BuildAvaloniaApp()
     {
         Logger.Sink = TestLogSink.Instance;
+        CultureInfo.DefaultThreadCurrentUICulture = TextCulture;
+        CultureInfo.CurrentUICulture = TextCulture;
 
         return AppBuilder.Configure<HeadlessTestApp>()
                          .UseSkia()

@@ -4,6 +4,11 @@
     <IsPackable>true</IsPackable>
     <!-- Public API is documented; a missing comment is a build error (CS1591 under warnings-as-errors). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The neutral resource IS English, so no en satellite is ever probed for: a lookup under any
+         en-* culture resolves in the main assembly. Localization/Strings.resx is generated from
+         DiffViewStrings.EnglishDefaults by scripts/gen-strings.cs; the locale files beside it are
+         authored translations. -->
+    <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>

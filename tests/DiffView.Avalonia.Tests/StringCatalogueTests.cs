@@ -33,22 +33,19 @@ public sealed class StringCatalogueTests
     public void Every_declared_key_goes_through_the_resolver()
     {
         List<string> asked = [];
-        try
+        using (DiffViewStrings.Override(new DiffViewLocalization
         {
-            DiffViewStrings.Resolver = key =>
+            Resolver = (key, _) =>
             {
                 asked.Add(key);
                 return null;
-            };
-
+            },
+        }))
+        {
             foreach ((_, string key) in DeclaredKeys())
             {
                 DiffViewStrings.Get(key);
             }
-        }
-        finally
-        {
-            DiffViewStrings.Resolver = null;
         }
 
         // A host's translation reaches every one of them, so no string is quietly English-only.
@@ -83,19 +80,15 @@ public sealed class StringCatalogueTests
         const string Sentinel = "«PASTED»";
         List<string> offenders = [];
 
-        try
+        // Only the two bare side words are redirected; every other key keeps its English. A
+        // string that pastes one of them shows the sentinel where the word would have been.
+        using (DiffViewStrings.Override(new DiffViewLocalization
         {
-            // Only the two bare side words are redirected; every other key keeps its English. A
-            // string that pastes one of them shows the sentinel where the word would have been.
-            DiffViewStrings.Resolver = key =>
-                key is DiffViewStrings.SideLeft or DiffViewStrings.SideRight ? Sentinel : null;
-
+            Resolver = (key, _) => key is DiffViewStrings.SideLeft or DiffViewStrings.SideRight ? Sentinel : null,
+        }))
+        {
             offenders.AddRange(await SideBySideTooltips());
             offenders.AddRange(await UnifiedTooltips());
-        }
-        finally
-        {
-            DiffViewStrings.Resolver = null;
         }
 
         Assert.True(offenders.Count == 0, "These are built by pasting a side word in: " + string.Join(" | ", offenders.Distinct()));

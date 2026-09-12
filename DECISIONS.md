@@ -1976,3 +1976,68 @@ the file and whose rest belongs to the control. The box — and a leading space,
 see it — separates them, and is the only thing that says the text can be clicked. Drawn from the
 run's own foreground rather than a colour of its own, so it follows a theme swap for the same
 reason the menu's icons do.
+
+## The English defaults are public, because the neutral resource is generated from them
+
+Plan 00014 named `scripts/gen-strings` and did not name what it would read. `DiffViewStrings.English`
+is private, and the three ways to reach it were each worse than exposing it: parsing
+`DiffViewStrings.cs` puts a regex over source that will rot; reflecting over a private static needs
+the generator to know the field's name; and moving the generator into the test project, where
+`InternalsVisibleTo` already reaches, would have made regeneration a side effect of running tests
+rather than the *"a tool writes it, a test checks it"* shape `theme-audit` already established here.
+
+So `EnglishDefaults` is a public `IReadOnlyDictionary<string, string>`, and it has a second caller
+who is not the generator: a host writing its own resolver can enumerate what there is to cover,
+which is otherwise only discoverable by reading 143 constants. This is additive API the plan did not
+scope, which is why it is recorded here rather than passed over.
+
+## The satellite step cannot be killed in phase 1, and that is structural
+
+Phase 1's five mutations killed four. The survivor is **`Get` skipping `Translation` entirely** —
+deleting the bundled-translation step from the chain fails no test.
+
+This is not a weak test. With no satellite on disk, `Translation` resolves the *neutral* resource,
+which the drift gate holds byte-identical to `English`, so removing the step changes no text any
+assertion can see. Nothing observable through `Get` distinguishes "the resource answered" from "the
+compiled table answered" until the two can disagree, and by construction they cannot until a locale
+exists.
+
+What stands in for it meanwhile is `The_neutral_resource_is_embedded_and_resolves`, which builds its
+own `ResourceManager` over the same base name and asserts a known key comes back. That catches the
+failure actually worth catching here — a wrong base name or an unembedded resx, which would make
+every lookup throw `MissingManifestResourceException` and fall through silently, leaving the suite
+green over a mechanism that never runs.
+
+**The mutation is kept in the harness rather than removed.** Phase 3 is where it must start being
+killed, and a mutation that survives for a reason is worth more than one deleted for tidiness.
+
+## A trimmed publish keeps the neutral resource, and `SatelliteResourceLanguages` waits
+
+The phase-1 canary publishes clean: `dotnet publish src/DiffView.Demo -c Release -r linux-x64
+--self-contained true` produces no `IL2xxx`, and
+`Bennewitz.Ninja.DiffView.Avalonia.Localization.Strings.resources` is present in the trimmed
+`DiffView.Avalonia.dll`. `ResourceManager` over an embedded resource in the same assembly is not the
+trim hazard — satellite assemblies are, and there are none yet.
+
+So the `SatelliteResourceLanguages` wiring the plan put in phase 1 moves to **phase 3**: with no
+locale files, the property can only restrict a set that is empty, and setting it now would be a
+no-op that reads as done.
+
+## Strings are resolved on the UI thread, and the audit says so rather than assuming it
+
+`Culture = null` follows `CultureInfo.CurrentUICulture`, which is per-thread, so the plan asked which
+of the 179 call sites are reachable from the diff worker.
+
+**None are.** `DiffView.Core` holds no reference to `DiffViewStrings` at all, and the two `Task.Run`
+bodies in each view call only Core delegates — `Builder` and `Searcher`. The region between the
+`ConfigureAwait(false)` and the `Dispatcher.UIThread` marshalling formats nothing. The risk is real
+and not live, and what would make it live is a future string formatted in a continuation rather than
+anything present.
+
+## Borrowed back from ClaudeForge: a locale that was never really translated
+
+`LocalizationParityTests` over in ClaudeForge asserts that no locale's values are *predominantly
+identical to English*, which catches a resx copied from the neutral file and never translated. Plan
+00014's phase 2 gate did not have that contract and should: it is the exact failure mode of
+machine-generated locales, where a model that declines to translate a term quietly returns the
+English one, and neither key parity nor placeholder parity notices.

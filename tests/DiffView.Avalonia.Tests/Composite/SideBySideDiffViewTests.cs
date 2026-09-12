@@ -351,14 +351,16 @@ public sealed class SideBySideDiffViewTests
     [AvaloniaFact]
     public async Task Swapping_the_string_resolver_before_load_changes_the_rendered_strings()
     {
-        DiffViewStrings.Resolver = key => key switch
+        using (DiffViewStrings.Override(new DiffViewLocalization
         {
-            DiffViewStrings.StateReady => "Bereit",
-            DiffViewStrings.LeftTitle => "Links",
-            DiffViewStrings.StatusChanges => "{0} Änderungen",
-            _ => null,
-        };
-        try
+            Resolver = (key, _) => key switch
+            {
+                DiffViewStrings.StateReady => "Bereit",
+                DiffViewStrings.LeftTitle => "Links",
+                DiffViewStrings.StatusChanges => "{0} Änderungen",
+                _ => null,
+            },
+        }))
         {
             (string left, string right) = CompositeHost.SmallFixture();
             using CompositeHost host = new();
@@ -367,10 +369,6 @@ public sealed class SideBySideDiffViewTests
             Assert.Equal("Bereit", host.View.StatusStrip!.StateText);
             Assert.Equal("Links", host.View.LeftHeader!.Title);
             Assert.Equal("5 Änderungen", host.View.StatusStrip.ChangesText);
-        }
-        finally
-        {
-            DiffViewStrings.ResetForTesting();
         }
     }
 

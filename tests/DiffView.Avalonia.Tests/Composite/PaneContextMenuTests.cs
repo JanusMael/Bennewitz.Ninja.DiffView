@@ -484,21 +484,16 @@ public sealed class PaneContextMenuTests
         host.View.RightReadOnly = false;
         CompositeHost.Layout();
 
-        try
+        // What a localized host does: one resolver over the whole catalogue. Every entry has to
+        // come through it, or a translated application shows English in its context menu.
+        using (DiffViewStrings.Override(new DiffViewLocalization { Resolver = (key, _) => "»" + key }))
         {
-            // What a localized host does: one resolver over the whole catalogue. Every entry has
-            // to come through it, or a translated application shows English in its context menu.
-            DiffViewStrings.Resolver = key => "»" + key;
             List<DiffMenuItem> items = ItemsAt(host, 2);
 
             Assert.NotEmpty(items);
             Assert.All(
                 items.Where(i => !i.IsSeparator),
                 i => Assert.StartsWith("»", i.Header, StringComparison.Ordinal));
-        }
-        finally
-        {
-            DiffViewStrings.Resolver = null;
         }
     }
 
