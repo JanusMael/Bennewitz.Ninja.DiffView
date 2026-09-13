@@ -11,6 +11,7 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 public sealed class TooltipTests
 {
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Line_numbers_name_the_counterpart_and_markers_name_the_block()
     {
         (string left, string right) = CompositeHost.SmallFixture();

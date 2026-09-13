@@ -16,6 +16,7 @@ public sealed class InlineFindTests
     private const string Needle = "Greeter";
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_scope_control_is_gone_and_the_scope_stays_both()
     {
         (string left, string right) = InlineHost.SmallFixture();
@@ -112,6 +113,7 @@ public sealed class InlineFindTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task F3_walks_the_matches_down_the_pane_selecting_each_in_turn()
     {
         (string left, string right) = InlineHost.SmallFixture();

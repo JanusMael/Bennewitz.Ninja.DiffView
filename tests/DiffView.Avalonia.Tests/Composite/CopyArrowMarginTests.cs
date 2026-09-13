@@ -318,6 +318,7 @@ public sealed class CopyArrowMarginTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_anchored_row_s_tooltip_carries_the_number_it_stands_in_for()
     {
         using CompositeHost host = new(width: 900, height: 400);

@@ -23,6 +23,7 @@ public sealed class FindTests
     private const string Needle = "Greeter";
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Ctrl_F_opens_the_bar_with_focus_in_the_query_box_and_Escape_closes_it_and_returns_focus()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -71,6 +72,7 @@ public sealed class FindTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task In_both_scope_F3_walks_the_matches_in_row_then_side_order_and_the_pane_holding_one_has_it_selected()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -118,6 +120,7 @@ public sealed class FindTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Switching_the_scope_re_runs_the_search_and_the_counts_and_highlights_follow()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -209,6 +212,7 @@ public sealed class FindTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task More_hits_than_the_cap_truncate_with_a_notice_and_the_search_runs_off_the_UI_thread()
     {
         // 10,000 lines a side, every one holding the needle: 20,000 hits against a 10,000 cap.

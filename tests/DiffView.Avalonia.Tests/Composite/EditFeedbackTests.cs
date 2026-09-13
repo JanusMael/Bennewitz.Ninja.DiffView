@@ -138,6 +138,7 @@ public sealed class EditFeedbackTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_margin_tooltip_says_a_line_was_edited_even_where_the_diff_is_silent()
     {
         using CompositeHost host = new(width: 900, height: 400);
@@ -161,6 +162,7 @@ public sealed class EditFeedbackTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_strip_names_the_sides_holding_unsaved_edits()
     {
         (string left, string right) = CompositeHost.SmallFixture();

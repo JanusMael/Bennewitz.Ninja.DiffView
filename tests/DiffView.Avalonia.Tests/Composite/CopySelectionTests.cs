@@ -226,6 +226,7 @@ public sealed class CopySelectionTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_selection_arrow_s_tooltip_names_what_it_copies()
     {
         using CompositeHost host = new(width: 900, height: 400);

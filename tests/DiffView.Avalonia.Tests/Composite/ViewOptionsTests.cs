@@ -145,6 +145,7 @@ public sealed class ViewOptionsTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Mixed_line_endings_are_noticed_in_the_state_and_the_strip()
     {
         using CompositeHost host = new(width: 700, height: 200);

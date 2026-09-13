@@ -113,6 +113,7 @@ public sealed class InlineDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_gutter_numbers_each_line_on_its_own_side_and_leaves_the_other_column_empty()
     {
         // A context line is in both files and carries both numbers; a removed or added line is
@@ -183,6 +184,7 @@ public sealed class InlineDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task F7_walks_the_blocks_and_the_border_covers_the_block_own_unified_lines()
     {
         (string left, string right) = InlineHost.SmallFixture();
@@ -228,6 +230,7 @@ public sealed class InlineDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task A_binary_side_fails_the_build_and_the_banner_offers_a_retry()
     {
         using InlineHost host = new();
@@ -258,6 +261,7 @@ public sealed class InlineDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task A_throwing_decorator_degrades_the_control_and_the_text_still_renders()
     {
         (string left, string right) = InlineHost.SmallFixture();
@@ -310,6 +314,7 @@ public sealed class InlineDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_caret_lane_names_the_line_on_its_own_side_not_the_unified_one()
     {
         (string left, string right) = InlineHost.SmallFixture();

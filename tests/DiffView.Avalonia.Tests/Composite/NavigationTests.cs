@@ -18,6 +18,7 @@ public sealed class NavigationTests
     private const double Tolerance = 1e-6;
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task NextChange_from_the_top_lands_on_the_first_block_and_stops_at_the_last_with_the_strip_saying_so()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -126,6 +127,7 @@ public sealed class NavigationTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Navigation_without_changes_says_so_and_a_new_model_clears_the_current_change()
     {
         (string left, string right) = CompositeHost.SmallFixture();

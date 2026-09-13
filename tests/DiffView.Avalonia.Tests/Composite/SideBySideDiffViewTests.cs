@@ -52,6 +52,7 @@ public sealed class SideBySideDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Sources_build_the_document_and_the_state_moves_from_Empty_through_Building_to_Ready()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -97,6 +98,7 @@ public sealed class SideBySideDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task A_missing_source_leaves_the_control_Empty_with_the_header_saying_so()
     {
         (string left, _) = CompositeHost.SmallFixture();
@@ -156,6 +158,7 @@ public sealed class SideBySideDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Changing_an_option_rebuilds_and_preserves_caret_selection_scroll_and_undo_in_both_panes()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -206,6 +209,7 @@ public sealed class SideBySideDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task A_throwing_builder_puts_the_control_in_Failed_with_the_message_and_Retry_rebuilds()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -241,6 +245,7 @@ public sealed class SideBySideDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Binary_input_fails_the_unrelated_pair_degrades_until_forced_and_identical_input_is_Ready_with_the_banner()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -480,6 +485,7 @@ public sealed class SideBySideDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task A_slow_build_shows_progress_after_the_threshold_and_the_previous_result_is_marked_stale()
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -517,6 +523,7 @@ public sealed class SideBySideDiffViewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_status_strip_shows_the_focused_panes_caret_and_a_failure_can_be_dismissed()
     {
         (string left, string right) = CompositeHost.SmallFixture();

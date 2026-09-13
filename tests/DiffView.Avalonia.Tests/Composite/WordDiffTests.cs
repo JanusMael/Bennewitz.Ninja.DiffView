@@ -106,6 +106,7 @@ public sealed class WordDiffTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_one_megabyte_single_line_renders_without_pieces_and_the_marker_tooltip_says_so()
     {
         const int size = 1_000_000;
@@ -150,6 +151,7 @@ public sealed class WordDiffTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Toggling_IgnoreWhitespace_removes_whitespace_only_diffs_and_the_strip_reflects_the_option()
     {
         using CompositeHost host = new();
@@ -176,6 +178,7 @@ public sealed class WordDiffTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Word_diff_off_draws_nothing_and_character_mode_reaches_the_cache()
     {
         (string left, string right) = FoxPair(unchangedLinesBefore: 0);

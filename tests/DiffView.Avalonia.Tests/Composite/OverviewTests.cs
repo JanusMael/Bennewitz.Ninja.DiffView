@@ -41,6 +41,7 @@ public sealed class OverviewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public void The_minimap_maps_pixels_to_buckets_to_rows_at_top_middle_and_bottom_on_the_200k_line_fixture()
     {
         (string left, string right) = LargePair(200_000);
@@ -128,6 +129,7 @@ public sealed class OverviewTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task Connector_polygons_have_the_expected_extents_a_click_selects_the_block_and_a_drag_resizes_the_panes()
     {
         (string left, string right) = CompositeHost.SmallFixture();

@@ -125,6 +125,7 @@ public sealed class MinimapLaneTests
     }
 
     [AvaloniaFact]
+    [EnglishChrome]
     public async Task The_tooltip_names_the_lane()
     {
         using CompositeHost host = new(width: 900, height: 600);

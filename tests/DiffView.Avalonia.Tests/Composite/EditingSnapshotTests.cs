@@ -36,6 +36,7 @@ public sealed class EditingSnapshotTests
     [AvaloniaTheory]
     [InlineData("Light")]
     [InlineData("Dark")]
+    [EnglishChrome]
     public async Task The_marks_an_edit_leaves_are_painted_and_named(string variant)
     {
         TestLogSink.Instance.Clear();
