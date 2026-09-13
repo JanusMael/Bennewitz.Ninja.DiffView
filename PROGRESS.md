@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` is at `71a9eaf` with a clean working tree and no remote. `dotnet build DiffView.slnx
+**`main` is at `60ef245` with a clean working tree and no remote. `dotnet build DiffView.slnx
 -warnaserror` is clean and `dotnet test --solution DiffView.slnx` is 606 passed / 0 failed / 0
 skipped.** Plans 00001 and 00003–00013 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **[Plan 00014](plans/00014-the-library-ships-its-own-translations.md)
