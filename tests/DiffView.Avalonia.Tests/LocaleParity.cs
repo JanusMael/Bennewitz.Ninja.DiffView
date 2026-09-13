@@ -160,7 +160,12 @@ internal static class LocaleParity
                 StringComparer.Ordinal);
     }
 
-    private static HashSet<int> IndicesIn(string text)
+    /// <summary>
+    /// The placeholder indices <paramref name="text"/> takes. Internal rather than private because
+    /// <see cref="StringCatalogueTests"/> asks the same question of a documentation comment, and a
+    /// second regex for it would be a second regex to get <c>{{</c> wrong in.
+    /// </summary>
+    internal static HashSet<int> IndicesIn(string text)
     {
         HashSet<int> indices = [];
         foreach (Match match in Placeholder.Matches(text))

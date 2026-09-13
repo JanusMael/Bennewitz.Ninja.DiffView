@@ -130,19 +130,19 @@ public static class DiffViewStrings
     /// <summary>The same, rightwards.</summary>
     public const string SelectionArrowTooltipRight = "SelectionArrow.Tooltip.Right";
 
-    /// <summary>The strip's lane while a side has unsaved edits.</summary>
+    /// <summary>The strip's lane while a side has unsaved edits: <c>{0}</c> the header titles of the dirty sides, comma-joined — file names, not side words.</summary>
     public const string StatusDirty = "Status.Dirty";
 
-    /// <summary>Reported when a save succeeds.</summary>
+    /// <summary>Reported when a save succeeds: <c>{0}</c> the side's header title, which is a file name rather than a side word.</summary>
     public const string SaveSucceeded = "Save.Succeeded";
 
-    /// <summary>Reported when a save is asked for on a side that came from no file.</summary>
+    /// <summary>Reported when a save is asked for on a side that came from no file: <c>{0}</c> the side's header title, which is a file name rather than a side word.</summary>
     public const string SaveNoPath = "Save.NoPath";
 
-    /// <summary>Reported when the file changed on disk since it was read.</summary>
+    /// <summary>Reported when the file changed on disk since it was read: <c>{0}</c> the side's header title, which is a file name rather than a side word.</summary>
     public const string SaveChangedOnDisk = "Save.ChangedOnDisk";
 
-    /// <summary>Reported when the write itself failed.</summary>
+    /// <summary>Reported when the write itself failed: <c>{0}</c> the side's header title — a file name, not a side word — and <c>{1}</c> the exception message.</summary>
     public const string SaveFailed = "Save.Failed";
 
     /// <summary>The marker on a result a newer build is about to replace.</summary>
@@ -293,13 +293,13 @@ public static class DiffViewStrings
     /// <summary>A line-number tooltip whose counterpart is on the left: <c>{0}</c> line, <c>{1}</c> that line.</summary>
     public const string LineTooltipAlignedLeft = "LineTooltip.Aligned.Left";
 
-    /// <summary>The same, counterpart on the right.</summary>
+    /// <summary>A line-number tooltip whose counterpart is on the right: <c>{0}</c> line, <c>{1}</c> that line.</summary>
     public const string LineTooltipAlignedRight = "LineTooltip.Aligned.Right";
 
     /// <summary>A line-number tooltip with no counterpart on the left: <c>{0}</c> line.</summary>
     public const string LineTooltipAloneLeft = "LineTooltip.Alone.Left";
 
-    /// <summary>The same, none on the right.</summary>
+    /// <summary>A line-number tooltip with no counterpart on the right: <c>{0}</c> line.</summary>
     public const string LineTooltipAloneRight = "LineTooltip.Alone.Right";
 
     /// <summary>A unified tooltip for a left line with a counterpart: <c>{0}</c> this line, <c>{1}</c> the right line.</summary>
@@ -311,7 +311,7 @@ public static class DiffViewStrings
     /// <summary>A unified tooltip for a left line with no counterpart: <c>{0}</c> this line.</summary>
     public const string LineTooltipUnifiedAloneLeft = "LineTooltip.Unified.Alone.Left";
 
-    /// <summary>The same for a right line.</summary>
+    /// <summary>A unified tooltip for a right line with no counterpart: <c>{0}</c> this line.</summary>
     public const string LineTooltipUnifiedAloneRight = "LineTooltip.Unified.Alone.Right";
 
     /// <summary>A marker or connector tooltip: <c>{0}</c> change (1-based), <c>{1}</c> total, <c>{2}</c> the block's counts.</summary>
@@ -329,7 +329,7 @@ public static class DiffViewStrings
     /// <summary>The overview's tooltip inside the left lane: <c>{0}</c> row, <c>{1}</c> rows, <c>{2}</c> kind.</summary>
     public const string MinimapLaneTooltipLeft = "Minimap.LaneTooltip.Left";
 
-    /// <summary>The same inside the right lane.</summary>
+    /// <summary>The overview's tooltip inside the right lane: <c>{0}</c> row, <c>{1}</c> rows, <c>{2}</c> kind.</summary>
     public const string MinimapLaneTooltipRight = "Minimap.LaneTooltip.Right";
 
     /// <summary>Automation name of the minimap.</summary>

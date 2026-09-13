@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Xml.Linq;
 using Avalonia.Headless.XUnit;
 using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 using Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
@@ -158,6 +159,109 @@ public sealed class StringCatalogueTests
     }
 
     /// <summary>Every <c>public const string</c> key <see cref="DiffViewStrings"/> declares.</summary>
+    /// <summary>
+    /// Plan 00016 §Phase 1: every key's <c>&lt;summary&gt;</c> accounts for every placeholder its
+    /// string takes. The packet a native reviewer reads pairs each translation with that summary as
+    /// its only context, one row at a time, so a summary that omits a placeholder — or claims one
+    /// the string does not take — tells the reviewer something false about what they are reading.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Nine of 143 failed when this was first measured, in two kinds. Five never documented their
+    /// placeholder anywhere: <c>Save.Failed</c> said only <em>"Reported when the write itself
+    /// failed"</em> and never that <c>{0}</c> is the side's header title and <c>{1}</c> the reason.
+    /// Four said <em>"The same, counterpart on the right"</em>, which is true and readable in this
+    /// file, where the left sibling two lines above spells the placeholders out, and resolves to
+    /// nothing in a row read on its own.
+    /// </para>
+    /// <para>
+    /// Read from the XML documentation file rather than the source, because that is what the
+    /// generator reads: a summary that survives the compiler and not the doc build would pass a
+    /// source-reading test and still leave the packet's context column empty. Absence of the file
+    /// is a failure, not a skip — the quiet version of this defect is a document that looks
+    /// complete.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Every_summary_accounts_for_the_placeholders_its_string_takes()
+    {
+        IReadOnlyDictionary<string, string> summaries = Summaries();
+        List<string> wrong = [];
+
+        foreach ((string name, string key) in DeclaredKeys())
+        {
+            if (!summaries.TryGetValue(name, out string? summary))
+            {
+                wrong.Add($"{name} (\"{key}\") has no summary in the documentation file");
+                continue;
+            }
+
+            // English rather than Get(key): the comparison is about what the string is made of,
+            // which is the same sentence in every culture, so this stays inside the de-DE leg.
+            HashSet<int> taken = LocaleParity.IndicesIn(DiffViewStrings.EnglishDefaults[key]);
+            HashSet<int> accounted = LocaleParity.IndicesIn(summary);
+
+            if (!taken.SetEquals(accounted))
+            {
+                wrong.Add($"{name} (\"{key}\"): the string takes {Describe(taken)}, the summary accounts for {Describe(accounted)}");
+            }
+        }
+
+        Assert.True(wrong.Count == 0, "These summaries would mislead a reviewer about their own string: " + string.Join("; ", wrong));
+    }
+
+    /// <summary>Every <c>DiffViewStrings</c> field summary, by field name, from the XML doc build output.</summary>
+    private static IReadOnlyDictionary<string, string> Summaries()
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "DiffView.Avalonia.xml");
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                "The XML documentation file is missing, so every summary would read as absent and this test would " +
+                "report 143 failures instead of the truth. GenerateDocumentationFile is true in " +
+                "DiffView.Avalonia.csproj; a build produces it beside the test assembly.",
+                path);
+        }
+
+        const string Prefix = "F:Bennewitz.Ninja.DiffView.Avalonia.DiffViewStrings.";
+        Dictionary<string, string> found = new(StringComparer.Ordinal);
+
+        foreach (XElement member in XDocument.Load(path).Descendants("member"))
+        {
+            string? id = member.Attribute("name")?.Value;
+            if (id is null || !id.StartsWith(Prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            XElement? summary = member.Element("summary");
+            if (summary is not null)
+            {
+                // Concatenated rather than .Value alone: the placeholders sit inside <c> elements,
+                // and reading only the element's own text would drop every one of them.
+                found[id[Prefix.Length..]] = string.Concat(summary.Nodes().Select(Flatten));
+            }
+        }
+
+        return found;
+    }
+
+    private static string Flatten(XNode node)
+    {
+        return node switch
+        {
+            XText text => text.Value,
+            XElement element => element.Value,
+            _ => string.Empty,
+        };
+    }
+
+    private static string Describe(HashSet<int> indices)
+    {
+        return indices.Count == 0
+            ? "no placeholder"
+            : string.Join(", ", indices.Order().Select(i => "{" + i.ToString(provider: null) + "}"));
+    }
     private static List<(string Name, string Key)> DeclaredKeys()
     {
         return typeof(DiffViewStrings)
