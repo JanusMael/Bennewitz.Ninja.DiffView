@@ -69,6 +69,19 @@ A test that fails only there either wants `[EnglishChrome]` — the claim that i
 words — or wants its assertion repaired. `AGENTS.md` §5 says which, and why the attribute is not an
 excuse to reach for first.
 
+The eight shipped locales are machine-generated and have **not** been read by a native speaker, which
+gates the first release. `docs/locale-review/` holds one document per locale for exactly that
+review — every string beside what it is, what each placeholder holds, and the English it came from.
+Those documents are generated and must not be edited; a correction belongs in the matching
+`src/DiffView.Avalonia/Localization/Strings.<culture>.resx`, after which:
+
+```bash
+./scripts/gen-locale-review.sh
+```
+
+regenerates them. `--check` reports staleness instead, and `LocaleReviewTests` fails if a committed
+document stops describing the strings it was generated from.
+
 Run the demo under a different theme or variant:
 
 ```bash

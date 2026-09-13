@@ -2,12 +2,14 @@
 
 ## Resume
 
-**`main` carries plan 00015 complete — all four phases — with a clean working tree and no remote.
+**`main` carries plan 00016 complete — all four phases — with a clean working tree and no remote.
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-611 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and 00003–00015 are complete
-and closed; plan 00002 was rejected on its own review before any code was written.
-**[Plan 00015](plans/00015-a-test-that-asserts-english-says-so.md) closed the culture audit plan
-00014 deferred**, and CI's `culture-leg` job is what holds it closed. *History — plan by plan* below
+625 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
+00003–00016 are complete and closed; plan 00002 was rejected on its own review before any code was
+written. **[Plan 00016](plans/00016-a-native-speaker-can-read-what-we-shipped.md) made the eight
+locales reviewable** — `docs/locale-review/<culture>.md`, generated and gated — and
+[plan 00015](plans/00015-a-test-that-asserts-english-says-so.md) before it closed the culture audit
+plan 00014 deferred, which CI's `culture-leg` job now holds closed. *History — plan by plan* below
 records how each one went and what each corrected, `DECISIONS.md` holds the arguments worth keeping,
 and `AGENTS.md` the cross-file contracts.
 
@@ -66,10 +68,12 @@ wording.
 
 ### Open
 
-1. **The eight locales are still unread by a native speaker.** Structure is gated — every key,
-   every placeholder set, the side-word sentinel, and now a suite that stays green in German — and
-   wording is not. This gates the **first release**, not any commit: `CHANGELOG.md` holds only
-   `[Unreleased]`.
+1. **The eight locales are reviewable and still unread by a native speaker.** Structure is gated —
+   every key, every placeholder set, the side-word sentinel, and a suite that stays green in German
+   — and wording is not. Plan 00016 removed the excuse: `docs/locale-review/<culture>.md` pairs
+   every string with what it is, what each placeholder holds, and the English it came from, so the
+   work now needs **eight readers rather than any more tooling**. This gates the **first release**,
+   not any commit: `CHANGELOG.md` holds only `[Unreleased]`.
 2. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.
@@ -352,6 +356,30 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00016 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The nine summaries | S | done | Five genuine gaps written — `Status.Dirty` and the four `Save.*`, whose `{0}` is a **header title, a file name, not a side word** — and four back-references given their sibling's full form. The gate reads the XML documentation build output, because that is what the generator reads. Four mutations, four killed |
+| 2 The generator, and one locale | S | done | `scripts/gen-locale-review.cs` and its `.sh`/`.ps1` wrappers with a `--check` mode, over `de-DE` alone. The phase's question — do the summaries read well enough to review from — answered by reading the output |
+| 3 Eight locales and the drift gate | M | done | The other seven, `LocaleReview` + `LocaleReviewTests`, and `Summaries` lifted out so the gate and the generator read one artifact. **The gate caught a real defect on its first run** (below). Four mutations, four killed |
+| 4 The record | S | done | `DECISIONS.md` (three sections), `AGENTS.md` §6 (three rows), this file, the changelog, the README |
+
+## Plan 00016 verification
+
+| Done-when item | Result |
+|---|---|
+| Every summary accounts for its string's placeholders | pass: `StringCatalogueTests.Every_summary_accounts_for_the_placeholders_its_string_takes`. **Failed on 9 of 143 when written** — measured before the plan was drafted, which is why phase 1 exists at all |
+| Every summary reads on its own | pass: `StringCatalogueTests.No_summary_leans_on_the_key_above_it`. **Not in the plan**, and the plan is the reason it is needed: four summaries pass the placeholder gate and say nothing — *"The same, rightwards."* accounts for all of its zero placeholders. *Decisions* carries why a checkable criterion is a proxy rather than the goal |
+| Every key appears in every packet | pass: `LocaleReviewTests.Every_committed_review_document_describes_the_strings_it_claims_to` reports a key with no row, and `Every_shipped_locale_has_a_review_document` a locale with no document |
+| Every row shows the strings it claims to | pass, same test, across all eight — English against `EnglishDefaults`, the translation against the `.resx`, the context against the key's summary, the `Holds` column against the string itself |
+| A pipe in a translation is escaped and read back | pass: `LocaleReviewTests.An_escaped_pipe_survives_the_round_trip`, against a fixture, since no shipped string contains one |
+| A newline in a translation is refused, by key | pass, by inspection of the generator rather than by test: it exits naming the culture and the key. No shipped string contains one and the generator is not a library, so there is nothing to call |
+| **A padded string survives the round trip** | pass, **and this is what the gate was worth.** `Fold.Placeholder` is `" ⋯ {0} matching rows hidden "` and a markdown cell trims; the first eight documents showed a string that was not the string. Now `␣`, with `LocaleReviewTests.A_string_padded_with_spaces_survives_the_round_trip` and `A_padded_string_shown_without_its_padding_is_caught` holding both halves |
+| The committed packet matches the strings | pass, and `dotnet run scripts/gen-locale-review.cs -- --check` is the same question asked from outside the suite |
+| The suite is green under both cultures | pass: 625 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` |
+| A native speaker has read a locale | **no, and that is the point.** This plan built the thing to read; it did not make anyone a German speaker. The eight locales stay marked machine-generated until a person says otherwise, and that still gates the first release |
 
 ## Plan 00015 phases
 

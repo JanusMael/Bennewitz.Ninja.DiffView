@@ -424,7 +424,14 @@ All notable changes to DiffView are recorded here. The format follows
   rather than softened, 60 frames declared to be pictures of English chrome — and a `culture-leg`
   CI job on `ubuntu-latest` keeps the whole suite green in German, so a test that fails only there
   asserted English without saying it wanted English.
-
+- Plan 00016 — the locale review packet. `scripts/gen-locale-review.cs` writes
+  `docs/locale-review/<culture>.md` for each of the eight shipped locales, pairing every string with
+  what it is, what each of its placeholders holds, and the English it was translated from, so a
+  native speaker can review a language without reading `.resx` files or C# doc comments. Generated
+  and gated, never edited: a correction goes into the `.resx` and the document regenerates, and
+  `LocaleReviewTests` fails if the two drift apart. Thirteen `DiffViewStrings` summaries were
+  repaired to make it possible — five that never documented their placeholder and eight that only
+  made sense beside the key above them — and two gates keep them that way.
 ### Removed
 
 - `ChangeConnectorGutter.CanCopyToLeft`, `CanCopyToRight`, `LastArrows`, `ArrowAt` and

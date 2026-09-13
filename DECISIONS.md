@@ -2312,3 +2312,55 @@ three times and the culture twice more than necessary, for three times the minut
 locales get no leg either: `de-DE` is the canary, and `LocaleParityTests` already holds the rest
 structurally — keys, placeholder sets and the side-word sentinel — which is the part a second
 culture leg would re-test.
+
+## The review packet is generated and gated, and never edited
+
+The obvious design for a document a translator reviews is a **Correction** column they fill in, and
+it does not survive contact with the rest of this repository. A generated document that is also an
+input cannot be drift-gated; the moment it is edited there are two spellings of German — one in
+`Strings.de-DE.resx` and one in `docs/locale-review/de-DE.md` — and no rule about which wins. The
+second is worse than it sounds, because the packet is the one a reviewer remembers signing off.
+
+So the packet is generated, committed, gated and read-only, exactly as the neutral resx is. A
+correction goes into the `.resx` against the key in the first column, and
+`scripts/gen-locale-review.sh` regenerates. The reviewer works however suits them — a copy, a
+comment, a message — and the repository keeps one spelling of each language.
+
+`LocaleReviewTests` reads the committed markdown back rather than re-rendering it, for the reason
+`LocalizationTests` reads the committed neutral resx rather than re-running `gen-strings`: a gate
+that re-derives its subject from the code that produced it agrees with itself by construction. It
+checks content — key, context, placeholders, English, translation — and not layout, because a layout
+change is harmless and a content change is the whole risk.
+
+## `Fold.Placeholder` is padded with spaces, and a markdown cell eats them
+
+Found by the gate on its first run over real documents, which is the justification for having
+written it. Two strings are padded deliberately — `" ⋯ {0} matching rows hidden "` and its
+one-row sibling — because the placeholder is drawn as a pill in the gutter and the spaces are the
+gap around it. Every markdown renderer trims a table cell, so the first eight documents showed a
+string that was **not** the string.
+
+The failure that would have followed is quiet and complete: a translator reads the trimmed string,
+returns a good translation of it without the padding, the parity gate passes it — placeholders and
+keys are all correct — and folds render flush against the gutter in eight languages with nothing
+anywhere reporting it.
+
+Leading and trailing spaces therefore render as `␣` (U+2423), the preamble says what the marker
+means, and the generator refuses a string that already contains one so the marker can never be
+ambiguous. Spaces *inside* a string are left alone, where nothing is lost and a row full of markers
+would be unreadable.
+
+## Accounting for the placeholders was a proxy; standing alone is the rule
+
+Plan 00016 phase 1 repaired nine summaries against a criterion it could state as a test — the
+placeholders named in the summary must equal the placeholders in the string — and phase 3 found
+four more that pass it and still fail what the plan actually asks for. *"The same, rightwards."*
+accounts for every one of its zero placeholders, and tells a reviewer meeting that key as a single
+row absolutely nothing.
+
+The criterion was never the goal. The goal is that a row can be judged without reading the row above
+it, which is what a table of 143 rows sorted by key name does to prose written top to bottom in a
+source file. Both are now enforced —
+`StringCatalogueTests.No_summary_leans_on_the_key_above_it` is the second gate — and the general
+lesson is worth keeping: **a criterion chosen because it is checkable is a proxy, and the proxy
+passing is not the goal being met.**
