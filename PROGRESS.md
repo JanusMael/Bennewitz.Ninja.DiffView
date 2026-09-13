@@ -2,9 +2,9 @@
 
 ## Resume
 
-**Plan 00015 is complete — all four phases — with a clean working tree and no remote. `dotnet build
-DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is 611 passed / 0
-failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and 00003–00015 are complete
+**`main` carries plan 00015 complete — all four phases — with a clean working tree and no remote.
+`dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
+611 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and 00003–00015 are complete
 and closed; plan 00002 was rejected on its own review before any code was written.
 **[Plan 00015](plans/00015-a-test-that-asserts-english-says-so.md) closed the culture audit plan
 00014 deferred**, and CI's `culture-leg` job is what holds it closed. *History — plan by plan* below
