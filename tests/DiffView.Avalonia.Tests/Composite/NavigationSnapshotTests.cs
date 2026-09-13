@@ -8,6 +8,12 @@ using Avalonia.Styling;
 namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 
 /// <summary>Plan 00001 §Phase 7, the snapshot: minimap, connectors and the current-block border on the small fixture, in both variants.</summary>
+/// <remarks>
+/// Class-level <see cref="EnglishChromeAttribute"/>: every test here is a frame, and a committed
+/// frame is a picture of English chrome. Plan 00015 §Phase 1 — the first class pinned, and the one
+/// the mechanism was measured on.
+/// </remarks>
+[EnglishChrome]
 public sealed class NavigationSnapshotTests
 {
     [AvaloniaTheory]

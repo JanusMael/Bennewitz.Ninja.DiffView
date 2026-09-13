@@ -2209,3 +2209,47 @@ an otherwise Portuguese menu.
 That is right. The library translates what the library owns; an item a host injects carries the
 host's text, and the host is responsible for its own localisation. A library that translated a
 host's injected header would be guessing at a string it does not own.
+
+## `EditingSnapshotTests` does not show what plan 00015 says it shows
+
+The plan justifies pinning per test rather than per class on the claim that a class-level pin on
+`EditingSnapshotTests` *"would turn a defect green"*. Measured while implementing phase 1, it would
+not. The class holds **one** test method; its German-leg failure is
+`Assert.Contains("Left", …DirtyText)`, an assertion of English text that never said it wanted
+English; and the pin is the sanctioned fix for exactly that. A class pin and a method pin are the
+same edit there, and neither hides anything.
+
+What that class does show is the plan's *other* claim about it, and the one the phase ordering
+rests on: its `Verify` sits behind those assertions, so under `de-DE` the frame has never been
+compared at all. **60 is a lower bound, not a list.** The snapshot set cannot be written until the
+behavioural half is fixed, which is why phase 2 precedes phase 3.
+
+The granularity survives on a different argument than the plan gave it. A class-level pin is
+correct wherever every test in the class is a frame, and blunt for a reason that has nothing to do
+with masking: it pins whatever the class gains afterwards too, taking a test out of the leg's reach
+before anyone has looked at it. So the set pinned is the set that was measured to need it, and a
+class-level application is shorthand used only where the whole class is in that set.
+
+## The pin is a scope, because an ambient one is destroyed by the seam working correctly
+
+One assignment of `DiffViewStrings.Localization` in `HeadlessTestApp` is the obvious implementation
+and it recovers **16 of the 94**. `LocalizationTests` assigns the seam directly and calls
+`DiffViewStrings.ResetForTesting` in a `finally` — both the seam being exercised as designed — and
+because the Avalonia suite is serial by design every test after it in the run order reverts to the
+machine's language. The run ends at 78 failures distributed by run order rather than by cause,
+which is a worse state than the 94 it started from: it reads as snapshot drift.
+
+`EnglishChromeAttribute` therefore hangs off `DiffViewStrings.Override` and its `IDisposable`,
+opened before each test and disposed after it. A scope re-established per test cannot be destroyed
+by what a previous test did. `EnglishChromeTests.The_pin_is_re_established_after_a_test_reset_the_seam`
+is the test of it, and mutating the attribute to pin once ambiently is what makes it fail.
+
+## An xunit before/after attribute does fire on Avalonia's dispatched test path
+
+Not assumed. `[AvaloniaFact]` and `[AvaloniaTheory]` route the body onto the headless UI thread
+through `AvaloniaTestRunner`, and an attribute that silently did not run there would read as a pin
+while pinning nothing — the suite green on an English runner and the audit imaginary. Phase 1
+applied it to one class and measured: `NavigationSnapshotTests` under `DIFFVIEW_TEST_UI_CULTURE=de-DE`
+goes from 2 failed to 0, and removing the attribute from
+`EnglishChromeTests.The_pin_reaches_the_body_of_a_headless_test` turns that test red. Five
+mutations, five killed.
