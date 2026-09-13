@@ -1,3 +1,4 @@
+using System.Globalization;
 using Serilog;
 using Serilog.Events;
 
@@ -48,6 +49,18 @@ internal static class DebugFlags
 
     /// <inheritdoc cref="EditLeft"/>
     public static bool EditRight { get; private set; }
+
+    /// <summary>
+    /// The UI culture to resolve the library's text in: <c>--culture &lt;name&gt;</c>, e.g.
+    /// <c>pt-BR</c>. Null follows the machine's.
+    /// </summary>
+    /// <remarks>
+    /// This drives <see cref="DiffViewLocalization.Culture"/>, not the operating system — the point
+    /// is to see a locale at real size without logging in as someone else. The demo's own chrome
+    /// stays English; only the library's strings move, which is exactly the surface a by-hand pass
+    /// is judging.
+    /// </remarks>
+    public static CultureInfo? Culture { get; private set; }
 
     /// <summary>
     /// What <c>--edit</c> resolved to, for the summary line. A flag the summary does not name is
@@ -141,6 +154,20 @@ internal static class DebugFlags
                     }
 
                     break;
+                case "--culture":
+                    if (TryTakeValue(args, ref i, flag, out string? culture))
+                    {
+                        try
+                        {
+                            Culture = CultureInfo.GetCultureInfo(culture);
+                        }
+                        catch (CultureNotFoundException)
+                        {
+                            Deferred.Add($"Unknown culture '{culture}'. Using the machine's.");
+                        }
+                    }
+
+                    break;
                 case "--log-level":
                     if (TryTakeValue(args, ref i, flag, out string? level))
                     {
@@ -172,8 +199,8 @@ internal static class DebugFlags
 
         Deferred.Clear();
         Log.Information(
-            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} unified={Unified} edit={Edit} level={Level}",
-            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", Unified, EditSummary, MinimumLevel);
+            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} unified={Unified} edit={Edit} culture={Culture} level={Level}",
+            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", Unified, EditSummary, Culture?.Name ?? "(machine)", MinimumLevel);
     }
 
     /// <summary>Restores every flag to its default. Test cleanup hook.</summary>

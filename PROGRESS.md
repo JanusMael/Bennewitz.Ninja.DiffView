@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` is at `259111b` with a clean working tree and no remote. `dotnet build DiffView.slnx
+**`main` is at `71a9eaf` with a clean working tree and no remote. `dotnet build DiffView.slnx
 -warnaserror` is clean and `dotnet test --solution DiffView.slnx` is 606 passed / 0 failed / 0
 skipped.** Plans 00001 and 00003–00013 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **[Plan 00014](plans/00014-the-library-ships-its-own-translations.md)
-is under way — phases 1, 2 and 3 are in, phase 4 is not.** *History — plan by plan* below records how
+is complete — all four phases.** *History — plan by plan* below records how
 each one went and what each corrected, `DECISIONS.md` holds the arguments worth keeping, and
 `AGENTS.md` the cross-file contracts.
 
@@ -65,23 +65,18 @@ wording.
 
 ### Open
 
-1. **[Plan 00014](plans/00014-the-library-ships-its-own-translations.md) phase 4 — evidence, and the
-   layout the translations break.** `de-DE` and `ja-JP` rendered at real size and **driven by hand**
-   under `AGENTS.md` §9: the pane menu, the header detail line, the status strip and the gutter
-   tooltips. The menu was already narrowed once for length on 2026-09-10, German runs about a third
-   longer than English, and a 600 px capture window has lied about this exact menu before — so this
-   is a by-hand pass, not a headless frame. `AGENTS.md` §6 rows are owed with it.
-2. **The suite is culture-dependent in 94 places**, found by phase 3 and larger than the phase that
+1. **The suite is culture-dependent in 94 places**, found by phase 3 and larger than the phase that
    found it. Under `DIFFVIEW_TEST_UI_CULTURE=de-DE` the suite fails 94 of 606: **62 are snapshot
    tests and are correct** — a committed frame is a picture of English chrome — and **32 are
    assertions of English text that forgot to pin a culture**. The `de-DE` CI leg plan 00014 asked
    for is deliberately **not written** until the 62 pin `en-US` themselves, because a gate that is
    permanently red for a non-defect is one nobody reads. *Decisions* carries the reasoning; the two
    halves have to land together.
-3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
-   plans 00012 and 00013 were both driven by hand here, on 2026-09-11 and 2026-09-12.
+2. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
+   plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
+   2026-09-13.
 
-Nothing else is in flight; new work beyond plan 00014 needs a new plan under `plans/`.
+Nothing else is in flight; new work needs a new plan under `plans/`.
 
 ### Running it
 
@@ -359,6 +354,36 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00014 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The seam | M | done | `DiffViewLocalization` (resolver + culture as one record), `Override`, the culture-carrying resolver, the generated neutral resx and its drift gate, the `ResourceManager` step, `NeutralLanguage`, the six test sites migrated to `using`, and `HeadlessTestApp` pinning `DefaultThreadCurrentUICulture`. **Shipped as a no-op** — the 581 existing tests staying green is the evidence |
+| 2 The parity gate | S | done | `LocaleParity`: missing keys, undeclared keys, placeholder-set equality, share identical to English. Written **before** any translation existed, against `fixtures/locales` — a miniature neutral catalogue and a `zz-ZZ` file wrong in all four ways at once |
+| 3 The eight locales | M | done | `de-DE`, `es-ES`, `fr-FR`, `ja-JP`, `ko-KR`, `pt-BR`, `ru-RU`, `zh-CN`, 143 keys each, machine-generated and unreviewed. `SatelliteResourceLanguages` names them; the trim canary keeps them |
+| 4 Evidence | M | done | The width measured before anything was rendered, the by-hand pass in `pt-BR` and `ja-JP`, the demo's `--culture`, `DECISIONS.md` (three sections), `AGENTS.md` §6 (five rows) and §9 (three), this file, the changelog |
+
+## Plan 00014 verification
+
+| Done-when item | Result |
+|---|---|
+| A host resolver outranks a satellite | pass: `LocalizationTests.A_host_resolver_outranks_the_bundled_translation`, with the culture set to one the library ships, so the satellite is present and still loses |
+| A partial resolver never mixes languages | pass: `LocalizationTests.A_partial_resolver_falls_through_to_the_resolved_culture_not_the_machines` — a resolver answering for Japanese and covering one key sees the other 142 come back Japanese, not the machine's en-US. **The defect that put the culture in the signature**, and unwritable before a locale existed |
+| A satellite is used when no resolver is set | pass: `LocalizationTests.The_bundled_translation_answers_when_the_library_ships_the_culture`. **This is the test that kills phase 1's surviving mutation**, exactly where *Decisions* said it would have to |
+| English is used when the culture has no satellite | pass: `LocalizationTests.A_culture_the_library_ships_nothing_for_falls_back_to_English`, against `fi-FI` |
+| The localisation state cannot be half-reset | pass: `LocalizationTests.Resetting_restores_both_the_resolver_and_the_culture`; mutated to restore only the resolver, it fails — which is the shape a two-property seam would have shipped |
+| `Override` restores on an exception | pass: `LocalizationTests.Override_restores_the_previous_state_when_the_body_throws` |
+| The existing resolver-swap contract still holds | pass: `SideBySideDiffViewTests.Swapping_the_string_resolver_before_load_changes_the_rendered_strings` unmoved |
+| The committed neutral resx equals the English table | pass: `LocalizationTests.The_committed_neutral_resx_carries_every_English_default_and_no_others`, and `scripts/gen-strings.cs --check` as the other half |
+| Every locale has every key and no others | pass: `LocaleParityTests.Every_shipped_locale_passes_every_check`; the fixture proving it can fail is `The_broken_fixture_locale_is_caught_reading_real_files` |
+| Placeholders match English per key | pass, and the fixture had to be made **asymmetric** first: a reader blind to `{{` finds `{0}` in both halves of a matched pair and calls them equal. `LocaleParityTests.An_escaped_brace_is_not_a_placeholder`; *Decisions* carries it |
+| No locale string pastes a side word | pass **by placeholder parity rather than a check of its own** — a translator reintroduces the defect by adding a hole to a whole sentence, which the set comparison already fails. `LocaleParityTests.A_locale_that_adds_a_placeholder_is_caught` |
+| A trimmed publish carries the satellites | pass: `dotnet publish -c Release -r linux-x64 --self-contained true` emits no `IL2xxx` and all eight culture directories are present in the output |
+| The pane menu fits in the widest locale at real size | pass, **and not in the locale the plan named**. Measured first: `de-DE` is 100% of English's widest entry and `ja-JP` 76%, while `pt-BR` is 117%. The by-hand pass ran `pt-BR` — menu 403×434, no truncation, no wrap, accelerators aligned — and `ja-JP` at 345×456. *Decisions* carries why German was the wrong thing to fear |
+| The header detail line and status strip fit | pass, in both `pt-BR` and `ja-JP`, at the app's real 1100×720 |
+| The gutter tooltips fit | **not done, and not reachable this way.** `xdotool mousemove` places the pointer but raises no tooltip — synthetic motion does not produce the dwell Avalonia waits on, the same class as accelerators not working through `xdotool` while clicks do. Tooltip *text* stays covered by the headless tests; tooltip *layout in a locale* is covered by nothing, which `AGENTS.md` §9 now says rather than implying the pass swept it |
+| The suite passes pinned to `de-DE` | **not done, deliberately.** 94 of 606 fail, of which **62 are snapshot tests and are correct** — a committed frame is a picture of English chrome. The CI leg waits for those 62 to pin `en-US` themselves; see *Open* above |
 
 ## Plan 00013 phases
 

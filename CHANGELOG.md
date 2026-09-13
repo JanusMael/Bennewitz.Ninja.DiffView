@@ -389,6 +389,35 @@ All notable changes to DiffView are recorded here. The format follows
   past the comparer's half-a-percent tolerance, so unlike a chip or an arrow these frames can fail
   on their own.
 
+- Plan 00014 — the library ships its own translations. `DiffViewLocalization` carries an optional
+  host resolver and an optional culture as **one record**, because two settable statics that must
+  agree are a bug waiting on someone's ordering; `DiffViewStrings.Localization` replaces the former
+  `Resolver` property and `Override` returns an `IDisposable` that restores the previous value.
+  `Get` reads that record once, resolves one culture, and **hands it to the resolver** — so a host
+  returning `null` for a key does so knowing which language will answer instead. The chain is host
+  resolver, then bundled translation for that culture, then the compiled English table, which cannot
+  fail to load.
+- Eight locales: `de-DE`, `es-ES`, `fr-FR`, `ja-JP`, `ko-KR`, `pt-BR`, `ru-RU`, `zh-CN`, 143 keys
+  each, the same set ClaudeForge ships. **They are machine-generated and have not been read by a
+  native speaker of any of the eight** — every file header says so, and `DECISIONS.md` records it as
+  a decision rather than an omission. The parity gate proves keys and placeholders; it proves nothing
+  about wording, and a release should not go out on them unreviewed.
+- `DiffViewStrings.EnglishDefaults`, and `scripts/gen-strings.cs` (with `.sh` / `.ps1` wrappers)
+  which generates the neutral `Localization/Strings.resx` from it under a drift gate, so the embedded
+  resource and the compiled table cannot disagree. The locale files beside it are authored.
+- `LocaleParity` and `LocaleParityTests`: missing keys, undeclared keys, placeholder-set equality per
+  key, and the share of values byte-identical to English — the last borrowed from ClaudeForge's
+  `LocalizationParityTests`, which catches a resx copied and never translated. Written **before any
+  translation existed**, against `fixtures/locales`, a miniature catalogue and a `zz-ZZ` file wrong
+  in all four ways at once. `DeclaredLocales` is asserted against what is on disk, so shipping a
+  locale stays a decision rather than a side effect of adding a file.
+- `SatelliteResourceLanguages` names the eight, so a consumer publishing trimmed keeps exactly them;
+  the trim canary confirms all eight survive with no `IL2xxx`.
+- The demo's `--culture <name>`, which drives the library's text without touching the operating
+  system and names the culture in the status strip. `HeadlessTestApp` pins
+  `DefaultThreadCurrentUICulture`, overridable with `DIFFVIEW_TEST_UI_CULTURE`, so an assertion of
+  English text is an assertion about the library rather than about the machine.
+
 ### Removed
 
 - `ChangeConnectorGutter.CanCopyToLeft`, `CanCopyToRight`, `LastArrows`, `ArrowAt` and

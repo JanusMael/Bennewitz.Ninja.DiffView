@@ -1,4 +1,5 @@
 using Avalonia;
+using Bennewitz.Ninja.DiffView.Avalonia;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Serilog;
 
@@ -38,6 +39,16 @@ internal static class Program
 
         // 4. Deferred flag warnings and the active-flags summary.
         DebugFlags.LogSummary();
+
+        // 4b. --culture drives the library's own text, not the operating system's. It is set here
+        //     rather than wired per control because DiffViewStrings resolves at the moment a string
+        //     is used, so one assignment before the first window covers everything the library
+        //     draws. The demo's own menus stay English on purpose: the surface under judgement in a
+        //     by-hand pass is the library's.
+        if (DebugFlags.Culture is { } culture)
+        {
+            DiffViewStrings.Localization = new DiffViewLocalization { Culture = culture };
+        }
 
         // 5. Boot. The Starting/Exiting pair brackets a session so a post-mortem can tell a crash
         //    (Starting present, Exiting absent) from a clean quit.

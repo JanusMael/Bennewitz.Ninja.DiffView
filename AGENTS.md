@@ -221,6 +221,11 @@ no dates, no counts.
 | `PaneContextMenuOpening` amends the control's items; `PaneContextMenu` replaces the menu and **suppresses that event**. Either way the context reaches the menu as its `DataContext` | A host with its own menu cannot learn what was clicked | `DiffPaneMenu.Request`; test `PaneContextMenuTests.The_replacement_menu_suppresses_the_opening_event` |
 | **Every string that names a side is a whole sentence per direction**, never one sentence with the side word substituted in — a translator cannot inflect a word dropped into someone else's sentence. Only runtime values are placeholders; a kind standing alone between separators is a label, not a phrase | A translated build reads as English grammar with foreign words in it | `DiffViewStrings.CopyArrowTooltip`, `LineTooltipAligned`, `MinimapLaneTooltip` and their siblings; test `StringCatalogueTests.No_string_of_the_library_is_built_by_pasting_a_side_word_into_it` |
 | Every declared key has English text, reaches the host's resolver, and is named once | A key added without a default renders as its own name and nothing notices | `StringCatalogueTests`, adapted from ClaudeForge's `LocalizationParityTests` |
+| Text resolves through the one `DiffViewStrings.Localization` record — a host resolver and a culture together, never two settable statics | A resolver answering for one language while the bundled translations answer for another, which no single-property version can prevent | `DiffViewLocalization`, `DiffViewStrings.Localization`; test `LocalizationTests.Resetting_restores_both_the_resolver_and_the_culture` |
+| `Get` reads `Localization` once, resolves one culture, and hands that culture to the resolver | A key answered out of one culture and its fallback out of another; a host that returns null not knowing which language will answer | `DiffViewStrings.Get`; test `LocalizationTests.A_partial_resolver_falls_through_to_the_resolved_culture_not_the_machines` |
+| The chain is host resolver, then bundled translation for that culture, then the compiled English table, which cannot fail to load | A trimmed or mispackaged build rendering keys instead of text | `DiffViewStrings.Translation` catches `MissingManifestResourceException`; test `LocalizationTests.A_host_resolver_outranks_the_bundled_translation` |
+| The neutral `Strings.resx` is generated from `DiffViewStrings.EnglishDefaults` and never hand-edited; the locale files beside it are authored | The embedded resource and the compiled table disagreeing, which silently changes what every lookup returns | `scripts/gen-strings.cs`; test `LocalizationTests.The_committed_neutral_resx_carries_every_English_default_and_no_others` |
+| A shipped locale carries every key, no undeclared key, and English's placeholder set per key; `SatelliteResourceLanguages` names the eight | A locale rendering literal braces or throwing `FormatException`; a ninth locale built and then dropped from a trimmed publish | `LocaleParity`; tests `LocaleParityTests.Every_shipped_locale_passes_every_check` and `The_shipped_locales_are_exactly_the_declared_set` |
 | `SplitRatio` is applied to both the headers grid and the panes grid, which share their star columns | Headers drift from their panes after a gutter drag | `SideBySideDiffView.ApplySplit`, template parts `PART_Headers` and `PART_Panes` |
 | A margin's tooltip is resolved per line under the pointer by `DiffMargin.OnPointerMoved` and cleared on exit; each margin supplies `TooltipFor(lineNumber)` from `PaneMetadata` | A tooltip names the wrong line, or lingers | `DiffMargin`, `DiffLineNumberMargin.TooltipFor`, `ChangeMarkerMargin.TooltipFor`; `TooltipTests` |
 | `DiffPanePresenter.CanCopyOut` carries the **other** side's editable flag, not its own: a pane offers to copy a block out when the side that would receive it is editable | Arrows appear on the pane that cannot be copied from, or vanish from the one that can | `SideBySideDiffView.AttachPane` and the `LeftReadOnlyProperty` / `RightReadOnlyProperty` branches of `OnPropertyChanged` — both paths, because a host that sets the flag in XAML is wired by the first and never reaches the second; test `CopyArrowMarginTests.A_side_editable_before_the_template_applies_is_wired_too` |
@@ -435,3 +440,39 @@ The two machine-level mitigations that exist as of 2026-09-12 — a udev rule th
 coredump before it expires, and `kernel.hung_task_panic` with `kernel.panic=20` — are configuration
 of this host, not of this repository. They are documented in the `lmstudio-opencode` repo, which is
 where machine and GPU configuration lives.
+
+### Two ways a grab fails that look like the app's fault
+
+Both cost time on **2026-09-13**, driving plan 00014 phase 4.
+
+- **`xdotool search --class DiffView | head -1` can return an unmapped window.** The demo has two
+  matching X windows; the first is `IsUnMapped` and `x11grab` rejects it with
+  `Cannot get the image data ... error_code:8` — a `BadMatch`, which reads like a geometry or
+  compositor problem and is neither. **Filter on map state**, not position in the list:
+  `xwininfo -id "$w" | grep -q IsViewable`.
+- **`pkill -f 'DiffView.Demo'` kills the turn, not the app.** The pattern appears in the agent
+  harness's own shell command line, so the shell matches itself and the turn ends at exit 144 — the
+  same exit code §9 attributes to the harness reaping a background child, which sends you looking in
+  entirely the wrong place. Close the window instead (`xdotool windowkill <id>`), or kill a PID you
+  recorded at launch.
+
+### Tooltips cannot be driven from here
+
+`xdotool mousemove` puts the pointer where you ask — a captured frame shows the cursor on the target
+— but **no tooltip ever appears**, because synthetic motion does not produce the dwell state
+Avalonia's tooltip service waits on. Same class as the accelerator finding above: clicks reach the
+app, hover does not.
+
+So a tooltip is judged from the headless tests that assert its text, never from a frame. Do not
+record a by-hand pass as having covered tooltip layout in a locale; nothing covers that yet.
+
+### Driving a locale
+
+`--culture <name>` sets `DiffViewLocalization.Culture` before the first window, which moves the
+library's text without touching the operating system. The demo's own chrome stays English on
+purpose, so a frame shows exactly the surface under judgement — and the status strip names the
+culture, which is how you confirm the flag took rather than assuming it.
+
+Measure before you look. `east_asian_width` counts a CJK glyph as two columns, and the widest
+locale is not the one you expect: on 2026-09-13 German measured 100% of English's widest menu entry
+and Portuguese 117%.

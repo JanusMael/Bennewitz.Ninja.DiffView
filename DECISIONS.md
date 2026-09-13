@@ -2151,3 +2151,61 @@ added without a line here would be compiled into a satellite and then silently d
 published output — which renders as English for that culture and nothing anywhere reports it. The
 trim canary confirms the current eight survive `dotnet publish -c Release -r linux-x64
 --self-contained true`, with no `IL2xxx`.
+
+## The menu width risk was real, aimed at the wrong language, and did not land
+
+Plan 00014 named German as its headline risk — *"German at +30% puts several entries back over"* the
+width that forced the menu to be narrowed on 2026-09-10 — and told phase 4 to render `de-DE` and
+`ja-JP`. Measured before rendering anything, in East-Asian display columns so a CJK glyph counts two:
+
+| Locale | Widest menu entry | vs English | Entries wider than English's widest |
+|---|---|---|---|
+| pt-BR | 34 | 117% | 5 |
+| es-ES | 34 | 117% | 4 |
+| fr-FR | 32 | 110% | 4 |
+| de-DE | 29 | **100%** | **0** |
+| ru-RU | 29 | 100% | 0 |
+| ko-KR | 27 | 93% | 0 |
+| ja-JP | 22 | 76% | 0 |
+| zh-CN | 20 | 69% | 0 |
+
+**German is the joint-narrowest non-CJK locale, and the two the plan prescribed are among the three
+safest.** Rendering them would have proved nothing. The width lands on the Romance languages, where
+articles and prepositions stack — *"Copiar a alteração para a esquerda"* against German's
+*"Änderung nach rechts kopieren"*.
+
+Part of that is authorship rather than language: German was written tight **because** the plan warned
+about it, and pt-BR was not. The lesson worth keeping is not "German is fine" but that **a length
+risk named for one language is a length risk for whichever one the translator was least careful
+with**, which is not knowable in advance and is why it is measured rather than predicted.
+
+**The risk did not land.** The by-hand pass ran `pt-BR` — the widest, not the prescribed — and the
+pane menu renders 403×434 with no truncation, no ellipsis and no wrap, accelerator column intact.
+`ja-JP` is 345×456: narrower, and slightly taller because CJK line height is greater. The header
+detail line and the status strip fit in both. **No change to any translation is needed**, and the
+41-character incident that prompted the warning was about a menu that has since been narrowed, not
+about the width available now.
+
+## What a by-hand pass in a locale can and cannot reach
+
+Three of the four surfaces phase 4 named were verified in `pt-BR` and `ja-JP`: the pane context menu,
+the header detail line, the status strip.
+
+**The gutter tooltips were not**, and cannot be by this route. `xdotool mousemove` places the pointer
+— the cursor is visibly on the line number in the captured frame — but no tooltip appears, because
+synthetic motion does not produce the dwell state Avalonia's tooltip service waits on. This is the
+same class as §9's existing finding that keyboard accelerators do not work through `xdotool` while
+clicks do. Tooltip *text* stays covered by the headless tests and by the placeholder parity gate;
+tooltip *layout* in a locale is not covered by anything, and saying so is better than implying the
+by-hand pass swept it.
+
+## A host's own menu items stay in the host's language
+
+Incidental confirmation from the `pt-BR` frame worth recording, because it is the extensibility seam
+behaving correctly and would read as a bug to anyone who saw it without knowing: the demo's own
+*"What did I click?"* entry, added through `PaneContextMenuOpening`, sits in English in the middle of
+an otherwise Portuguese menu.
+
+That is right. The library translates what the library owns; an item a host injects carries the
+host's text, and the host is responsible for its own localisation. A library that translated a
+host's injected header would be guessing at a string it does not own.

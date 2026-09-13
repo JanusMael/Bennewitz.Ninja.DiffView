@@ -629,7 +629,7 @@ public sealed partial class MainWindow : Window
             (false, true) => "   ·   unsaved: right",
             _ => string.Empty,
         };
-        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Palette: {palette}   ·   View: {layout}   ·   Editable: {editable}{dirty}{note}   ·   F12: live log";
+        StatusText.Text = $"Theme: {DebugFlags.Theme}   ·   Variant: {requested} (actual {ActualThemeVariant})   ·   Palette: {palette}   ·   View: {layout}   ·   Editable: {editable}   ·   Culture: {DebugFlags.Culture?.Name ?? "(machine)"}{dirty}{note}   ·   F12: live log";
         ToolTip.SetTip(StatusText, $"Logs: {LogPaths.LogsDirectory}");
     }
 }
