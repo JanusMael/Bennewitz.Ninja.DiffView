@@ -26,6 +26,10 @@ const string LocaleDirectory = "src/DiffView.Avalonia/Localization";
 const string OutputDirectory = "docs/locale-review";
 const string DocumentationFile = "DiffView.Avalonia.xml";
 
+// U+2423 OPEN BOX, standing for a literal space at the start or end of a string, which a markdown
+// table cell would otherwise swallow without trace.
+const char Space = '␣';
+
 string[] arguments = args;
 bool check = arguments.Contains("--check");
 string[] wanted = arguments.Where(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
@@ -117,6 +121,9 @@ string Render(string culture)
     text.AppendLine("- **A string that names a side is a whole sentence per direction**, never one sentence with the");
     text.AppendLine("  word *left* or *right* pasted in, because a pasted word cannot be inflected. If a translation");
     text.AppendLine("  reads as though a word was dropped into it, that is the defect to report.");
+    text.AppendLine($"- **`{Space}` stands for a space** at the very start or end of a string, where it is part of the");
+    text.AppendLine("  string and a table cell would otherwise hide it. Those strings are padded on purpose — they are");
+    text.AppendLine("  drawn as a pill in the gutter — so the padding belongs in the translation too.");
     text.AppendLine();
     text.AppendLine($"To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture {culture}`.");
     text.AppendLine();
@@ -146,10 +153,15 @@ string Render(string culture)
     return text.ToString();
 }
 
-// A cell that cannot break the table. A pipe is escaped; a newline cannot be, and a row silently
-// split in two is a defect nobody notices in a 143-row document, so it fails by name instead.
-// No shipped string contains either today — which is exactly when to decide what happens when one
-// does.
+// A cell that cannot break the table, and cannot quietly lose part of its string. A pipe is
+// escaped; a newline cannot be, and a row silently split in two is a defect nobody notices in a
+// 143-row document, so it fails by name instead.
+//
+// Leading and trailing spaces are the subtle one. Fold.Placeholder is " ⋯ {0} matching rows hidden "
+// and the padding is deliberate — it is the space around a pill drawn in the gutter. A markdown
+// cell cannot hold it: every renderer trims, so the reviewer would see a string that is not the
+// string, and a translator would helpfully return it without the padding. Shown as ␣ instead, which
+// is the one thing a reviewer must not have to guess about.
 string Cell(string value, string key, string culture)
 {
     if (value.Contains('\n') || value.Contains('\r'))
@@ -158,7 +170,37 @@ string Cell(string value, string key, string culture)
              + "Either the string is wrong or this generator needs a different layout.");
     }
 
-    return value.Replace("|", "\\|", StringComparison.Ordinal);
+    if (value.Contains(Space))
+    {
+        Fail($"{culture}: '{key}' already contains '{Space}', which this document uses to stand for a "
+             + "literal space at the start or end of a string. The marker would be ambiguous.");
+    }
+
+    return Reveal(value.Replace("|", "\\|", StringComparison.Ordinal));
+}
+
+// Leading and trailing spaces made visible; spaces inside the string are left alone, where nothing
+// is lost and a row full of markers would be unreadable.
+string Reveal(string value)
+{
+    int lead = 0;
+    while (lead < value.Length && value[lead] == ' ')
+    {
+        lead++;
+    }
+
+    if (lead == value.Length)
+    {
+        return new string(Space, lead);
+    }
+
+    int trail = 0;
+    while (value[^(trail + 1)] == ' ')
+    {
+        trail++;
+    }
+
+    return new string(Space, lead) + value[lead..^trail] + new string(Space, trail);
 }
 
 // The placeholder indices the string actually takes, read off the string rather than off its

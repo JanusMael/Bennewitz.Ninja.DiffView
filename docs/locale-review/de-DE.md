@@ -17,6 +17,9 @@ Two things worth knowing before reading:
 - **A string that names a side is a whole sentence per direction**, never one sentence with the
   word *left* or *right* pasted in, because a pasted word cannot be inflected. If a translation
   reads as though a word was dropped into it, that is the defect to report.
+- **`␣` stands for a space** at the very start or end of a string, where it is part of the
+  string and a table cell would otherwise hide it. Those strings are padded on purpose — they are
+  drawn as a pill in the gutter — so the padding belongs in the translation too.
 
 To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture de-DE`.
 
@@ -31,7 +34,7 @@ To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture d
 | `ChangeMarkersMargin.Name` | Automation name of the change-marker margin. | — | Change markers | Änderungsmarkierungen |
 | `ConnectorGutter.Name` | Automation name of the connector gutter. | — | Change connectors | Änderungsverbinder |
 | `CopyArrow.Tooltip.Left` | What the copy arrow standing in for a line number would do, copying leftwards. | — | Copy this change to the left side | Diese Änderung auf die linke Seite kopieren |
-| `CopyArrow.Tooltip.Right` | The same, copying rightwards. | — | Copy this change to the right side | Diese Änderung auf die rechte Seite kopieren |
+| `CopyArrow.Tooltip.Right` | What the copy arrow standing in for a line number would do, copying rightwards. | — | Copy this change to the right side | Diese Änderung auf die rechte Seite kopieren |
 | `DiffView.Name` | Automation name of the composite control. | — | Side-by-side diff | Nebeneinander-Vergleich |
 | `Find.ChangedRowsOnly` | The Changed rows only toggle's label. | — | Changed | Geändert |
 | `Find.ChangedRowsOnly.Name` | The Changed rows only toggle's tooltip and automation name. | — | Changed rows only | Nur geänderte Zeilen |
@@ -62,8 +65,8 @@ To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture d
 | `Find.Truncated` | The cap was reached: {0} the cap. | `{0}` | Showing the first {0} matches | Die ersten {0} Treffer werden angezeigt |
 | `Find.WholeWord` | The Whole word toggle's label. | — | Word | Wort |
 | `Find.WholeWord.Name` | The Whole word toggle's tooltip and automation name. | — | Whole word | Ganzes Wort |
-| `Fold.Placeholder` | The placeholder standing for a folded run: {0} rows hidden behind it. | `{0}` |  ⋯ {0} matching rows hidden  |  ⋯ {0} übereinstimmende Zeilen ausgeblendet  |
-| `Fold.Placeholder.One` | The same where exactly one row is hidden, which no plural rule covers for free. | — |  ⋯ 1 matching row hidden  |  ⋯ 1 übereinstimmende Zeile ausgeblendet  |
+| `Fold.Placeholder` | The placeholder standing for a folded run: {0} rows hidden behind it. | `{0}` | ␣⋯ {0} matching rows hidden␣ | ␣⋯ {0} übereinstimmende Zeilen ausgeblendet␣ |
+| `Fold.Placeholder.One` | The placeholder standing for a folded run of exactly one row, which no plural rule covers for free. | — | ␣⋯ 1 matching row hidden␣ | ␣⋯ 1 übereinstimmende Zeile ausgeblendet␣ |
 | `Header.Badge.Binary` | The header badge of a binary side. | — | binary | binär |
 | `Header.Badge.Empty` | The header badge of an empty side. | — | empty | leer |
 | `Header.Badge.Identical` | The header badge when the sides are identical. | — | identical | identisch |
@@ -91,7 +94,7 @@ To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture d
 | `LineTooltip.Alone.Left` | A line-number tooltip with no counterpart on the left: {0} line. | `{0}` | Line {0} · no left line | Zeile {0} · keine linke Zeile |
 | `LineTooltip.Alone.Right` | A line-number tooltip with no counterpart on the right: {0} line. | `{0}` | Line {0} · no right line | Zeile {0} · keine rechte Zeile |
 | `LineTooltip.Unified.Aligned.Left` | A unified tooltip for a left line with a counterpart: {0} this line, {1} the right line. | `{0}` `{1}` | Line {0} on the left · line {1} on the right | Zeile {0} links · Zeile {1} rechts |
-| `LineTooltip.Unified.Aligned.Right` | The same for a right line: {0} this line, {1} the left line. | `{0}` `{1}` | Line {0} on the right · line {1} on the left | Zeile {0} rechts · Zeile {1} links |
+| `LineTooltip.Unified.Aligned.Right` | A unified tooltip for a right line with a counterpart: {0} this line, {1} the left line. | `{0}` `{1}` | Line {0} on the right · line {1} on the left | Zeile {0} rechts · Zeile {1} links |
 | `LineTooltip.Unified.Alone.Left` | A unified tooltip for a left line with no counterpart: {0} this line. | `{0}` | Line {0} on the left · no right line | Zeile {0} links · keine rechte Zeile |
 | `LineTooltip.Unified.Alone.Right` | A unified tooltip for a right line with no counterpart: {0} this line. | `{0}` | Line {0} on the right · no left line | Zeile {0} rechts · keine linke Zeile |
 | `Marker.ModifiedSinceLoad` | Appended to a marker tooltip on a line edited since the source was assigned. | — | Edited in this session | In dieser Sitzung bearbeitet |
@@ -138,7 +141,7 @@ To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture d
 | `Save.NoPath` | Reported when a save is asked for on a side that came from no file: {0} the side's header title, which is a file name rather than a side word. | `{0}` | {0} did not come from a file, so there is nowhere to save it. | {0} stammt nicht aus einer Datei, daher gibt es keinen Speicherort. |
 | `Save.Succeeded` | Reported when a save succeeds: {0} the side's header title, which is a file name rather than a side word. | `{0}` | Saved {0} | {0} gespeichert |
 | `SelectionArrow.Tooltip.Left` | What the selection's arrow, standing in for a line number, would do, leftwards. | — | Copy the selected lines to the left side | Die ausgewählten Zeilen auf die linke Seite kopieren |
-| `SelectionArrow.Tooltip.Right` | The same, rightwards. | — | Copy the selected lines to the right side | Die ausgewählten Zeilen auf die rechte Seite kopieren |
+| `SelectionArrow.Tooltip.Right` | What the selection's arrow, standing in for a line number, would do, rightwards. | — | Copy the selected lines to the right side | Die ausgewählten Zeilen auf die rechte Seite kopieren |
 | `Side.Left` | The left side, in a tooltip. | — | left | links |
 | `Side.Right` | The right side, in a tooltip. | — | right | rechts |
 | `State.Building` | The pill. | — | Building… | Wird erstellt… |

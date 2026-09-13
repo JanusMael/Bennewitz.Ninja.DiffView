@@ -121,13 +121,13 @@ public static class DiffViewStrings
     /// <summary>What the copy arrow standing in for a line number would do, copying leftwards.</summary>
     public const string CopyArrowTooltipLeft = "CopyArrow.Tooltip.Left";
 
-    /// <summary>The same, copying rightwards.</summary>
+    /// <summary>What the copy arrow standing in for a line number would do, copying rightwards.</summary>
     public const string CopyArrowTooltipRight = "CopyArrow.Tooltip.Right";
 
     /// <summary>What the selection's arrow, standing in for a line number, would do, leftwards.</summary>
     public const string SelectionArrowTooltipLeft = "SelectionArrow.Tooltip.Left";
 
-    /// <summary>The same, rightwards.</summary>
+    /// <summary>What the selection's arrow, standing in for a line number, would do, rightwards.</summary>
     public const string SelectionArrowTooltipRight = "SelectionArrow.Tooltip.Right";
 
     /// <summary>The strip's lane while a side has unsaved edits: <c>{0}</c> the header titles of the dirty sides, comma-joined — file names, not side words.</summary>
@@ -305,7 +305,7 @@ public static class DiffViewStrings
     /// <summary>A unified tooltip for a left line with a counterpart: <c>{0}</c> this line, <c>{1}</c> the right line.</summary>
     public const string LineTooltipUnifiedAlignedLeft = "LineTooltip.Unified.Aligned.Left";
 
-    /// <summary>The same for a right line: <c>{0}</c> this line, <c>{1}</c> the left line.</summary>
+    /// <summary>A unified tooltip for a right line with a counterpart: <c>{0}</c> this line, <c>{1}</c> the left line.</summary>
     public const string LineTooltipUnifiedAlignedRight = "LineTooltip.Unified.Aligned.Right";
 
     /// <summary>A unified tooltip for a left line with no counterpart: <c>{0}</c> this line.</summary>
@@ -320,7 +320,7 @@ public static class DiffViewStrings
     /// <summary>The placeholder standing for a folded run: <c>{0}</c> rows hidden behind it.</summary>
     public const string FoldPlaceholder = "Fold.Placeholder";
 
-    /// <summary>The same where exactly one row is hidden, which no plural rule covers for free.</summary>
+    /// <summary>The placeholder standing for a folded run of exactly one row, which no plural rule covers for free.</summary>
     public const string FoldPlaceholderOne = "Fold.Placeholder.One";
 
     /// <summary>A minimap tooltip: <c>{0}</c> row (1-based), <c>{1}</c> rows, <c>{2}</c> kind.</summary>

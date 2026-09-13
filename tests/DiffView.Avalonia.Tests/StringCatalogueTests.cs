@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Xml.Linq;
 using Avalonia.Headless.XUnit;
 using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 using Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
@@ -158,7 +157,6 @@ public sealed class StringCatalogueTests
         }
     }
 
-    /// <summary>Every <c>public const string</c> key <see cref="DiffViewStrings"/> declares.</summary>
     /// <summary>
     /// Plan 00016 §Phase 1: every key's <c>&lt;summary&gt;</c> accounts for every placeholder its
     /// string takes. The packet a native reviewer reads pairs each translation with that summary as
@@ -185,7 +183,7 @@ public sealed class StringCatalogueTests
     [Fact]
     public void Every_summary_accounts_for_the_placeholders_its_string_takes()
     {
-        IReadOnlyDictionary<string, string> summaries = Summaries();
+        IReadOnlyDictionary<string, string> summaries = Summaries.ByField();
         List<string> wrong = [];
 
         foreach ((string name, string key) in DeclaredKeys())
@@ -210,58 +208,44 @@ public sealed class StringCatalogueTests
         Assert.True(wrong.Count == 0, "These summaries would mislead a reviewer about their own string: " + string.Join("; ", wrong));
     }
 
-    /// <summary>Every <c>DiffViewStrings</c> field summary, by field name, from the XML doc build output.</summary>
-    private static IReadOnlyDictionary<string, string> Summaries()
+    /// <summary>
+    /// Plan 00016 §Phase 3: no summary leans on the one above it.
+    /// </summary>
+    /// <remarks>
+    /// The sibling of the placeholder test, and the reason that one is not enough. A reviewer meets
+    /// each key as a single row in a table, so <em>"The same, rightwards."</em> is context that
+    /// resolves to nothing — and it accounts for every one of its zero placeholders, so the
+    /// placeholder gate passes it. The goal is that a row can be judged without reading the row
+    /// above it; accounting for the placeholders was only ever a proxy for it.
+    /// </remarks>
+    [Fact]
+    public void No_summary_leans_on_the_key_above_it()
     {
-        string path = Path.Combine(AppContext.BaseDirectory, "DiffView.Avalonia.xml");
-        if (!File.Exists(path))
+        string[] leaning = ["the same", "same ", "as above", "likewise", "ditto"];
+        IReadOnlyDictionary<string, string> summaries = Summaries.ByField();
+        List<string> dependent = [];
+
+        foreach ((string name, string key) in DeclaredKeys())
         {
-            throw new FileNotFoundException(
-                "The XML documentation file is missing, so every summary would read as absent and this test would " +
-                "report 143 failures instead of the truth. GenerateDocumentationFile is true in " +
-                "DiffView.Avalonia.csproj; a build produces it beside the test assembly.",
-                path);
-        }
-
-        const string Prefix = "F:Bennewitz.Ninja.DiffView.Avalonia.DiffViewStrings.";
-        Dictionary<string, string> found = new(StringComparer.Ordinal);
-
-        foreach (XElement member in XDocument.Load(path).Descendants("member"))
-        {
-            string? id = member.Attribute("name")?.Value;
-            if (id is null || !id.StartsWith(Prefix, StringComparison.Ordinal))
+            if (summaries.TryGetValue(name, out string? summary)
+                && leaning.Any(opening => summary.StartsWith(opening, StringComparison.OrdinalIgnoreCase)))
             {
-                continue;
-            }
-
-            XElement? summary = member.Element("summary");
-            if (summary is not null)
-            {
-                // Concatenated rather than .Value alone: the placeholders sit inside <c> elements,
-                // and reading only the element's own text would drop every one of them.
-                found[id[Prefix.Length..]] = string.Concat(summary.Nodes().Select(Flatten));
+                dependent.Add($"{name} (\"{key}\"): \"{summary}\"");
             }
         }
 
-        return found;
+        Assert.True(
+            dependent.Count == 0,
+            "These summaries only make sense beside the one above them, and a review document shows a key on its own: "
+            + string.Join("; ", dependent));
     }
-
-    private static string Flatten(XNode node)
-    {
-        return node switch
-        {
-            XText text => text.Value,
-            XElement element => element.Value,
-            _ => string.Empty,
-        };
-    }
-
     private static string Describe(HashSet<int> indices)
     {
         return indices.Count == 0
             ? "no placeholder"
             : string.Join(", ", indices.Order().Select(i => "{" + i.ToString(provider: null) + "}"));
     }
+    /// <summary>Every <c>public const string</c> key <see cref="DiffViewStrings"/> declares.</summary>
     private static List<(string Name, string Key)> DeclaredKeys()
     {
         return typeof(DiffViewStrings)
