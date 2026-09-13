@@ -2,13 +2,14 @@
 
 ## Resume
 
-**`main` carries plan 00014 complete (written at `60ef245`), with a clean working tree and no remote. `dotnet build DiffView.slnx
--warnaserror` is clean and `dotnet test --solution DiffView.slnx` is 606 passed / 0 failed / 0
-skipped.** Plans 00001 and 00003–00013 are complete and closed; plan 00002 was rejected on its own
-review before any code was written. **[Plan 00014](plans/00014-the-library-ships-its-own-translations.md)
-is complete — all four phases.** *History — plan by plan* below records how
-each one went and what each corrected, `DECISIONS.md` holds the arguments worth keeping, and
-`AGENTS.md` the cross-file contracts.
+**Plan 00015 is complete — all four phases — with a clean working tree and no remote. `dotnet build
+DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is 611 passed / 0
+failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and 00003–00015 are complete
+and closed; plan 00002 was rejected on its own review before any code was written.
+**[Plan 00015](plans/00015-a-test-that-asserts-english-says-so.md) closed the culture audit plan
+00014 deferred**, and CI's `culture-leg` job is what holds it closed. *History — plan by plan* below
+records how each one went and what each corrected, `DECISIONS.md` holds the arguments worth keeping,
+and `AGENTS.md` the cross-file contracts.
 
 ### What ships
 
@@ -65,13 +66,10 @@ wording.
 
 ### Open
 
-1. **The suite is culture-dependent in 94 places**, found by phase 3 and larger than the phase that
-   found it. Under `DIFFVIEW_TEST_UI_CULTURE=de-DE` the suite fails 94 of 606: **62 are snapshot
-   tests and are correct** — a committed frame is a picture of English chrome — and **32 are
-   assertions of English text that forgot to pin a culture**. The `de-DE` CI leg plan 00014 asked
-   for is deliberately **not written** until the 62 pin `en-US` themselves, because a gate that is
-   permanently red for a non-defect is one nobody reads. *Decisions* carries the reasoning; the two
-   halves have to land together.
+1. **The eight locales are still unread by a native speaker.** Structure is gated — every key,
+   every placeholder set, the side-word sentinel, and now a suite that stays green in German — and
+   wording is not. This gates the **first release**, not any commit: `CHANGELOG.md` holds only
+   `[Unreleased]`.
 2. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.
@@ -355,6 +353,32 @@ either.
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
 
+## Plan 00015 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The mechanism, proven to fire | S | done | `EnglishChromeAttribute` over `DiffViewStrings.Override`, five tests, and one class pinned. The phase's job was the unknown: these are `[AvaloniaFact]` tests dispatched by `AvaloniaTestRunner`, and an xunit before/after attribute that silently did not run there would read as a pin while pinning nothing. It runs — measured, not inferred |
+| 2 The 34 | M | done | 33 methods across 14 files, 34 failures because one is a theory with two rows. Pinned rather than softened. The leg 92 → 58, and the 58 left were all snapshot comparisons |
+| 3 The frames | M | done | Twelve classes pinned whole, `SyntaxSnapshotTests` pinned on one method, `PresenterSnapshotTests` pinned nowhere. The leg 58 → 0. **No baseline regenerated** |
+| 4 The leg and the record | S | done | The `culture-leg` CI job on `ubuntu-latest`, `DECISIONS.md` (four sections, one superseding its own arithmetic), `AGENTS.md` §5 (three rows), this file, the changelog |
+
+## Plan 00015 verification
+
+| Done-when item | Result |
+|---|---|
+| The pin reaches the body of a headless test | pass: `EnglishChromeTests.The_pin_reaches_the_body_of_a_headless_test`. **The load-bearing one** — the only evidence that Avalonia's dispatched test path honours an xunit before/after attribute at all. Culture-independent by construction, so it means the same under either leg; removing the attribute turns it red |
+| The pin reaches the rendered frame | pass: `NavigationSnapshotTests.Minimap_connectors_and_the_current_block_render` goes 2 failed → 0 under `de-DE` with the class pinned, and back to 2 without it |
+| Text resolves English while the thread asks for German | pass: `EnglishChromeTests.Text_resolves_English_while_the_thread_asks_for_German`, against the compiled table rather than a literal, so the two sides cannot drift |
+| The pin survives a test that reset the seam | pass: `EnglishChromeTests.The_pin_is_re_established_after_a_test_reset_the_seam`. **The scope decision, as a test.** An ambient pin recovers 16 of the 94 and ends at 78 failures distributed by run order; mutating the attribute to pin once ambiently is what fails this |
+| The pin does not leak past its test | pass: `EnglishChromeTests.The_pin_is_removed_when_the_test_ends`, and `EnglishChromeTests.A_second_pin_opened_over_the_first_is_refused` holds the serial assumption the static scope rests on |
+| Every new test proven able to fail | pass: five mutations, five killed — the attribute off the headless test, the attribute off the resolution test, the teardown removed, the nesting guard removed, and the pin made ambient. Harness at `~/c/cl/scratch/DiffView/mutate-phase1.py` |
+| The suite is green under `de-DE` | pass: 611 passed / 0 failed / 0 skipped with `DIFFVIEW_TEST_UI_CULTURE=de-DE` |
+| The English run is unchanged | pass: 611 passed / 0 failed / 0 skipped, the 606 that existed plus phase 1's five |
+| The leg is a CI gate | pass: `culture-leg` on `ubuntu-latest`, beside the three-OS matrix rather than inside it. **Not yet observed on GitHub — there is no remote**, so what is verified is the workflow's shape and the command it runs, both of which were run here |
+| No snapshot baseline regenerated | pass: none. A frame needing regeneration would have been a rendering difference hiding behind a culture failure, which is a finding rather than a step |
+| The 62/32 split | **corrected to 60/34.** The recorded split was by class name; by failure mode `EditingSnapshotTests` moves from the snapshot half to the behavioural half. *Decisions* supersedes the arithmetic and keeps the conclusion |
+| The hidden snapshot failures phase 2 was ordered around | **none surfaced, and the ordering was still right.** A pin repairs the assertion and the frame in one stroke, so the frame that had never been compared under the leg compares and passes. Softening the 34 instead would have moved the failures one phase later rather than removing them |
+
 ## Plan 00014 phases
 
 | Phase | Size | Status | Notes |
@@ -383,7 +407,7 @@ either.
 | The pane menu fits in the widest locale at real size | pass, **and not in the locale the plan named**. Measured first: `de-DE` is 100% of English's widest entry and `ja-JP` 76%, while `pt-BR` is 117%. The by-hand pass ran `pt-BR` — menu 403×434, no truncation, no wrap, accelerators aligned — and `ja-JP` at 345×456. *Decisions* carries why German was the wrong thing to fear |
 | The header detail line and status strip fit | pass, in both `pt-BR` and `ja-JP`, at the app's real 1100×720 |
 | The gutter tooltips fit | **not done, and not reachable this way.** `xdotool mousemove` places the pointer but raises no tooltip — synthetic motion does not produce the dwell Avalonia waits on, the same class as accelerators not working through `xdotool` while clicks do. Tooltip *text* stays covered by the headless tests; tooltip *layout in a locale* is covered by nothing, which `AGENTS.md` §9 now says rather than implying the pass swept it |
-| The suite passes pinned to `de-DE` | **not done, deliberately.** 94 of 606 fail, of which **62 are snapshot tests and are correct** — a committed frame is a picture of English chrome. The CI leg waits for those 62 to pin `en-US` themselves; see *Open* above |
+| The suite passes pinned to `de-DE` | **deferred here, closed by [plan 00015](plans/00015-a-test-that-asserts-english-says-so.md).** 94 of 606 failed. The split recorded at the time — 62 snapshot, 32 behavioural — was made by class name; by failure mode it is **60 and 34**, and *Decisions* supersedes the arithmetic while keeping the conclusion that both halves had to land together. The leg is green and a CI job |
 
 ## Plan 00013 phases
 

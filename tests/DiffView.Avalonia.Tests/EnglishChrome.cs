@@ -33,9 +33,11 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
 /// set pinned is the set that was measured to need it.
 /// </para>
 /// <para>
-/// <c>EditingSnapshotTests</c> is why the measuring came first. Its <c>Verify</c> sits behind
-/// assertions that fail under the German leg, so its frame has never been compared there at all —
-/// which is what makes the snapshot count a lower bound rather than a list.
+/// <c>EditingSnapshotTests</c> is why the measuring came first. Its <c>Verify</c> sat behind
+/// assertions that failed under the German leg, so its frame had never been compared there at all,
+/// and the snapshot count was a lower bound rather than a list. Pinning closed both at once — a
+/// test whose text is English renders a frame of English chrome — where repairing the assertion by
+/// resolving the same key on both sides would have left the frame to fail a phase later.
 /// </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]

@@ -63,6 +63,56 @@ jobs:
           path: ./test-results/*.trx
           retention-days: 14
 
+  culture-leg:
+    name: Culture Leg (de-DE)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Fetch reference sources
+        run: dotnet run scripts/fetch-reference.cs
+
+      - name: Pack ClaudeForge diagnostics into the local feed
+        run: dotnet run scripts/pack-diagnostics.cs
+
+      - name: Restore
+        run: dotnet restore DiffView.slnx
+
+      - name: Build (Debug)
+        run: dotnet build DiffView.slnx --no-restore -c Debug -warnaserror
+
+      # The audit, not a second platform. The suite runs pinned to a culture the library
+      # ships, and a failure here that is green everywhere else means one thing: a test
+      # asserted English text without saying it wanted English — invisible on an English
+      # runner, red on a German desk. One OS, because the axis under test is the culture.
+      #
+      # Tests that are genuinely about English words say so with [EnglishChrome] and are out
+      # of this leg's reach by construction; that set is the set plan 00015 measured, and a
+      # test added without it is in the leg by default, which is the way round it should be.
+      - name: Test (DIFFVIEW_TEST_UI_CULTURE=de-DE)
+        env:
+          DIFFVIEW_TEST_UI_CULTURE: de-DE
+        run: >
+          dotnet test --solution DiffView.slnx
+          --no-build -c Debug
+          --report-trx
+          --results-directory ./test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-culture-de-DE
+          path: ./test-results/*.trx
+          retention-days: 14
+
   trim-check:
     name: Trim Check (Release linux-x64)
     runs-on: ubuntu-latest

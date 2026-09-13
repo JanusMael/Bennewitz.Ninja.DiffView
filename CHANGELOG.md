@@ -417,6 +417,13 @@ All notable changes to DiffView are recorded here. The format follows
   system and names the culture in the status strip. `HeadlessTestApp` pins
   `DefaultThreadCurrentUICulture`, overridable with `DIFFVIEW_TEST_UI_CULTURE`, so an assertion of
   English text is an assertion about the library rather than about the machine.
+- Plan 00015 — the culture audit. `[EnglishChrome]` marks a test as being about the English words,
+  holding the library's text at `en-US` for that test's duration through `DiffViewStrings.Override`
+  rather than by an assignment that a test resetting the seam would destroy. The 94 tests that
+  failed under `DIFFVIEW_TEST_UI_CULTURE=de-DE` now pass — 34 assertions of English text pinned
+  rather than softened, 60 frames declared to be pictures of English chrome — and a `culture-leg`
+  CI job on `ubuntu-latest` keeps the whole suite green in German, so a test that fails only there
+  asserted English without saying it wanted English.
 
 ### Removed
 

@@ -2121,6 +2121,10 @@ prevent it with.
 
 ## The suite is culture-dependent in 94 places, and only 32 of them are defects
 
+> **The arithmetic here is superseded** by §*"The German leg is a gate, and the split it was
+> deferred over was 60/34"* below, and the work is done. Left standing as what was believed at plan
+> 00014, because the reasoning it drew from the numbers is the reasoning plan 00015 followed.
+
 `HeadlessTestApp` honours `DIFFVIEW_TEST_UI_CULTURE`, and running the whole suite under `de-DE`
 fails **94 of 606**. The split matters more than the number:
 
@@ -2253,3 +2257,58 @@ applied it to one class and measured: `NavigationSnapshotTests` under `DIFFVIEW_
 goes from 2 failed to 0, and removing the attribute from
 `EnglishChromeTests.The_pin_reaches_the_body_of_a_headless_test` turns that test red. Five
 mutations, five killed.
+
+## The German leg is a gate, and the split it was deferred over was 60/34
+
+Supersedes §*"The suite is culture-dependent in 94 places, and only 32 of them are defects"*, whose
+count stands and whose arithmetic does not. That section classified the 94 by **class name**;
+re-measured by **failure mode** — a `VerifyException` over a `.png`, or an assertion — it is **60
+snapshot and 34 behavioural**. `EditingSnapshotTests` is the class that moves: it is named for its
+snapshot and its two failures are an assertion of English text.
+
+The conclusion the section drew from its numbers was right and is what plan 00015 followed. Both
+halves landed together, the suite is green under `DIFFVIEW_TEST_UI_CULTURE=de-DE`, and the leg is a
+CI job rather than something somebody could choose to run. A failure there that is green everywhere
+else means one thing: a test asserted English text without saying it wanted English.
+
+## Pinning repairs the assertion and the frame in one stroke, so the lower bound was benign
+
+Plan 00015 expected phase 2 to uncover snapshot failures that had been hiding: an assertion that
+fails stands in front of the `Verify` that follows it, so
+`EditingSnapshotTests.The_marks_an_edit_leaves_are_painted_and_named` had never had its frame
+compared under the German leg at all. The reasoning was sound and **none surfaced**.
+
+The reason is the shape of the fix rather than luck. The repair for an assertion of English text is
+to hold the text at English, and a test whose text is English renders a frame of English chrome —
+so the assertion and the capture are repaired by the same line. The leg went 92 → 58 across phase
+2, which is exactly the 34 removed and nothing revealed. It would **not** have held had the 34 been
+repaired by softening them to resolve the same key on both sides: those assertions would have
+passed in German, and the frames behind them would have started failing one phase later, one per
+test, looking like snapshot drift.
+
+## `SyntaxSnapshotTests` is the class the granularity rule was written for
+
+The rule — pin what was measured to need it, and use a class-level attribute only as shorthand
+where the whole class is in that set — was argued in the plan from `EditingSnapshotTests`, which
+turned out to be the wrong example. The right one is `SyntaxSnapshotTests`, and it was found by
+counting rather than reading: four of its five cases fail the leg, and the fifth,
+`SyntaxSnapshotTests.Syntax_colour_and_the_inserted_fill_compose_on_the_same_row`, passes German
+untouched because it is a pixel assertion over a grammar's colours with no chrome in it. So
+`SyntaxSnapshotTests.A_colourised_pair_renders_under_the_diff_backgrounds` carries the pin and the
+fact does not.
+
+`PresenterSnapshotTests` is the same point from the other end: it never failed, because a presenter
+frame carries no chrome text, and it is pinned nowhere.
+
+Twelve classes are pinned whole. The cost of that is named rather than hidden — a class-level pin
+also covers every test the class gains afterwards, taking it out of the leg's reach before anyone
+has looked at it — and it is accepted because those twelve are frames by construction.
+
+## One leg, one OS
+
+`culture-leg` runs on `ubuntu-latest` only, beside the three-OS `build-and-test` matrix rather than
+inside it. The axis under test is the culture; running it across the matrix tests the platform
+three times and the culture twice more than necessary, for three times the minutes. The other seven
+locales get no leg either: `de-DE` is the canary, and `LocaleParityTests` already holds the rest
+structurally — keys, placeholder sets and the side-word sentinel — which is the part a second
+culture leg would re-test.

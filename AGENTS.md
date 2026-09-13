@@ -191,6 +191,26 @@ no dates, no counts.
   were aligned to, which is why a copy arrow shifted four pixels survived every other assertion.
 - `AccessibilityCoverageTests` counts `DiffPanePresenter` and `TextEditor` as interactive, so
   every pane in a view carries `AutomationProperties.Name`.
+- **A test that asserts English text says so, with `[EnglishChrome]`.** `HeadlessTestApp` pins the
+  UI culture to `en-US` and `DIFFVIEW_TEST_UI_CULTURE` flips it; CI's `culture-leg` job flips it to
+  `de-DE` over the whole suite. A test that fails only there was asserting English without saying
+  it wanted English — invisible on an English runner, red on a German desk. The attribute is the
+  claim that this test is about the English words, and it belongs on the **method**; on a class it
+  is shorthand for *every test in this class is a frame*, which also silently covers whatever the
+  class gains later. A new test carries no pin by default and is therefore in the leg, which is the
+  way round it should be.
+- **Pin, do not soften.** The cheap repair for an assertion of English text is to resolve the same
+  key on both sides of the comparison — `Assert.Equal(DiffViewStrings.Get(key), control.Text)` —
+  and it passes in every culture while asserting almost nothing, because a control wired to the
+  wrong key moves both sides together. Soften only where the test's subject really is the wiring,
+  and say so at the call site. `MinimapLaneTests.The_tooltip_names_the_lane` is the case that shows
+  the cost: it asserts one tooltip contains `"left"` and a second does not, and under German the
+  second half passed vacuously while the first failed.
+- **The pin is a scope, never an assignment.** `EnglishChromeAttribute` opens
+  `DiffViewStrings.Override` before each test and disposes it after. Pinning
+  `DiffViewStrings.Localization` once at start-up was measured and recovers 16 of 94:
+  `LocalizationTests` assigns the seam and calls `ResetForTesting` in a `finally`, both by design,
+  and the serial run reverts every test after it to the machine's language.
 
 ## 6. The composite
 

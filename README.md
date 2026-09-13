@@ -57,6 +57,18 @@ Stopwatch tests (`Category=Perf`) stay out of the default run; their numbers are
 dotnet test --solution DiffView.slnx -p:IncludePerfTests=true
 ```
 
+CI also runs the whole suite pinned to a culture the library ships. That leg is how a test that
+asserts English text without saying it wanted English gets caught, because such a test is invisible
+on an English machine and red on a German desk:
+
+```bash
+DIFFVIEW_TEST_UI_CULTURE=de-DE dotnet test --solution DiffView.slnx
+```
+
+A test that fails only there either wants `[EnglishChrome]` — the claim that it is about the English
+words — or wants its assertion repaired. `AGENTS.md` §5 says which, and why the attribute is not an
+excuse to reach for first.
+
 Run the demo under a different theme or variant:
 
 ```bash
