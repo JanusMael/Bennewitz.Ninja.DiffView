@@ -12,6 +12,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
 /// inside each block, a number column per side, word-level pieces on a modified pair, and the
 /// current block outlined — in both theme variants.
 /// </summary>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class InlineSnapshotTests
 {
     private const string Left = "using System;\nnamespace Demo;\n\nclass Greeter\n{\n    public string Greet(string name) => $\"Hello {name}\";\n\n    public void Farewell() { }\n}\n";

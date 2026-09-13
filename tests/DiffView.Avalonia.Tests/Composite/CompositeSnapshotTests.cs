@@ -13,6 +13,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// Plan 00001 §Phase 5, the snapshots: headers and status strip over the small fixture in both
 /// theme variants and both palettes; the identical banner and the error banner once each.
 /// </summary>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class CompositeSnapshotTests
 {
     private static readonly Uri BaseUri = new("avares://DiffView.Avalonia.Tests/");

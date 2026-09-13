@@ -29,6 +29,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// raised it, its column alignment, and the popup actually appearing.
 /// </para>
 /// </remarks>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class MenuSnapshotTests
 {
     private const string Left = """

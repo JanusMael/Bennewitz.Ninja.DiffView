@@ -16,6 +16,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
 /// nothing binds badly, and the frame matches its committed snapshot within the comparer's
 /// tolerance.
 /// </summary>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class SmokeSnapshotTests
 {
     [AvaloniaTheory]

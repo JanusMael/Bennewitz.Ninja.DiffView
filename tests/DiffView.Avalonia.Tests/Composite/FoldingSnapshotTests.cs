@@ -18,6 +18,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// is part of the frame, and a change to a fixture two tests away should not silently repaint six
 /// baselines.
 /// </remarks>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class FoldingSnapshotTests
 {
     [AvaloniaTheory]

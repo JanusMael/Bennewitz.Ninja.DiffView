@@ -20,6 +20,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// A bucket is one pixel row, so per <c>AGENTS.md</c> §5 the PNG is not the guard: the assertions
 /// beside the capture are, and the frame is what a reviewer looks at.
 /// </remarks>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class MinimapSnapshotTests
 {
     private static readonly Uri BaseUri = new("avares://DiffView.Avalonia.Tests/");

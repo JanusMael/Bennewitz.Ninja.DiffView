@@ -12,6 +12,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// backgrounds, a wider tab, a larger pane font — and the focus accent under the header of the
 /// pane that has focus — in both theme variants.
 /// </summary>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class ViewOptionsSnapshotTests
 {
     private const string Left = "\tone\t  two\nalpha\nbeta\n";

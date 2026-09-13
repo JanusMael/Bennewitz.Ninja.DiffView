@@ -11,6 +11,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// Plan 00001 §Phase 8, the snapshot: the find bar over the panes, every match highlighted above
 /// the row fills and below the selection, the current match in its own brush, in both variants.
 /// </summary>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class FindSnapshotTests
 {
     [AvaloniaTheory]

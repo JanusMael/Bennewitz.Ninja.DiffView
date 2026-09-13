@@ -21,6 +21,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// the guard for anything at this scale; the pixel assertions beside each capture are, and the PNG
 /// is what a reviewer looks at. See <c>AGENTS.md</c> §5.
 /// </remarks>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class SelectionArrowSnapshotTests
 {
     private static readonly Uri BaseUri = new("avares://DiffView.Avalonia.Tests/");

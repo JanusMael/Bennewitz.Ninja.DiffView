@@ -17,6 +17,8 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
 /// on their own for a change this small — the assertions beside each capture are the guard, and
 /// the PNG is what a reviewer looks at.
 /// </remarks>
+/// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
+[EnglishChrome]
 public sealed class MarkerChipSnapshotTests
 {
     private const string Left = """
