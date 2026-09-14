@@ -1,0 +1,116 @@
+# Release: tag vYYYY.Q.MDD, and this publishes it.
+#
+# The tag is the version. A push of v2026.3.914 matches v*.*.*, the job strips the leading v, and
+# /p:Version= carries 2026.3.914 into both build and pack — both, because --no-build on the pack
+# means a mismatch would silently pack something else. The caldate is year, quarter, then month and
+# day run together, matching Bennewitz.Ninja.AutoVersioning and Bennewitz.Ninja.Chisel.
+#
+# Bennewitz.Ninja.AutoVersioning stamps the assembly attributes with its own caldate computed from
+# build time, so a tag written on a different day than the build disagrees with them. That is how
+# this author's other packages already behave; the tag is what nuget.org shows.
+#
+# DO NOT RENAME THIS FILE. The nuget.org Trusted Publishing policy names owner, repository *and
+# workflow filename*. Renaming it breaks publishing with an authentication failure that never
+# mentions filenames.
+#
+# Not yet run: this repository has no remote. Written dormant on purpose — plan 00018.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'NuGet version (e.g. 2026.3.914)'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write   # required for NuGet.org Trusted Publishing (OIDC) — see NuGet/login below
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Resolve version and tag
+        # Tag push: strip leading 'v' from the tag (e.g. v2026.3.914 → 2026.3.914)
+        # Manual run: use the version input; derive tag by prepending 'v'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+            echo "TAG=v${{ inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+            echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          fi
+
+      # The reference checkouts and the sibling feed, exactly as ci.yml needs them: the theme audit
+      # reads the former and DiffView.Avalonia resolves LayeredEditors.* from the latter.
+      - name: Fetch reference sources
+        run: dotnet run scripts/fetch-reference.cs
+
+      - name: Pack ClaudeForge diagnostics into the local feed
+        run: dotnet run scripts/pack-diagnostics.cs
+
+      - name: Build
+        run: dotnet build DiffView.slnx -c Release --nologo -warnaserror /p:Version=${{ env.VERSION }}
+
+      - name: Test
+        run: dotnet test --solution DiffView.slnx --no-build -c Release
+
+      # The suite pinned to a culture the library ships. A release is the last moment to discover
+      # that a string assertion was about the machine rather than about the library.
+      - name: Test (DIFFVIEW_TEST_UI_CULTURE=de-DE)
+        env:
+          DIFFVIEW_TEST_UI_CULTURE: de-DE
+        run: dotnet test --solution DiffView.slnx --no-build -c Release
+
+      - name: Pack
+        run: >
+          dotnet pack DiffView.slnx -c Release --no-build --nologo
+          /p:Version=${{ env.VERSION }}
+          --output ./packages/Release
+
+      - name: NuGet Login (Trusted Publishing)
+        # Exchanges this job's GitHub OIDC token for a short-lived NuGet.org API key — no
+        # long-lived NUGET_API_KEY secret to store or rotate. Requires a Trusted Publishing
+        # policy on nuget.org (owner/repo/workflow filename must match this job exactly) and
+        # the NUGET_USER repo secret set to the nuget.org account name tied to that policy.
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # NAMED, NEVER GLOBBED. `dotnet pack` over this solution also produces
+      # Bennewitz.Ninja.ThemeAudit, which is local-feed-only by design: NuGet.config maps that exact
+      # id to ../nuget-local and the README installs it from there. A *.nupkg glob would publish it
+      # to nuget.org on the first release, and a published id cannot be withdrawn — only unlisted.
+      # PackagingTests.The_release_workflow_names_the_packages_it_pushes fails if the glob returns.
+      - name: Push to NuGet.org
+        run: |
+          dotnet nuget push \
+            ./packages/Release/Bennewitz.Ninja.DiffView.Core.${{ env.VERSION }}.nupkg \
+            ./packages/Release/Bennewitz.Ninja.DiffView.Avalonia.${{ env.VERSION }}.nupkg \
+            --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      # --skip-duplicate above makes a re-run safe; it also means a green job is not proof that this
+      # version was published by *this* run.
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ env.TAG }}" \
+            --title "${{ env.TAG }}" \
+            --generate-notes \
+            ./packages/Release/Bennewitz.Ninja.DiffView.Core.${{ env.VERSION }}.nupkg \
+            ./packages/Release/Bennewitz.Ninja.DiffView.Avalonia.${{ env.VERSION }}.nupkg

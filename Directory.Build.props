@@ -21,6 +21,23 @@
     <CopyrightHolder>Brian Bennewitz</CopyrightHolder>
     <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
     <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration>
+    <!-- AutoVersioning records the released version as assembly metadata; it does not set it. The
+         package version comes from the release tag as /p:Version=, so this follows it and reads
+         1.0.0 on a local build, which is what a local build is. -->
+    <PublicVersion Condition="'$(PublicVersion)' == ''">$(Version)</PublicVersion>
+  </PropertyGroup>
+
+  <!-- Package metadata shared by every packable project. Without a licence expression a package is
+       one nobody's compliance review passes; without Authors it packs as the assembly name; without
+       a repository URL the nuspec carries a commit hash pointing at nothing. PackageTags are
+       per-project and live in the csproj beside the Description. The repository does not exist yet —
+       the release workflow is written and dormant, see plan 00018. -->
+  <PropertyGroup>
+    <Authors>Brian Bennewitz</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/JanusMael/DiffView</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JanusMael/DiffView</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <!-- PDB policy: portable in Debug for local source stepping; embedded in Release so the

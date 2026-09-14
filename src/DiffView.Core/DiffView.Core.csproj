@@ -8,6 +8,7 @@
     <!-- See the note in DiffView.Avalonia.csproj: the package carries the Bennewitz.Ninja prefix,
          the assembly stays unprefixed. Bennewitz.Ninja.DiffView.Avalonia depends on this one. -->
     <PackageId>Bennewitz.Ninja.DiffView.Core</PackageId>
+    <PackageTags>diff;compare;text-diff;diffplex;alignment;side-by-side</PackageTags>
     <!-- Public API is documented; a missing comment is a build error (CS1591 under warnings-as-errors). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>

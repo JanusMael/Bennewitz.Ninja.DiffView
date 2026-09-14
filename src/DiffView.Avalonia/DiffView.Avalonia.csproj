@@ -7,6 +7,7 @@
          Bennewitz.Ninja.*. The assembly stays unprefixed — that convention is about assemblies —
          and the package carries the prefix and the platform both. -->
     <PackageId>Bennewitz.Ninja.DiffView.Avalonia</PackageId>
+    <PackageTags>avalonia;diff;diff-view;side-by-side;compare;avaloniaedit;control;text-diff</PackageTags>
     <!-- Deviates from the repository convention (Bennewitz.Ninja.<AssemblyName>) on purpose: a
          namespace segment named Avalonia shadows the framework's own root inside this assembly, so
          Avalonia.Media.Color resolves to Bennewitz.Ninja.DiffView.Avalonia.Media.Color and fails
