@@ -2,14 +2,18 @@
 
 ## Resume
 
-**`main` carries plan 00016 complete — all four phases — with a clean working tree and no remote.
+**`main` carries plan 00017 complete — all three phases — with a clean working tree and no remote.
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-625 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
-00003–00016 are complete and closed; plan 00002 was rejected on its own review before any code was
-written. **[Plan 00016](plans/00016-a-native-speaker-can-read-what-we-shipped.md) made the eight
-locales reviewable** — `docs/locale-review/<culture>.md`, generated and gated — and
-[plan 00015](plans/00015-a-test-that-asserts-english-says-so.md) before it closed the culture audit
-plan 00014 deferred, which CI's `culture-leg` job now holds closed. *History — plan by plan* below
+627 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
+00003–00017 are complete and closed; plan 00002 was rejected on its own review before any code was
+written. **The library's namespace is
+[`Bennewitz.Ninja.DiffView`](plans/00017-one-namespace-and-no-segment-that-shadows-the-framework.md)**
+— plan 00017 removed the `Avalonia` segment, which shadowed the framework's own root and cost a
+`global::` to work around. Before it,
+[plan 00016](plans/00016-a-native-speaker-can-read-what-we-shipped.md) made the eight locales
+reviewable — `docs/locale-review/<culture>.md`, generated and gated — and
+[plan 00015](plans/00015-a-test-that-asserts-english-says-so.md) closed the culture audit plan 00014
+deferred, which CI's `culture-leg` job now holds closed. *History — plan by plan* below
 records how each one went and what each corrected, `DECISIONS.md` holds the arguments worth keeping,
 and `AGENTS.md` the cross-file contracts.
 
@@ -356,6 +360,28 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00017 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The sweep | M | done | 201 occurrences across 158 files, longest name first because `…DiffView.Avalonia` is a prefix of `…DiffView.Avalonia.Tests`. Six forms: namespaces and usings, two `RootNamespace` overrides, four `x:Class` and four `xmlns:dv`, the `F:` documentation prefix in two places, `theme-audit.json` plus its regenerated report, and the `ResourceManager` base name. No behaviour changed |
+| 2 The guard, and the proof | S | done | `NamespaceConventionTests`, and `DiffCommand`'s `global::` **deleted** so the compiler holds the other half. Three mutations, three as specified — including one whose correct outcome is **NO BUILD** |
+| 3 The record | S | done | `DECISIONS.md` (four sections, one superseding line), `AGENTS.md` §1, this file, the changelog as a breaking change |
+
+## Plan 00017 verification
+
+| Done-when item | Result |
+|---|---|
+| **The shadow is gone** | pass, by construction: `DiffCommand`'s cref reads `Avalonia.Input.KeyBinding` with no `global::` and the build is clean. Re-creating `Bennewitz.Ninja.DiffView.Avalonia` anywhere in the library fails at that line with `CS1574` — measured, as mutation M3 |
+| No namespace shadows a referenced root | pass: `NamespaceConventionTests.No_namespace_carries_a_segment_that_shadows_a_referenced_root`, against the real reference graph rather than the word *Avalonia* |
+| The guard looks at all the code it claims to | pass: `NamespaceConventionTests.Everything_outside_the_repository_prefix_is_generated`. **The naive rule failed on its first run** and correctly — `CompiledAvaloniaXaml` is emitted by the XAML compiler into this assembly and shipped by Avalonia too, and is not a collision because nothing we write resolves through it |
+| Every new test proven able to fail | pass: three mutations, three as specified — a segment named `Avalonia` somewhere that still compiles, a namespace outside the prefix, and the old namespace back in the library, whose correct outcome is NO BUILD |
+| **Locales still resolve** | pass: `LocalizationTests.The_bundled_translation_answers_when_the_library_ships_the_culture`. The `ResourceManager` base name is a string literal and the only form of the name that fails silently; this test existing is what made a mechanical sweep safe |
+| The locale review packet still reads | pass: `LocaleReviewTests.Every_committed_review_document_describes_the_strings_it_claims_to`, which fails wholesale if the `F:` prefix was missed |
+| The theme audit still matches | pass: `theme-audit report` regenerated `docs/theme-audit.md`; **three lines move and all three are content hashes**, every count identical, which is what a rename should do to a report about themes |
+| The suite, both cultures | pass: 627 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` |
+| Nothing outside code changed name | pass: `InternalsVisibleTo` and every `avares://` URI name assemblies, checked rather than assumed. `DECISIONS.md` keeps the old name where it records what was verified at the time, with a superseding line beside it |
 
 ## Plan 00016 phases
 

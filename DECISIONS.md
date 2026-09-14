@@ -2016,7 +2016,9 @@ killed, and a mutation that survives for a reason is worth more than one deleted
 The phase-1 canary publishes clean: `dotnet publish src/DiffView.Demo -c Release -r linux-x64
 --self-contained true` produces no `IL2xxx`, and
 `Bennewitz.Ninja.DiffView.Avalonia.Localization.Strings.resources` is present in the trimmed
-`DiffView.Avalonia.dll`. `ResourceManager` over an embedded resource in the same assembly is not the
+`DiffView.Avalonia.dll`. *(That resource is named
+`Bennewitz.Ninja.DiffView.Localization.Strings.resources` since plan 00017 moved the namespace; the
+verification above is left naming what it actually checked at the time.)* `ResourceManager` over an embedded resource in the same assembly is not the
 trim hazard — satellite assemblies are, and there are none yet.
 
 So the `SatelliteResourceLanguages` wiring the plan put in phase 1 moves to **phase 3**: with no
@@ -2364,3 +2366,91 @@ source file. Both are now enforced —
 `StringCatalogueTests.No_summary_leans_on_the_key_above_it` is the second gate — and the general
 lesson is worth keeping: **a criterion chosen because it is checkable is a proxy, and the proxy
 passing is not the goal being met.**
+
+## `Bennewitz.Ninja.DiffView`, because the segment that collided was `Avalonia`
+
+The rename was asked for as `Bennewitz.Ninja.Avalonia.DiffView`, to group the library under the
+platform, and with a question attached: how to handle a namespace and a type both called `DiffView`.
+
+**That collision does not exist.** There is no type named `DiffView` — the controls are
+`SideBySideDiffView` and `InlineDiffView`, and the seven `DiffView*` types are all suffixed. The
+decision was to keep it that way, which is also what keeps `Bennewitz.Ninja.DiffView` safe as a
+namespace: the guidance against naming a type after its containing namespace only bites when someone
+creates the type.
+
+**A different collision was already live.** A probe compiled against the library on 2026-09-14:
+
+```
+error CS0234: The type or namespace name 'Media' does not exist in
+the namespace 'Bennewitz.Ninja.DiffView.Avalonia'
+```
+
+C# resolves the first identifier of a qualified name by walking outward through enclosing namespaces
+before it reaches global, so inside `Bennewitz.Ninja.DiffView.Avalonia` the name `Avalonia` found
+**us** first. The tree already carried the scar: `DiffCommand`'s documentation needed
+`<see cref="global::Avalonia.Input.KeyBinding"/>`, and the `global::` was load-bearing rather than
+stylistic.
+
+The proposed root would have made that worse in two ways. It promotes the shadow from this library's
+tree to **every `Bennewitz.Ninja.*` sibling**, so a future Avalonia library under the same root
+inherits it. And it forces `DiffView.Core` — *"No UI dependency"*, by design and by its own
+description — either under an `Avalonia` namespace it would be lying about, or into a second tree,
+splitting one library across two roots.
+
+Dropping the segment entirely solves both. The platform is carried by the **assembly and package**
+name, `DiffView.Avalonia`, which is where a consumer looks for it; `Directory.Build.props` already
+says assembly names stay unprefixed, so assembly ≠ namespace was the existing convention rather than
+a new inconsistency. `DiffView.Core` becomes a natural child at `Bennewitz.Ninja.DiffView.Core`.
+
+Nothing was released — no package, no version tag, `CHANGELOG.md` at `[Unreleased]` — so a change
+that breaks every consumer's `using` cost nothing. It would not have stayed free.
+
+## The tests had to move too, and it is the easy half to skip
+
+Leaving the suite at `Bennewitz.Ninja.DiffView.Avalonia.Tests` would have kept
+`Bennewitz.Ninja.DiffView.Avalonia` in existence as a **test-only** namespace, and every test file
+would have gone on shadowing `Avalonia` exactly as before. The goal was never a tidier public
+surface; it was that the segment stops existing. Both projects therefore carry an explicit
+`RootNamespace` that deviates from the repository convention, with the reason written at the point
+of deviation, because the convention is what produced the shadow.
+
+## The name took six forms and only one of them was a `namespace` line
+
+The sweep rewrote 201 occurrences across 158 files, and the namespace declarations were the easy
+part. The others: two `RootNamespace` overrides; four `x:Class` and four `xmlns:dv="using:…"` in
+XAML; the `F:` documentation-comment prefix in `Summaries` and `scripts/gen-locale-review.cs`; two
+`"using:…"` entries in `theme-audit.json`, whose report then had to be regenerated; and the
+`ResourceManager` base name in `DiffViewStrings`.
+
+That last one is the only form that fails **silently** — the embedded resource's logical name
+derives from `RootNamespace`, and a base name that no longer matches makes every locale fall back to
+English with nothing thrown.
+`LocalizationTests.The_bundled_translation_answers_when_the_library_ships_the_culture` is the guard
+on it, and its existing green is what made a mechanical sweep safe to do at all.
+
+`InternalsVisibleTo` and every `avares://` URI name **assemblies**, not namespaces, and were checked
+rather than assumed.
+
+Order mattered once: `Bennewitz.Ninja.DiffView.Avalonia` is a prefix of
+`Bennewitz.Ninja.DiffView.Avalonia.Tests`, so the longer name was rewritten first. The other order
+lands the tests on the correct namespace by luck, and nothing would have reported the difference.
+
+## The guard's naive form fails on generated code, and correctly
+
+`NamespaceConventionTests` asserts that no namespace carries a segment matching the root namespace of
+a referenced assembly — against the real reference graph rather than against the word *Avalonia*,
+because the defect is the shape and a future `.Media` or `.Controls` segment is the same bug with a
+different spelling.
+
+Its first run reported `CompiledAvaloniaXaml`, which the Avalonia XAML compiler emits into this
+assembly and which Avalonia also ships. **Not a collision**: that namespace is generated, cannot be
+renamed, and never encloses a line of our source, so nothing we write resolves through it. The rule
+therefore looks only at namespaces under the repository's own prefix — which makes the scoping a
+claim in its own right, and
+`NamespaceConventionTests.Everything_outside_the_repository_prefix_is_generated` is the test of it:
+if a root namespace ever appears that is neither ours nor known tool output, the shadowing test has
+stopped looking at all the code it says it does.
+
+The other half is not a test. `DiffCommand`'s `global::` was **deleted**, so the cref reaches the
+framework on its own — and re-creating the old namespace anywhere in the library now fails the build
+at that exact line with `CS1574`, which the phase's mutation harness confirms.

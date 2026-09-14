@@ -458,6 +458,15 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **Breaking — the library's namespace is `Bennewitz.Ninja.DiffView`**, where it was
+  `Bennewitz.Ninja.DiffView.Avalonia`. A namespace segment named `Avalonia` shadows the framework's
+  own root: C# walks enclosing namespaces before it reaches global, so `Avalonia.Media.Color`
+  resolved to `Bennewitz.Ninja.DiffView.Avalonia.Media.Color` and failed to compile with CS0234,
+  and `DiffCommand`'s documentation needed `global::` to name a `KeyBinding`. The platform is
+  carried by the assembly and package name, `DiffView.Avalonia`, which does **not** change;
+  `Bennewitz.Ninja.DiffView.Core` does not change either and is now a natural child of the
+  library's namespace. Nothing had been published, so no consumer is affected — which is why it was
+  done now rather than later.
 - **Every string that names a side is now a whole sentence per direction**, rather than one sentence
   with the side substituted into it — *"Copy this change to the left side"* and *"…to the right
   side"* as separate keys, not *"…to the {0} side"*. A translator cannot inflect a word dropped into
