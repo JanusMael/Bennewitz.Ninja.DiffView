@@ -2,6 +2,11 @@
   <PropertyGroup>
     <Description>Side-by-side diff control for Avalonia 12, built on AvaloniaEdit.</Description>
     <IsPackable>true</IsPackable>
+    <!-- Named rather than defaulted: PackageId falls back to AssemblyName, which would publish this
+         as the unprefixed DiffView.Avalonia where every other package of this author's is
+         Bennewitz.Ninja.*. The assembly stays unprefixed — that convention is about assemblies —
+         and the package carries the prefix and the platform both. -->
+    <PackageId>Bennewitz.Ninja.DiffView.Avalonia</PackageId>
     <!-- Deviates from the repository convention (Bennewitz.Ninja.<AssemblyName>) on purpose: a
          namespace segment named Avalonia shadows the framework's own root inside this assembly, so
          Avalonia.Media.Color resolves to Bennewitz.Ninja.DiffView.Avalonia.Media.Color and fails

@@ -78,7 +78,14 @@ wording.
    every string with what it is, what each placeholder holds, and the English it came from, so the
    work now needs **eight readers rather than any more tooling**. This gates the **first release**,
    not any commit: `CHANGELOG.md` holds only `[Unreleased]`.
-2. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
+2. **The release.** Package ids are settled — `Bennewitz.Ninja.DiffView.Avalonia` and
+   `Bennewitz.Ninja.DiffView.Core`, both unclaimed on nuget.org — and `dotnet pack` produces sound
+   packages with the satellites and XML docs in them. What is **not** settled is the metadata a
+   publish needs: the authors field defaults to the assembly name, the version packs as `1.0.0`
+   rather than the date-shaped one `Bennewitz.Ninja.AutoVersioning` gives this author's other
+   packages, and there is no licence expression, project URL, readme or tags. *Decisions* carries
+   the detail. Needs a plan.
+3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.
 

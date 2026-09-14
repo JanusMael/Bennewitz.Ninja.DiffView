@@ -2454,3 +2454,43 @@ stopped looking at all the code it says it does.
 The other half is not a test. `DiffCommand`'s `global::` was **deleted**, so the cref reaches the
 framework on its own — and re-creating the old namespace anywhere in the library now fails the build
 at that exact line with `CS1574`, which the phase's mutation harness confirms.
+
+## Package ids carry `Bennewitz.Ninja.`; assembly names do not
+
+`PackageId` defaults to `AssemblyName`, so `DiffView.Avalonia` and `DiffView.Core` would have
+published unprefixed while every other package this author owns is `Bennewitz.Ninja.*`. Both
+projects now name the id explicitly, as `src/ThemeAudit` already did.
+
+The split is deliberate and is not an inconsistency. `Directory.Build.props` says *"assembly names
+stay unprefixed"* — that is a rule about **assemblies**. A package id is a global identifier in a
+public namespace shared with everyone, and it takes the prefix for the same reason the assembly does
+not. The platform stays in both: assembly `DiffView.Avalonia`, package
+`Bennewitz.Ninja.DiffView.Avalonia`.
+
+Checked against NuGet.org on 2026-09-14, which needs no credentials — the registration API is public
+and reading it sends nothing. Three packages are published, all owned by `JanusMael`:
+`Bennewitz.Ninja.AutoVersioning` (which this repository consumes), `Bennewitz.Ninja.FileServer` and
+`Bennewitz.Ninja.Chisel`. **Every id this repository might publish is unclaimed**, prefixed and
+unprefixed alike, so the choice was free rather than forced.
+
+`Bennewitz.Ninja.ThemeAudit` is also unpublished, and that is consistent rather than an oversight:
+`NuGet.config` maps that exact id to the sibling `../nuget-local` feed, and the README's
+`dotnet tool install` line is an install *from that feed* after `scripts/pack-theme-audit.sh`. The
+id is available if it is ever wanted on nuget.org.
+
+The source mapping was checked for the obvious trap and does not have it: the local feed is matched
+by `LayeredEditors.*` and the one exact id, **not** by a `Bennewitz.Ninja.*` wildcard, so renaming
+these two ids cannot reroute `Bennewitz.Ninja.AutoVersioning` away from nuget.org.
+
+## What the first `dotnet pack` exposed, and left for the release
+
+`dotnet pack -c Release` produces all three packages cleanly, the project reference becomes a
+dependency on `Bennewitz.Ninja.DiffView.Core`, and all eight satellite assemblies and the XML
+documentation are in `lib/net10.0/`. Three things in the metadata are wrong or missing, and they
+belong to the release rather than to a change about ids:
+
+| | |
+|---|---|
+| `<authors>DiffView.Avalonia</authors>` | Defaulted from `AssemblyName`. The published packages author as *Brian Bennewitz* — except `Chisel`, which says *Bennewitz.Ninja*, so there is an existing inconsistency to settle at the same time |
+| `<version>1.0.0</version>` | The three published packages carry a date-shaped version from `Bennewitz.Ninja.AutoVersioning`, which this repository already references — but `GenerateAutoVersionedAssemblyInfo` stamps assembly attributes, not `PackageVersion`, so a pack today would publish `1.0.0` |
+| No licence, project URL, readme, tags, or repository URL | Only `<repository commit="…">` is emitted. nuget.org will warn on most of these, and a package with no licence expression is one nobody's compliance team can take |
