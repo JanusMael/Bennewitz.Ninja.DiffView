@@ -2494,3 +2494,73 @@ belong to the release rather than to a change about ids:
 | `<authors>DiffView.Avalonia</authors>` | Defaulted from `AssemblyName`. The published packages author as *Brian Bennewitz* — except `Chisel`, which says *Bennewitz.Ninja*, so there is an existing inconsistency to settle at the same time |
 | `<version>1.0.0</version>` | The three published packages carry a date-shaped version from `Bennewitz.Ninja.AutoVersioning`, which this repository already references — but `GenerateAutoVersionedAssemblyInfo` stamps assembly attributes, not `PackageVersion`, so a pack today would publish `1.0.0` |
 | No licence, project URL, readme, tags, or repository URL | Only `<repository commit="…">` is emitted. nuget.org will warn on most of these, and a package with no licence expression is one nobody's compliance team can take |
+
+## MIT, and the file and the expression are checked against each other
+
+There was no `LICENSE` file in the repository at all, which is a thing nobody notices until a
+package is in front of someone's compliance review and the answer is *"unlicensed"*. MIT, matching
+ClaudeForge, over a repository whose `THIRD-PARTY-NOTICES.md` already records what was read or
+adapted and from where.
+
+The licence is stated **twice** — as `PackageLicenseExpression` in `Directory.Build.props` and as the
+file itself — and nothing in the toolchain compares the two. A repository can declare MIT and ship
+Apache without a murmur, so `PackagingTests.The_licence_the_packages_declare_is_the_one_in_the_repository`
+does the comparing.
+
+## The tag is the version, and `/p:Version=` goes to both build and pack
+
+`Bennewitz.Ninja.AutoVersioning` stamps the assembly attributes with a caldate computed at build
+time and accepts a `PublicVersion` it records as metadata. **It does not set `PackageVersion`.** The
+package version comes from the git tag, as it does in this author's other repositories: a push of
+`v2026.3.914` matches `v*.*.*`, the job strips the `v`, and `/p:Version=` carries `2026.3.914`
+through.
+
+It goes to **both** steps. `dotnet pack --no-build` reuses what the build produced, so a version
+passed to one and not the other packs the wrong thing quietly —
+`PackagingTests.The_release_workflow_carries_the_tag_version_into_build_and_pack` counts both.
+
+The caldate is `YYYY.Q.MDD`: year, **quarter**, then month and day run together. AutoVersioning's
+documentation gives a build on 2026-04-29 at 14:35 as `2026.2.429.1435` and the package form drops
+the time. `Bennewitz.Ninja.AutoVersioning` 2026.3.914 and `Bennewitz.Ninja.Chisel` 2026.3.819 both
+decode; **`Bennewitz.Ninja.FileServer` 2026.9.2 does not**, because there is no quarter 9. The scheme
+is not uniform across this author's repositories and DiffView follows the two that agree.
+
+**A consequence, named rather than fixed:** the package version is a tag a human writes and the
+assembly caldate is computed from build time, so tagging on a different day than the build makes
+them disagree. That is already true of the other packages. The tag is what nuget.org shows.
+
+## The push names its packages, and a test reads the YAML
+
+`dotnet pack` over this solution produces **three** packages, because `src/ThemeAudit` is packable.
+It is local-feed-only by design — `NuGet.config` maps that exact id to `../nuget-local` and the
+README installs it from there — and the workflow this one was modelled on pushes
+`./packages/Release/*.nupkg`.
+
+Copying that glob would have published `Bennewitz.Ninja.ThemeAudit` to nuget.org on the first
+release. A published id cannot be withdrawn, only unlisted. So the push names its two packages and
+`PackagingTests.The_release_workflow_names_the_packages_it_pushes` fails if the glob ever returns.
+
+Asserting things about YAML is not this repository's habit, and the asymmetry is what justifies it:
+the failure is silent, instant and permanent, against twenty lines of test. The test drops comment
+lines before searching, because the comment above the push step explains the very glob it forbids —
+a detail that would otherwise have made the test fail on its own documentation.
+
+## Trusted Publishing, and the filename it is married to
+
+`NuGet/login@v1` exchanges the job's GitHub OIDC token for a short-lived nuget.org key, so there is
+no long-lived `NUGET_API_KEY` to store, leak or rotate — only a `NUGET_USER` repository secret.
+
+The cost is a coupling that fails in an unhelpful direction: the nuget.org policy names **owner,
+repository and workflow filename**, so renaming `release.yml` later breaks publishing with an
+authentication error that never mentions filenames. The warning sits at the top of the file, where
+somebody renaming it will read it.
+
+`--skip-duplicate` is kept, because it makes a re-run safe. It also means **a green job is not proof
+that this run published anything**, which is worth knowing before reading one as a receipt.
+
+## Written dormant, on purpose
+
+There is no remote, so none of this has run. That was the decision rather than an oversight: the
+workflow, the licence and the metadata are cheapest to get wrong now, when getting them wrong costs
+a commit instead of a permanent package. The first real run will be the first real run, and
+`workflow_dispatch` exists so it need not also be a tag push.

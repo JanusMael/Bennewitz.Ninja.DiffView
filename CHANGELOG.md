@@ -432,6 +432,15 @@ All notable changes to DiffView are recorded here. The format follows
   `LocaleReviewTests` fails if the two drift apart. Thirteen `DiffViewStrings` summaries were
   repaired to make it possible — five that never documented their placeholder and eight that only
   made sense beside the key above them — and two gates keep them that way.
+- Plan 00018 — the release, written and dormant. `LICENSE` (MIT — there was none), `Authors`,
+  `PackageLicenseExpression`, `PackageProjectUrl`, `RepositoryUrl` and `PackageTags` on every
+  packable project, and `.github/workflows/release.yml`: tagging `vYYYY.Q.MDD` strips the `v` and
+  carries the version into build and pack, publishes through NuGet Trusted Publishing with no
+  long-lived API key, and creates the GitHub release. The push **names its two packages** rather
+  than globbing `*.nupkg`, because this solution also packs `Bennewitz.Ninja.ThemeAudit`, which is
+  local-feed-only by design and could not be withdrawn once published. `PackagingTests` gates all of
+  it. Nothing has run: there is no remote, and the first push is a person's to make.
+
 ### Removed
 
 - `ChangeConnectorGutter.CanCopyToLeft`, `CanCopyToRight`, `LastArrows`, `ArrowAt` and

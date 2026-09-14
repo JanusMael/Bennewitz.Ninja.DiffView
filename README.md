@@ -94,6 +94,30 @@ Open two files in the unified view, which View → Unified (inline) view also sw
 dotnet run --project src/DiffView.Demo -- --unified --left one.cs --right two.cs
 ```
 
+## Releasing
+
+The tag is the version. Tagging `vYYYY.Q.MDD` — year, quarter, then month and day run together, the
+same caldate `Bennewitz.Ninja.AutoVersioning` uses — is the whole procedure:
+
+```bash
+git tag v2026.3.914 && git push origin v2026.3.914
+```
+
+`.github/workflows/release.yml` strips the `v`, carries the version into both the build and the
+pack, runs the suite under `en-US` and `de-DE`, publishes `Bennewitz.Ninja.DiffView.Core` and
+`Bennewitz.Ninja.DiffView.Avalonia` to nuget.org through Trusted Publishing, and creates the GitHub
+release. `workflow_dispatch` takes a version directly, for a first run that need not also be a tag.
+
+Three things it needs that no commit can supply: a remote, a nuget.org Trusted Publishing policy
+naming the owner, repository and **workflow filename**, and a `NUGET_USER` repository secret. **Do
+not rename `release.yml`** — the policy is bound to its filename and renaming it fails
+authentication without ever mentioning filenames.
+
+The push names its two packages and must never glob. `dotnet pack` over this solution also produces
+`Bennewitz.Ninja.ThemeAudit`, which belongs in the local feed rather than on nuget.org, and a
+published package id cannot be withdrawn — only unlisted. `PackagingTests` fails if the glob ever
+returns.
+
 ## The theme audit
 
 `theme-audit.json` at the root names the themes (from the reference checkouts), the consumers

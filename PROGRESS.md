@@ -2,11 +2,14 @@
 
 ## Resume
 
-**`main` carries plan 00017 complete — all three phases — with a clean working tree and no remote.
+**`main` carries plan 00018 complete — all three phases — with a clean working tree and no remote.
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-627 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
-00003–00017 are complete and closed; plan 00002 was rejected on its own review before any code was
-written. **The library's namespace is
+631 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
+00003–00018 are complete and closed; plan 00002 was rejected on its own review before any code was
+written. **[Plan 00018](plans/00018-the-release-written-before-there-is-a-remote.md) wrote the
+release and left it dormant** — MIT, the package metadata, and a `release.yml` where tagging
+`vYYYY.Q.MDD` is the whole procedure; nothing has run, because there is no remote. **The library's
+namespace is
 [`Bennewitz.Ninja.DiffView`](plans/00017-one-namespace-and-no-segment-that-shadows-the-framework.md)**
 — plan 00017 removed the `Avalonia` segment, which shadowed the framework's own root and cost a
 `global::` to work around. Before it,
@@ -78,13 +81,13 @@ wording.
    every string with what it is, what each placeholder holds, and the English it came from, so the
    work now needs **eight readers rather than any more tooling**. This gates the **first release**,
    not any commit: `CHANGELOG.md` holds only `[Unreleased]`.
-2. **The release.** Package ids are settled — `Bennewitz.Ninja.DiffView.Avalonia` and
-   `Bennewitz.Ninja.DiffView.Core`, both unclaimed on nuget.org — and `dotnet pack` produces sound
-   packages with the satellites and XML docs in them. What is **not** settled is the metadata a
-   publish needs: the authors field defaults to the assembly name, the version packs as `1.0.0`
-   rather than the date-shaped one `Bennewitz.Ninja.AutoVersioning` gives this author's other
-   packages, and there is no licence expression, project URL, readme or tags. *Decisions* carries
-   the detail. Needs a plan.
+2. **The first publish.** Everything is written and nothing has run. The packages are MIT, carry
+   their metadata, and pack at a caldate the release tag supplies; `release.yml` publishes them
+   through Trusted Publishing, and tagging `vYYYY.Q.MDD` is the whole procedure. Three things stand
+   between that and a release, in order: **a remote** (`https://github.com/JanusMael/DiffView`, which
+   the metadata already names), **the hosting guide**, which owns `PackageReadmeFile`, and **a
+   nuget.org Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
+   `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
 3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.
@@ -367,6 +370,28 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00018 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The licence and the metadata | S | done | MIT `LICENSE` — there was none — plus `Authors`, both URLs and tags on every packable project, and the gate that each is present. **Landed with phase 2**: `PackagingTests` holds both sets of checks and splitting one file across two commits to honour a planning device would be the worse commit |
+| 2 The workflow | M | done | `.github/workflows/release.yml`, mirroring the upstream one and adapted: the reference fetch and diagnostics pack, both test legs, `/p:Version=` on build **and** pack, Trusted Publishing, an explicit two-package push, the GitHub release. **Inert** — no remote |
+| 3 The record | S | done | `DECISIONS.md` (five sections), `AGENTS.md` §1, this file, the changelog, and the README's release procedure |
+
+## Plan 00018 verification
+
+| Done-when item | Result |
+|---|---|
+| **The packages carry a licence** | pass: MIT, and `PackagingTests.The_licence_the_packages_declare_is_the_one_in_the_repository` compares the expression against the file, which nothing in the toolchain does — a repository can declare MIT and ship Apache without a murmur |
+| Every packable project carries the metadata a consumer needs | pass: `PackagingTests.Every_packable_project_carries_the_metadata_a_consumer_needs`, read as XML rather than searched as text, since the comment above those properties names every one while defining none |
+| **The tag becomes the version** | pass, and measured: `dotnet pack -c Release -p:Version=2026.3.914` produces `Bennewitz.Ninja.DiffView.Avalonia.2026.3.914.nupkg` with the Core dependency pinned to the same version, all eight satellites and the XML documentation |
+| The version reaches build and pack both | pass: `PackagingTests.The_release_workflow_carries_the_tag_version_into_build_and_pack`. `--no-build` means one without the other packs what the build made, silently |
+| **The push never globs** | pass: `PackagingTests.The_release_workflow_names_the_packages_it_pushes`. The guard against publishing `Bennewitz.Ninja.ThemeAudit` — packable here, local-feed-only by design — which could not then be withdrawn |
+| Every new test proven able to fail | pass: six mutations across the two phases, six killed — the licence expression removed, `Authors` removed, one project's tags removed, the `LICENSE` file disagreeing with the expression, the upstream `*.nupkg` glob restored, and the version dropped from the pack |
+| The suite, both cultures | pass: 631 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` |
+| **Anything published** | **no, and deliberately.** No remote, so the workflow has never run. The first push is Brian's: a package id and version are permanent, unlisting is possible and deleting is not |
+| `PackageReadmeFile` | **not set, and owned by the next plan.** A package readme and the hosting guide are the same document; writing both means keeping two consumer-facing surfaces in step. The release cannot go out before the guide, which costs nothing because it cannot go out before the remote either |
 
 ## Plan 00017 phases
 
