@@ -81,16 +81,24 @@ wording.
    every string with what it is, what each placeholder holds, and the English it came from, so the
    work now needs **eight readers rather than any more tooling**. This gates the **first release**,
    not any commit: `CHANGELOG.md` holds only `[Unreleased]`.
-2. **The first publish.** Everything is written and nothing has run. The packages are MIT, carry
+2. **The hosting guide**, asked for on 2026-09-14: a document for consumers of the control, with the
+   demo kept exactly as it is. The next plan, **00019** — a full draft is parked outside the
+   repository and was written before the namespace sweep and the package-id change, so every
+   namespace and id it names needs re-checking. It also owns `PackageReadmeFile`, which plan 00018
+   deliberately left unset, so the item below waits on this one.
+3. **The first publish.** Everything is written and nothing has run. The packages are MIT, carry
    their metadata, and pack at a caldate the release tag supplies; `release.yml` publishes them
    through Trusted Publishing, and tagging `vYYYY.Q.MDD` is the whole procedure. Three things stand
    between that and a release, in order: **a remote** (`https://github.com/JanusMael/DiffView`, which
    the metadata already names), **the hosting guide**, which owns `PackageReadmeFile`, and **a
    nuget.org Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
    `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
-3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
+4. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.
+
+Items 1 and 4 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
+demo runs need those machines.
 
 Nothing else is in flight; new work needs a new plan under `plans/`.
 
