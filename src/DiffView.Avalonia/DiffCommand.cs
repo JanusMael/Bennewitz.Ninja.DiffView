@@ -3,7 +3,7 @@ namespace Bennewitz.Ninja.DiffView;
 /// <summary>
 /// The verbs the diff controls bind keys to. Closed on purpose: it names <em>this</em> control's
 /// commands, and a host's own commands stay the host's — it adds its own
-/// <see cref="global::Avalonia.Input.KeyBinding"/> beside these, which
+/// <see cref="Avalonia.Input.KeyBinding"/> beside these, which
 /// <see cref="DiffKeyMap"/> does not touch.
 /// </summary>
 public enum DiffCommand
