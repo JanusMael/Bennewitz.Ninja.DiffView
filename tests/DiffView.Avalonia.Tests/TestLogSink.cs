@@ -1,6 +1,6 @@
 using Avalonia.Logging;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Collects Avalonia's internal log events at Warning and above so a test can assert that

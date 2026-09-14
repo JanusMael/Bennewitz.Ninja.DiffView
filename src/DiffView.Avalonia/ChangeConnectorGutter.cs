@@ -6,7 +6,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>One connector the gutter drew: its block and its four corners in gutter coordinates.</summary>
 public sealed record ConnectorPolygon(int BlockIndex, Point LeftTop, Point RightTop, Point RightBottom, Point LeftBottom)

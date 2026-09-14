@@ -3,7 +3,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00003 §Phase 3, dirty state and save. A pane writes back to the file it was read from,

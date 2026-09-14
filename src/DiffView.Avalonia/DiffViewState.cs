@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>The one state the composite control is always in; the status strip renders it.</summary>
 public enum DiffViewState

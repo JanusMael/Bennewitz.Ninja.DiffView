@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Locates the repository root from the test's runtime directory, for tests that read source

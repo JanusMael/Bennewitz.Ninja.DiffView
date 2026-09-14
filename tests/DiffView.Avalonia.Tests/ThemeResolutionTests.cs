@@ -13,12 +13,12 @@ using Avalonia.Threading;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Search;
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 using Bennewitz.Ninja.ThemeAudit;
 using Semi.Avalonia;
 using ThemeVariant = Avalonia.Styling.ThemeVariant;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// The audit's static view checked against the runtime (plan 00001 §Phase 2): every

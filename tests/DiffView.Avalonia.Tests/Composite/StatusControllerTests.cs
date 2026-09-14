@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// The transient-message lifecycle lifted from ClaudeForge, on a hand-advanced clock: success

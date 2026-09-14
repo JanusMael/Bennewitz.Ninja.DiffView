@@ -14,7 +14,7 @@ using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 using Microsoft.Extensions.Logging;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// One pane of the side-by-side view: an AvaloniaEdit editor over the pane's <em>source</em>

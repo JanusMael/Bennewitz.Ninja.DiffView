@@ -3,7 +3,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using AvaloniaEdit.Rendering;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Draws the caret one text line tall over its line's text band, on

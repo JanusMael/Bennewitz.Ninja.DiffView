@@ -5,7 +5,7 @@ using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using LogicalDirection = AvaloniaEdit.Document.LogicalDirection;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Spike;
+namespace Bennewitz.Ninja.DiffView.Tests.Spike;
 
 // Phase 1 spike. Everything in this file is throwaway: it proves the mechanism the plan's
 // PaddingRun / PaddingElement / PaddingElementGenerator / PaddingHeightPrimer rely on, against

@@ -10,7 +10,7 @@ using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
+namespace Bennewitz.Ninja.DiffView.Tests.Presenter;
 
 /// <summary>
 /// Plan 00001 §Phase 4, the pane presenter: structure, priming, metadata, the gutters, the

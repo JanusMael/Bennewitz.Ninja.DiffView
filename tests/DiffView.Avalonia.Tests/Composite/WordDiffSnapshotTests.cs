@@ -5,7 +5,7 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>Plan 00001 §Phase 6, the snapshot: a modified row with only its changed words highlighted, in both variants.</summary>
 /// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>

@@ -8,7 +8,7 @@ using Bennewitz.Ninja.DiffView.Core;
 // The assembly has an implicit `using System.IO`, whose Path is not this one.
 using Path = Avalonia.Controls.Shapes.Path;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The icons for the menu column plan 00010 reserved and left empty. No new visual language: the

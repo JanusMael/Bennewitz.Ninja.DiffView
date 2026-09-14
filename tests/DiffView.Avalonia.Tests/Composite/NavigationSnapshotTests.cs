@@ -5,7 +5,7 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>Plan 00001 §Phase 7, the snapshot: minimap, connectors and the current-block border on the small fixture, in both variants.</summary>
 /// <remarks>

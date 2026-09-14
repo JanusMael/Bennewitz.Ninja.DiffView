@@ -1,7 +1,7 @@
 using System.Windows.Input;
 using Avalonia.Input;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// One entry in a pane's context menu, before it becomes an Avalonia <c>MenuItem</c>. A plain

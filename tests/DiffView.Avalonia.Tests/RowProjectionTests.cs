@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Plan 00013 phase 1. The projection is pure arithmetic over row indices, so it is tested

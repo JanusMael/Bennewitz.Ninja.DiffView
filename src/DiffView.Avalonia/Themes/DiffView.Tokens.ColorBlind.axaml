@@ -10,7 +10,7 @@
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    x:Class="Bennewitz.Ninja.DiffView.Avalonia.DiffViewColorBlindPalette">
+                    x:Class="Bennewitz.Ninja.DiffView.DiffViewColorBlindPalette">
   <ResourceDictionary.ThemeDictionaries>
     <ResourceDictionary x:Key="Default">
       <!-- Pane -->

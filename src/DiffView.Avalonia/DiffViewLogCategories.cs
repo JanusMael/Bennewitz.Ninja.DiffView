@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The logger categories the library logs under. A host creates one <c>ILogger</c> per category

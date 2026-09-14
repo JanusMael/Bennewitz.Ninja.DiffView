@@ -1,7 +1,7 @@
 using Avalonia.Headless.XUnit;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// What a fold can and cannot put out of reach. Navigation and find both scroll by row through the

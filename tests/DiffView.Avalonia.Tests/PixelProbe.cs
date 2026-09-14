@@ -4,7 +4,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Reads pixels out of a captured frame, for assertions of the form "this band carries the

@@ -5,7 +5,7 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+namespace Bennewitz.Ninja.DiffView.Tests.Inline;
 
 /// <summary>
 /// Plan 00001 §Phase 11, the rendered evidence: the same pair unified — removals then additions

@@ -13,7 +13,7 @@ using Bennewitz.Ninja.DiffView.Core;
 using Microsoft.Extensions.Logging;
 using TextInfo = Bennewitz.Ninja.DiffView.Core.TextInfo;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The side-by-side diff: two <see cref="DiffPanePresenter"/>s over the sources' own documents,

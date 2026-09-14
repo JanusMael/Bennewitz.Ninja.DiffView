@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Which surface a <see cref="DiffPaneContext"/> describes. Plan 00010 shaped this as an enum

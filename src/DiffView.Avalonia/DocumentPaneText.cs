@@ -1,7 +1,7 @@
 using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// An <see cref="IPaneText"/> over a captured editor document: an immutable

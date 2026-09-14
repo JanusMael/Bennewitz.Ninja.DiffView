@@ -4,7 +4,7 @@ using AvaloniaEdit.TextMate;
 using TextMateSharp.Grammars;
 using TextMateInstallation = AvaloniaEdit.TextMate.TextMate.Installation;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The grammar chosen for a file: the language it belongs to and the TextMate scope the registry

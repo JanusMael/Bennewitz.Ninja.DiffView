@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The word-level pieces of a row, read from the two live documents on demand: the model does

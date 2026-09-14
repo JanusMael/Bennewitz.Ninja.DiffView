@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// How the library resolves its user-visible text: an optional host resolver and an optional

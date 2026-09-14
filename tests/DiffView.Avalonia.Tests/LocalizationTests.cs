@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Resources;
 using System.Xml.Linq;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// The localisation seam: the one-value state, the scope that restores it, and the generated
@@ -16,7 +16,7 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
 /// </remarks>
 public sealed class LocalizationTests
 {
-    private const string BaseName = "Bennewitz.Ninja.DiffView.Avalonia.Localization.Strings";
+    private const string BaseName = "Bennewitz.Ninja.DiffView.Localization.Strings";
     private const string CommittedResx = "src/DiffView.Avalonia/Localization/Strings.resx";
 
     [Fact]

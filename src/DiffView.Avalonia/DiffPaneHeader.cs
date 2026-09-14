@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.Primitives;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// One pane's header: the title or file name, a detail line (line count, encoding, line

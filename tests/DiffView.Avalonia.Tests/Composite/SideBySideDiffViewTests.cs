@@ -11,11 +11,11 @@ using Avalonia.VisualTree;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
+using Bennewitz.Ninja.DiffView.Tests.Presenter;
 using Bennewitz.Ninja.DiffView.Core;
 using Microsoft.Extensions.Logging;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00001 §Phase 5: the composite control's state machine, sources and options, the

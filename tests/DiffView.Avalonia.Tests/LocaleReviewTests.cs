@@ -1,6 +1,6 @@
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Plan 00016 §Phase 3: the committed review documents describe the strings they claim to.

@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using SkiaSharp;
 using VerifyTests;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Verify configuration: snapshots live under <c>Snapshots/</c>, and PNGs are compared by a

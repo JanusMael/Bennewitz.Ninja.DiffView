@@ -1,7 +1,7 @@
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Emits a <see cref="PaddingElement"/> at the start of every line whose padding is not empty.

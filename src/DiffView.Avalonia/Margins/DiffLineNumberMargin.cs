@@ -6,7 +6,7 @@ using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Draws the numbers of the lines the pane shows, at each line's text band, so nothing is drawn

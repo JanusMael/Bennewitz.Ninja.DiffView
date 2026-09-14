@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Media;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The copy-to-side arrow: a head at the leading edge of its square zone and a shaft running back

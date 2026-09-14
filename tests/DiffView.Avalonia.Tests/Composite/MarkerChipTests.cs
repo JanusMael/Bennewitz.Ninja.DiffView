@@ -4,10 +4,10 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using AvaloniaEdit.Rendering;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
+using Bennewitz.Ninja.DiffView.Tests.Presenter;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00005 §Phase 2, the chip under each marker glyph: one per run of same-kind rows, so a lone

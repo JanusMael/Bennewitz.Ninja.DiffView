@@ -4,7 +4,7 @@ using Avalonia.Media.TextFormatting;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>One match rectangle the search renderer drew, in text-view coordinates; read by tests.</summary>
 internal readonly record struct SearchRectangle(int LineNumber, FindMatch Match, bool IsCurrent, Rect Rect);

@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:dv="using:Bennewitz.Ninja.DiffView.Avalonia"
+        xmlns:dv="using:Bennewitz.Ninja.DiffView"
         x:Class="Bennewitz.Ninja.DiffView.Demo.MainWindow"
         Title="DiffView Demo"
         Width="1100" Height="720"

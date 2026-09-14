@@ -2,10 +2,10 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+using Bennewitz.Ninja.DiffView.Tests.Composite;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+namespace Bennewitz.Ninja.DiffView.Tests.Inline;
 
 /// <summary>
 /// A window holding one <see cref="InlineDiffView"/> on a hand-advanced clock, with the log

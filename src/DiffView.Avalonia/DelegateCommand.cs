@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>A command over a delegate, for the banner and status-strip buttons.</summary>
 internal sealed class DelegateCommand : ICommand

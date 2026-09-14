@@ -121,13 +121,13 @@
       "name": "FluentKeys.Semi", "from": "Fluent", "to": "Semi",
       "mapping": "src/ThemeAudit/Mappings/FluentToSemi.json",
       "output": "src/DiffView.Avalonia/Themes/Compat/FluentKeys.Semi.axaml",
-      "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView.Avalonia", "type": "SemiThemeVariants" }
+      "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView", "type": "SemiThemeVariants" }
     },
     {
       "name": "SimpleKeys.Semi", "from": "Simple", "to": "Semi",
       "mapping": "src/ThemeAudit/Mappings/SimpleToSemi.json",
       "output": "src/DiffView.Avalonia/Themes/Compat/SimpleKeys.Semi.axaml",
-      "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView.Avalonia", "type": "SemiThemeVariants" }
+      "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView", "type": "SemiThemeVariants" }
     }
   ]
 }

@@ -4,7 +4,7 @@ using Avalonia.Media.TextFormatting;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>What the background renderer drew for one visual line; read by tests.</summary>
 internal readonly record struct DrawnLine(int LineNumber, DiffLineKind Kind, PaddingSpec Padding);

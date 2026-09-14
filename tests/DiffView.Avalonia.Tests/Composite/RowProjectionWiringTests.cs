@@ -4,7 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00013 phase 1. The two surfaces outside a pane converted rows to pixels by multiplying,

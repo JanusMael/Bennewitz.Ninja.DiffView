@@ -14,9 +14,9 @@
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:dv="using:Bennewitz.Ninja.DiffView.Avalonia"
+                    xmlns:dv="using:Bennewitz.Ninja.DiffView"
                     xmlns:editing="using:AvaloniaEdit.Editing"
-                    x:Class="Bennewitz.Ninja.DiffView.Avalonia.DiffPanePresenterTheme">
+                    x:Class="Bennewitz.Ninja.DiffView.DiffPanePresenterTheme">
   <ControlTheme x:Key="{x:Type dv:DiffPanePresenter}" TargetType="dv:DiffPanePresenter">
     <Setter Property="Background" Value="{DynamicResource DiffView.PaneBackgroundBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource DiffView.PaneForegroundBrush}" />

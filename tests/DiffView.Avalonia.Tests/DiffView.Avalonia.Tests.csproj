@@ -1,4 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Follows the library it tests rather than the repository convention. Leaving these at
+         Bennewitz.Ninja.DiffView.Avalonia.Tests would keep Bennewitz.Ninja.DiffView.Avalonia in
+         existence as a test-only namespace, and every test file would go on shadowing the
+         framework's Avalonia root — the thing plan 00017 exists to remove. -->
+    <RootNamespace>Bennewitz.Ninja.DiffView.Tests</RootNamespace>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia.Headless.XUnit" />
     <PackageReference Include="Avalonia.Skia" />

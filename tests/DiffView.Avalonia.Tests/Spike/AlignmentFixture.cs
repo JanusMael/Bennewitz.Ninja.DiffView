@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Spike;
+namespace Bennewitz.Ninja.DiffView.Tests.Spike;
 
 // Phase 1 spike, throwaway. A hand-rolled alignment so the spike can pad two documents without
 // the Core model that Phase 3 builds.

@@ -8,12 +8,12 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using AvaloniaEdit.Document;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
+using Bennewitz.Ninja.DiffView.Tests.Composite;
+using Bennewitz.Ninja.DiffView.Tests.Presenter;
 using Bennewitz.Ninja.DiffView.Core;
 using Microsoft.Extensions.Logging;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+namespace Bennewitz.Ninja.DiffView.Tests.Inline;
 
 /// <summary>
 /// Plan 00001 §Phase 11: the unified view over the same fixtures as the side-by-side — the text

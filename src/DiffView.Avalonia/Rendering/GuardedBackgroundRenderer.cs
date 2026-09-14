@@ -1,7 +1,7 @@
 using Avalonia.Media;
 using AvaloniaEdit.Rendering;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// A background renderer that is a rendering boundary: <see cref="Draw"/> returns early while

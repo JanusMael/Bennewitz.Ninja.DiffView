@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Reads a <c>docs/locale-review/&lt;culture&gt;.md</c> document back and checks that every row

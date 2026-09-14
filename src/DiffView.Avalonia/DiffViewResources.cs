@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Locations of the resources a host includes to style the DiffView controls.

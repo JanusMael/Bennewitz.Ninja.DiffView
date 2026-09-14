@@ -5,7 +5,7 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00001 §Phase 10, the rendered evidence: whitespace and line-ending glyphs over the diff

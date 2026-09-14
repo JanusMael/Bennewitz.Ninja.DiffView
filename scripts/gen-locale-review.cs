@@ -20,7 +20,7 @@
 using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 
 const string LocaleDirectory = "src/DiffView.Avalonia/Localization";
 const string OutputDirectory = "docs/locale-review";
@@ -280,7 +280,7 @@ IReadOnlyDictionary<string, string> Summaries()
              + "DiffView.Avalonia.csproj, so a build of that project produces it; build first.");
     }
 
-    const string Prefix = "F:Bennewitz.Ninja.DiffView.Avalonia.DiffViewStrings.";
+    const string Prefix = "F:Bennewitz.Ninja.DiffView.DiffViewStrings.";
 
     // The field name the documentation is keyed by is the constant's name; the review is keyed by
     // the string it holds. Reflection over the same constants bridges the two.

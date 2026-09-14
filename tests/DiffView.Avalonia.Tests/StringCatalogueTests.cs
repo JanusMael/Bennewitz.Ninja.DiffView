@@ -1,10 +1,10 @@
 using System.Reflection;
 using Avalonia.Headless.XUnit;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+using Bennewitz.Ninja.DiffView.Tests.Composite;
+using Bennewitz.Ninja.DiffView.Tests.Inline;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// The localization contract, adapted from ClaudeForge's <c>LocalizationParityTests</c>: every key

@@ -8,7 +8,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00012 phase 5, the rendered evidence: one frame per surface the plan gave a menu, plus

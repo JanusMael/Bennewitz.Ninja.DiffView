@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Xml.Linq;
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// The <c>&lt;summary&gt;</c> of every <see cref="DiffViewStrings"/> key, read from the XML
@@ -16,7 +16,7 @@ namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
 /// </remarks>
 internal static class Summaries
 {
-    private const string Prefix = "F:Bennewitz.Ninja.DiffView.Avalonia.DiffViewStrings.";
+    private const string Prefix = "F:Bennewitz.Ninja.DiffView.DiffViewStrings.";
     private const string DocumentationFile = "DiffView.Avalonia.xml";
 
     /// <summary>By constant name — <c>HeaderDirty</c>, not <c>Header.Dirty</c>.</summary>

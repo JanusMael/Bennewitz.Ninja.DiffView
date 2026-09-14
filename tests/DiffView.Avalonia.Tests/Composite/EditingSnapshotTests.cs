@@ -9,10 +9,10 @@ using Avalonia.Media.TextFormatting;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using AvaloniaEdit.Rendering;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
+using Bennewitz.Ninja.DiffView.Tests.Presenter;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00003, the rendered evidence: the marks an edit leaves — the modified-since-load bar down

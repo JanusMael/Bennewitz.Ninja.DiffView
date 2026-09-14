@@ -2,7 +2,7 @@ using System.Windows.Input;
 using Avalonia.Input;
 using Microsoft.Extensions.Logging;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The one implementation of putting a <see cref="DiffKeyMap"/>'s gestures into a control's

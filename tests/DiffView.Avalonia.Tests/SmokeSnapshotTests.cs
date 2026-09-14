@@ -5,10 +5,10 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+using Bennewitz.Ninja.DiffView.Tests.Composite;
 using Bennewitz.Ninja.DiffView.Demo;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Proves the harness end to end: the headless host renders real pixels, the demo window comes

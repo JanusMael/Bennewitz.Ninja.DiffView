@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>One captured log line: its category, level, rendered message and exception.</summary>
 internal sealed record LogRecord(string Category, LogLevel Level, string Message, Exception? Exception)

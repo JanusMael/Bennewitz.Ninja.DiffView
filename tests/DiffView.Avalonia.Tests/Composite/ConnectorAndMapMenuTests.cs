@@ -6,10 +6,10 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+using Bennewitz.Ninja.DiffView.Tests.Inline;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00012 phase 2: the two surfaces between and beside the panes. Each already hit-tests what

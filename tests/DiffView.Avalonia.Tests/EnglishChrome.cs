@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Reflection;
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 using Xunit.v3;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Pins the library's text to English for one test and puts back whatever was there afterwards —

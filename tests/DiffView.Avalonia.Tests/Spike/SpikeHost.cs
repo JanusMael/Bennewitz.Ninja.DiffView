@@ -11,7 +11,7 @@ using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Spike;
+namespace Bennewitz.Ninja.DiffView.Tests.Spike;
 
 // Phase 1 spike, throwaway.
 

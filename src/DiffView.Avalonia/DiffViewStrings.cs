@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Resources;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Every user-visible string of the library, behind a swappable <see cref="Localization"/>. A
@@ -779,7 +779,7 @@ public static class DiffViewStrings
 
     /// <summary>The bundled resources; the neutral set is English and each satellite is one culture.</summary>
     private static readonly ResourceManager Resources =
-        new("Bennewitz.Ninja.DiffView.Avalonia.Localization.Strings", typeof(DiffViewStrings).Assembly);
+        new("Bennewitz.Ninja.DiffView.Localization.Strings", typeof(DiffViewStrings).Assembly);
 
     /// <summary>What <see cref="Override"/> hands back: puts the previous value on, once.</summary>
     private sealed class LocalizationScope : IDisposable

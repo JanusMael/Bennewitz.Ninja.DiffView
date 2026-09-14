@@ -5,7 +5,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>Plan 00001 §Phase 7, the tooltips: the aligned line on a line number, the block summary on a marker, and the pointer bringing them up.</summary>
 public sealed class TooltipTests

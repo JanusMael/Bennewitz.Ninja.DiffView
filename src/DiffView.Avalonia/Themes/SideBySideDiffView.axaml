@@ -9,8 +9,8 @@
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:dv="using:Bennewitz.Ninja.DiffView.Avalonia"
-                    x:Class="Bennewitz.Ninja.DiffView.Avalonia.SideBySideDiffViewTheme">
+                    xmlns:dv="using:Bennewitz.Ninja.DiffView"
+                    x:Class="Bennewitz.Ninja.DiffView.SideBySideDiffViewTheme">
 
   <ControlTheme x:Key="{x:Type dv:SideBySideDiffView}" TargetType="dv:SideBySideDiffView">
     <Setter Property="Background" Value="{DynamicResource DiffView.PaneBackgroundBrush}" />

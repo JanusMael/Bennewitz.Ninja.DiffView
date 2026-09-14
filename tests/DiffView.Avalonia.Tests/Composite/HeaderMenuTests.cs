@@ -5,10 +5,10 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.VisualTree;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+using Bennewitz.Ninja.DiffView.Tests.Inline;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00012 phase 3: the header, and the second context type it needed. Five line-, row- and

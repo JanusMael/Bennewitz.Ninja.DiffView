@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// One presenter's view of a <see cref="SideBySideDocument"/> — a side of it, or the unified

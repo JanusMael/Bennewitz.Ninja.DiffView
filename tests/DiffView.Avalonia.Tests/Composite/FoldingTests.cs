@@ -3,7 +3,7 @@ using Avalonia.Headless.XUnit;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00013 phase 2: the runs, the three cuts, and the two line ranges each fold collapses.

@@ -2,6 +2,13 @@
   <PropertyGroup>
     <Description>Side-by-side diff control for Avalonia 12, built on AvaloniaEdit.</Description>
     <IsPackable>true</IsPackable>
+    <!-- Deviates from the repository convention (Bennewitz.Ninja.<AssemblyName>) on purpose: a
+         namespace segment named Avalonia shadows the framework's own root inside this assembly, so
+         Avalonia.Media.Color resolves to Bennewitz.Ninja.DiffView.Avalonia.Media.Color and fails
+         with CS0234. Plan 00017 measured it. The platform is carried by the assembly and package
+         name, which is where a consumer looks for it. This also fixes the embedded resource's
+         logical name, which DiffViewStrings reads back as a string literal. -->
+    <RootNamespace>Bennewitz.Ninja.DiffView</RootNamespace>
     <!-- Public API is documented; a missing comment is a build error (CS1591 under warnings-as-errors). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- The neutral resource IS English, so no en satellite is ever probed for: a lookup under any

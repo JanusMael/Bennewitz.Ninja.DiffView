@@ -5,7 +5,7 @@ using Avalonia.Input;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00013 phase 3: the placeholder a folded run leaves behind — what it says, that a click on

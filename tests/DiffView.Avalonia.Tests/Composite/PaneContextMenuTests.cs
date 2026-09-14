@@ -7,7 +7,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00010: the context object a host reads, the two shapes it can change the menu through,

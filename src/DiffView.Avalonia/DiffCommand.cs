@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The verbs the diff controls bind keys to. Closed on purpose: it names <em>this</em> control's

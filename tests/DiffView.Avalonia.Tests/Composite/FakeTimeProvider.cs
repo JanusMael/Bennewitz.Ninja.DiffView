@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// A clock the test advances by hand. Timers fire synchronously, on the advancing thread, in

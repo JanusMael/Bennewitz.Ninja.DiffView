@@ -1,10 +1,10 @@
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+using Bennewitz.Ninja.DiffView.Tests.Composite;
 using Microsoft.Extensions.Logging;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+namespace Bennewitz.Ninja.DiffView.Tests.Inline;
 
 /// <summary>
 /// Plan 00009 phase 2: the unified view holds the same <see cref="DiffKeyMap"/> the side-by-side

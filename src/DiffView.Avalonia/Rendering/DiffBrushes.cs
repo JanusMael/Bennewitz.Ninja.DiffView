@@ -4,7 +4,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>The brushes the presenter's decorators draw with, each a <c>DiffView.*</c> token.</summary>
 internal enum DiffBrush

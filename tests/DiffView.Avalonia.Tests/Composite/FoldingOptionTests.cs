@@ -1,8 +1,8 @@
 using Avalonia.Headless.XUnit;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+using Bennewitz.Ninja.DiffView.Tests.Inline;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00013 phase 4: <c>UnchangedContextRows</c> on both views, the four commands, and the

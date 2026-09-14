@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// A decorator — a background renderer, a margin, the padding generator or the height primer —

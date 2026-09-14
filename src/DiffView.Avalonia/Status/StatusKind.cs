@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The severity of a transient status message, which decides its colours, its glyph and its

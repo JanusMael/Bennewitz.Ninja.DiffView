@@ -6,7 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00005 §Phase 3, the rendered evidence: a run of same-kind rows sharing one chip, a lone

@@ -12,7 +12,7 @@ using Bennewitz.Ninja.DiffView.Core;
 // The assembly has an implicit `using System.IO`, whose Path is not this one.
 using Path = Avalonia.Controls.Shapes.Path;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00012 phase 4: the column plan 00010 reserved, filled. No new visual language — the copy

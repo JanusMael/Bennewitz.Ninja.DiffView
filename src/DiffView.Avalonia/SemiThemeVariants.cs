@@ -1,6 +1,6 @@
 using Avalonia.Styling;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Semi.Avalonia's four high-contrast theme variants by name, without a reference to Semi.

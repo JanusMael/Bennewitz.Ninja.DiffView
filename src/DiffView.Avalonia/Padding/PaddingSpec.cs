@@ -1,7 +1,7 @@
 using Avalonia.Media.TextFormatting;
 using AvaloniaEdit.Rendering;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Rows of padding a line carries: <see cref="Above"/> before its text, <see cref="Below"/>

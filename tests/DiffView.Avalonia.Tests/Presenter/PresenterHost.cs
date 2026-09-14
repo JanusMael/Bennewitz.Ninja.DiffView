@@ -8,7 +8,7 @@ using Avalonia.VisualTree;
 using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
+namespace Bennewitz.Ninja.DiffView.Tests.Presenter;
 
 /// <summary>
 /// A window with two <see cref="DiffPanePresenter"/>s side by side, both fed from one Core build

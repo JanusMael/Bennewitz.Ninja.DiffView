@@ -5,7 +5,7 @@ using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Presenter;
+namespace Bennewitz.Ninja.DiffView.Tests.Presenter;
 
 /// <summary>
 /// Plan 00001 §Phase 4, the coarse snapshot: two presenters over the small fixture, every row

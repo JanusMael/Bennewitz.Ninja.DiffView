@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// What <see cref="SideBySideDiffView.Save"/> did. A save reports rather than throws: every

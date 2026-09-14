@@ -12,7 +12,7 @@ using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Spike;
+namespace Bennewitz.Ninja.DiffView.Tests.Spike;
 
 /// <summary>
 /// Plan 00001, Phase 1: the virtual-padding spike, against two plain <see cref="TextEditor"/>s.

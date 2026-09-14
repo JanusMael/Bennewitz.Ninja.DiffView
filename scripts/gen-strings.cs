@@ -14,7 +14,7 @@
 // touched here. Only the neutral English one is generated.
 
 using System.Xml.Linq;
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 
 const string Target = "src/DiffView.Avalonia/Localization/Strings.resx";
 

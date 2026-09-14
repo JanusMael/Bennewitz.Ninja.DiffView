@@ -2,7 +2,7 @@ using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using AvaloniaEdit.Rendering;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Reads the colours a built line carries. Plain text is one foreground for the whole line; a

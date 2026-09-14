@@ -3,7 +3,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00009, key bindings a host can change: the defaults pinned, rebinding and unbinding, the

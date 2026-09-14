@@ -1,6 +1,6 @@
 using Avalonia.Threading;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Owns the status strip's transient message and its lifecycle. Lifted from ClaudeForge's

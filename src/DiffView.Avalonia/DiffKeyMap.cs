@@ -1,7 +1,7 @@
 using System.Collections;
 using Avalonia.Input;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// What key each <see cref="DiffCommand"/> is on. A host rebinds a command by assigning its

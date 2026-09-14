@@ -5,7 +5,7 @@ using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using LogicalDirection = AvaloniaEdit.Document.LogicalDirection;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// A zero-width run whose <see cref="Baseline"/> extends the line's ascent by the padding above

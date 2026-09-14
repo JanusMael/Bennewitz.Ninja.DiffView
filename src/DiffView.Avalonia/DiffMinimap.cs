@@ -5,7 +5,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The whole-document overview beside the panes: one pixel row per bucket of rows, in **two

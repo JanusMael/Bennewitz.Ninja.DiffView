@@ -7,7 +7,7 @@ using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
 using Avalonia.Themes.Simple;
 using Avalonia.Threading;
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Semi.Avalonia;
 using Serilog;

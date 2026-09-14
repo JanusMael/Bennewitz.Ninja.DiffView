@@ -6,7 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00013 phase 5, the rendered evidence: the same pair unfolded and folded, so the frames

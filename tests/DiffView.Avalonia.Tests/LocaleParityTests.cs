@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Plan 00014 phase 2: the gate every shipped locale has to pass, landed before any translation

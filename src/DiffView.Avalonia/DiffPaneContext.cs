@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// What was under the pointer — or the caret — when a pane's context menu was asked for. This is

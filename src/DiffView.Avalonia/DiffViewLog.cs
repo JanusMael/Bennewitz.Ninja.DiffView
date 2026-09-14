@@ -3,7 +3,7 @@ using Bennewitz.Ninja.DiffView.Core;
 using Microsoft.Extensions.Logging;
 using TextInfo = Bennewitz.Ninja.DiffView.Core.TextInfo;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// The one place the library formats log lines, so the rule is enforced in one place: a line

@@ -5,7 +5,7 @@ using Avalonia.Themes.Simple;
 using Semi.Avalonia;
 using ThemeVariant = Avalonia.Styling.ThemeVariant;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>The ten theme targets of plan 00001: Fluent and Simple in two variants, Semi in six.</summary>
 internal static class ThemeTargets

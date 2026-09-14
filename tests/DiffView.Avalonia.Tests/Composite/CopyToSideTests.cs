@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Headless.XUnit;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00003 §Phase 4, copy to side. A block's lines on one side replace the other side's lines

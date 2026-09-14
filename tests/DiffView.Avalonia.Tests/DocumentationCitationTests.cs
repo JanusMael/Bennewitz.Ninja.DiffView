@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// The documents name tests as evidence; this checks they are tests that exist. `PROGRESS.md` once

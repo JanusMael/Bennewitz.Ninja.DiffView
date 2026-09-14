@@ -4,7 +4,7 @@ using Avalonia.Media;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// A one-character strip beside the line numbers: <c>+</c> for an inserted line, <c>−</c> for a

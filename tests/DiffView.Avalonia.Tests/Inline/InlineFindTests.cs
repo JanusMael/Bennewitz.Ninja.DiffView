@@ -1,10 +1,10 @@
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+using Bennewitz.Ninja.DiffView.Tests.Composite;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+namespace Bennewitz.Ninja.DiffView.Tests.Inline;
 
 /// <summary>
 /// Plan 00001 §Phase 11, find: the same engine over the same two sides as the side-by-side view,

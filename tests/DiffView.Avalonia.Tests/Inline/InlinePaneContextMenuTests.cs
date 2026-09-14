@@ -3,7 +3,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Inline;
+namespace Bennewitz.Ninja.DiffView.Tests.Inline;
 
 /// <summary>
 /// Plan 00010 phase 1 in the unified view: the same seam, and a context that says what a pane

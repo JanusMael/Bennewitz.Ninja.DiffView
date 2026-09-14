@@ -5,7 +5,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00001 §Phase 9: the grammar chosen from the file name, the theme following the variant,

@@ -4,7 +4,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00007, the overview map: a lane per side so a one-sided block inks one and notches the

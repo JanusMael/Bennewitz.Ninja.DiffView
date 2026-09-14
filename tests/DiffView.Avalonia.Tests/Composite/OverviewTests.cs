@@ -7,7 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00001 §Phase 7, the overview: the minimap's pixel → bucket → row mapping on the

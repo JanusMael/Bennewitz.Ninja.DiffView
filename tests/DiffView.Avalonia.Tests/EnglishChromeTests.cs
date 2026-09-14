@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Reflection;
 using Avalonia.Headless.XUnit;
-using Bennewitz.Ninja.DiffView.Avalonia;
+using Bennewitz.Ninja.DiffView;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Plan 00015 §Phase 1: the pin, proven to fire. An attribute believed to pin while pinning nothing

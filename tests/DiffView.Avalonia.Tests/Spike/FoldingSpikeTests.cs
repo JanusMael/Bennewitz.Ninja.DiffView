@@ -3,7 +3,7 @@ using AvaloniaEdit;
 using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Spike;
+namespace Bennewitz.Ninja.DiffView.Tests.Spike;
 
 /// <summary>
 /// The folding feasibility spike: Beyond Compare's <i>Show Differences / Show Same / Show

@@ -4,15 +4,15 @@ using Avalonia.Headless;
 using Avalonia.Logging;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
-using Bennewitz.Ninja.DiffView.Avalonia;
-using Bennewitz.Ninja.DiffView.Avalonia.Tests;
+using Bennewitz.Ninja.DiffView;
+using Bennewitz.Ninja.DiffView.Tests;
 using Semi.Avalonia;
 
 // Avalonia tests share one dispatcher; xunit.runner.json in this project turns collection
 // parallelization off so they run serially.
 [assembly: AvaloniaTestApplication(typeof(HeadlessTestApp))]
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// The application every headless test runs under: Semi as the base theme (the intended host's),

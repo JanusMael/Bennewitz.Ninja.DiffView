@@ -5,7 +5,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Media.Imaging;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00003 §Phase 1, typing. The panes' <c>IsReadOnly</c> is a property every layer honours

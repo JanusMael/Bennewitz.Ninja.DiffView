@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// What a header's context menu is about: a side and its file, with no line at all.

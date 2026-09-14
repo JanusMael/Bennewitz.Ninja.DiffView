@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia;
+namespace Bennewitz.Ninja.DiffView;
 
 /// <summary>
 /// Which rows a fold takes, computed from the model alone. A fold is a <b>row</b> range: the two

@@ -3,7 +3,7 @@ using Avalonia.Headless.XUnit;
 using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView.Core;
 
-namespace Bennewitz.Ninja.DiffView.Avalonia.Tests.Composite;
+namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
 /// <summary>
 /// Plan 00003 §Phase 2, live re-diff. An edit rests for <see cref="SideBySideDiffView.ReDiffDelay"/>
