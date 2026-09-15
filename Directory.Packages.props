@@ -12,6 +12,11 @@
     <PackageVersion Include="Avalonia.Themes.Simple" Version="12.1.2" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.2" />
+    <!-- Runtime XAML loading, which the base Avalonia package deliberately leaves out because it
+         carries the XAML compiler. Test-only: plan 00019's quickstart gate loads the snippet from
+         docs/hosting-diffview.md rather than a retyped copy, so the markup a reader pastes is the
+         markup under test. Nothing shipped references it. -->
+    <PackageVersion Include="Avalonia.Markup.Xaml.Loader" Version="12.1.2" />
     <PackageVersion Include="Semi.Avalonia" Version="12.1.0.1" />
   </ItemGroup>
 
