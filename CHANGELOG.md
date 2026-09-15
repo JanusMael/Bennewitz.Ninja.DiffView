@@ -462,7 +462,16 @@ All notable changes to DiffView are recorded here. The format follows
   left on the real clock outlived the test and aborted the test host — exit 134, about one full-suite
   run in ten, reported by the runner as `Failed!` with `failed: 0`. `DECISIONS.md` records the
   measurements, the ordering trap that made the first repair a no-op, and the unguarded inline
-  dispatch underneath it, which is left open.
+  dispatch underneath it, which a later probe closed as won't-fix: the headless host runs Avalonia's
+  UI loop on a `.NET TP Worker`, so the path is unreachable on a desktop's dedicated UI thread.
+- Plan 00020 — both views now release the `StatusController` they build when they leave the visual
+  tree, so a closed or detached view is no longer reachable from the timer queue and no auto-clear
+  writes to a status strip nobody is looking at. The field is nulled as well as disposed, which is
+  what keeps a view working when it comes back from a tab switch, a virtualized list or a reparent.
+- `UpdateStrip` reads the status field rather than the lazy `Status` getter. Calling the getter made
+  every strip refresh rebuild the controller a detach had just released — measured at two armed
+  timers on a detached view — and reading the field writes exactly the values the getter's freshly
+  built controller would have.
 
 ### Removed
 
@@ -489,6 +498,12 @@ All notable changes to DiffView are recorded here. The format follows
   column layout, and a test asserts each header's **x** as well as its width.
 
 ### Changed
+
+- `SideBySideDiffView.Status` and `InlineDiffView.Status` return one controller per attach rather
+  than one for the life of the view. A host that stores the reference across a detach meets
+  `ObjectDisposedException`; a host that sets an auto-clear delay on it or subscribes to `Changed`
+  has to do so again after a re-attach. A detach also clears the message on screen, including a
+  `Failure`, which otherwise sticks until dismissed or replaced.
 
 - **Breaking — the library's namespace is `Bennewitz.Ninja.DiffView`**, where it was
   `Bennewitz.Ninja.DiffView.Avalonia`. A namespace segment named `Avalonia` shadows the framework's

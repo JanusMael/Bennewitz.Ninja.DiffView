@@ -2,11 +2,18 @@
 
 ## Resume
 
-**`main` carries plan 00019 complete — all four phases — with a clean working tree and no remote.
+**`main` carries plan 00020 complete — both phases — with a clean working tree and no remote.
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-651 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
-00003–00019 are complete and closed; plan 00002 was rejected on its own review before any code was
-written. **[Plan 00019](plans/00019-the-control-for-someone-who-did-not-build-it.md) wrote
+661 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
+00003–00020 are complete and closed; plan 00002 was rejected on its own review before any code was
+written. **[Plan 00020](plans/00020-the-timer-that-outlived-the-view.md) gave both views ownership
+of the status controller they build** — leaving the visual tree disposes it and nulls the field,
+where the null is what keeps a view that comes back working, and `UpdateStrip` now reads that field
+rather than the lazy getter, because a strip refresh that called the getter rebuilt the controller
+the detach had just released. What a detach cannot reach is pinned rather than hidden: `Set` arms
+its timer *after* it raises `Changed`, so work landing after a detach still arms one, bounded at ten
+seconds — the bound the defect always had — and asserted as a bound rather than as zero. Before it,
+**[plan 00019](plans/00019-the-control-for-someone-who-did-not-build-it.md) wrote
 [the hosting guide](docs/hosting-diffview.md)** — the document for someone putting the control into
 their own application, gated so every API name it prints resolves against the shipped surface and the
 quickstart it tells a stranger to paste is loaded from the document, parsed and driven to `Ready`. It
@@ -96,25 +103,11 @@ wording.
    `https://github.com/JanusMael/DiffView`, which the metadata already names, and a **nuget.org
    Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
    `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
-3. **Nothing releases `StatusController`, so a closed view is reachable for ten seconds.** Both views
-   build it lazily and neither disposes it; there is no `_status?.Dispose()` anywhere in `src/` and
-   no attach or detach override on either. The pending auto-clear holds the controller, which holds
-   a `Changed` subscription to the view. **Plan 00020 is drafted and awaiting approval** at
-   `plans/00020-the-timer-that-outlived-the-view.md` — untracked, uncommitted, because a plan is
-   committed alone on approval. The release is `_status?.Dispose(); _status = null;` on detach, where
-   the **null** is what keeps a re-attached view working: `Dispose` latches `_disposed` and `Set`
-   then throws. Two decisions locked 2026-09-15, both in `DECISIONS.md`.
-
-   The finding this replaces — `DispatchToUiThread` invoking inline without a guard — is **closed as
-   won't-fix**, measured rather than argued: the headless host runs Avalonia's UI loop on a
-   `.NET TP Worker`, so `CheckAccess()` can answer true for a pooled thread handed back after a test.
-   A desktop UI thread is dedicated and never a pool thread, so the path is unreachable in
-   production, at this and the other four `CheckAccess()` sites alike.
-4. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
+3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.
 
-Items 1 and 4 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
+Items 1 and 3 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
 demo runs need those machines.
 
 Nothing else is in flight; new work needs a new plan under `plans/`.
@@ -395,6 +388,26 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00020 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The release | M | done | `OnDetachedFromVisualTree` on both views disposes the controller and nulls the field, the order commented because it is load-bearing; `UpdateStrip` reads the field rather than the lazy getter, which is what the review measured undoing the release; `Status` gains a sentence about its lifetime; `StatusOrNull` is internal so a test can ask without building. Ten tests, six of them red first. 7 of 7 mutations killed |
+| 2 The record | S | done | `DECISIONS.md` ×5 — the round-three measurement, the residue and why zero is unreachable, `ScrollSync` closed, plan 00019's template-touch lesson relaxed, and the two consequences a consumer would otherwise find. This file, `CHANGELOG.md` |
+
+## Plan 00020 verification
+
+| Done-when item | Result |
+|---|---|
+| A detached view leaves no armed timer | Green on both views, and red before the fix |
+| A strip refresh on a detached view does not rebuild the controller | Green on both views. **This is the case the plan's second draft would have shipped broken** — measured at two armed timers with its fix applied and all four of its proposed tests passing |
+| A re-attached view still takes a message | Green on both views. Passes today too: it guards the naive one-line fix, and mutation M1 (the null dropped) is what proves it bites |
+| Detaching with a message on screen does not throw | Green on both views, and red before the fix — the teardown path did not run at all |
+| The residue is one timer, and it drains | Green on both views. Characterisation, not a repair: `Set` arms *after* it raises `Changed`, so no detach-time hook can cancel what the call is about to create. Bounded at ten seconds, which is the bound the defect always had |
+| `ScrollSync` | **Not a finding.** Already released at `SideBySideDiffView.cs:3130`; the draft's open question was answerable by one grep |
+| New tests proven able to fail | 7 of 7 mutations killed: the null dropped, the dispose dropped, the two statements swapped, `UpdateStrip` reading the getter again, `InlineDiffView` left unfixed, and two aimed at the residue tests alone — a success outlasting the advance, and two timers armed per message |
+| The suite | 661 passed / 0 failed / 0 skipped, `en-US` and `de-DE` alike; build clean under `-warnaserror` |
 
 ## Plan 00019 phases
 

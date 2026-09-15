@@ -2647,7 +2647,9 @@ existing lazy getter, which builds a fresh controller and re-subscribes `Changed
 
 Decided 2026-09-15; the plan is `plans/00020-the-timer-that-outlived-the-view.md`.
 
-## The guide is the package readme, and the file lives outside both projects
+**Extended 2026-09-15 — two lines were necessary and not sufficient.** Applying exactly the
+release above and measuring it showed the timer coming back, because `UpdateStrip` ended in a
+call to the lazy `Status` getter. See §*"The release was necessary and not sufficient"* below.
 
 ## The guide is the package readme, and the file lives outside both projects
 
@@ -2665,3 +2667,101 @@ appears **inside** the package, which is why it carries no directory.
 is not in `PackagingTests`' shared `Required` list. It has its own pair of tests, one of which packs
 both projects for real and reads the readme back out of the `.nupkg`, because what the nuspec ends
 up saying is the thing nuget.org acts on.
+
+## The release was necessary and not sufficient, because `UpdateStrip` called the lazy getter
+
+The section above decided the repair and called it two lines. A step-back review applied exactly
+those two lines to `SideBySideDiffView` and measured what they bought:
+
+| Probe, with `_status?.Dispose(); _status = null;` in `OnDetachedFromVisualTree` | Result |
+|---|---|
+| Post a success, detach | `ActiveTimers=0` — the release works at the instant of detach |
+| …then flip `IgnoreCase` and post another message | **`ActiveTimers=2`** |
+| Detach first, then let a build land | `0` → **`ActiveTimers=1`**, text `Compared 33 rows in 0 ms` |
+
+`UpdateStrip()` ended with `StatusController status = Status;` — the **lazy getter** — at
+`SideBySideDiffView.cs:2956` and `InlineDiffView.cs:1665`, with 19 and 15 call sites feeding it.
+So the null was not a release at all but a deferral: the next strip refresh built a fresh
+controller, re-subscribed `Changed`, and the next message armed a timer on a view that would never
+detach again.
+
+**`UpdateStrip` now reads the field.** With no controller the getter would have built one whose
+`Text` is null, `Kind` is `None` and `IsDismissible` is false — exactly what the null-coalescing
+form writes — so nothing visible changes and all 34 paths close at once.
+
+The lesson generalises past this fix: **a lazy getter is a write, and reading one in a teardown
+path undoes the teardown.** The four tests the plan's second draft proposed all passed against the
+leaking version, because every one of them stopped measuring at the instant of detach.
+
+## What the release cannot reach: `Set` arms its timer after it raises `Changed`
+
+Zero armed timers on a detached view is not reachable from the detach hook, and the reason is an
+ordering inside `StatusController.Set`:
+
+```csharp
+CancelPendingClear();
+Apply(...);                                    // Changed fires here
+TimeSpan? clearAfter = Kind switch { ... };
+if (clearAfter is { } delay) { ...CreateTimer... }   // armed here, afterwards
+```
+
+Anything driven by `Changed` — a hook that re-released while detached was the obvious next idea —
+runs *before* the arm and cancels nothing. Reaching zero therefore means gating all 24 `Set…` call
+sites or changing `StatusController` itself, and both are larger than the defect.
+
+**So the residue is accepted and bounded rather than engineered away.** Work started before a
+detach and landing after it — a build completing is the reachable case — arms one timer of at most
+ten seconds, which then fires and unroots itself. That is the *same* bound the defect always had:
+the retention was never unbounded, and saying otherwise oversells the repair. What the repair
+actually buys is that the ordinary path no longer retains at all, and that a control no longer
+writes to a strip belonging to a view that has left the tree.
+
+`A_build_that_completes_after_detach_arms_one_timer_and_it_drains`, on both views, asserts the bound
+rather than zero: exactly one timer, and none after the clock advances past the delay. Two
+mutations exist for it alone — a success outlasting the advance, and two timers armed per message —
+because a bound nothing can violate is not a test.
+
+## `ScrollSync` was already released, and the question should not have been open
+
+Plan 00020's draft listed `ScrollSync` as `IDisposable` and unchecked, and offered the answer as a
+finding for this file. There is nothing to record: `SideBySideDiffView.cs:3130` ends `DetachParts()`
+with `_sync?.Dispose(); _sync = null;` — the same idiom the plan proposed for `_status`, already in
+the same file.
+
+Worth keeping is why `DetachParts()` was nonetheless the wrong home for the status release, since it
+is a reviewer's first guess. It runs from `OnApplyTemplate` only (`:1172`), and the template is
+**not** re-applied when a control is re-attached — measured, `attached=2` with `templated=1` across
+a detach and re-attach cycle. A release living there would fire once and never again.
+
+## Applying the template no longer builds the status controller
+
+Plan 00019 recorded that `StatusController` is built lazily on the first touch of `Status`, and that
+applying the template is such a touch — which is why `TimeProvider` had to be assigned before
+`Window.Show()`, and why assigning it afterwards compiled, read as correct and changed nothing.
+
+The first half of that is no longer true. `UpdateStrip` was the toucher, and it now reads the field,
+so the controller is built on the first `Set…` instead. **The guidance stands and the trap is
+gone**: before `Show()` is still the safe order, and it is no longer the only order that works. The
+note in `TimeProvider`'s own summary is left as written, because a rule that is merely no longer
+load-bearing is worse to delete than to keep.
+
+## A detach clears a failure, and `Status` hands out one instance per attach
+
+Two consequences of the release that are decided here rather than discovered by a consumer.
+
+**`Dispose()` calls `Apply(null, StatusKind.None)` unconditionally**, so a detach clears every kind,
+including `StatusKind.Failure` — documented as *"sticks until dismissed or replaced"* — and
+`StatusKind.State`. The plan's second draft justified the loss as *"correct for a message that was
+going to clear itself in six seconds"*, which is true of `Success` and `Warning` and false of the one
+kind that exists to persist: a user who tabs away from a failed diff and back now finds empty panes
+and no error text. Accepted, because preserving a message across a disposal reintroduces exactly the
+ownership the release exists to remove, and because the failure path re-runs on the next build.
+
+**`Status` returned one instance for the life of the view and now returns one per attach.** The
+signature does not move, so this is invisible to a compiler and to `PackagingTests` alike. A host
+that stored the reference meets `ObjectDisposedException` from `Set`; a host that set
+`SuccessAutoClearDelay` or subscribed to `Changed` loses both **silently** on the next tab switch.
+Nothing in this repository does either — the hosting guide never names `Status`, and the demo calls
+it inline — so the repair is a sentence on the property's summary, added in the same commit, on the
+principle that a package id is permanent once published and the cheapest time to say this is before
+the first push.
