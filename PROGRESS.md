@@ -2,11 +2,18 @@
 
 ## Resume
 
-**`main` carries plan 00018 complete — all three phases — with a clean working tree and no remote.
+**`main` carries plan 00019 complete — all four phases — with a clean working tree and no remote.
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-631 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
-00003–00018 are complete and closed; plan 00002 was rejected on its own review before any code was
-written. **[Plan 00018](plans/00018-the-release-written-before-there-is-a-remote.md) wrote the
+651 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
+00003–00019 are complete and closed; plan 00002 was rejected on its own review before any code was
+written. **[Plan 00019](plans/00019-the-control-for-someone-who-did-not-build-it.md) wrote
+[the hosting guide](docs/hosting-diffview.md)** — the document for someone putting the control into
+their own application, gated so every API name it prints resolves against the shipped surface and the
+quickstart it tells a stranger to paste is loaded from the document, parsed and driven to `Ready`. It
+is also the packages' `PackageReadmeFile`, which was the last thing the release waited on besides a
+remote. Writing it uncovered an intermittent process abort — a status auto-clear on the real clock —
+recorded in `DECISIONS.md` with the one finding it leaves unrepaired. Before it,
+**[plan 00018](plans/00018-the-release-written-before-there-is-a-remote.md) wrote the
 release and left it dormant** — MIT, the package metadata, and a `release.yml` where tagging
 `vYYYY.Q.MDD` is the whole procedure; nothing has run, because there is no remote. **The library's
 namespace is
@@ -81,18 +88,19 @@ wording.
    every string with what it is, what each placeholder holds, and the English it came from, so the
    work now needs **eight readers rather than any more tooling**. This gates the **first release**,
    not any commit: `CHANGELOG.md` holds only `[Unreleased]`.
-2. **The hosting guide**, asked for on 2026-09-14: a document for consumers of the control, with the
-   demo kept exactly as it is. The next plan, **00019** — a full draft is parked outside the
-   repository and was written before the namespace sweep and the package-id change, so every
-   namespace and id it names needs re-checking. It also owns `PackageReadmeFile`, which plan 00018
-   deliberately left unset, so the item below waits on this one.
-3. **The first publish.** Everything is written and nothing has run. The packages are MIT, carry
-   their metadata, and pack at a caldate the release tag supplies; `release.yml` publishes them
-   through Trusted Publishing, and tagging `vYYYY.Q.MDD` is the whole procedure. Three things stand
-   between that and a release, in order: **a remote** (`https://github.com/JanusMael/DiffView`, which
-   the metadata already names), **the hosting guide**, which owns `PackageReadmeFile`, and **a
-   nuget.org Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
+2. **The first publish.** Everything is written and nothing has run. The packages are MIT, carry
+   their metadata and their readme, and pack at a caldate the release tag supplies; `release.yml`
+   publishes them through Trusted Publishing, and tagging `vYYYY.Q.MDD` is the whole procedure. Plan
+   00019 closed one of the three preconditions — `PackageReadmeFile` now points at the hosting guide,
+   proven by packing and reading it back out of the `.nupkg`. **Two remain**: a **remote** at
+   `https://github.com/JanusMael/DiffView`, which the metadata already names, and a **nuget.org
+   Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
    `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
+3. **`StatusController.DispatchToUiThread` invokes inline without a guard.** Found by plan 00019's
+   quickstart gate and left unrepaired on purpose; the argument and the measurements are in
+   `DECISIONS.md`. A desktop host has a stable UI thread, so this is very likely test-host-only, but
+   the failure mode if that is wrong is a consumer's process aborting while a status message clears.
+   Wants its own change and its own test, not a documentation plan's.
 4. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.
@@ -378,6 +386,27 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00019 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The two gates | S | done | `HostingGuideGate` + `HostingGuideTests`, shipped before the document existed and against fixtures broken in exactly one way each. Citations resolve by reflection against the shipped surface (exported types, `Public` binding flags — a non-public member is *absent*); the quickstart is read from the document, parsed and driven to `Ready`; and the `xmlns` is compared against the namespace the control's type reports. `Avalonia.Markup.Xaml.Loader` added test-only. 5 of 5 mutations killed |
+| 2 The guide | M | done | [`docs/hosting-diffview.md`](docs/hosting-diffview.md). Writing it against the live gate exposed the gate's own gap: the guide must print `Bennewitz.Ninja.DiffView`, which resolves to no type because plan 00017 left none — `Kind.Namespace` added, excused but verified against the namespaces the surface declares. The TextMate cost is stated at the measured 6 MB, not the 6.7 MB the parked draft asserted. Joined `DocumentationCitationTests` |
+| 3 The package readme | S | done | `PackageReadmeFile` on both packable projects plus the `None … Pack="true" PackagePath="\"` item the guide needs for living outside them; gated by packing for real and reading the readme back out of the `.nupkg`. 2 of 2 mutations killed. **Uncovered an intermittent process abort it did not cause** — see *Plan 00019 verification* |
+| 4 The record | S | done | `README.md` leads with the guide, the demo says in one line that it is a harness rather than a sample, `DECISIONS.md` takes both findings, this file, `CHANGELOG.md` |
+
+## Plan 00019 verification
+
+| Done-when item | Result |
+|---|---|
+| Every API name the guide prints resolves | Green, and shown biting: a deliberate `SideBySideDiffView.NoSuchThing` appended to the real document fails `The_guide_itself_passes_every_check` and names it |
+| The quickstart parses, declares the right namespace and reaches `Ready` | Green, over the block read from the document. It carries no `x:Class`, so it is loadable exactly as printed |
+| A non-public member is caught | Green — `SideBySideDiffView.Builder` is internal and visible to the test assembly, and still reports as absent |
+| The readme is inside both packages | Green, by `dotnet pack` and reading the nuspec's `<readme>` and the payload back |
+| The guide is linked from `README.md` | Green |
+| The suite | 651 passed / 0 failed / 0 skipped, `en-US` and `de-DE` alike; build clean under `-warnaserror` |
+| **The abort phase 3 uncovered** | **Fixed in the test; the finding under it is open.** The pack gate parks the Avalonia thread for ~2s, which let a real-clock status auto-clear come due. `StatusController.DispatchToUiThread` then invoked inline — `Dispatcher.UIThread.CheckAccess()` answers true for a pooled thread the headless dispatcher has handed back — outside its own `try`/`catch`, so `VerifyAccess` escaped unhandled and aborted the process at exit 134. **The runner reports this as `Failed!` with `failed: 0`**, so a grep for failing tests finds nothing. Two crashes in 18 runs, then 0 in 10 with the gate removed (which nearly bought the wrong culprit), then 1 more in 13. The quickstart gate now installs a `FakeTimeProvider` **before `Show()`** — after it, `StatusController` has already been built lazily on the template's touch of `Status`, so a late assignment compiles and changes nothing — and asserts `ActiveTimers` is non-zero to prove the clock took. **18 consecutive clean full runs** afterwards |
 
 ## Plan 00018 phases
 

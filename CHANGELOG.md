@@ -440,6 +440,29 @@ All notable changes to DiffView are recorded here. The format follows
   than globbing `*.nupkg`, because this solution also packs `Bennewitz.Ninja.ThemeAudit`, which is
   local-feed-only by design and could not be withdrawn once published. `PackagingTests` gates all of
   it. Nothing has run: there is no remote, and the first push is a person's to make.
+- Plan 00019 — [the hosting guide](docs/hosting-diffview.md), for someone putting the control into
+  their own application: install, quickstart, theming, the properties that carry the control,
+  editing, the extension points, what the TextMate dependency costs, and where the control stops.
+  It states three things a reader cannot discover — the library declares no XAML namespace, so the
+  `using:` form is the only one; the package id, the assembly name and the namespace are three
+  different strings; and the eight shipped locales are machine-generated and unreviewed.
+- Two gates in front of that guide, written before it: every API name it prints must resolve by
+  reflection against the **shipped** surface, with a non-public member counting as absent, and its
+  quickstart is read from the document itself, parsed, and driven to `Ready` headless — so the
+  snippet a stranger pastes is the snippet under test. A third compares the `xmlns` the document
+  teaches against the namespace the control reports, which is the citation plan 00017 would have
+  broken and that no member-name reflection would catch.
+- `PackageReadmeFile` on both published packages, pointing at that guide rather than at a second
+  consumer-facing document kept in step with it. Gated by packing for real and reading the readme
+  back out of the `.nupkg`.
+
+### Fixed
+
+- The quickstart gate installs a hand-advanced clock before showing its window. A status auto-clear
+  left on the real clock outlived the test and aborted the test host — exit 134, about one full-suite
+  run in ten, reported by the runner as `Failed!` with `failed: 0`. `DECISIONS.md` records the
+  measurements, the ordering trap that made the first repair a no-op, and the unguarded inline
+  dispatch underneath it, which is left open.
 
 ### Removed
 

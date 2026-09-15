@@ -7,6 +7,11 @@ designed so in-pane editing is a flip, not a rewrite. A second, standalone deliv
 resource keys an Avalonia theme leaves undefined (the invisible-control cases) and the tokens
 below a contrast floor, for any Avalonia project.
 
+**Putting the control into your own application? Read
+[docs/hosting-diffview.md](docs/hosting-diffview.md).** It is the guide for consumers — install,
+quickstart, theming, the extension points, what the dependency costs you and where the control
+stops. Everything below this line is for someone working *on* DiffView rather than *with* it.
+
 Status: **every phase of the plan is complete, the optional inline view included.** The
 theme audit report is [docs/theme-audit.md](docs/theme-audit.md). The plan is
 [plans/00001-side-by-side-diff-control.md](plans/00001-side-by-side-diff-control.md);

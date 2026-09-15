@@ -208,9 +208,11 @@ public sealed class HostingGuideTests
     public async Task The_guide_itself_passes_every_check()
     {
         string path = RepoPaths.Source(HostingGuideGate.DocumentPath);
-        Assert.SkipUnless(
-            File.Exists(path),
-            $"{HostingGuideGate.DocumentPath} lands in phase 2. The gate ships first, on purpose.");
+
+        // Phase 1 shipped this as a skip, because the gate deliberately preceded the document. Phase
+        // 2 wrote it, so the skip came out: a guide that vanishes must fail here rather than quietly
+        // stop being checked.
+        Assert.True(File.Exists(path), $"{HostingGuideGate.DocumentPath} is gone, and with it every check below.");
 
         string markdown = await File.ReadAllTextAsync(path);
 
@@ -223,6 +225,15 @@ public sealed class HostingGuideTests
         Assert.NotNull(xaml);
         Assert.Equal(typeof(SideBySideDiffView).Namespace, HostingGuideGate.DeclaredNamespace(xaml));
         await AssertQuickstartRunsAsync(xaml);
+    }
+
+    [Fact]
+    public void The_guide_is_linked_from_the_readme()
+    {
+        // A guide nobody can find is the failure mode that costs least to prevent, and README.md is
+        // the only place a consumer who arrived at the repository will look.
+        string readme = File.ReadAllText(RepoPaths.Source("README.md"));
+        Assert.Contains(HostingGuideGate.DocumentPath, readme, StringComparison.Ordinal);
     }
 
     /// <summary>
