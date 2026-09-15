@@ -96,11 +96,20 @@ wording.
    `https://github.com/JanusMael/DiffView`, which the metadata already names, and a **nuget.org
    Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
    `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
-3. **`StatusController.DispatchToUiThread` invokes inline without a guard.** Found by plan 00019's
-   quickstart gate and left unrepaired on purpose; the argument and the measurements are in
-   `DECISIONS.md`. A desktop host has a stable UI thread, so this is very likely test-host-only, but
-   the failure mode if that is wrong is a consumer's process aborting while a status message clears.
-   Wants its own change and its own test, not a documentation plan's.
+3. **Nothing releases `StatusController`, so a closed view is reachable for ten seconds.** Both views
+   build it lazily and neither disposes it; there is no `_status?.Dispose()` anywhere in `src/` and
+   no attach or detach override on either. The pending auto-clear holds the controller, which holds
+   a `Changed` subscription to the view. **Plan 00020 is drafted and awaiting approval** at
+   `plans/00020-the-timer-that-outlived-the-view.md` — untracked, uncommitted, because a plan is
+   committed alone on approval. The release is `_status?.Dispose(); _status = null;` on detach, where
+   the **null** is what keeps a re-attached view working: `Dispose` latches `_disposed` and `Set`
+   then throws. Two decisions locked 2026-09-15, both in `DECISIONS.md`.
+
+   The finding this replaces — `DispatchToUiThread` invoking inline without a guard — is **closed as
+   won't-fix**, measured rather than argued: the headless host runs Avalonia's UI loop on a
+   `.NET TP Worker`, so `CheckAccess()` can answer true for a pooled thread handed back after a test.
+   A desktop UI thread is dedicated and never a pool thread, so the path is unreachable in
+   production, at this and the other four `CheckAccess()` sites alike.
 4. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13.

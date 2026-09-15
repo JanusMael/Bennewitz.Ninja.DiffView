@@ -2601,11 +2601,53 @@ disappear for ten runs, which nearly bought the wrong conclusion — that the pa
 
 The finding underneath it is not repaired: `DispatchToUiThread`'s `try`/`catch` covers only the
 `Post` branch, and the inline `action()` above it is unguarded, so any `VerifyAccess` failure on
-that path is a process abort rather than a dropped status update. A desktop host has a stable UI
-thread, so `CheckAccess()` true does imply `VerifyAccess` passes and this is very likely
-test-host-only — but "very likely" is carrying the whole load, and the cost of being wrong is a
-consumer's process aborting while a status message clears. Left as a finding rather than fixed
-inside a documentation plan; it wants its own change and its own test.
+that path is a process abort rather than a dropped status update.
+
+**Superseded 2026-09-15 — this is measured, and it is headless-only.** The paragraph that stood here
+said *"very likely test-host-only, but 'very likely' is carrying the whole load"*. A probe settled it
+in one run:
+
+| Probe, on the headless UI thread | Result |
+|---|---|
+| `Thread.CurrentThread.IsThreadPoolThread` | **True** |
+| `Thread.CurrentThread.Name` | **`.NET TP Worker`** |
+| `Dispatcher.UIThread.CheckAccess()` from a fresh pool thread | False |
+
+**The headless host runs Avalonia's UI loop on a thread-pool thread.** It is handed back when the
+test ends, a later timer callback can land on that same thread, and `CheckAccess()` — which compares
+thread identity — answers true for a thread whose dispatcher state has moved on. A desktop
+application runs a dedicated, non-pool UI thread, so a timer callback is never on it,
+`CheckAccess()` is always false, and the call always posts.
+
+So the inline path is **not reachable in production**, and the same argument retires it at the other
+four `CheckAccess()` sites — `Complete` and `CompleteFind` on both views — which have the identical
+shape and sit on hotter paths. **Closed as won't-fix**: changing shipped code to harden a test host
+is the wrong trade, and plan 00019's test fix already closes the path that reached it.
+
+What the same review did turn up is a defect that *does* reach a consumer, and that would
+incidentally have prevented the abort: **nothing ever disposes `StatusController`**. See the section
+below.
+
+## Nothing releases the status controller, and a closed view is reachable for ten seconds
+
+Both views build `StatusController` lazily — `SideBySideDiffView.cs:931`, `InlineDiffView.cs:689` —
+and neither ever releases it. There is no `_status?.Dispose()` anywhere in `src/`, and neither view
+overrides any attach or detach method at all.
+
+A success message arms a 6-second auto-clear, a warning a 10-second one. Until it fires, the timer
+holds its callback, which holds the controller, which holds a `Changed` subscription to the view: a
+**detached or closed view stays reachable from the timer queue for up to ten seconds**, and the
+callback then mutates a status strip nobody is looking at.
+
+The repair is two lines and one trap. `Dispose()` latches `_disposed`, and `Set` does
+`ObjectDisposedException.ThrowIf(_disposed, this)` — so disposing *alone* breaks every view that
+comes back: a tab switch, a virtualized list, a reparent. The release must therefore be
+`_status?.Dispose(); _status = null;`, where the **null** hands the next `Status` access to the
+existing lazy getter, which builds a fresh controller and re-subscribes `Changed`.
+
+Decided 2026-09-15; the plan is `plans/00020-the-timer-that-outlived-the-view.md`.
+
+## The guide is the package readme, and the file lives outside both projects
 
 ## The guide is the package readme, and the file lives outside both projects
 
