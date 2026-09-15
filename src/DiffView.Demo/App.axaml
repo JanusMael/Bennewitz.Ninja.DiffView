@@ -2,6 +2,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Bennewitz.Ninja.DiffView.Demo.App"
              RequestedThemeVariant="Default">
+  <!-- Semi caps a menu popup at 400px (MenuFlyoutMaxHeight, Themes/Shared/Menu.axaml), bound to the
+       popup border's MaxHeight. The View menu is 24 items and 8 separators and wants 858px, so the
+       cap put more than half of it behind a scroll. Lifted here so the popup sizes to its content;
+       the windowing layer still constrains it to the screen, which is where a scroll legitimately
+       comes back — on a short screen this menu will scroll again, and that is the intended
+       fallback. Resources are searched ahead of Styles, which is what lets this outrank the theme.
+       Fluent and Simple define no such key, so under those flags this is inert. -->
+  <Application.Resources>
+    <x:Double x:Key="MenuFlyoutMaxHeight">Infinity</x:Double>
+  </Application.Resources>
+
   <!-- The base theme — Semi by default, Fluent or Simple by the theme flag — is inserted ahead
        of these styles in code-behind, so the flag can choose it. -->
   <Application.Styles>
