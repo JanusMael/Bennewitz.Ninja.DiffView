@@ -2564,3 +2564,62 @@ There is no remote, so none of this has run. That was the decision rather than a
 workflow, the licence and the metadata are cheapest to get wrong now, when getting them wrong costs
 a commit instead of a permanent package. The first real run will be the first real run, and
 `workflow_dispatch` exists so it need not also be a tag push.
+
+## A status auto-clear on the real clock aborts the test host, about one run in ten
+
+Plan 00019's quickstart gate drives a `SideBySideDiffView` loaded from the guide's own markup, and
+it was the first Avalonia test here to leave a **real** timer armed — every other one goes through
+`CompositeHost`, which installs a `FakeTimeProvider`. A successful build posts a status message, and
+`StatusKind.Success` schedules an auto-clear. On `TimeProvider.System` that timer outlives the test.
+
+When it fires, it lands on a thread-pool thread and `StatusController.DispatchToUiThread` asks
+`Dispatcher.UIThread.CheckAccess()`, which answers **true** — the headless dispatcher runs the UI
+loop on a pooled thread, and by then that thread has been handed back. So the action is invoked
+inline rather than posted, `DiffStatusStrip.State` fails `VerifyAccess` inside `SetValue`, and the
+exception escapes on a thread-pool thread: unhandled, process aborted, exit 134, mid-suite.
+
+Measured before it was understood, because the symptom is easy to misread: the runner prints
+**`Test run summary: Failed!` with `failed: 0`** and a total short of the full count, so a grep for
+failing tests finds nothing and the run looks green. Two crashes in eighteen runs with the gate as
+first written; zero in ten with it removed; one more in ten after it was restored, which is what
+produced the stack.
+
+**The repair here was the test**, which now uses the same hand-advanced clock as everything else —
+but the first attempt at that repair did not work, and the reason is the part worth keeping.
+`StatusController` is built **lazily, on the first touch of `Status`**, capturing whatever
+`TimeProvider` reads at that moment, and applying the template is one such touch. Assigning the
+clock after `Window.Show()` therefore compiles, reads as correct, and changes nothing; the crash
+came back at the same rate. The property's own summary says *"set it before the first build"*, which
+is looser than the truth — it must be set before the template applies. The test now asserts
+`FakeTimeProvider.ActiveTimers` is non-zero after the build, because the failure mode of getting
+this wrong is not a red test but a process abort in one full-suite run out of ten, hours later.
+
+The trigger that made a latent problem visible was unrelated and worth noting on its own: the
+package-readme gate shells out to `dotnet pack`, which parks the Avalonia test thread for a couple of
+seconds and gives a pending real-clock timer room to come due. Removing that test made the crash
+disappear for ten runs, which nearly bought the wrong conclusion — that the pack test was at fault.
+
+The finding underneath it is not repaired: `DispatchToUiThread`'s `try`/`catch` covers only the
+`Post` branch, and the inline `action()` above it is unguarded, so any `VerifyAccess` failure on
+that path is a process abort rather than a dropped status update. A desktop host has a stable UI
+thread, so `CheckAccess()` true does imply `VerifyAccess` passes and this is very likely
+test-host-only — but "very likely" is carrying the whole load, and the cost of being wrong is a
+consumer's process aborting while a status message clears. Left as a finding rather than fixed
+inside a documentation plan; it wants its own change and its own test.
+
+## The guide is the package readme, and the file lives outside both projects
+
+`PackageReadmeFile` is `hosting-diffview.md` on both packable projects — the hosting guide itself,
+not a second consumer-facing document kept in step with it. Plan 00018 left the property unset for
+exactly that reason and handed it here.
+
+The guide sits at `docs/`, outside both project directories, so the property alone packs nothing and
+`dotnet pack` fails on a readme it cannot find — the `LayeredEditors.Avalonia.Diagnostics` failure
+recorded further up this file. A `None Include="$(RepoRoot)docs/hosting-diffview.md" Pack="true"
+PackagePath="\"` item is what actually carries it, and `PackageReadmeFile` names the file as it
+appears **inside** the package, which is why it carries no directory.
+
+`src/ThemeAudit` is packable too and deliberately carries no readme, being local-feed-only, so this
+is not in `PackagingTests`' shared `Required` list. It has its own pair of tests, one of which packs
+both projects for real and reads the readme back out of the `.nupkg`, because what the nuspec ends
+up saying is the thing nuget.org acts on.

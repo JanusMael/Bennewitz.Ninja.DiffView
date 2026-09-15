@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.IO.Compression;
 using System.Xml.Linq;
 
 namespace Bennewitz.Ninja.DiffView.Tests;
@@ -127,6 +129,109 @@ public sealed class PackagingTests
         // pack must be told the same thing or the pack quietly ships what the build made.
         Assert.Contains("GITHUB_REF_NAME#v", instructions, StringComparison.Ordinal);
         Assert.Equal(2, lines.Count(line => line.Contains("/p:Version=", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// Plan 00019 §Phase 3: the two published packages carry the hosting guide as their readme.
+    /// </summary>
+    /// <remarks>
+    /// Not in <see cref="Required"/>, because <c>src/ThemeAudit</c> is packable too and is
+    /// local-feed-only by design; it carries no readme and should not be made to.
+    /// </remarks>
+    [Fact]
+    public void The_published_packages_declare_the_hosting_guide_as_their_readme()
+    {
+        Assert.True(
+            File.Exists(Path.Combine(RepoPaths.Root, "docs", "hosting-diffview.md")),
+            "The guide is gone, so the readme both packages declare names nothing and the pack fails.");
+
+        List<string> declaring = PackableProjects()
+            .Where(project => PropertiesIn(project).Contains("PackageReadmeFile"))
+            .Select(Path.GetFileNameWithoutExtension)
+            .OfType<string>()
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(["DiffView.Avalonia", "DiffView.Core"], declaring);
+    }
+
+    /// <summary>
+    /// The readme reaches the package. A <c>PackageReadmeFile</c> naming a file the project does not
+    /// actually pack fails <c>dotnet pack</c> outright — the
+    /// <c>LayeredEditors.Avalonia.Diagnostics</c> failure recorded in <c>DECISIONS.md</c> — and the
+    /// guide sits outside both project directories, so the property alone would do exactly that.
+    /// Asserted by packing rather than by reading the csproj, because what the nuspec ends up saying
+    /// is the thing nuget.org acts on.
+    /// </summary>
+    [Fact]
+    public void The_readme_each_package_declares_is_inside_the_package()
+    {
+        string output = Path.Combine(Path.GetTempPath(), "diffview-pack-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(output);
+
+        try
+        {
+            foreach (string project in PackableProjects()
+                         .Where(project => PropertiesIn(project).Contains("PackageReadmeFile")))
+            {
+                // --no-build: the suite has already built this configuration, and packing again
+                // would triple the cost of the check. A failure here prints the pack's own output.
+                (int code, string log) = Run("dotnet", ["pack", project, "--no-build", "-o", output, "-nodeReuse:false"]);
+                Assert.True(code == 0, $"dotnet pack failed for {Path.GetFileName(project)}:\n{log}");
+            }
+
+            string[] packages = Directory.GetFiles(output, "*.nupkg");
+            Assert.Equal(2, packages.Length);
+
+            foreach (string package in packages)
+            {
+                using ZipArchive archive = ZipFile.OpenRead(package);
+
+                ZipArchiveEntry nuspec = Assert.Single(
+                    archive.Entries,
+                    entry => entry.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+
+                using Stream stream = nuspec.Open();
+                XDocument document = XDocument.Load(stream);
+                XElement? readme = document.Descendants().FirstOrDefault(
+                    element => string.Equals(element.Name.LocalName, "readme", StringComparison.Ordinal));
+
+                string name = Path.GetFileName(package);
+                Assert.True(readme is not null, $"{name}'s nuspec names no readme.");
+                Assert.Equal("hosting-diffview.md", readme!.Value.Trim());
+
+                Assert.True(
+                    archive.Entries.Any(entry => string.Equals(entry.FullName, readme.Value.Trim(), StringComparison.Ordinal)),
+                    $"{name}'s nuspec names {readme.Value.Trim()}, which is not in the package.");
+            }
+        }
+        finally
+        {
+            Directory.Delete(output, recursive: true);
+        }
+    }
+
+    private static (int Code, string Output) Run(string file, string[] arguments)
+    {
+        ProcessStartInfo start = new()
+        {
+            FileName = file,
+            WorkingDirectory = RepoPaths.Root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+
+        foreach (string argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        using Process process = Process.Start(start)
+            ?? throw new InvalidOperationException($"Could not start {file}.");
+
+        string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        return (process.ExitCode, output);
     }
 
     private static List<string> PackableProjects()

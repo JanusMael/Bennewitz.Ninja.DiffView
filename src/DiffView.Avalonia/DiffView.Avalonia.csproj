@@ -27,6 +27,10 @@
          built and then silently dropped from the published output. Matches the set asserted by
          LocaleParityTests.The_shipped_locales_are_exactly_the_declared_set. -->
     <SatelliteResourceLanguages>en;de-DE;es-ES;fr-FR;ja-JP;ko-KR;pt-BR;ru-RU;zh-CN</SatelliteResourceLanguages>
+    <!-- The readme IS the hosting guide, not a second consumer-facing document to keep in step with
+         it. Plan 00018 left this unset for that reason and handed it to plan 00019. The value is the
+         file's name *inside the package*, which is why it carries no directory. -->
+    <PackageReadmeFile>hosting-diffview.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,6 +38,14 @@
     <PackageReference Include="Avalonia.AvaloniaEdit" />
     <PackageReference Include="AvaloniaEdit.TextMate" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What actually carries the file. The guide lives outside this project directory, so the
+         property alone packs nothing and dotnet pack fails on a readme it cannot find — the
+         LayeredEditors.Avalonia.Diagnostics failure DECISIONS.md records. PackagePath="\" is the
+         package root, which is where PackageReadmeFile looks. -->
+    <None Include="$(RepoRoot)docs/hosting-diffview.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

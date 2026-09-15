@@ -235,11 +235,32 @@ public sealed class HostingGuideTests
         Window window = Assert.IsType<Window>(AvaloniaRuntimeXamlLoader.Load(xaml));
         try
         {
-            window.Show();
-            CompositeHost.Layout();
-
             SideBySideDiffView view = Assert.Single(
                 window.GetLogicalDescendants().OfType<SideBySideDiffView>());
+
+            // A hand-advanced clock, as every other Avalonia test here uses — and it must be set
+            // BEFORE the window is shown. StatusController is built lazily on the first touch of
+            // Status, capturing whatever TimeProvider says at that moment, and applying the template
+            // is one such touch; assigning afterwards compiles, reads as correct, and leaves the
+            // real clock in place. ("Set it before the first build" is the property's own wording,
+            // which is looser than the truth.)
+            //
+            // Not cosmetic. A successful build posts a status message with an auto-clear timer
+            // behind it; on the real clock that timer outlives the test, fires on a pool thread, and
+            // StatusController.DispatchToUiThread invokes it inline because
+            // Dispatcher.UIThread.CheckAccess() answers true for a pooled thread the headless
+            // dispatcher has already handed back. That call sits outside the method's try/catch, so
+            // the VerifyAccess failure escapes unhandled and aborts the process — exit 134,
+            // mid-suite. Recorded in DECISIONS.md, where the unguarded inline call is left as a
+            // finding rather than repaired inside a documentation plan.
+            //
+            // Scaffolding around the markup, not a change to it: the quickstart under test is still
+            // exactly what the document prints.
+            FakeTimeProvider clock = new();
+            view.TimeProvider = clock;
+
+            window.Show();
+            CompositeHost.Layout();
 
             view.LeftSource = new PaneSource("one\ntwo\nthree\n") { Title = "left.txt" };
             view.RightSource = new PaneSource("one\ntwo changed\nthree\n") { Title = "right.txt" };
@@ -248,6 +269,14 @@ public sealed class HostingGuideTests
 
             Assert.True(ready, $"The quickstart never reached Ready; it settled at {view.State}.");
             Assert.NotNull(view.Document);
+
+            // Proof the clock above actually took. A successful build posts a status message and
+            // arms its auto-clear, so the timer has to be on this clock; if the assignment ever
+            // drifts back below Show() it lands on the real one instead, and the only symptom is a
+            // process abort in roughly one full-suite run out of ten, long after this test passed.
+            Assert.True(
+                clock.ActiveTimers > 0,
+                "The status auto-clear was not armed on the test clock, so it is on the real one.");
         }
         finally
         {

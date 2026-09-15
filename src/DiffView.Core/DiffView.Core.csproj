@@ -11,11 +11,23 @@
     <PackageTags>diff;compare;text-diff;diffplex;alignment;side-by-side</PackageTags>
     <!-- Public API is documented; a missing comment is a build error (CS1591 under warnings-as-errors). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The readme IS the hosting guide, not a second consumer-facing document to keep in step with
+         it. Plan 00018 left this unset for that reason and handed it to plan 00019. The value is the
+         file's name *inside the package*, which is why it carries no directory. -->
+    <PackageReadmeFile>hosting-diffview.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="DiffPlex" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What actually carries the file. The guide lives outside this project directory, so the
+         property alone packs nothing and dotnet pack fails on a readme it cannot find — the
+         LayeredEditors.Avalonia.Diagnostics failure DECISIONS.md records. PackagePath="\" is the
+         package root, which is where PackageReadmeFile looks. -->
+    <None Include="$(RepoRoot)docs/hosting-diffview.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
