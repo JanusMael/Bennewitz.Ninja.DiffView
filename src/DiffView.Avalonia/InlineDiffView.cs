@@ -679,7 +679,13 @@ public class InlineDiffView : TemplatedControl
     /// <summary>The clock behind the transient messages' auto-clear and the slow-build threshold. Set it before the first build.</summary>
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
-    /// <summary>The transient message lane; its typed helpers are the only way to emit one.</summary>
+    /// <summary>
+    /// The transient message lane; its typed helpers are the only way to emit one. The instance
+    /// does not outlive the view's place in the visual tree: leaving it releases the controller
+    /// and the next access builds a fresh one, so a host that stores the reference, sets a delay
+    /// on it or subscribes to <see cref="StatusController.Changed"/> has to do so again after a
+    /// re-attach.
+    /// </summary>
     public StatusController Status
     {
         get
@@ -899,6 +905,10 @@ public class InlineDiffView : TemplatedControl
 
     internal DiffStatusStrip? StatusStrip => _statusStrip;
 
+    // The controller as it stands, without building one: the public Status getter is lazy,
+    // so asking it whether the field was released would create what it was asked about.
+    internal StatusController? StatusOrNull => _status;
+
     internal DiffFindBar? FindBar => _findBar;
 
     internal Button? BannerAction => _bannerAction;
@@ -1079,6 +1089,18 @@ public class InlineDiffView : TemplatedControl
         UpdateFindBar();
         UpdateStrip();
         UpdateBanner();
+    }
+
+    /// <inheritdoc/>
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+
+        // The order is load-bearing. Dispose raises Changed synchronously into UpdateStrip,
+        // which reads the field, so the field must still hold the controller being disposed.
+        // Nulled first, these two lines release one controller and immediately build another.
+        _status?.Dispose();
+        _status = null;
     }
 
     /// <inheritdoc/>
@@ -1662,10 +1684,13 @@ public class InlineDiffView : TemplatedControl
         strip.FindText = FindStripText();
         strip.CaretText = IsPaneFocused ? DiffViewStrings.Format(DiffViewStrings.StatusCaret, CaretLine, CaretColumn) : null;
 
-        StatusController status = Status;
-        strip.TransientText = status.Text;
-        strip.TransientKind = status.Kind;
-        strip.IsTransientDismissible = status.IsDismissible;
+        // The field, never the lazy getter. A refresh must not build a controller for a view
+        // that has left the tree — that is what re-armed the timer the detach had released.
+        // With no controller the getter would have built one reading exactly these defaults.
+        StatusController? status = _status;
+        strip.TransientText = status?.Text;
+        strip.TransientKind = status?.Kind ?? StatusKind.None;
+        strip.IsTransientDismissible = status?.IsDismissible ?? false;
     }
 
     private void OnStatusChanged(object? sender, EventArgs e)
