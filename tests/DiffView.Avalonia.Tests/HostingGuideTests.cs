@@ -53,7 +53,11 @@ public sealed class HostingGuideTests
         HostingGuideGate.Unresolved(markdown, HostingGuideGate.Surface());
 
     private static HostingGuideGate.Kind Classify(string dotted) =>
-        HostingGuideGate.Classify(dotted, HostingGuideGate.PackageIds(), HostingGuideGate.AssemblyNames());
+        HostingGuideGate.Classify(
+            dotted,
+            HostingGuideGate.PackageIds(),
+            HostingGuideGate.AssemblyNames(),
+            HostingGuideGate.Namespaces(HostingGuideGate.Surface()));
 
     // ── The citation gate ──────────────────────────────────────────────────────────────────
 
@@ -112,6 +116,23 @@ public sealed class HostingGuideTests
     {
         Assert.Equal(HostingGuideGate.Kind.FileName, Classify("README.md"));
         Assert.Equal(HostingGuideGate.Kind.FileName, Classify("DiffView.axaml"));
+    }
+
+    [Fact]
+    public void A_namespace_the_library_declares_is_not_read_as_a_member_citation()
+    {
+        // The guide has to print this one: it is the xmlns a reader imports, and plan 00017 left no
+        // type named DiffView on purpose, so member resolution could never account for it.
+        Assert.Equal("Bennewitz.Ninja.DiffView", typeof(SideBySideDiffView).Namespace);
+        Assert.Equal(HostingGuideGate.Kind.Namespace, Classify("Bennewitz.Ninja.DiffView"));
+    }
+
+    [Fact]
+    public void A_namespace_the_library_does_not_declare_is_still_caught()
+    {
+        // Excused, not unchecked. The day the namespace moves again, the guide's own xmlns fails.
+        Assert.Equal(HostingGuideGate.Kind.Api, Classify("Bennewitz.Ninja.DiffView.Nowhere"));
+        Assert.Single(Unresolved("It lives in `Bennewitz.Ninja.DiffView.Nowhere`.\n"));
     }
 
     [Fact]

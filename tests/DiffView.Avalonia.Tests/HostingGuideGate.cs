@@ -55,6 +55,15 @@ internal static class HostingGuideGate
         /// <summary>An assembly name. Same.</summary>
         AssemblyName,
 
+        /// <summary>
+        /// A namespace that the surface actually declares. The guide has to print
+        /// <c>Bennewitz.Ninja.DiffView</c> — it is the <c>xmlns</c> a reader imports — and there is
+        /// deliberately no type of that name, so without this it would fail its own gate. Excused
+        /// but not unchecked: the string must match a namespace some exported type is in, so the
+        /// day it moves again the citation fails rather than being waved through.
+        /// </summary>
+        Namespace,
+
         /// <summary>A file: the segment after the last dot is an extension, not a PascalCase member.</summary>
         FileName,
     }
@@ -108,11 +117,25 @@ internal static class HostingGuideGate
         return ids;
     }
 
+    /// <summary>Every namespace the surface declares, which is what excuses a namespace citation.</summary>
+    public static IReadOnlyCollection<string> Namespaces(Type[] surface) =>
+        surface.Select(type => type.Namespace)
+               .Where(name => !string.IsNullOrEmpty(name))
+               .Select(name => name!)
+               .Distinct(StringComparer.Ordinal)
+               .ToArray();
+
     /// <summary>Decides what a dotted token is, so only the API ones are held to resolving.</summary>
-    public static Kind Classify(string dotted, IReadOnlyCollection<string> packageIds, IReadOnlyCollection<string> assemblyNames)
+    public static Kind Classify(
+        string dotted,
+        IReadOnlyCollection<string> packageIds,
+        IReadOnlyCollection<string> assemblyNames,
+        IReadOnlyCollection<string> namespaces)
     {
-        // Order matters: DiffView.Avalonia is an assembly name and would otherwise read as
-        // "member Avalonia of type DiffView", which resolves to nothing and would fail the gate.
+        // Order matters twice over. DiffView.Avalonia is an assembly name and would otherwise read
+        // as "member Avalonia of type DiffView", which resolves to nothing; and
+        // Bennewitz.Ninja.DiffView.Core is both a package id and a namespace, so whichever is
+        // checked first has to be one that excuses it.
         if (packageIds.Contains(dotted, StringComparer.Ordinal))
         {
             return Kind.PackageId;
@@ -121,6 +144,11 @@ internal static class HostingGuideGate
         if (assemblyNames.Contains(dotted, StringComparer.Ordinal))
         {
             return Kind.AssemblyName;
+        }
+
+        if (namespaces.Contains(dotted, StringComparer.Ordinal))
+        {
+            return Kind.Namespace;
         }
 
         string last = dotted[(dotted.LastIndexOf('.') + 1)..];
@@ -158,6 +186,7 @@ internal static class HostingGuideGate
     {
         IReadOnlyCollection<string> packageIds = PackageIds();
         IReadOnlyCollection<string> assemblyNames = AssemblyNames();
+        IReadOnlyCollection<string> namespaces = Namespaces(surface);
 
         List<string> unresolved = [];
         HashSet<string> seen = new(StringComparer.Ordinal);
@@ -165,7 +194,7 @@ internal static class HostingGuideGate
         foreach (Match match in Dotted.Matches(markdown))
         {
             string dotted = match.Groups[1].Value;
-            if (Classify(dotted, packageIds, assemblyNames) != Kind.Api)
+            if (Classify(dotted, packageIds, assemblyNames, namespaces) != Kind.Api)
             {
                 continue;
             }

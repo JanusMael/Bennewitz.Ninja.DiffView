@@ -14,7 +14,14 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// </remarks>
 public sealed class DocumentationCitationTests
 {
-    private static readonly string[] Documents = ["PROGRESS.md", "AGENTS.md", "DECISIONS.md", "CHANGELOG.md", "README.md"];
+    private static readonly string[] Documents =
+    [
+        "PROGRESS.md", "AGENTS.md", "DECISIONS.md", "CHANGELOG.md", "README.md",
+        // The hosting guide is read by people who cannot check it. Its API names are held to a
+        // stricter gate than this one — HostingGuideTests resolves them against the shipped
+        // surface — but a test name it cites is this file's business, like every other document's.
+        "docs/hosting-diffview.md",
+    ];
 
     /// <summary>
     /// Snake_case with at least four words: a test name, not a type or a member. The documents cite
