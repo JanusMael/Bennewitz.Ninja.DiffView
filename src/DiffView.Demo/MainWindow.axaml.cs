@@ -492,6 +492,24 @@ public sealed partial class MainWindow : Window
         Diff.ShowMinimap = ShowMinimap.IsChecked;
     }
 
+    private void OnToggleShowHeaders(object? sender, RoutedEventArgs e)
+    {
+        Diff.ShowHeaders = ShowHeaders.IsChecked;
+        Unified.ShowHeaders = ShowHeaders.IsChecked;
+    }
+
+    private void OnToggleShowStatusStrip(object? sender, RoutedEventArgs e)
+    {
+        Diff.ShowStatusStrip = ShowStatusStrip.IsChecked;
+        Unified.ShowStatusStrip = ShowStatusStrip.IsChecked;
+    }
+
+    private void OnToggleShowBanner(object? sender, RoutedEventArgs e)
+    {
+        Diff.ShowBanner = ShowBanner.IsChecked;
+        Unified.ShowBanner = ShowBanner.IsChecked;
+    }
+
     private void OnToggleMinimapPlacement(object? sender, RoutedEventArgs e)
     {
         Diff.MinimapPlacement = MinimapOnLeft.IsChecked ? MinimapPlacement.Left : MinimapPlacement.Right;

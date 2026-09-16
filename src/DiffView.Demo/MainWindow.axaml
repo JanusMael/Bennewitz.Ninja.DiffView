@@ -46,6 +46,12 @@
                   Click="OnToggleShowMinimap" AutomationProperties.Name="Show the two-lane overview map beside the panes" />
         <MenuItem x:Name="MinimapOnLeft" Header="Overview map on the le_ft" ToggleType="CheckBox"
                   Click="OnToggleMinimapPlacement" AutomationProperties.Name="Dock the overview map outside the left pane instead of the right" />
+        <MenuItem x:Name="ShowHeaders" Header="Show pane _headers" ToggleType="CheckBox" IsChecked="True"
+                  Click="OnToggleShowHeaders" AutomationProperties.Name="Show the file-name headers above the panes" />
+        <MenuItem x:Name="ShowStatusStrip" Header="Show _status strip" ToggleType="CheckBox" IsChecked="True"
+                  Click="OnToggleShowStatusStrip" AutomationProperties.Name="Show the status strip below the panes" />
+        <MenuItem x:Name="ShowBanner" Header="Show _banner" ToggleType="CheckBox" IsChecked="True"
+                  Click="OnToggleShowBanner" AutomationProperties.Name="Let the banner appear when a build fails or the files are too different to align" />
         <Separator />
         <MenuItem Header="_Find…" InputGesture="Ctrl+F" Click="OnFind"
                   AutomationProperties.Name="Open the find bar" />

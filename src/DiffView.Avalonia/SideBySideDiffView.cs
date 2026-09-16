@@ -45,6 +45,9 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>The template part hosting the banner's action button.</summary>
     public const string BannerActionPart = "PART_BannerAction";
 
+    /// <summary>The banner, whose visibility this control drives through its pseudo-classes.</summary>
+    public const string BannerPart = "PART_Banner";
+
     /// <summary>The template part holding the two headers, whose star columns follow <see cref="SplitRatio"/>.</summary>
     public const string HeadersPart = "PART_Headers";
 
@@ -144,6 +147,18 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>Identifies the <see cref="ShowMinimap"/> property.</summary>
     public static readonly StyledProperty<bool> ShowMinimapProperty =
         AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowMinimap), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="ShowHeaders"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowHeadersProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowHeaders), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="ShowStatusStrip"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowStatusStripProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowStatusStrip), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="ShowBanner"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowBannerProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, bool>(nameof(ShowBanner), defaultValue: true);
 
     /// <summary>Identifies the <see cref="MinimapPlacement"/> property.</summary>
     public static readonly StyledProperty<MinimapPlacement> MinimapPlacementProperty =
@@ -392,6 +407,7 @@ public class SideBySideDiffView : TemplatedControl
     private DiffPaneHeader? _rightHeader;
     private DiffStatusStrip? _statusStrip;
     private Button? _bannerAction;
+    private Border? _banner;
     private ScrollSync? _sync;
 
     private readonly DiffKeyBindings _bindings;
@@ -600,6 +616,38 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(ShowMinimapProperty);
         set => SetValue(ShowMinimapProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the pane headers are shown. On by default. Off, their row takes no height, so
+    /// the panes get it back — and the header context menu goes with them, as does the accent
+    /// that says which pane has focus.
+    /// </summary>
+    public bool ShowHeaders
+    {
+        get => GetValue(ShowHeadersProperty);
+        set => SetValue(ShowHeadersProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the status strip is shown. On by default. Off, it takes no height, and the
+    /// transient message lane goes with it — so do the save outcomes and the caret position.
+    /// </summary>
+    public bool ShowStatusStrip
+    {
+        get => GetValue(ShowStatusStripProperty);
+        set => SetValue(ShowStatusStripProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the banner may be shown when there is something to say. On by default. Off, it
+    /// never appears, and the retry and force-alignment affordances go with it — both verbs
+    /// stay available as commands. A banner with nothing to say is hidden either way.
+    /// </summary>
+    public bool ShowBanner
+    {
+        get => GetValue(ShowBannerProperty);
+        set => SetValue(ShowBannerProperty, value);
     }
 
     /// <summary>
@@ -1021,6 +1069,10 @@ public class SideBySideDiffView : TemplatedControl
 
     internal Button? BannerAction => _bannerAction;
 
+    internal Grid? HeadersGrid => _headersGrid;
+
+    internal Border? Banner => _banner;
+
     internal ScrollSync? Sync => _sync;
 
     /// <summary>Runs the build again with the current sources and options; the panes' faults are cleared.</summary>
@@ -1187,6 +1239,7 @@ public class SideBySideDiffView : TemplatedControl
         _rightHeader = e.NameScope.Find<DiffPaneHeader>(RightHeaderPart);
         _statusStrip = e.NameScope.Find<DiffStatusStrip>(StatusStripPart);
         _bannerAction = e.NameScope.Find<Button>(BannerActionPart);
+        _banner = e.NameScope.Find<Border>(BannerPart);
         _headersGrid = e.NameScope.Find<Grid>(HeadersPart);
         _headerLeftSpacer = e.NameScope.Find<Border>(HeaderLeftSpacerPart);
         _headerRightSpacer = e.NameScope.Find<Border>(HeaderRightSpacerPart);
@@ -1194,6 +1247,8 @@ public class SideBySideDiffView : TemplatedControl
         _gutter = e.NameScope.Find<ChangeConnectorGutter>(GutterPart);
         _minimap = e.NameScope.Find<DiffMinimap>(MinimapPart);
         _findBar = e.NameScope.Find<DiffFindBar>(FindBarPart);
+
+        ApplyChromeVisibility();
 
         AttachPane(_leftPane, DiffSide.Left);
         AttachPane(_rightPane, DiffSide.Right);
@@ -1367,7 +1422,13 @@ public class SideBySideDiffView : TemplatedControl
         {
             ForEachPane(ApplyPaneFont);
         }
-        else if (change.Property == StateProperty || change.Property == BannerKindProperty)
+        else if (change.Property == ShowHeadersProperty || change.Property == ShowStatusStripProperty)
+        {
+            ApplyChromeVisibility();
+        }
+        else if (change.Property == StateProperty
+                 || change.Property == BannerKindProperty
+                 || change.Property == ShowBannerProperty)
         {
             UpdatePseudoClasses();
             _retry.RaiseCanExecuteChanged();
@@ -2795,9 +2856,34 @@ public class SideBySideDiffView : TemplatedControl
         }
     }
 
+    /// <summary>
+    /// The two parts whose visibility this control owns outright. Called from the template
+    /// path and from the property-change path, because a host that sets a flag in XAML is
+    /// wired by the first and never reaches the second — the gap plan 00004 fixed for
+    /// <c>CanCopyOut</c>. The banner is not here: its visibility belongs to a style, and a
+    /// write from code would outrank that style permanently.
+    /// </summary>
+    private void ApplyChromeVisibility()
+    {
+        if (_headersGrid is not null)
+        {
+            _headersGrid.IsVisible = ShowHeaders;
+        }
+
+        if (_statusStrip is not null)
+        {
+            _statusStrip.IsVisible = ShowStatusStrip;
+        }
+    }
+
     private void UpdatePseudoClasses()
     {
-        PseudoClasses.Set(":banner-none", BannerKind == DiffBannerKind.None);
+        // ShowBanner joins the class that already owns the banner's visibility rather than
+        // writing IsVisible on the part: a code write lands at LocalValue, outranks the style
+        // for the life of the control, and would strand an empty banner on screen the next
+        // time a build had nothing to say. So :banner-none now means "not shown", which is
+        // wider than "nothing to say" — the only writer is this method.
+        PseudoClasses.Set(":banner-none", BannerKind == DiffBannerKind.None || !ShowBanner);
         PseudoClasses.Set(":banner-error", BannerKind == DiffBannerKind.Error);
         PseudoClasses.Set(":banner-degraded", BannerKind == DiffBannerKind.TooDifferentToAlign);
         PseudoClasses.Set(":banner-identical", BannerKind == DiffBannerKind.Identical);

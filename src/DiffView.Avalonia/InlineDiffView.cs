@@ -49,6 +49,12 @@ public class InlineDiffView : TemplatedControl
     /// <summary>The template part hosting the banner's action button.</summary>
     public const string BannerActionPart = "PART_BannerAction";
 
+    /// <summary>The banner, whose visibility this control drives through its pseudo-classes.</summary>
+    public const string BannerPart = "PART_Banner";
+
+    /// <summary>The grid holding the two headers. Named in the theme since the unified view shipped.</summary>
+    public const string HeadersPart = "PART_Headers";
+
     /// <summary>The template part hosting the find bar.</summary>
     public const string FindBarPart = "PART_FindBar";
 
@@ -97,6 +103,18 @@ public class InlineDiffView : TemplatedControl
     /// <summary>Identifies the <see cref="ShowWhitespace"/> property.</summary>
     public static readonly StyledProperty<bool> ShowWhitespaceProperty =
         AvaloniaProperty.Register<InlineDiffView, bool>(nameof(ShowWhitespace));
+
+    /// <summary>Identifies the <see cref="ShowHeaders"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowHeadersProperty =
+        AvaloniaProperty.Register<InlineDiffView, bool>(nameof(ShowHeaders), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="ShowStatusStrip"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowStatusStripProperty =
+        AvaloniaProperty.Register<InlineDiffView, bool>(nameof(ShowStatusStrip), defaultValue: true);
+
+    /// <summary>Identifies the <see cref="ShowBanner"/> property.</summary>
+    public static readonly StyledProperty<bool> ShowBannerProperty =
+        AvaloniaProperty.Register<InlineDiffView, bool>(nameof(ShowBanner), defaultValue: true);
 
     /// <summary>Identifies the <see cref="ShowLineEndings"/> property.</summary>
     public static readonly StyledProperty<bool> ShowLineEndingsProperty =
@@ -281,6 +299,8 @@ public class InlineDiffView : TemplatedControl
     private DiffStatusStrip? _statusStrip;
     private DiffFindBar? _findBar;
     private Button? _bannerAction;
+    private Border? _banner;
+    private Grid? _headersGrid;
 
     private readonly DiffKeyBindings _bindings;
 
@@ -420,6 +440,38 @@ public class InlineDiffView : TemplatedControl
     {
         get => GetValue(ShowWhitespaceProperty);
         set => SetValue(ShowWhitespaceProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the pane headers are shown. On by default. Off, their row takes no height, so
+    /// the panes get it back — and the header context menu goes with them, as does the accent
+    /// that says which pane has focus.
+    /// </summary>
+    public bool ShowHeaders
+    {
+        get => GetValue(ShowHeadersProperty);
+        set => SetValue(ShowHeadersProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the status strip is shown. On by default. Off, it takes no height, and the
+    /// transient message lane goes with it — so do the save outcomes and the caret position.
+    /// </summary>
+    public bool ShowStatusStrip
+    {
+        get => GetValue(ShowStatusStripProperty);
+        set => SetValue(ShowStatusStripProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the banner may be shown when there is something to say. On by default. Off, it
+    /// never appears, and the retry and force-alignment affordances go with it — both verbs
+    /// stay available as commands. A banner with nothing to say is hidden either way.
+    /// </summary>
+    public bool ShowBanner
+    {
+        get => GetValue(ShowBannerProperty);
+        set => SetValue(ShowBannerProperty, value);
     }
 
     /// <summary>Whether a line terminator is drawn at the end of its line.</summary>
@@ -913,6 +965,10 @@ public class InlineDiffView : TemplatedControl
 
     internal Button? BannerAction => _bannerAction;
 
+    internal Grid? HeadersGrid => _headersGrid;
+
+    internal Border? Banner => _banner;
+
     /// <summary>Runs the build again with the current sources and options; the pane's faults are cleared.</summary>
     public void Retry()
     {
@@ -1061,7 +1117,11 @@ public class InlineDiffView : TemplatedControl
         _rightHeader = e.NameScope.Find<DiffPaneHeader>(RightHeaderPart);
         _statusStrip = e.NameScope.Find<DiffStatusStrip>(StatusStripPart);
         _bannerAction = e.NameScope.Find<Button>(BannerActionPart);
+        _banner = e.NameScope.Find<Border>(BannerPart);
+        _headersGrid = e.NameScope.Find<Grid>(HeadersPart);
         _findBar = e.NameScope.Find<DiffFindBar>(FindBarPart);
+
+        ApplyChromeVisibility();
 
         AttachPane(_pane);
         if (_statusStrip is not null)
@@ -1154,7 +1214,13 @@ public class InlineDiffView : TemplatedControl
                 ApplyPaneFont(_pane);
             }
         }
-        else if (change.Property == StateProperty || change.Property == BannerKindProperty)
+        else if (change.Property == ShowHeadersProperty || change.Property == ShowStatusStripProperty)
+        {
+            ApplyChromeVisibility();
+        }
+        else if (change.Property == StateProperty
+                 || change.Property == BannerKindProperty
+                 || change.Property == ShowBannerProperty)
         {
             UpdatePseudoClasses();
             _retry.RaiseCanExecuteChanged();
@@ -1523,9 +1589,34 @@ public class InlineDiffView : TemplatedControl
         }
     }
 
+    /// <summary>
+    /// The two parts whose visibility this control owns outright. Called from the template
+    /// path and from the property-change path, because a host that sets a flag in XAML is
+    /// wired by the first and never reaches the second — the gap plan 00004 fixed for
+    /// <c>CanCopyOut</c>. The banner is not here: its visibility belongs to a style, and a
+    /// write from code would outrank that style permanently.
+    /// </summary>
+    private void ApplyChromeVisibility()
+    {
+        if (_headersGrid is not null)
+        {
+            _headersGrid.IsVisible = ShowHeaders;
+        }
+
+        if (_statusStrip is not null)
+        {
+            _statusStrip.IsVisible = ShowStatusStrip;
+        }
+    }
+
     private void UpdatePseudoClasses()
     {
-        PseudoClasses.Set(":banner-none", BannerKind == DiffBannerKind.None);
+        // ShowBanner joins the class that already owns the banner's visibility rather than
+        // writing IsVisible on the part: a code write lands at LocalValue, outranks the style
+        // for the life of the control, and would strand an empty banner on screen the next
+        // time a build had nothing to say. So :banner-none now means "not shown", which is
+        // wider than "nothing to say" — the only writer is this method.
+        PseudoClasses.Set(":banner-none", BannerKind == DiffBannerKind.None || !ShowBanner);
         PseudoClasses.Set(":banner-error", BannerKind == DiffBannerKind.Error);
         PseudoClasses.Set(":banner-degraded", BannerKind == DiffBannerKind.TooDifferentToAlign);
         PseudoClasses.Set(":banner-identical", BannerKind == DiffBannerKind.Identical);
