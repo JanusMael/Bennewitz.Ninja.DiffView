@@ -107,6 +107,7 @@ You will not need most of the surface. These are the ones that change what a rea
 | `SideBySideDiffView.WordDiff` | Word-level highlighting within a changed row |
 | `SideBySideDiffView.UseSyntaxHighlighting` | Grammar colouring, chosen from the source's path |
 | `SideBySideDiffView.ShowMinimap`, `SideBySideDiffView.MinimapPlacement` | The overview map and which side it docks to |
+| `SideBySideDiffView.ShowHeaders`, `SideBySideDiffView.ShowStatusStrip`, `SideBySideDiffView.ShowBanner` | The pane headers, the status strip and the banner, each on by default. Switching one off takes what it carries with it: the headers carry the header context menu and the accent that says which pane has focus; the strip carries the transient message lane, the save outcomes and the caret position; the banner carries the only in-control way to retry a failed build or force an alignment, though `SideBySideDiffView.Retry` and `SideBySideDiffView.ForceAlignment` stay available either way |
 | `SideBySideDiffView.SyncHorizontalScroll` | Vertical scrolling is always coupled; horizontal is opt-in |
 | `SideBySideDiffView.ShowWhitespace`, `SideBySideDiffView.ShowLineEndings`, `SideBySideDiffView.TabWidth` | The editor's own view options |
 | `SideBySideDiffView.PaneFontSize`, `SideBySideDiffView.PaneFontFamily` | Leave unset to let the pane theme decide |

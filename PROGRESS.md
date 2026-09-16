@@ -2,11 +2,18 @@
 
 ## Resume
 
-**`main` carries plan 00020 complete — both phases — with a clean working tree and no remote.
+**`main` carries plan 00022 complete — both phases — with a clean working tree and no remote.
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-661 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001 and
-00003–00020 are complete and closed; plan 00002 was rejected on its own review before any code was
-written. **[Plan 00020](plans/00020-the-timer-that-outlived-the-view.md) gave both views ownership
+676 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001, 00003–00020
+and 00022 are complete and closed; plan 00002 was rejected on its own review before any code was
+written, and **plan 00021 is a draft waiting on a spike** — see *Open*.
+**[Plan 00022](plans/00022-three-pieces-of-chrome-you-can-turn-off.md) made three more pieces of
+chrome switchable** — `ShowHeaders`, `ShowStatusStrip` and `ShowBanner`, on both views, each on by
+default. The headers and the strip take the `ShowMinimap` route and drive `IsVisible` on their part
+from both the template and the property-change path; **the banner cannot and must not**, because a
+write from code outranks the style that owns its visibility for the life of the control, so its
+toggle is a disjunct inside the `:banner-none` pseudo-class. Before it,
+**[plan 00020](plans/00020-the-timer-that-outlived-the-view.md) gave both views ownership
 of the status controller they build** — leaving the visual tree disposes it and nulls the field,
 where the null is what keeps a view that comes back working, and `UpdateStrip` now reads that field
 rather than the lazy getter, because a strip refresh that called the getter rebuilt the controller
@@ -105,7 +112,18 @@ wording.
    `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
 3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
-   2026-09-13.
+   2026-09-13. The three new chrome toggles have View-menu entries and have never been driven by
+   hand anywhere.
+4. **Plan 00021 — the read-only viewer — is drafted and waiting on a spike.**
+   `plans/00021-the-viewer-under-the-editor.md`, untracked and unapproved. `DiffViewer` becomes the
+   **base** and `SideBySideDiffView` derives from it, because C# derivation adds and never removes:
+   a viewer derived *from* the editor would inherit `Save`, `Revert` and `OpenFind` and be a lie.
+   Six decisions are locked in the draft, including that the seams are `private protected` — so they
+   are not published surface at all — and that this lands **before** the first publish. Three
+   adversarial reviews each found fresh defects in a cut nobody has measured, so the next step is a
+   throwaway compile-only spike whose deliverable is the seam list, the property re-ownership list,
+   whether `InlineDiffView` also compiles against the base, and a before/after dump of
+   `SideBySideDiffView`'s public API. **The plan is rewritten from that, not from argument.**
 
 Items 1 and 3 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
 demo runs need those machines.
@@ -388,6 +406,27 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00022 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The three toggles | M | done | `ShowHeaders`, `ShowStatusStrip`, `ShowBanner` on both views, defaulting on. Headers and strip through one `ApplyChromeVisibility` per view, called from both paths; the banner through a disjunct in `:banner-none`, because a code write would outrank its style permanently. `InlineDiffView` gained the `HeadersPart` it had always named in its theme, plus `BannerPart` and two internal accessors on both views. Three demo View-menu entries. 15 tests, 12 red first; 7 of 7 mutations killed |
+| 2 The record | S | done | `AGENTS.md` §6 ×3 and a sentence making §7's purpose explicit; `DECISIONS.md` ×2 — the value-priority finding and the stale-bounds one, both general; the hosting guide's display table; this file; `CHANGELOG.md` |
+
+## Plan 00022 verification
+
+| Done-when item | Result |
+|---|---|
+| Each part hides and the survivors take the room | Green on both views, and red before the wiring. Measured: panes 555 at baseline, 577 with the headers off, 600 with the strip off as well |
+| Each part comes back | Green. The half the rejected banner mechanism cannot do at all |
+| The banner's cases drive a banner | Every banner case loads identical sources first. At rest `BannerKind` is `None` and the banner is already hidden, so a toggle test in the default state would assert nothing |
+| A permitted banner with nothing to say stays hidden | Green — and **this is the only test of fifteen that fails when the banner is put back on `IsVisible` from code.** The other fourteen pass against the design that strands an empty banner on screen |
+| Each property set before the template applies still takes | Green, three tests per view rather than one: `AGENTS.md` §6 makes the two-path rule an invariant per property |
+| The defaults move nothing | 676 = 661 + 15, no existing test edited, no committed snapshot moved |
+| The demo entries carry automation names | Green, by a scan of the `.axaml` — `AccessibilityCoverageTests`' element set is a hardcoded literal that does not include `MenuItem`, so it would not have caught this |
+| New tests proven able to fail | 7 of 7 mutations killed: each path dropped, each property unwired, the unified view left alone, the banner's disjunct dropped, the banner's mechanism reverted, a demo entry stripped of its name |
+| The suite | 676 passed / 0 failed / 0 skipped, `en-US` and `de-DE` alike; build clean under `-warnaserror` |
 
 ## Plan 00020 phases
 

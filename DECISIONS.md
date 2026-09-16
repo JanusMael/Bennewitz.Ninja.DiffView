@@ -2765,3 +2765,50 @@ Nothing in this repository does either — the hosting guide never names `Status
 it inline — so the repair is a sentence on the property's summary, added in the same commit, on the
 principle that a package id is permanent once published and the cheapest time to say this is before
 the first push.
+
+## A code write outranks a style for the life of the control, so the banner's toggle is a pseudo-class
+
+Plan 00022's first draft said all three new chrome toggles could follow `ShowMinimap`: a
+`StyledProperty` driving `IsVisible` on the template part, wired on both paths. Two of them can. The
+banner cannot, and the reason is not visible from reading the source.
+
+**Only the banner's visibility is style-driven.** `PART_Headers` and `PART_StatusStrip` have no
+`IsVisible` setter in any style in either theme. `PART_Banner` has one per banner kind, selected by
+the `:banner-none`, `:banner-error`, `:banner-degraded` and `:banner-identical` pseudo-classes that
+`UpdatePseudoClasses` writes.
+
+**Avalonia's value priority is what settles it.** A write from code lands at `LocalValue`; a style
+setter lands at `StyleTrigger`; `LocalValue` wins and keeps winning. So a banner hidden from code and
+then shown from code never returns to style control, and the next build with nothing to say leaves an
+empty banner on screen — permanently, for the life of the control, not for a frame. Measured with the
+first draft's mechanism applied:
+
+| Step | Result |
+|---|---|
+| Toggle off, then on, then let the model go quiet | `BannerKind=None`, `IsVisible=True`, priority `LocalValue`, height 28 |
+
+**So `ShowBanner` joins the class that already owns the rule** — one disjunct,
+`BannerKind == DiffBannerKind.None || !ShowBanner`. Measured on a banner that has something to say:
+showing at 525, suppressed at 554, permitted again at 525. It composes in both directions, needs no
+template part, no style and no `axaml` edit, and has **no two-path problem at all**, because a
+pseudo-class lives on the control rather than on a part — a host setting it before the template
+applies is already correct.
+
+The cost is that `:banner-none` now means *not shown* rather than *nothing to say*. `AGENTS.md` §6
+carries that, and `UpdatePseudoClasses` is the only writer on either view.
+
+**The margin was one test.** The mutation harness puts the banner back on the rejected mechanism and
+exactly one of fifteen tests notices — `A_permitted_banner_with_nothing_to_say_stays_hidden`. The
+other fourteen pass against a design that strands an empty banner on screen.
+
+## A hidden part goes on reporting the size it had
+
+Measured while writing plan 00022's tests, and general: Avalonia does not re-arrange an invisible
+control, so `Bounds` on a hidden part is whatever it was when it was last laid out — 22 for the
+headers grid, 23 for the status strip, 29 for the banner.
+
+**A test that asserts a hidden part is not drawn by reading that part's own bounds passes for a
+correct implementation and a broken one alike.** Assert `IsVisible` on the part and the arithmetic on
+the *survivors*: the panes' height, which grows by what the part gave up and returns to its baseline
+when the part comes back. `MinimapLaneTests` already did this for the map; `ChromeToggleTests` does
+it for the other three.

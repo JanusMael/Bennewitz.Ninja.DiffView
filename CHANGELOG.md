@@ -8,6 +8,16 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00022 — `ShowHeaders`, `ShowStatusStrip` and `ShowBanner` on both views, each on by default,
+  so a host can switch the pane headers, the status strip and the banner off the way `ShowMinimap`
+  already switches the overview map. Switching one off takes what it carries: the headers carry the
+  header context menu and the focus accent, the strip carries the transient message lane, the save
+  outcomes and the caret position, and the banner carries the only in-control way to retry a failed
+  build or force an alignment — both verbs stay available as commands.
+- `InlineDiffView.HeadersPart`, and `BannerPart` on both views, with the unified view now looking up
+  the headers grid its theme had always named.
+- Three View-menu entries in the demo for the new toggles, beside the overview map's.
+
 - Plan 00001 — the side-by-side diff control on Avalonia 12, AvaloniaEdit and DiffPlex — with
   its adversarial review and the ClaudeForge reuse analysis.
 - Repository scaffolding: solution, central package management, the local feed, reference
