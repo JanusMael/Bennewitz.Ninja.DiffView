@@ -6,8 +6,8 @@
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
 676 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001, 00003–00020
 and 00022 are complete and closed; plan 00002 was rejected on its own review before any code was
-written, and **plan 00021 is a draft whose spike has run, rewritten from it, corrected against an
-adversarial review, and awaiting approval** — see *Open*.
+written, and **plan 00021 is on its third draft — no longer a base class but two sibling controls
+sharing an internal seam — and awaiting approval** — see *Open*.
 **[Plan 00022](plans/00022-three-pieces-of-chrome-you-can-turn-off.md) made three more pieces of
 chrome switchable** — `ShowHeaders`, `ShowStatusStrip` and `ShowBanner`, on both views, each on by
 default. The headers and the strip take the `ShowMinimap` route and drive `IsVisible` on their part
@@ -115,51 +115,49 @@ wording.
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13. The three new chrome toggles have View-menu entries and have never been driven by
    hand anywhere.
-4. **Plan 00021 — the read-only viewer — is drafted, rewritten from its spike, corrected against an
-   adversarial review, and awaiting approval.**
-   `plans/00021-the-viewer-under-the-editor.md`, untracked and unapproved. `DiffViewer` becomes the
-   **base** and `SideBySideDiffView` derives from it, because C# derivation adds and never removes.
-   The spike ran on 2026-09-17; a review of the rewrite the same day found twelve defects, and the
-   plan now carries the corrections. Three re-runnable tools under `~/c/cl/scratch/DiffView/` hold
-   the measurements: `spike/` (the cut), `DocSeamProbe/` (the document decision), and `SurfaceDump/`
-   (the stop condition and the allow-list).
+4. **Plan 00021 — the read-only viewer — is on its third draft and awaiting approval.**
+   `plans/00021-the-viewer-beside-the-editor.md`, untracked and unapproved. **The shape changed on
+   2026-09-17**, after a spike, an adversarial review that found twelve defects in the second draft,
+   and three probes. It is no longer a base class.
 
-   **The cut is ten `private protected virtual` seams plus six field widenings — sixteen new
-   non-public members, against a restated threshold of twenty.** The earlier count of nine measured
-   virtuals only, which is the same error the spike caught in the draft before it. **42 of 53
-   property registrations must be re-owned, 26 of them silently.**
+   **`DiffViewer` and `SideBySideDiffView` are unrelated sibling controls sharing their
+   implementation through an internal interface and an internal extension block.** The orchestration
+   is written once in the block; the ten variation points are interface members with real
+   polymorphic dispatch; and **none of it reaches either public surface** — measured, the probe
+   control's entire public API is its constructor and the two members it means to expose. That
+   retires what the base-class draft called its headline risk: `DiffViewer` would have had to be
+   public the moment a derivation compiled (`CS0060`), making **208 members permanent at v1** on a
+   type no consumer had used. It also removes the irreversible phase; phase 1 here touches one
+   control's internals and can be reverted.
 
-   **The stop condition had to be rebuilt.** The first rewrite gated phase 2 on the spike's
-   307-member dump being byte-identical — impossible, because that dump is `DeclaredOnly` and the
-   whole mechanism moves members *up*, out of the derived type's declared set. The gate is now the
-   **flattened** surface filtered to library-declared members, which is invariant across the split:
-   **307 today and 307 afterwards.** The dumper is committed in phase 1 and regenerates the spike's
-   baseline byte-for-byte, which is what licenses trusting it.
+   **Why the base class lost.** Its second argument was that two standalone copies drift. Measured:
+   `InlineDiffView` has been a standalone copy since `cec26cb` (2026-09-07), and of the 27 commits
+   touching either file since, **13 touched both — each in one commit — and none touched
+   `InlineDiffView` alone.** Re-run with `~/c/cl/scratch/DiffView/drift-check.sh`.
 
-   **`DiffViewer`'s permanent v1 surface is 208 members**, enumerated in the plan's Appendix A rather
-   than authored during the irreversible phase: 52 properties, 9 methods, 3 events, 14 constants and
-   42 `…Property` statics. 98 members stay on `SideBySideDiffView` across find, editing, context
-   menus and the key map. Deriving the list caught three constants mis-filed to the base
-   (`FindBarPart`, `FindDebounce`, `ReDiffDebounce`) — the constants are surface too.
+   **What the sibling shape gives up, and what replaces it.** Avalonia has **no interface selector**
+   — `Selectors.Is<T>` is constrained `T : StyledElement` — so a base type's "one style reaches
+   both by construction" has no direct equivalent. Two mechanisms recover it: `AddOwner` puts the
+   **same** `AvaloniaProperty` instance in both registries so one `Setter` reaches both, and a shared
+   `diff-surface` style class both controls add in their constructors is the type-agnostic selector.
+   The residual gap is that the class is opt-in where a base type is automatic — a convention rather
+   than a guarantee, gated by a test.
 
-   **Two claims the review killed.** *The base fits both views* is withdrawn: `InlineDiffView` has
-   none of `ShowMinimap`, `MinimapPlacement`, `SplitRatio`, `SyncHorizontalScroll`, `LeftPaneName`,
-   `RightPaneName` or `FocusedSide`, its `AttachPane` takes no side, and this plan moves `ShowMinimap`
-   up regardless. `DiffViewer` is a **two-pane** base; a unified viewer needs a sibling. And *two
-   copies of the build orchestration drift* is **false here**: `InlineDiffView` has been a standalone
-   copy since `cec26cb` (2026-09-07), and of the 27 commits touching either file since, **13 touched
-   both — each in a single commit — and none touched `InlineDiffView` alone.** So the case for the
-   hierarchy is the type surface and nothing else. That is the open question for approval.
+   **Three decisions taken 2026-09-17 and not to be reopened:** the sibling-plus-internal-seam shape;
+   **navigation on the viewer** — the index, four methods and four commands together, since
+   `CurrentChangeIndex`'s setter *is* the scroll and the ask was *no key bindings* rather than *no
+   navigation*; and **all nine pseudo-classes stay and the hosting guide names them**, because a
+   pseudo-class is the only way a host can style on control state through a selector, even though
+   five of the nine are styled by nothing today.
 
-   **One decision still needs sign-off:** navigation on the base — the index, the four methods and
-   the four commands together — on the grounds that `CurrentChangeIndex` is already base, its setter
-   *is* the scroll, and the ask was *no key bindings* rather than *no navigation*.
+   **Still open before approval:** `DiffViewer`'s 208-member surface is listed in the plan's
+   Appendix A and should be *trimmed* there — it is a new control's API, so it constrains nothing but
+   itself, and it is permanent once published. `TimeProvider` and `LoggerFactory` are public and
+   settable on it.
 
-   The document decision re-taken earlier stands, proved on `DocSeamProbe/`: the base owns the two
-   fields behind a `private protected` accessor, the public accessors and both `DirectProperty`
-   registrations stay on the derived type, and a seam carries the notification. The read-only
-   guarantee is typed-surface only either way — though `DiffPanePresenter` sets `IsReadOnly = true`
-   in its constructor, so the escape is the visual tree, not the keyboard.
+   Four re-runnable tools hold every number: `~/c/cl/scratch/DiffView/spike/` (the inventory),
+   `DocSeamProbe/` (the documents), `SurfaceDump/` (the 307-member gate and the split), and
+   `SiblingProbe/` (fifteen checks on the shape itself).
 
 Items 1 and 3 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
 demo runs need those machines.
