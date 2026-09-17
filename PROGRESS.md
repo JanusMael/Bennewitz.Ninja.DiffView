@@ -150,10 +150,21 @@ wording.
    pseudo-class is the only way a host can style on control state through a selector, even though
    five of the nine are styled by nothing today.
 
-   **Still open before approval:** `DiffViewer`'s 208-member surface is listed in the plan's
-   Appendix A and should be *trimmed* there — it is a new control's API, so it constrains nothing but
-   itself, and it is permanent once published. `TimeProvider` and `LoggerFactory` are public and
-   settable on it.
+   **The surface is trimmed and Appendix A is now a decided contract, not an inventory: 208 → 194**
+   (2026-09-17). Five members went internal — `Document`, `Diagnostics` and `Warnings` because
+   `BuildCompleted` already carries a `DiffBuildResult` holding all three and those types are public
+   in `DiffView.Core`, so the properties were a second pollable path rather than the only one;
+   `WordDiffLookup` because it is keyed to one build's options; and `TimeProvider` because it is a
+   test seam with an ordering constraint, the only one of the five unreachable another way.
+   `InternalsVisibleTo` already names the test assembly, so none of it cost a test.
+
+   Two things stayed on evidence rather than preference. **`IsStale` and `IsBuildingSlowly`**: there
+   is no `BuildStarted` event, so a host cannot time a build itself, and `IsStale` carries what
+   `State` does not — it is assigned `Document is not null` immediately before `SetState(Building)`,
+   distinguishing a first build from a rebuild with a stale result still on screen. **The caret trio**
+   `CaretLine` / `CaretColumn` / `FocusedSide`: the panes are not public, so these are the only access
+   to caret state, and the panes stay focusable because that is how keyboard scrolling and
+   select-to-copy work. All 13 `…Part` constants carry over; `FindBarPart` left with find.
 
    Four re-runnable tools hold every number: `~/c/cl/scratch/DiffView/spike/` (the inventory),
    `DocSeamProbe/` (the documents), `SurfaceDump/` (the 307-member gate and the split), and
