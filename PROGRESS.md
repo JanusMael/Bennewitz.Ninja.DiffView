@@ -6,8 +6,9 @@
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
 676 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001, 00003–00020
 and 00022 are complete and closed; plan 00002 was rejected on its own review before any code was
-written, and **plan 00021 is on its third draft — no longer a base class but two sibling controls
-sharing an internal seam — and awaiting approval** — see *Open*.
+written, and **plan 00021 is on its fourth draft — sibling controls sharing an internal
+controller, no longer gating the release — and plan 00023 is drafted beside it; both await
+approval** — see *Open*.
 **[Plan 00022](plans/00022-three-pieces-of-chrome-you-can-turn-off.md) made three more pieces of
 chrome switchable** — `ShowHeaders`, `ShowStatusStrip` and `ShowBanner`, on both views, each on by
 default. The headers and the strip take the `ShowMinimap` route and drive `IsVisible` on their part
@@ -111,64 +112,75 @@ wording.
    `https://github.com/JanusMael/DiffView`, which the metadata already names, and a **nuget.org
    Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
    `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
+   **Plan 00021 is no longer among the preconditions** (decided 2026-09-17): it used to gate the
+   release because a base class inserted under a published type would have re-rooted it, and
+   siblings do no re-rooting — a new control in a minor is purely additive. The gates are item 1's
+   eight readers, the remote and the policy, and none of them is a plan.
 3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
    plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
    2026-09-13. The three new chrome toggles have View-menu entries and have never been driven by
    hand anywhere.
-4. **Plan 00021 — the read-only viewer — is on its third draft and awaiting approval.**
-   `plans/00021-the-viewer-beside-the-editor.md`, untracked and unapproved. **The shape changed on
-   2026-09-17**, after a spike, an adversarial review that found twelve defects in the second draft,
-   and three probes. It is no longer a base class.
+4. **Plan 00021 — the read-only viewer — is on its fourth draft and awaiting approval, and it no
+   longer gates the release.** `plans/00021-the-viewer-beside-the-editor.md`, untracked and
+   unapproved. Two shapes were tried and rejected before this one: a public base class (killed by
+   the drift measurement and by 194 permanent v1 members), then siblings sharing through a C# 14
+   extension block (killed by a second adversarial review). **The shape decided 2026-09-17 is two
+   unrelated sibling controls sharing an internal `DiffBuildController` through a narrow (~15-member)
+   internal `IDiffSurface`.**
 
-   **`DiffViewer` and `SideBySideDiffView` are unrelated sibling controls sharing their
-   implementation through an internal interface and an internal extension block.** The orchestration
-   is written once in the block; the ten variation points are interface members with real
-   polymorphic dispatch; and **none of it reaches either public surface** — measured, the probe
-   control's entire public API is its constructor and the two members it means to expose. That
-   retires what the base-class draft called its headline risk: `DiffViewer` would have had to be
-   public the moment a derivation compiled (`CS0060`), making **208 members permanent at v1** on a
-   type no consumer had used. It also removes the irreversible phase; phase 1 here touches one
-   control's internals and can be reverted.
+   **Why the extension block failed, measured.** It needed **~90 interface members, not the ~50
+   claimed** — a block declares no state, so all 34 unwrapped shared private fields plus ~44 CLR
+   properties had to be named on the interface. It **cannot reach `protected` members**, and
+   `UpdatePseudoClasses` is nine `PseudoClasses.Set` calls and nothing else, while `SetCurrentChange`
+   passes a private field by `ref`, which no interface property can supply. It **cannot raise** the
+   three events (CS0079). And the claim that it "leaves the orchestration bodies almost untouched"
+   was backwards: method calls on `this` survive, field access does not, and 46 distinct fields are
+   touched by just 772 lines of the shared half.
 
-   **Why the base class lost.** Its second argument was that two standalone copies drift. Measured:
-   `InlineDiffView` has been a standalone copy since `cec26cb` (2026-09-07), and of the 27 commits
-   touching either file since, **13 touched both — each in one commit — and none touched
-   `InlineDiffView` alone.** Re-run with `~/c/cl/scratch/DiffView/drift-check.sh`.
+   **The controller wins on four counts.** The interface drops to ~15 members, some 150 forwarders
+   never written. The 34 private fields **stay private** — on an interface they would have become
+   type surface, worse encapsulation than the code has today. It **rewrites less**, because a field
+   that moves with its code keeps every reference verbatim. And the orchestration becomes
+   **unit-testable with no visual tree**, where today it is reachable only through `CompositeHost`.
 
-   **What the sibling shape gives up, and what replaces it.** Avalonia has **no interface selector**
-   — `Selectors.Is<T>` is constrained `T : StyledElement` — so a base type's "one style reaches
-   both by construction" has no direct equivalent. Two mechanisms recover it: `AddOwner` puts the
-   **same** `AvaloniaProperty` instance in both registries so one `Setter` reaches both, and a shared
-   `diff-surface` style class both controls add in their constructors is the type-agnostic selector.
-   The residual gap is that the class is opt-in where a base type is automatic — a convention rather
-   than a guarantee, gated by a test.
+   **Three further decisions of 2026-09-17.** The viewer **no longer gates the first publish** — that
+   requirement existed only because re-rooting a published type changes the identity consumers' XAML
+   and `ControlTheme`s bind against, and siblings do no re-rooting; the release's real gates are the
+   eight locale readers, a remote and a Trusted Publishing policy. **The demo hosts the viewer**, a
+   View-menu entry and a `--viewer` flag exactly as `--unified` does for `InlineDiffView`, because
+   excluding it meant no human would ever see a new public control and the owed platform runs could
+   never include it. And the **`diff-surface` style class is dropped**: a comma-union type selector,
+   `Selector="local|DiffViewer, local|SideBySideDiffView"`, reaches both with **no cooperation from
+   either control**, where the class was an opt-in convention with a test to maintain.
 
-   **Three decisions taken 2026-09-17 and not to be reopened:** the sibling-plus-internal-seam shape;
-   **navigation on the viewer** — the index, four methods and four commands together, since
-   `CurrentChangeIndex`'s setter *is* the scroll and the ask was *no key bindings* rather than *no
-   navigation*; and **all nine pseudo-classes stay and the hosting guide names them**, because a
-   pseudo-class is the only way a host can style on control state through a selector, even though
-   five of the nine are styled by nothing today.
+   **Corrections the review forced, all measured.** `DirectProperty.AddOwner` returns a **new**
+   instance, not the same one — `==` still holds via a shared `Id`, but a sibling that calls
+   `RegisterDirect` afresh compares unequal and its `OnPropertyChanged` branch **silently never
+   runs**; that is the established habit here (`InlineDiffView` registers 21 that way, and
+   `grep -rn "AddOwner" src/` returns zero), so it is gated rather than trusted. A direct property
+   cannot be set from a style at all. The surface dump is **content-identical, not byte-identical**,
+   to the spike baseline — the spike's file carries a BOM — so the gate normalises and compares
+   content. That gate is also weaker than claimed: explicit interface implementations are private in
+   IL, so it proves nothing leaked to the public API and **the 676 tests are what protect phase 1**.
+   And the shared half is **2,785 lines, not 1,500** — the earlier figure was the acting half, which
+   stays.
 
-   **The surface is trimmed and Appendix A is now a decided contract, not an inventory: 208 → 194**
-   (2026-09-17). Five members went internal — `Document`, `Diagnostics` and `Warnings` because
-   `BuildCompleted` already carries a `DiffBuildResult` holding all three and those types are public
-   in `DiffView.Core`, so the properties were a second pollable path rather than the only one;
-   `WordDiffLookup` because it is keyed to one build's options; and `TimeProvider` because it is a
-   test seam with an ordering constraint, the only one of the five unreachable another way.
-   `InternalsVisibleTo` already names the test assembly, so none of it cost a test.
+   Five re-runnable tools hold every number, all under `~/c/cl/scratch/DiffView/`: `spike/`,
+   `DocSeamProbe/`, `SurfaceDump/`, `SiblingProbe/` and `drift-check.sh`. Appendix A stands as
+   decided: **194 members**, five trimmed to internal on 2026-09-17.
 
-   Two things stayed on evidence rather than preference. **`IsStale` and `IsBuildingSlowly`**: there
-   is no `BuildStarted` event, so a host cannot time a build itself, and `IsStale` carries what
-   `State` does not — it is assigned `Document is not null` immediately before `SetState(Building)`,
-   distinguishing a first build from a rebuild with a stale result still on screen. **The caret trio**
-   `CaretLine` / `CaretColumn` / `FocusedSide`: the panes are not public, so these are the only access
-   to caret state, and the panes stay focusable because that is how keyboard scrolling and
-   select-to-copy work. All 13 `…Part` constants carry over; `FindBarPart` left with find.
+5. **Plan 00023 — the harness the prose describes — is drafted and awaiting approval.**
+   `plans/00023-the-harness-the-prose-describes.md`, untracked. `AGENTS.md` §9 records ~75 lines of
+   hard-won fact about driving the running demo, and **every tool that applies them lives in scratch**,
+   so each session rebuilds the driver from prose. The plan commits them as one .NET 10 file-based app
+   with a platform back end — the convention `gen-locale-review` and three others already follow —
+   with seven verbs that take **a name or a coordinate** (decided 2026-09-17), so Windows and macOS can
+   address elements by the `AutomationProperties.Name` that `AccessibilityCoverageTests` already
+   enforces. **Phase 1 (`catch-crash`) goes first, ahead of 00021**; phases 2 to 5 follow it. None of
+   the five scratch scripts can be committed unchanged: all three capture scripts parse **English**
+   `xwininfo` output, in a repository that tests under `de-DE`, and they hardcode a uid, a compositor,
+   a display and a repo path.
 
-   Four re-runnable tools hold every number: `~/c/cl/scratch/DiffView/spike/` (the inventory),
-   `DocSeamProbe/` (the documents), `SurfaceDump/` (the 307-member gate and the split), and
-   `SiblingProbe/` (fifteen checks on the shape itself).
 
 Items 1 and 3 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
 demo runs need those machines.
