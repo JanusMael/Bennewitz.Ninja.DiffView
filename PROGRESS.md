@@ -4,7 +4,7 @@
 
 **`main` carries plan 00022 complete — both phases — with a clean working tree and no remote.
 `dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-676 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001, 00003–00020
+679 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001, 00003–00020
 and 00022 are complete and closed; plan 00002 was rejected on its own review before any code was
 written, and **plan 00021 is on its fourth draft — sibling controls sharing an internal
 controller, no longer gating the release — and plan 00023 is drafted beside it; both await
@@ -180,6 +180,10 @@ wording.
    the five scratch scripts can be committed unchanged: all three capture scripts parse **English**
    `xwininfo` output, in a repository that tests under `de-DE`, and they hardcode a uid, a compositor,
    a display and a repo path.
+
+   **Phase 1 is done and merged** (`aa090b3`): `scripts/catch-crash` and its two wrappers, two
+   fixtures, three tests, both detection clauses proven able to fail. Phases 2 to 5 follow plan
+   00021.
 
 
 Items 1 and 3 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
@@ -463,6 +467,29 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00023 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 `catch-crash` | S | done | `scripts/catch-crash.cs` plus `.sh` and `.ps1` wrappers, following the `gen-locale-review` convention. Re-runs the suite until it catches an abort and keeps that log; `--check <log>` judges a captured one and runs nothing, which is what makes it testable through its real command line. Two fixtures under `fixtures/test-runs/`. 3 tests, 2 of 2 mutations killed |
+| 2 The driver, X11 only | M | not started | The seven verbs and the X11 back end; the three capture scripts reduced to calls into it |
+| 3 `run-demo --detach` and the locale tool | S | not started | |
+| 4 The Windows back end | M | not started | Cannot be verified here |
+| 5 The record | S | not started | |
+
+## Plan 00023 phase 1 verification
+
+| Done-when item | Result |
+|---|---|
+| The judgement is not a grep | Six clauses: a non-zero exit, a missing summary, an outcome that is not `Passed`, any failure, counts that do not close, and a total short of `--expect`. **The outcome clause is the load-bearing one** — an aborted host says `Failed!` while reporting `failed: 0`, and no arithmetic over the counts alone can see that |
+| An aborted run is refused | Green, and **red when the outcome clause is removed** — with it gone the reconstructed abort reads as healthy, because 412 + 0 + 0 = 412 closes perfectly |
+| A complete pass is accepted | Green against a **real captured run** of all 676, absolute paths normalised so the fixture is not machine-specific |
+| A short run is refused | Green via `--expect`, and red when that clause is removed |
+| The fixtures are honest about what they are | `healthy.log` is captured. **`aborted.log` is reconstructed and its header says so** — the abort is intermittent and no log of one was kept when it was first seen, so every element comes from the recorded signature: exit 134, the host exiting unexpectedly, `Failed!`, `failed: 0`, 412 of 676. A real one replaces it if ever caught |
+| The tool is tested through its real interface | The tests shell out to `dotnet run scripts/catch-crash.cs -- --check`, not to a shared type — the `LocaleReviewTests` principle that a gate re-deriving its subject from the code that produced it tests very little |
+| New tests proven able to fail | 2 of 2 mutations killed. **The harness itself had to be fixed first**: it judged a mutation by `failed: 0` being absent from the output, which a failing run contains for other reasons, so it reported a killed mutation as survived. The exit code is the oracle now — the spike's lesson that a tool filtering its own input can under-report, relearned |
+| The suite | 679 = 676 + 3, no existing test edited; build clean under `-warnaserror` |
 
 ## Plan 00022 phases
 
