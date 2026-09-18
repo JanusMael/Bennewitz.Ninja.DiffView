@@ -1,0 +1,23 @@
+<Project>
+  <!-- A shield, not a configuration.
+
+       Everything under reference/ is a read-only upstream checkout fetched by
+       scripts/fetch-reference.cs. Those projects are built with THEIR versioning rules, not this
+       repository's, and MSBuild does not know that: Directory.Packages.props discovery walks up
+       from each project until it finds one, so a checkout that ships none of its own would find
+       the repository root's and inherit central package management from it. Every PackageReference
+       with a Version attribute then becomes NU1008.
+
+       That is not hypothetical. ClaudeForge ships a Directory.Build.props and no
+       Directory.Packages.props, so scripts/pack-diagnostics.cs failed on every CI job the first
+       time this repository had a remote — and only there. On a machine where reference/sources.json
+       resolves ClaudeForge to a sibling checkout OUTSIDE this tree, the walk-up never reaches here
+       and the pack succeeds, which is why it went unseen through twenty-three plans. Avalonia,
+       AvaloniaEdit, DiffPlex and Semi.Avalonia were immune only because each ships its own.
+
+       Setting the flag false stops the search here and hands each checkout back to its own rules.
+       This file deliberately declares no PackageVersion items: it is not a place to pin anything. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
