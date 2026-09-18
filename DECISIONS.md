@@ -2812,3 +2812,33 @@ correct implementation and a broken one alike.** Assert `IsVisible` on the part 
 the *survivors*: the panes' height, which grows by what the part gave up and returns to its baseline
 when the part comes back. `MinimapLaneTests` already did this for the map; `ChromeToggleTests` does
 it for the other three.
+
+## The repository is `Bennewitz.Ninja.DiffView`, not `DiffView`
+
+Plan 00018 named `https://github.com/JanusMael/DiffView` and the metadata carried it. The repository
+created on 2026-09-18 is **`Bennewitz.Ninja.DiffView`**, and `PackageProjectUrl` / `RepositoryUrl`
+follow it. The plan is frozen and keeps the old URL; this is the record.
+
+The convention is the author's own, read off the published packages rather than asserted:
+
+| Package | Repository |
+|---|---|
+| `Bennewitz.Ninja.AutoVersioning` | `JanusMael/Bennewitz.Ninja.AutoVersioning` |
+| `Bennewitz.Ninja.FileServer` | `JanusMael/Bennewitz.Ninja.FileServer` |
+| `Bennewitz.Ninja.Chisel` | `JanusMael/chisel` |
+
+Two of three name the repository after the full package id. `chisel` is the outlier, and it is the
+same package whose `Authors` field reads `Bennewitz.Ninja` where the other two read
+`Brian Bennewitz` — a stray, not a second convention.
+
+**Not `Bennewitz.Ninja.DiffView.Avalonia`,** even though that is the id a consumer installs. This
+repository ships **two** packages and `Bennewitz.Ninja.DiffView.Core` is platform-neutral: it
+depends on DiffPlex and `Microsoft.Extensions.Logging.Abstractions` and nothing else, and the single
+occurrence of the string "Avalonia" in its sources is a doc comment about what AvaloniaEdit's
+`NewLineFinder` recognises. Naming the repository after the platform package would file the neutral
+one under a platform it does not use. `Bennewitz.Ninja.DiffView` is the common stem of both ids and
+is already the `RootNamespace` of every file here.
+
+**The timing was the cheap moment and will not come again.** A nuget.org Trusted Publishing policy
+binds owner, repository *and* workflow filename. Nothing had run and no policy existed, so the
+rename cost two lines; after a policy exists it costs recreating it.

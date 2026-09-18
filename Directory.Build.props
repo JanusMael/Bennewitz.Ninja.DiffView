@@ -30,13 +30,15 @@
   <!-- Package metadata shared by every packable project. Without a licence expression a package is
        one nobody's compliance review passes; without Authors it packs as the assembly name; without
        a repository URL the nuspec carries a commit hash pointing at nothing. PackageTags are
-       per-project and live in the csproj beside the Description. The repository does not exist yet —
-       the release workflow is written and dormant, see plan 00018. -->
+       per-project and live in the csproj beside the Description. The repository is named for the
+       package stem, not the product: two of this author's three published packages name their
+       repository after the full package id. See Decisions; plan 00018 names the old URL and is
+       frozen. -->
   <PropertyGroup>
     <Authors>Brian Bennewitz</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/JanusMael/DiffView</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/JanusMael/DiffView</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/JanusMael/Bennewitz.Ninja.DiffView</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JanusMael/Bennewitz.Ninja.DiffView</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
