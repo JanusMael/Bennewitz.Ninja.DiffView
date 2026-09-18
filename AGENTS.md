@@ -149,6 +149,15 @@ no dates, no counts.
   the `EnsureReferenceSources` target fetches.
 - `PresenterHost` under `tests/DiffView.Avalonia.Tests/Presenter` is the fixture for presenter
   tests; `ThemeSwap` and `ThemeTargets` cover the ten theme targets.
+- **A test-host abort reads as a pass to any grep, so judge the whole summary.** When the host dies
+  mid-run the runner prints **`Test run summary: Failed!` with `failed: 0`** and a total short of the
+  suite — `failed: 0` is true and meaningless, and `succeeded:` matches the tests that did run. The
+  one abort this repository has diagnosed was root-caused and repaired (`DECISIONS.md`, plan 00020's
+  `StatusController` clock), so this is a guard against misreading rather than a live defect.
+  `scripts/catch-crash.sh` is the guard: `--check <log>` judges a captured run, and with no argument
+  it re-runs the suite until it catches one and keeps that log. Its load-bearing clause is that the
+  summary outcome must say `Passed!` — no arithmetic over the counts can see an abort, because
+  412 + 0 + 0 closes perfectly. Pass `--expect 679` to make a short total a failure too.
 - `CompositeHost` keeps syntax highlighting **off** unless a test passes `syntax: true`, for the
   reason it keeps the caret from blinking: TextMateSharp tokenizes on its own thread, so a frame
   captured without waiting is a coin toss. A test that wants colour waits on

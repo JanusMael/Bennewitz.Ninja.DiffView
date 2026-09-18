@@ -197,6 +197,11 @@ Nothing else is in flight; new work needs a new plan under `plans/`.
 a side editable so a run no longer opens with a menu drive, `--unified` opens the inline view, and
 `AGENTS.md` §9 is how to capture and drive the running window from a session here.
 
+**`scripts/catch-crash.sh` judges a test run.** `--check <log>` reads a captured one; with no
+argument it re-runs the suite until it catches an abort and keeps that log. It exists because a
+host that dies mid-run prints `Failed!` with `failed: 0` and a short total, which any grep reads
+as success. `--expect 679` makes a short total a failure too.
+
 The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:
 
