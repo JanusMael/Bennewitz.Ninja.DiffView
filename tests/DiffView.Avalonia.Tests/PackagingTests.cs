@@ -90,12 +90,15 @@ public sealed class PackagingTests
     /// Plan 00018 §Phase 2: the release workflow names the packages it pushes, and never globs.
     /// </summary>
     /// <remarks>
-    /// An unusual thing to assert about YAML, and the asymmetry earns it. <c>dotnet pack</c> over
-    /// this solution produces three packages, because <c>src/ThemeAudit</c> is packable too and is
-    /// local-feed-only by design — <c>NuGet.config</c> maps that exact id to <c>../nuget-local</c>.
-    /// The workflow this one was modelled on pushes <c>*.nupkg</c>; copying that glob would publish
-    /// ThemeAudit to nuget.org on the first release, and a published id cannot be withdrawn, only
+    /// An unusual thing to assert about YAML, and the asymmetry earns it. The workflow this one was
+    /// modelled on pushes <c>*.nupkg</c>, which publishes whatever the solution happens to produce
+    /// rather than what anyone chose to publish — and a published id cannot be withdrawn, only
     /// unlisted. Silent, instant and permanent against twenty lines of test.
+    /// <para>
+    /// It has been close once. <c>src/ThemeAudit</c> was packable and local-feed-only, so the glob
+    /// would have published it; that project has since moved to Bennewitz.Ninja.XamlQuality, which
+    /// removes today's third package but not the next one somebody adds.
+    /// </para>
     /// </remarks>
     [Fact]
     public void The_release_workflow_names_the_packages_it_pushes()
@@ -110,7 +113,6 @@ public sealed class PackagingTests
             File.ReadLines(path).Where(line => !line.TrimStart().StartsWith('#')));
 
         Assert.DoesNotContain("*.nupkg", instructions, StringComparison.Ordinal);
-        Assert.DoesNotContain("ThemeAudit", instructions, StringComparison.Ordinal);
         Assert.Contains("Bennewitz.Ninja.DiffView.Core.", instructions, StringComparison.Ordinal);
         Assert.Contains("Bennewitz.Ninja.DiffView.Avalonia.", instructions, StringComparison.Ordinal);
     }
@@ -136,8 +138,11 @@ public sealed class PackagingTests
     /// Plan 00019 §Phase 3: the two published packages carry the hosting guide as their readme.
     /// </summary>
     /// <remarks>
-    /// Not in <see cref="Required"/>, because <c>src/ThemeAudit</c> is packable too and is
-    /// local-feed-only by design; it carries no readme and should not be made to.
+    /// Asserted by name rather than added to <see cref="Required"/>: a readme is a promise to a
+    /// consumer, so it belongs to the packages this repository publishes rather than to every
+    /// project that happens to be packable. <c>src/ThemeAudit</c> was the standing example — it
+    /// packed to a local feed and carried no readme — and it has since moved to
+    /// Bennewitz.Ninja.XamlQuality.
     /// </remarks>
     [Fact]
     public void The_published_packages_declare_the_hosting_guide_as_their_readme()

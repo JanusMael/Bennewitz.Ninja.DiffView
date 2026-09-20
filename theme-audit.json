@@ -4,9 +4,12 @@
   // theme files, Fluent's control templates (what any Fluent-styled control may reach for),
   // and ClaudeForge's views through the manifest's local entry or the fetched checkout.
   //
-  //   dotnet run --project src/ThemeAudit -- compat     regenerate Themes/Compat/*.Semi.axaml
-  //   dotnet run --project src/ThemeAudit -- report     regenerate docs/theme-audit.md
-  //   … --check                                          the drift check the tests also run
+  // The tool is Bennewitz.Ninja.XamlQuality.ThemeAudit:
+  //   dotnet tool install --global Bennewitz.Ninja.XamlQuality.ThemeAudit
+  //
+  //   theme-audit compat     regenerate Themes/Compat/*.Semi.axaml
+  //   theme-audit report     regenerate docs/theme-audit.md
+  //   … --check              the drift check the tests also run
   "title": "DiffView theme audit",
   "report": "docs/theme-audit.md",
   "themes": [
@@ -119,13 +122,13 @@
     // key, so it matches Semi's at runtime).
     {
       "name": "FluentKeys.Semi", "from": "Fluent", "to": "Semi",
-      "mapping": "src/ThemeAudit/Mappings/FluentToSemi.json",
+      "mapping": "mappings/FluentToSemi.json",
       "output": "src/DiffView.Avalonia/Themes/Compat/FluentKeys.Semi.axaml",
       "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView", "type": "SemiThemeVariants" }
     },
     {
       "name": "SimpleKeys.Semi", "from": "Simple", "to": "Semi",
-      "mapping": "src/ThemeAudit/Mappings/SimpleToSemi.json",
+      "mapping": "mappings/SimpleToSemi.json",
       "output": "src/DiffView.Avalonia/Themes/Compat/SimpleKeys.Semi.axaml",
       "variantKeys": { "prefix": "dv", "namespace": "using:Bennewitz.Ninja.DiffView", "type": "SemiThemeVariants" }
     }

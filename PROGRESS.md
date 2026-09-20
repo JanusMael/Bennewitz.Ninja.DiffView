@@ -294,12 +294,17 @@ The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:
 
 ```bash
-dotnet run --project src/ThemeAudit -- compat
+theme-audit compat
 ```
 
 ```bash
-dotnet run --project src/ThemeAudit -- report
+theme-audit report
 ```
+
+The tool is `Bennewitz.Ninja.XamlQuality.ThemeAudit` (`dotnet tool install --global
+Bennewitz.Ninja.XamlQuality.ThemeAudit`); it was `src/ThemeAudit` in this repository until the
+analysis moved to Bennewitz.Ninja.XamlQuality. The reviewed key tables it generates from stay
+here, in `mappings/`.
 
 ## History — plan by plan
 
