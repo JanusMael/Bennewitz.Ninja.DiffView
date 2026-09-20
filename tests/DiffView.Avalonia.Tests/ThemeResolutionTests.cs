@@ -14,7 +14,7 @@ using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Search;
 using Bennewitz.Ninja.DiffView;
-using Bennewitz.Ninja.ThemeAudit;
+using Bennewitz.Ninja.XamlQuality.ThemeAudit;
 using Semi.Avalonia;
 using ThemeVariant = Avalonia.Styling.ThemeVariant;
 
