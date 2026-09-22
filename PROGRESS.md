@@ -2,46 +2,46 @@
 
 ## Resume
 
-**`main` carries plan 00022 complete — both phases — with a clean working tree and no remote.
-`dotnet build DiffView.slnx -warnaserror` is clean, and `dotnet test --solution DiffView.slnx` is
-679 passed / 0 failed / 0 skipped under `en-US` and under `de-DE` alike.** Plans 00001, 00003–00020
-and 00022 are complete and closed; plan 00002 was rejected on its own review before any code was
-written, and **plan 00021 is on its fourth draft — sibling controls sharing an internal
-controller, no longer gating the release — and plan 00023 is drafted beside it; both await
-approval** — see *Open*.
-**[Plan 00022](plans/00022-three-pieces-of-chrome-you-can-turn-off.md) made three more pieces of
-chrome switchable** — `ShowHeaders`, `ShowStatusStrip` and `ShowBanner`, on both views, each on by
-default. The headers and the strip take the `ShowMinimap` route and drive `IsVisible` on their part
-from both the template and the property-change path; **the banner cannot and must not**, because a
-write from code outranks the style that owns its visibility for the life of the control, so its
-toggle is a disjunct inside the `:banner-none` pseudo-class. Before it,
-**[plan 00020](plans/00020-the-timer-that-outlived-the-view.md) gave both views ownership
-of the status controller they build** — leaving the visual tree disposes it and nulls the field,
-where the null is what keeps a view that comes back working, and `UpdateStrip` now reads that field
-rather than the lazy getter, because a strip refresh that called the getter rebuilt the controller
-the detach had just released. What a detach cannot reach is pinned rather than hidden: `Set` arms
-its timer *after* it raises `Changed`, so work landing after a detach still arms one, bounded at ten
-seconds — the bound the defect always had — and asserted as a bound rather than as zero. Before it,
-**[plan 00019](plans/00019-the-control-for-someone-who-did-not-build-it.md) wrote
-[the hosting guide](docs/hosting-diffview.md)** — the document for someone putting the control into
-their own application, gated so every API name it prints resolves against the shipped surface and the
-quickstart it tells a stranger to paste is loaded from the document, parsed and driven to `Ready`. It
-is also the packages' `PackageReadmeFile`, which was the last thing the release waited on besides a
-remote. Writing it uncovered an intermittent process abort — a status auto-clear on the real clock —
-recorded in `DECISIONS.md` with the one finding it leaves unrepaired. Before it,
-**[plan 00018](plans/00018-the-release-written-before-there-is-a-remote.md) wrote the
-release and left it dormant** — MIT, the package metadata, and a `release.yml` where tagging
-`vYYYY.Q.MDD` is the whole procedure; nothing has run, because there is no remote. **The library's
-namespace is
-[`Bennewitz.Ninja.DiffView`](plans/00017-one-namespace-and-no-segment-that-shadows-the-framework.md)**
-— plan 00017 removed the `Avalonia` segment, which shadowed the framework's own root and cost a
-`global::` to work around. Before it,
-[plan 00016](plans/00016-a-native-speaker-can-read-what-we-shipped.md) made the eight locales
-reviewable — `docs/locale-review/<culture>.md`, generated and gated — and
-[plan 00015](plans/00015-a-test-that-asserts-english-says-so.md) closed the culture audit plan 00014
-deferred, which CI's `culture-leg` job now holds closed. *History — plan by plan* below
-records how each one went and what each corrected, `DECISIONS.md` holds the arguments worth keeping,
-and `AGENTS.md` the cross-file contracts.
+**This repository has a remote, and CI has run.** `main` is at
+`https://github.com/JanusMael/Bennewitz.Ninja.DiffView`, public, and the first execution of a
+workflow written dormant in plan 00018 found **three defects that had been green here for
+twenty-three plans**. Everything below the fold is still true; what changed is that "green" now
+means something it did not mean before, because it is no longer a statement about one machine.
+
+**`main` carries plan 00024 phase 1.** `dotnet build DiffView.slnx -warnaserror` is clean and the
+suite is 679 locally. **CI is not green**, and the remaining failures are known rather than
+mysterious:
+
+| Defect | Where | State |
+|---|---|---|
+| **A** — `docs/theme-audit.md` stale on every CI machine | all four test jobs | **Diagnosed and fixed upstream**; blocked on a release, see *Open* |
+| **B** — `PackagingTests` packed a configuration the suite never built | all four test jobs | **Fixed**, plan 00024 phase 1 |
+| **C** — 32 rendering tests fail | Windows and macOS only | Plan 00024 phase 3. A decision, not a bug |
+
+**Defect A is the one worth reading about**, because the shape of it is the lesson. The theme
+audit's content digest hashed each file's path *relative to the configuration's own directory*
+alongside its bytes. ClaudeForge resolves to a **sibling checkout** on a developer machine
+(`../cl/ClaudeForge/src`) and to a **fetched copy** on CI (`reference/ClaudeForge/src`) — a
+both-spellings form the audit's `paths` explicitly supports. Same 43 files, same pinned commit,
+clean worktree, every count in the row identical; only the digest moved. It could never have passed
+in both places. The method's own summary is the indictment: the report changes *"whenever a pin bump
+changes what was audited, and only then."*
+
+It took **three days and three measured, dead hypotheses** to find, and then one artifact upload to
+see. That upload is the other half of phase 1: CI wrote `theme-audit.received.md` and threw the
+runner away, so the failure named a file nobody outside the runner could read. With it kept, the
+diff was **one line**.
+
+**The fix is upstream and merged**, in `Bennewitz.Ninja.XamlQuality` — the audit moved there on
+2026-09-20 and DiffView now consumes it. Both digest call sites root at the deepest directory the
+scanned files share, which is a property of the audited set rather than of the machine. Predicted
+result for this repository, computed from the same 43 files: **`b7ea0ec438c5` in both layouts**,
+where it was `0ef898b7243a` here and `f95218bc267e` on CI.
+
+Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
+review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
+`IDiffSurface`, on `feat/the-viewer-beside-the-editor`, pushed, 681 green. **Plan 00023 phase 1 is
+done.** **Plan 00024 is approved and phase 1 has landed on `main`.**
 
 ### What ships
 
@@ -98,100 +98,80 @@ wording.
 
 ### Open
 
-1. **The eight locales are reviewable and still unread by a native speaker.** Structure is gated —
-   every key, every placeholder set, the side-word sentinel, and a suite that stays green in German
-   — and wording is not. Plan 00016 removed the excuse: `docs/locale-review/<culture>.md` pairs
-   every string with what it is, what each placeholder holds, and the English it came from, so the
-   work now needs **eight readers rather than any more tooling**. This gates the **first release**,
-   not any commit: `CHANGELOG.md` holds only `[Unreleased]`.
-2. **The first publish.** Everything is written and nothing has run. The packages are MIT, carry
-   their metadata and their readme, and pack at a caldate the release tag supplies; `release.yml`
-   publishes them through Trusted Publishing, and tagging `vYYYY.Q.MDD` is the whole procedure. Plan
-   00019 closed one of the three preconditions — `PackageReadmeFile` now points at the hosting guide,
-   proven by packing and reading it back out of the `.nupkg`. **Two remain**: a **remote** at
-   `https://github.com/JanusMael/DiffView`, which the metadata already names, and a **nuget.org
-   Trusted Publishing policy** naming owner, repository and the workflow filename, plus a
-   `NUGET_USER` secret. The push itself is Brian's — a package id and version are permanent.
-   **Plan 00021 is no longer among the preconditions** (decided 2026-09-17): it used to gate the
-   release because a base class inserted under a published type would have re-rooted it, and
-   siblings do no re-rooting — a new control in a minor is purely additive. The gates are item 1's
-   eight readers, the remote and the policy, and none of them is a plan.
-3. **Windows and macOS demo runs**, owed since plan 00001 Phase 10. The Linux run is **not** owed —
-   plans 00012, 00013 and 00014 were all driven by hand here, on 2026-09-11, 2026-09-12 and
-   2026-09-13. The three new chrome toggles have View-menu entries and have never been driven by
-   hand anywhere.
-4. **Plan 00021 — the read-only viewer — is on its fourth draft and awaiting approval, and it no
-   longer gates the release.** `plans/00021-the-viewer-beside-the-editor.md`, untracked and
-   unapproved. Two shapes were tried and rejected before this one: a public base class (killed by
-   the drift measurement and by 194 permanent v1 members), then siblings sharing through a C# 14
-   extension block (killed by a second adversarial review). **The shape decided 2026-09-17 is two
-   unrelated sibling controls sharing an internal `DiffBuildController` through a narrow (~15-member)
-   internal `IDiffSurface`.**
+1. **Plan 00024 phase 2 is blocked on a release, and the release is blocked on the calendar.** The
+   digest fix is merged in `Bennewitz.Ninja.XamlQuality` and verified — 98 tests, four mutations
+   killed including a call site reverted to the old root, which is the literal defect. It cannot be
+   tagged today: versions here are caldates, `2026.3.922` is already published, and tagging
+   `2026.3.923` before 2026-09-23 would make the package version disagree with the assembly
+   attributes `Bennewitz.Ninja.AutoVersioning` stamps from build time. **Tomorrow**: tag, then in
+   this repository bump the pin, regenerate `docs/theme-audit.md`, and confirm the ClaudeForge row
+   reads **`b7ea0ec438c5`** — predicted from the same 43 files under the new rooting, and identical
+   in both layouts. CI should agree; if it does not, something else is going on.
 
-   **Why the extension block failed, measured.** It needed **~90 interface members, not the ~50
-   claimed** — a block declares no state, so all 34 unwrapped shared private fields plus ~44 CLR
-   properties had to be named on the interface. It **cannot reach `protected` members**, and
-   `UpdatePseudoClasses` is nine `PseudoClasses.Set` calls and nothing else, while `SetCurrentChange`
-   passes a private field by `ref`, which no interface property can supply. It **cannot raise** the
-   three events (CS0079). And the claim that it "leaves the orchestration bodies almost untouched"
-   was backwards: method calls on `this` survive, field access does not, and 46 distinct fields are
-   touched by just 772 lines of the shared half.
+   ⚠ The fix **rebases every digest once**, not only rows resolved outside the tree, because the
+   root moves from the configuration directory to each scanned set's own common ancestor. Nothing
+   breaks silently — the drift test fails loudly and a regenerate fixes it.
 
-   **The controller wins on four counts.** The interface drops to ~15 members, some 150 forwarders
-   never written. The 34 private fields **stay private** — on an interface they would have become
-   type surface, worse encapsulation than the code has today. It **rewrites less**, because a field
-   that moves with its code keeps every reference verbatim. And the orchestration becomes
-   **unit-testable with no visual tree**, where today it is reachable only through `CompositeHost`.
+2. **Plan 00024 phase 3 — defect C — is the only one that is a decision rather than a bug.** 32
+   rendering tests fail on Windows and macOS at 10–13% of pixels differing: glyph rasterization, not
+   antialiasing. The bundled `DejaVuSansMono` fixes *which* glyphs are drawn and nothing about *how*
+   they are rasterized; macOS is arm64 besides. Linux is green only because every verified PNG was
+   generated on Linux. **Two of the 32 are not baselines at all** —
+   `MarkerChipTests.The_glyph_is_centred_in_its_chip` and
+   `MarkerGlyphTests.Every_marker_is_heavy_enough_to_scan` measure the frame, so no baseline strategy
+   touches them: two pixel measurements are simply tighter than the platform spread. The plan's
+   decision is Linux-only baselines plus the owed by-hand runs; the artifacts from run `35780424399`
+   hold the evidence.
 
-   **Three further decisions of 2026-09-17.** The viewer **no longer gates the first publish** — that
-   requirement existed only because re-rooting a published type changes the identity consumers' XAML
-   and `ControlTheme`s bind against, and siblings do no re-rooting; the release's real gates are the
-   eight locale readers, a remote and a Trusted Publishing policy. **The demo hosts the viewer**, a
-   View-menu entry and a `--viewer` flag exactly as `--unified` does for `InlineDiffView`, because
-   excluding it meant no human would ever see a new public control and the owed platform runs could
-   never include it. And the **`diff-surface` style class is dropped**: a comma-union type selector,
-   `Selector="local|DiffViewer, local|SideBySideDiffView"`, reaches both with **no cooperation from
-   either control**, where the class was an opt-in convention with a test to maintain.
+3. **The first publish.** The packages are MIT, carry their metadata and readme, and pack at a
+   caldate the release tag supplies. The remote exists. **Two preconditions remain and both are
+   Brian's**: a nuget.org Trusted Publishing policy naming owner, repository and workflow filename,
+   and `NUGET_USER`. ⛔ **Check whether this repository's `release.yml` reads `secrets.NUGET_USER`
+   or `vars.NUGET_USER` before setting it.** It was written in plan 00018, before
+   `Bennewitz.Ninja.Templates` made that change, and getting it wrong produces a preflight that
+   fails with "NUGET_USER is not set" while `gh variable get NUGET_USER` prints the value — which
+   cost a round on `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
 
-   **Corrections the review forced, all measured.** `DirectProperty.AddOwner` returns a **new**
-   instance, not the same one — `==` still holds via a shared `Id`, but a sibling that calls
-   `RegisterDirect` afresh compares unequal and its `OnPropertyChanged` branch **silently never
-   runs**; that is the established habit here (`InlineDiffView` registers 21 that way, and
-   `grep -rn "AddOwner" src/` returns zero), so it is gated rather than trusted. A direct property
-   cannot be set from a style at all. The surface dump is **content-identical, not byte-identical**,
-   to the spike baseline — the spike's file carries a BOM — so the gate normalises and compares
-   content. That gate is also weaker than claimed: explicit interface implementations are private in
-   IL, so it proves nothing leaked to the public API and **the 676 tests are what protect phase 1**.
-   And the shared half is **2,785 lines, not 1,500** — the earlier figure was the acting half, which
-   stays.
+4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done and pushed:
+   `DiffBuildController` (1,872 lines) and `IDiffSurface` (17 members, not the ~15 the plan
+   estimated), 681 green. Phase 2 is `DiffViewer` itself, and it **no longer gates the release**.
+   The viewer still has no find — re-confirmed 2026-09-22 rather than superseded — and **phase 4's
+   hosting guide must name that gap outright**, so a host wanting read-only side-by-side with search
+   meets documentation rather than silence.
 
-   Five re-runnable tools hold every number, all under `~/c/cl/scratch/DiffView/`: `spike/`,
-   `DocSeamProbe/`, `SurfaceDump/`, `SiblingProbe/` and `drift-check.sh`. Appendix A stands as
-   decided: **194 members**, five trimmed to internal on 2026-09-17.
+5. **Plan 00023 phases 2–5 — the window harness.** Phase 1 (`catch-crash`) is merged. The rest
+   follows 00021.
 
-5. **Plan 00023 — the harness the prose describes — is drafted and awaiting approval.**
-   `plans/00023-the-harness-the-prose-describes.md`, untracked. `AGENTS.md` §9 records ~75 lines of
-   hard-won fact about driving the running demo, and **every tool that applies them lives in scratch**,
-   so each session rebuilds the driver from prose. The plan commits them as one .NET 10 file-based app
-   with a platform back end — the convention `gen-locale-review` and three others already follow —
-   with seven verbs that take **a name or a coordinate** (decided 2026-09-17), so Windows and macOS can
-   address elements by the `AutomationProperties.Name` that `AccessibilityCoverageTests` already
-   enforces. **Phase 1 (`catch-crash`) goes first, ahead of 00021**; phases 2 to 5 follow it. None of
-   the five scratch scripts can be committed unchanged: all three capture scripts parse **English**
-   `xwininfo` output, in a repository that tests under `de-DE`, and they hardcode a uid, a compositor,
-   a display and a repo path.
+6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
+   this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
+   `DiffViewStrings.Localization` lets a host outrank the library with its own resolver. What is
+   owed is the caveat where a consumer reads it — the README and the package description, not the
+   `.resx` headers alone. **Unstarted, and it has no plan**; whether it needs a number was asked and
+   never answered.
 
-   **Phase 1 is done and merged** (`aa090b3`): `scripts/catch-crash` and its two wrappers, two
-   fixtures, three tests, both detection clauses proven able to fail. Phases 2 to 5 follow plan
-   00021.
+7. **Adopt `XQ1002` and delete `AccessibilityCoverageTests`.** Unblocked —
+   `Bennewitz.Ninja.XamlQuality 2026.3.922` is live and carries it. Closes two holes measured in
+   this repository's own gate on 2026-09-22: an empty `AutomationProperties.Name=""` passes it, and
+   an element set that matches nothing passes it, so a renamed control would silently stop being
+   checked. Needs its own plan.
 
+8. **`AQ1001` reports two findings here**, from this author's own new
+   `Bennewitz.Ninja.AssemblyQuality 2026.3.922`: `DiffDocumentBuilder.Build` and `DiffSearch.Find`
+   take defaulted `CancellationToken`s on public API about to publish. A policy call, not a defect —
+   the BCL defaults its own tokens everywhere, and the rule says so in its own documentation.
 
-Items 1 and 3 are Brian's own (2026-09-14): the locales need readers rather than tooling, and the
-demo runs need those machines.
+9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. Reframed by 00024: the
+   *suite* does not pass on those platforms, so a by-hand run was never the first obstacle. Plan
+   00023's harness is what would make them repeatable.
 
-Nothing else is in flight; new work needs a new plan under `plans/`.
+Items 3, 6 and 9 are Brian's own. Nothing else is in flight; new work needs a new plan under
+`plans/`.
 
 ### Running it
+
+**CI is the other judge now, and it disagrees with this machine.** Three defects were green here
+for twenty-three plans; two of the three are invisible from a developer checkout by construction.
+A local green is evidence about one machine — `catch-crash` judges a run, and CI judges the claim.
 
 **`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path.** `--edit left|right|both` starts
 a side editable so a run no longer opens with a menu drive, `--unified` opens the inline view, and
@@ -472,6 +452,26 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00024 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 Two fixes and one question | S | done | `PackagingTests` names the configuration it packs; both test jobs keep what the gates rejected. Ended with defect A **diagnosed**, which is what it was for |
+| 2 Defect A | S | **blocked** | Fixed upstream and merged in `Bennewitz.Ninja.XamlQuality`; waiting on a release. The caldate scheme means the next tag is tomorrow's — `2026.3.922` is spent, and tagging `.923` today would make the package version disagree with the assembly attributes AutoVersioning stamps from build time |
+| 3 The rendering split | M | not started | Independent of A and B. The `received-*` artifacts from run `35780424399` carry the raw material: 3.1 MB of macOS PNGs, 1.9 MB of Windows |
+| 4 The record | S | not started | |
+
+## Plan 00024 phase 1 verification
+
+| Done-when item | Result |
+|---|---|
+| Defect B fixed | `dotnet pack` defaults to Release; the suite builds Debug; `--no-build` then read a `bin/Release` that on this machine was populated by plans 00018 and 00019 and on a clean checkout does not exist. The configuration is now read from `AssemblyConfigurationAttribute` rather than hardcoded, so it stays right if the suite is ever run in Release |
+| The packaging check packs what was built | **Proven in both directions before committing.** Deleting `bin/Release` locally reproduced CI's `NU5026` naming the same missing `DiffView.Core.dll`; after the fix it passes with still no packable `.dll` under `bin/Release`, so the flag and not stale output is what made it green |
+| A red CI run stops being a dead end | Both test jobs upload `docs/*.received.md` and `tests/**/*.received.*`. Gated on `failure()` rather than `always()`: on a green run those paths do not exist, and a step that loudly uploads nothing every time is one that gets deleted by whoever tidies next |
+| Defect A diagnosed | **One-line diff.** Committed `0ef898b7243a` against CI's `f95218bc267e`, every count identical — 43 files, 1852 keys, 210, 1109. Then both values reproduced from those same files by changing nothing but the path prefix, `../cl/ClaudeForge/src` against `reference/ClaudeForge/src`. Three earlier hypotheses were measured and dead: the pins resolve exactly, the committed report was not merely unregenerated, and `XamlFiles` already sorts ordinally |
+| The suite | ubuntu and the culture leg went from 2 failures to **1**; Windows and macOS keep defect C's 32 |
+| What it cost to find | Three days. The artifact upload is worth more than the fix beside it: the diff was available on the first run after it existed |
 
 ## Plan 00023 phases
 
