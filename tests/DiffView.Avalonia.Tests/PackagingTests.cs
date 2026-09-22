@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.IO.Compression;
 using System.Xml.Linq;
 
@@ -156,6 +157,19 @@ public sealed class PackagingTests
     }
 
     /// <summary>
+    /// The configuration this test assembly was compiled in, which is the only one whose build
+    /// output exists when <c>--no-build</c> runs.
+    /// </summary>
+    /// <remarks>
+    /// Read from the assembly rather than from <c>#if DEBUG</c>: the attribute is what the build
+    /// actually recorded, and it is right for any configuration someone adds later.
+    /// </remarks>
+    private static string BuiltConfiguration =>
+        typeof(PackagingTests).Assembly
+            .GetCustomAttribute<System.Reflection.AssemblyConfigurationAttribute>()?.Configuration
+        ?? "Debug";
+
+    /// <summary>
     /// The readme reaches the package. A <c>PackageReadmeFile</c> naming a file the project does not
     /// actually pack fails <c>dotnet pack</c> outright — the
     /// <c>LayeredEditors.Avalonia.Diagnostics</c> failure recorded in <c>DECISIONS.md</c> — and the
@@ -176,7 +190,17 @@ public sealed class PackagingTests
             {
                 // --no-build: the suite has already built this configuration, and packing again
                 // would triple the cost of the check. A failure here prints the pack's own output.
-                (int code, string log) = Run("dotnet", ["pack", project, "--no-build", "-o", output, "-nodeReuse:false"]);
+                //
+                // ⛔ -c is not optional, and leaving it off is what made this test a false green
+                // for five plans. `dotnet pack` defaults to Release; the suite builds Debug. With
+                // --no-build the pack then reads bin/Release, which on this machine was populated
+                // by the release work of plans 00018 and 00019 and on a clean checkout does not
+                // exist at all — NU5026, on every CI machine, from the first run this repository
+                // ever had. Named from the assembly rather than hardcoded, so the check stays
+                // honest if the suite is ever run in Release.
+                (int code, string log) = Run(
+                    "dotnet",
+                    ["pack", project, "--no-build", "-c", BuiltConfiguration, "-o", output, "-nodeReuse:false"]);
                 Assert.True(code == 0, $"dotnet pack failed for {Path.GetFileName(project)}:\n{log}");
             }
 

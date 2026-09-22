@@ -63,6 +63,26 @@ jobs:
           path: ./test-results/*.trx
           retention-days: 14
 
+      # ⭐ The step that turns a red CI run into evidence. Two of this repository's gates write a
+      # "received" file beside the committed one they disagree with — the theme audit's regenerated
+      # report, and every Verify image snapshot — and CI then throws the runner away. The failure
+      # message names a file nobody outside the runner can read, which is why defect A of plan 00024
+      # went three days with three dead hypotheses and no diff to look at.
+      #
+      # ⚠ if: failure() rather than always(): on a green run these paths do not exist, and an
+      # upload-artifact step with no matching path warns. Uploading nothing, loudly, on every
+      # successful run is how a step gets deleted by whoever is tidying next.
+      - name: Upload what the gates rejected
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: received-${{ matrix.os }}
+          path: |
+            docs/*.received.md
+            tests/**/*.received.*
+          if-no-files-found: ignore
+          retention-days: 14
+
   culture-leg:
     name: Culture Leg (de-DE)
     runs-on: ubuntu-latest
@@ -111,6 +131,26 @@ jobs:
         with:
           name: test-results-culture-de-DE
           path: ./test-results/*.trx
+          retention-days: 14
+
+      # ⭐ The step that turns a red CI run into evidence. Two of this repository's gates write a
+      # "received" file beside the committed one they disagree with — the theme audit's regenerated
+      # report, and every Verify image snapshot — and CI then throws the runner away. The failure
+      # message names a file nobody outside the runner can read, which is why defect A of plan 00024
+      # went three days with three dead hypotheses and no diff to look at.
+      #
+      # ⚠ if: failure() rather than always(): on a green run these paths do not exist, and an
+      # upload-artifact step with no matching path warns. Uploading nothing, loudly, on every
+      # successful run is how a step gets deleted by whoever is tidying next.
+      - name: Upload what the gates rejected
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: received-culture-de-DE
+          path: |
+            docs/*.received.md
+            tests/**/*.received.*
+          if-no-files-found: ignore
           retention-days: 14
 
   trim-check:
