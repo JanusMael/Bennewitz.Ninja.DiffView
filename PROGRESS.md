@@ -192,7 +192,31 @@ wording.
    *suite* does not pass on those platforms, so a by-hand run was never the first obstacle. Plan
    00023's harness is what would make them repeatable.
 
-Items 3, 6 and 9 are Brian's own. Nothing else is in flight; new work needs a new plan under
+10. **`LayeredEditors.Avalonia.Diagnostics` → `Bennewitz.Ninja.AppServices.Avalonia`: deferred
+    2026-09-23, deliberately.** The demo keeps its hand-packed `1.0.1` from `../nuget-local`, and
+    nothing breaks: the published package ships `2026.3.924` and later, trusted-published and
+    trimmable, but **DiffView is not moving to it yet**. What a move would involve, recorded now so
+    it need not be re-derived: the namespace becomes `Bennewitz.Ninja.AppServices.AvaloniaUI`
+    (dialogs in `.Dialogs`), the package id keeping `.Avalonia` while the assembly and namespaces
+    take `.AvaloniaUI`. Six of the demo's seven call sites are unaffected — `ConfigureLogging` with
+    `AppName` / `LogsDirectory` / `MinimumLevel` / `FileNamePrefix`, `InstallAvaloniaHooks`,
+    `ShowFatalErrorDialog`, `ShowNativeFatalError`.
+
+    ⛔ **`AvaloniaDiagnostics.ToggleLiveLogWindow()` is gone** in the published package — the live
+    log and tail windows stayed in ClaudeForge. It has **three** call sites here, not the two the
+    hand-off note names: `MainWindow.axaml.cs:76` (F12), `:573` (`OnToggleLiveLog`) and
+    `MainWindow.axaml:113`, the View-menu entry. Replacing it means a window of DiffView's own, fed
+    by `AvaloniaDiagnosticsOptions.ConfigureLogger` adding a Serilog sink, with `EventListener` for
+    diagnostic events. ⚠ That menu entry carries an `AutomationProperties.Name`, so it is one of the
+    71 elements plan 00025's accessibility gate counts — **whichever of the two changes lands
+    second sets that floor.** The rename log is at
+    `https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/layered-editors-renames.md`.
+
+    The cost of deferring is that the local feed is a hand-packed artifact no other machine can
+    restore, so CI and any fresh checkout stay dependent on a folder here, and the gap widens with
+    each AppServices release.
+
+Items 3, 6, 9 and 10 are Brian's own. Nothing else is in flight; new work needs a new plan under
 `plans/`.
 
 ### Running it
