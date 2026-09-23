@@ -129,14 +129,36 @@ wording.
    decision is Linux-only baselines plus the owed by-hand runs; the artifacts from run `35780424399`
    hold the evidence.
 
-3. **The first publish.** The packages are MIT, carry their metadata and readme, and pack at a
-   caldate the release tag supplies. The remote exists. **Two preconditions remain and both are
-   Brian's**: a nuget.org Trusted Publishing policy naming owner, repository and workflow filename,
-   and `NUGET_USER`. ⛔ **Check whether this repository's `release.yml` reads `secrets.NUGET_USER`
-   or `vars.NUGET_USER` before setting it.** It was written in plan 00018, before
-   `Bennewitz.Ninja.Templates` made that change, and getting it wrong produces a preflight that
-   fails with "NUGET_USER is not set" while `gh variable get NUGET_USER` prints the value — which
-   cost a round on `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
+3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
+   are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
+   remote exists. **Two preconditions remain and both are Brian's**: a nuget.org Trusted Publishing
+   policy naming owner, repository and workflow filename, and `NUGET_USER`.
+
+   ⛔ **`NUGET_USER` is a repository VARIABLE, here and everywhere. The workflow was wrong and has
+   been corrected; the repository settings have not.** `release.yml` was written in plan 00018 from
+   a template that said `secrets.`, and read `secrets.NUGET_USER` until 2026-09-23, when it was
+   changed to `vars.NUGET_USER`. A nuget.org profile name is not a secret, and the convention is
+   the same in every repository here — a `secrets.` reading is a defect to fix, not a local shape to
+   accommodate.
+
+   **Two steps, and only one is done:**
+
+   | Step | State |
+   |---|---|
+   | `release.yml` reads `vars.NUGET_USER` | ✅ done 2026-09-23 |
+   | The repository has `NUGET_USER` as a **variable** | ❌ **not done — Brian's** |
+
+   ⚠ `gh secret list` shows `NUGET_USER` set as a **secret** on 2026-09-20 and `gh variable list` is
+   empty, so **a release dispatched right now would fail**. Set the variable, then delete the
+   secret, which otherwise only preserves the ambiguity. DiffView's publish being on hold is what
+   makes this safe to leave half-done for the moment. The failure mode when these disagree is
+   "NUGET_USER is not set" while `gh secret list` shows it present — which sends you looking
+   anywhere but at the `vars.`/`secrets.` prefix, and cost a round on
+   `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
+
+   ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
+   manages that release. DiffView's publish being on hold does not hold XamlQuality's, and defect A
+   waits on the latter rather than the former.
 
 4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done and pushed:
    `DiffBuildController` (1,872 lines) and `IDiffSurface` (17 members, not the ~15 the plan

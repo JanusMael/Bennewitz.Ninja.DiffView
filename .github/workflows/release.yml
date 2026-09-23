@@ -83,11 +83,17 @@ jobs:
         # Exchanges this job's GitHub OIDC token for a short-lived NuGet.org API key — no
         # long-lived NUGET_API_KEY secret to store or rotate. Requires a Trusted Publishing
         # policy on nuget.org (owner/repo/workflow filename must match this job exactly) and
-        # the NUGET_USER repo secret set to the nuget.org account name tied to that policy.
+        # the NUGET_USER repo **variable** set to the nuget.org account name tied to that policy.
+        #
+        # ⚠ `vars.`, not `secrets.`, and that is the convention across every repository here. A
+        # nuget.org profile name is not a secret, and reading it from `secrets.` while it is set as
+        # a variable fails as "NUGET_USER is not set" — while `gh variable get NUGET_USER` happily
+        # prints the value, which sends you looking anywhere but here. This file was written from
+        # an older template that said `secrets.`; corrected 2026-09-23.
         id: nuget-login
         uses: NuGet/login@v1
         with:
-          user: ${{ secrets.NUGET_USER }}
+          user: ${{ vars.NUGET_USER }}
 
       # NAMED, NEVER GLOBBED. `dotnet pack` over this solution also produces
       # Bennewitz.Ninja.ThemeAudit, which is local-feed-only by design: NuGet.config maps that exact
