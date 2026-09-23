@@ -98,15 +98,21 @@ wording.
 
 ### Open
 
-1. **Plan 00024 phase 2 is blocked on a release, and the release is blocked on the calendar.** The
-   digest fix is merged in `Bennewitz.Ninja.XamlQuality` and verified — 98 tests, four mutations
-   killed including a call site reverted to the old root, which is the literal defect. It cannot be
-   tagged today: versions here are caldates, `2026.3.922` is already published, and tagging
-   `2026.3.923` before 2026-09-23 would make the package version disagree with the assembly
-   attributes `Bennewitz.Ninja.AutoVersioning` stamps from build time. **Tomorrow**: tag, then in
-   this repository bump the pin, regenerate `docs/theme-audit.md`, and confirm the ClaudeForge row
-   reads **`b7ea0ec438c5`** — predicted from the same 43 files under the new rooting, and identical
-   in both layouts. CI should agree; if it does not, something else is going on.
+1. **Plan 00024 phase 2 is unblocked as of 2026-09-23 and is the next work.** The digest fix is
+   merged in `Bennewitz.Ninja.XamlQuality` (`4f7bd62`, PR #3) and still present on `main`; the
+   calendar block has expired, because the caldate `2026.3.923` is now today's rather than
+   tomorrow's.
+
+   ⚠ **Upstream has moved since that merge — re-check before assuming.** As of 2026-09-23
+   `main` is at `02e945b` with six further commits from another session: `XQ1004` (a Grid slot a
+   control does not fit in), `XQ1005`, and an Avalonia gotchas reference. A release now carries all
+   of that, not only the digest fix, so it deserves its own verification pass rather than the one
+   run on 2026-09-22.
+
+   **Then, here**: bump the pin, regenerate `docs/theme-audit.md`, and confirm the ClaudeForge row
+   reads **`b7ea0ec438c5`** — predicted from the same 43 files under the new rooting and identical
+   in both layouts, so a different value means the diagnosis was incomplete rather than that the
+   report simply moved. CI should agree.
 
    ⚠ The fix **rebases every digest once**, not only rows resolved outside the tree, because the
    root moves from the configuration directory to each scanned set's own common ancestor. Nothing
