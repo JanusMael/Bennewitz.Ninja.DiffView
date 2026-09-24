@@ -98,6 +98,22 @@ wording.
 
 ### Open
 
+0. **Plan 00025 is at draft 8, unapproved, and all of its phases 0–4 are BUILT** in the scratch
+   worktree `~/c/cl/scratch/DiffView/wt-pr1` (branch `pr1-rebase`, never pushed): suite 618/1, 25
+   mutations of which 21 kill a gate. Seven adversarial reviews have each found a real defect,
+   usually in the previous round's fix; **an eighth was in flight when the session ended and must be
+   re-run.** The plan adopts `XQ1002`, `XQ1003`, `AQ1001`, `AQ1002 ["DiffPlex"]` and `AQ1003
+   ["Avalonia"]` plus a hand-rolled nuspec dependency gate, at `XamlQuality`/`AssemblyQuality`
+   `2026.3.922`, and declines `XQ1001`, `XQ1004` and `AQ1004` — the last **at that pin only**.
+
+0b. **Plan 00026 — an agent cannot drive this library — is opened by measurement and unwritten.**
+   All eight controls this repository ships return `NoneAutomationPeer` with `ControlType` `None`
+   and honour no automation pattern, against `Button`/`TextBox` answering `Button`+`Invoke` and
+   `Edit`+`Value` in the same run. No `AutomationId` anywhere; `OverlayPopups` unset, so the five
+   context-menu surfaces are their own top-level windows. ⚠ The acceptance test is **drivability by
+   a harness**, not screen-reader quality — the latter is why the criteria exist, not the gate.
+   Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`.
+
 1. **Plan 00024 phase 2 is unblocked as of 2026-09-23 and is the next work.** The digest fix is
    merged in `Bennewitz.Ninja.XamlQuality` (`4f7bd62`, PR #3) and still present on `main`; the
    calendar block has expired, because the caldate `2026.3.923` is now today's rather than
@@ -207,9 +223,12 @@ wording.
     hand-off note names: `MainWindow.axaml.cs:76` (F12), `:573` (`OnToggleLiveLog`) and
     `MainWindow.axaml:113`, the View-menu entry. Replacing it means a window of DiffView's own, fed
     by `AvaloniaDiagnosticsOptions.ConfigureLogger` adding a Serilog sink, with `EventListener` for
-    diagnostic events. ⚠ That menu entry carries an `AutomationProperties.Name`, so it is one of the
-    71 elements plan 00025's accessibility gate counts — **whichever of the two changes lands
-    second sets that floor.** The rename log is at
+    diagnostic events. ⚠ That menu entry carries an `AutomationProperties.Name`, so plan 00025's
+    accessibility gate scans it — and **it does move a number**, which an earlier version of this
+    line denied. That gate floors the library's own markup at 19 and the whole scan at 60, against
+    a measured 71 of which 52 are the demo's. Removing one demo entry takes the scan to 70, which
+    the floor absorbs; removing eleven would not. ⛔ A correction to that line already got this
+    wrong once by reading only the library floor, so check both before relying on it. The rename log is at
     `https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/layered-editors-renames.md`.
 
     The cost of deferring is that the local feed is a hand-packed artifact no other machine can
