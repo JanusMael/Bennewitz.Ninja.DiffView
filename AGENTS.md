@@ -84,6 +84,10 @@ no dates, no counts.
   `InlineDiffViewTheme` and merged by the control itself; the find bar, the headers and the strip
   it hosts each merge `SideBySideDiffViewTheme` in their own constructors, so the file holds one
   theme and nothing else.
+- `DiffViewer`'s control theme is `Themes/DiffViewer.axaml`, compiled as `DiffViewerTheme` and
+  merged by the control itself — `SideBySideDiffView`'s template without the find bar's row. The
+  headers and the strip it hosts each merge `SideBySideDiffViewTheme` in their own constructors, as
+  they do under the editor.
 - `DiffLineNumberMargin` draws one column of the document's own numbers for a side's pane and two
   columns of the *sides'* numbers for a unified one, a context line filling both; each column is
   measured against its own side's line count (§7).
@@ -229,6 +233,11 @@ no dates, no counts.
   the same hand-advanced clock, the same zero-time builder, the same syntax rule. A test that
   reads what a margin or a background renderer *drew* captures a frame (`Capture()`); a layout
   pass alone does not redraw a margin.
+- `ViewerHost` under `tests/DiffView.Avalonia.Tests/Viewer` is `CompositeHost`'s twin for
+  `DiffViewer` — the same clock, builder and syntax rule. It exists because `CompositeHost.View` is
+  typed as the editor, so none of the coverage written against it reaches the viewer. A test that
+  shows an editor and a viewer side by side focuses a pane just before pressing keys in its window:
+  keyboard focus belongs to one device, and focusing the second window's pane takes it from the first.
 - Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`) — no
   build time, no machine's font. Static seams: `DebugFlags.ResetForTesting`,
   `DiffViewStrings.ResetForTesting`.
@@ -308,8 +317,9 @@ no dates, no counts.
 **Since plan 00021 phase 1, the composite is two objects.** `SideBySideDiffView` is the control and
 the public API — find, editing, copying, the context menus and the key map. `DiffBuildController` is
 everything both a diff editor and a diff viewer do: building, the model, the state machine, the
-template parts, the panes, the chrome, folding and navigation. It is internal, it is not a control,
-and it is directly constructible, so the orchestration can be driven with no visual tree.
+template parts, the panes, the chrome, folding and navigation. It is internal and it is not a
+control, but it reads every option from the control it is handed, so it runs with no window and no
+template — never with no control (`ViewerStateTests.A_viewer_that_is_never_shown_builds_to_ready`).
 
 The two meet at `IDiffSurface`, an internal seam the control implements **explicitly**, so none of
 it reaches the public surface. Its members re-expose what the framework marks protected (`Control`,
@@ -401,6 +411,26 @@ does.
 | **A row is foldable only if collapsing its lines removes that row's height and nothing else.** Padding is height *on* a line, so a line at a run's edge can be carrying rows the fold does not cover — rows the other pane is still drawing. The rule is a property of the fold's neighbours: the first row is foldable when the row above it has a line on both sides, the last when nothing after it rides on a side's final line | The panes diverging by exactly the orphaned padding — equal row counts, unequal heights | `FoldPlan.Take`; tests `FoldingTests.A_fold_never_starts_on_a_line_carrying_padding_for_the_rows_above_it`, `A_fold_never_ends_on_a_sides_last_line_while_that_side_has_a_trailing_gap`. It fires **only** where `UnchangedContextRows` is `0`: with any context the cut has already moved both ends past the boundary rows, and no interior line of an unchanged run can carry padding |
 | **Collapsing a line is not hiding it.** `TextView.CollapseLines` writes the height tree; `CreateAndMeasureVisualLines` then walks `LastDocumentLine.NextLine` **without** skipping what is collapsed. The element that makes one visual line span the run is what keeps that walk on a line it can build | `InvalidOperationException: Trying to build visual line from collapsed line`, from the measure pass, the moment a fold comes into view — and not before, which is why a fold that is off screen is not a fold that has been rendered | `FoldPlaceholderGenerator`, `DiffPanePresenter.SetCollapsedLines`; test `FoldPlaceholderTests.The_placeholder_spans_its_run_and_says_how_many_rows_it_hides`. The generator is interested in the **end** offset of the line before a run where `PaddingElementGenerator` is interested in a line's **start**, so the two never compete for an offset — asserted by `The_padding_and_the_placeholder_share_a_document_rather_than_displace_each_other`, because an order that is right by accident is the thing to rule out. `FoldingManager` is not used at all: `Install` would claim a slot in `TextArea.LeftMargins` and generator index 0 |
 | **A collapse leaves the extent stale.** `DocumentHeight` answers at once; the visual lines and the published `ExtentHeight` follow only from a `Redraw()` **and** an `InvalidateMeasure()` — the two steps `PaddingHeightPrimer` already takes for the same reason | An extent assertion passing against a number that never moved, which is how two of the folding spike's own assertions passed before it was found | `DiffPanePresenter.SetCollapsedLines`; tests `FoldingTests`, and `FoldingSpikeTests.Settle` for the same two steps in the spike |
+
+### The viewer
+
+`DiffViewer` is the controller's second host: the editor's template without the find bar's row, and
+none of the verbs — no find, no menus, no copy, no save or revert, no key map. Everything in this
+section holds for it except where the ledger below says otherwise. Like §7, it is a ledger of
+divergences, not a promise that the two controls stay parallel.
+
+| Invariant | Failure signature if broken | Canonical source |
+|---|---|---|
+| Every property the viewer carries is the editor's own registration through `AddOwner`: a styled one is the editor's instance, a direct one compares equal and is registered on the viewer | The controller raises and dispatches through the editor's identities, so a property registered afresh compares unequal and its branch never runs — with no error anywhere | `DiffViewer`'s property fields; test `SharedRegistrationTests.Every_property_the_viewer_carries_is_the_editors_own_registration` |
+| The viewer registers **no** document or model property, not even internally. `GetValue` resolves a direct property by id against the object's own type, so any registration lets the editor's **public** identity read the viewer's value; the controller's `SetAndRaise` through that identity needs none | `viewer.GetValue(SideBySideDiffView.LeftDocumentProperty)` returns the live document and an insert through it succeeds — the read-only control made writable in one line | `DiffViewer`; `DiffViewer`'s `IDiffSurface.OnDocumentReplaced` raises nothing; tests `SurfaceGateTests.The_viewer_hands_out_no_TextDocument`, `ViewerStateTests.The_seam_answers_for_its_own_control` |
+| The viewer's public surface **equals** `fixtures/api/viewer.txt`; a member added or removed on purpose edits that file in the same change | A member vanishes with the gate green, which after the first publish is the break | test `SurfaceGateTests.DiffViewer_reachable_surface_matches_its_allow_list` |
+| No surface of the viewer opens a menu: it wires no context handler on the panes, the connector, the map or the headers, so a right-click anywhere reaches a `ContextMenu` a host put on the view itself | A menu of greyed verbs on a control that has none, or a host's own menu swallowed | `DiffViewer`'s `IDiffSurface.OnPartsAttached` and `OnPaneAttached`; test `ViewerVerbTests.No_surface_opens_a_menu_where_the_editor_opens_one` |
+| The viewer binds no key — `KeyBindings` is empty and none of `DiffKeyMap.Default()`'s chords moves state — while an arrow and Page Down stay the pane's | F7 walks, F6 switches panes, Ctrl+F looks for a find bar that is not there | test `ViewerVerbTests.No_key_the_editor_binds_does_anything_and_the_panes_keys_still_scroll` |
+| Both panes keep the presenter's defaults: read-only, no copy arrow, and focusable, because that is how keyboard scrolling and select-to-copy work | A keystroke or a paste lands in a viewer, or an arrow offers a copy the control cannot make | `DiffViewer`'s `IDiffSurface.OnPaneAttached`; test `ViewerVerbTests.Each_pane_selects_and_copies_and_neither_takes_a_keystroke_or_a_paste` |
+| The viewer draws exactly what the editor draws for the same input, compared as two frames pixel for pixel beside each decorator's own record — never against a stored picture | A visual difference for the same sources, which the plan allows none of; a stored snapshot misses one smaller than a row | test `ViewerDrawingTests.The_viewer_draws_exactly_what_the_editor_draws` |
+| Every dual-path contract above holds on the viewer through a test of its own, set after load and set before the template applies — the editor's tests bind to `CompositeHost.View`, and none of their coverage reaches a second control | A host setting a toggle, the placement or the split in XAML is ignored by the viewer | `ViewerChromeTests` |
+| All three views carry the same pseudo-classes through the same states | A host's rule on `:degraded` or `:banner-error` styles two of the three | test `ViewerStateTests.All_three_views_carry_the_same_pseudo_classes_through_the_same_states` |
+| A rule that styles both controls is a comma-union type selector with an **owner-qualified** setter property. The union's target type is `TemplatedControl`, so the unqualified property does not load | A host's rule throws at load | test `SharedRegistrationTests.One_comma_union_rule_styles_both_controls_through_one_setter` |
 
 ## 7. The unified view
 

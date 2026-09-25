@@ -64,9 +64,9 @@ DiffView's reference clones now check out LF on every platform, so Windows audit
 commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, unreleased).
 
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
-review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
-`IDiffSurface`, on `feat/the-viewer-beside-the-editor`, rebased onto the `main` that carries plans
-00024 and 00025, 623 green; **phase 2, the viewer, is in progress**. **Plan 00023 phase 1 is
+review before any code was written. **Plan 00021 phases 1 and 2 are done** — `DiffBuildController`
+and `IDiffSurface`, then `DiffViewer`, on `feat/the-viewer-beside-the-editor`, rebased onto the
+`main` that carries plans 00024 and 00025, 651 green; phases 3 and 4 remain. **Plan 00023 phase 1 is
 done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every
 CI job passes, on all three platforms.
 
@@ -150,22 +150,16 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done: `DiffBuildController` and
-   `IDiffSurface` (17 members, not the ~15 the plan estimated), rebased across plans 00024 and 00025
-   with what that carried recorded in `DECISIONS.md` — 623 green, main's 621 and the surface gate's
-   two; CI green on all five jobs. Phase 2, `DiffViewer`, **no longer gates the release**, and is in
-   progress. In: the navigation verbs moved into the controller so both views share them; the control
-   itself, every shared property the editor's own registration through `AddOwner`, and **no document
-   or model property registered at all** — an internal one let the editor's public identity read the
-   viewer's live document; its theme, `DiffViewerTheme`, the editor's template without the find bar;
-   `ViewerHost`; the three gates that saw it arrive — `AccessibilityCoverageTests.Excluded` names it
-   until phase 3's demo hosts it, the runtime walk realises a loaded and a failing viewer, and
-   `TemplatePartTests` holds the controller's lookups to every host's own constants; and the viewer's
-   own tests, each proven able to fail by a targeted mutation — its surface equal to
-   `fixtures/api/viewer.txt`, the `AddOwner` gate, no document handed out, the editor's frame pixel for
-   pixel, no menu on six surfaces, no key but the pane's, the walks, the map and the connector,
-   folding, every chrome dual path, one pseudo-class set across all three views, and the seam's
-   answers. Still owed by phase 2: the mutation harness over the new gate lines, and the record.
+4. **Plan 00021 phases 3–4 — the viewer's theme split, its demo entry and its record.** Phases 1 and
+   2 are done on `feat/the-viewer-beside-the-editor` — *Plan 00021 phases* below — and the viewer
+   **does not gate the release**. Phase 3 is the theme split, so `DiffPaneHeader`, `DiffStatusStrip`
+   and `DiffFindBar` are keyed once and the viewer merges no find bar's theme, and the demo's
+   `--viewer` flag and View-menu entry, which retires `AccessibilityCoverageTests.Excluded[DiffViewer]`;
+   the plan's Testing row that every pseudo-class any theme styles is styled by every theme goes with
+   it. Phase 4 is the hosting guide's viewer section — which of the three controls a host reaches
+   for; how far the read-only guarantee goes, which is the viewer type's API and not the visual tree,
+   a pane being a public type in a public template; the comma-union rule with its **owner-qualified**
+   setter; the nine pseudo-classes — and `CHANGELOG.md`.
    The viewer still has no find — re-confirmed 2026-09-22 rather than superseded — and **phase 4's
    hosting guide must name that gap outright**, so a host wanting read-only side-by-side with search
    meets documentation rather than silence.
@@ -625,6 +619,35 @@ either.
 | The demo entries carry automation names | Green, by a scan of the `.axaml` — `AccessibilityCoverageTests`' element set is a hardcoded literal that does not include `MenuItem`, so it would not have caught this |
 | New tests proven able to fail | 7 of 7 mutations killed: each path dropped, each property unwired, the unified view left alone, the banner's disjunct dropped, the banner's mechanism reverted, a demo entry stripped of its name |
 | The suite | 676 passed / 0 failed / 0 skipped, `en-US` and `de-DE` alike; build clean under `-warnaserror` |
+
+## Plan 00021 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The controller | L | done | `DiffBuildController` and `IDiffSurface`, 17 members; `SideBySideDiffView` moved onto them with its public surface gated unchanged; rebased across plans 00024 and 00025, pushed, CI green on all five jobs |
+| 2 The viewer | M | done | The navigation verbs moved into the controller first; `DiffViewer` and `DiffViewerTheme`; `AddOwner` brought forward from phase 3 with its gate; no document or model property registered; `ViewerHost`; the three gates that saw it arrive; the viewer's own tests, 28 cases |
+| 3 The theme split and the demo | M | not started | `DiffPaneHeader`, `DiffStatusStrip` and `DiffFindBar` keyed once, the viewer merging no find bar's theme; the demo's `--viewer` and View-menu entry, which retires `Excluded[DiffViewer]` |
+| 4 The record | S | not started | The hosting guide's viewer section, `DECISIONS.md`, `PROGRESS.md`, `CHANGELOG.md` |
+
+## Plan 00021 phase 2 verification
+
+| Done-when item | Result |
+|---|---|
+| The viewer's surface is its allow-list | `fixtures/api/viewer.txt` is the viewer's own dump — Appendix A's Keep table, the constructor and plan 00025's two header names. **Equal, not a subset**: the mutation that makes a public member internal fails the gate, and would pass a subset one |
+| Nothing shared is public | The seam's members are private in IL on every control that implements `IDiffSurface`, derived rather than listed |
+| The viewer hands out no `TextDocument` | **The plan's form of this test passed throughout a leak.** An internal `AddOwner` let `viewer.GetValue(SideBySideDiffView.LeftDocumentProperty)` return the live document, and an insert through it succeeded. The registrations went, and the test now reads every public document identity through a viewer |
+| `AddOwner` equality | Every property field of any visibility: equal to the editor's, registered on the viewer, and a styled one the editor's own instance — a mutation for each way of going wrong |
+| One rule reaches both controls | A comma-union selector loaded as a host writes it, with one setter on the shared identity. The setter's property must be owner-qualified, and the unqualified rule failing to load is asserted as well |
+| The viewer draws what the editor draws | The two frames pixel for pixel, beside each decorator's record of what it drew. Copy arrows appearing in the viewer — smaller than a row — is 860 differing pixels |
+| No menu on six surfaces | Every right-click the editor answers reaches a host's own `ContextMenu` on the viewer instead |
+| No gesture but scrolling | Every chord in `DiffKeyMap.Default()` moves nothing on the viewer, after the same presses are seen to move the editor; an arrow moves the caret and Page Down scrolls both panes |
+| The map, the connector, folding | The map jumps both panes, a polygon click makes its block current, and a placeholder click gives one run back in both panes alike |
+| Every §6 dual path | Headers, strip, banner, map, placement and split ratio, each set after load and set before the template applies |
+| One pseudo-class set | All three views driven through empty, building, ready, identical, the banner switched off, too different to align, and failed |
+| The controller without a visual tree | **Narrowed**, decided by Brian: a viewer that is never shown builds to `Ready`. "No control, no headless app" cannot be written — `DECISIONS.md` |
+| New tests proven able to fail | 38 of 38 targeted mutations killed by the test they name, none by the compiler |
+| The repository's mutation harness | Over the phase 2 commit: **one kill by the wrong test, and the exclusion floor untripped** — `DiffViewer`'s exclusion broke the premise of "the only exclusion is removed". The mutation now empties the set. Over the final commit: **clean** — every mutation as expected, killed by its test, by the build, or green by design, and every assertion in the gate files tripped first by a mutation except the one marked inert at the pin |
+| The suite | 651 = 623 + 28, green in `en-US` and `de-DE` under `catch-crash --expect auto`; the build clean under `-warnaserror` |
 
 ## Plan 00020 phases
 
