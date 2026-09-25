@@ -9,13 +9,13 @@ twenty-three plans**. Everything below the fold is still true; what changed is t
 means something it did not mean before, because it is no longer a statement about one machine.
 
 **`main` carries plan 00024 phase 1**, and is pushed. `dotnet build DiffView.slnx -warnaserror` is
-clean. ⚠ **The suite is 679 on `main` and 623 on the plan-00025 branch** — that branch removes
+clean. ⚠ **The suite is 679 on `main` and 621 on the plan-00025 branch** — that branch removes
 `tests/ThemeAudit.Tests` along with the tool, so a smaller number there is correct and merging makes
-`main` 623.
+`main` 621.
 
 | Defect | Where | State |
 |---|---|---|
-| **A** — `docs/theme-audit.md` stale on every CI machine | was all four test jobs | ✅ **RETIRED 2026-09-24.** `XamlQuality 2026.3.924` carries the fix; the report regenerates once. Done on the plan-00025 branch, whose suite is **623 with no failures** |
+| **A** — `docs/theme-audit.md` stale on every CI machine | was all four test jobs | ✅ **RETIRED 2026-09-24.** `XamlQuality 2026.3.924` carries the fix; the report regenerates once. Done on the plan-00025 branch, whose suite is **621 with no failures** |
 | **B** — `PackagingTests` packed a configuration the suite never built | all four test jobs | **Fixed**, plan 00024 phase 1 |
 | **C** — **66** rendering tests fail | Windows and macOS only | Plan 00024 phase 3. A decision, not a bug |
 
@@ -56,7 +56,8 @@ report that moved: a different value would have meant the root cause was only pa
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
 `IDiffSurface`, on `feat/the-viewer-beside-the-editor`, pushed, 681 green. **Plan 00023 phase 1 is
-done.** **Plan 00024 is approved and phase 1 has landed on `main`.**
+done.** **Plan 00024 is approved and phase 1 has landed on `main`.** **Plan 00025 is approved**, with
+phases 0–4 built on a scratch branch.
 
 ### What ships
 
@@ -113,24 +114,25 @@ wording.
 
 ### Open
 
-0. **Plan 00025 is at draft 10, unapproved, and all of its phases 0–4 are BUILT** in the scratch
-   worktree `~/c/cl/scratch/DiffView/wt-pr1` (branch `pr1-rebase`, tip never pushed): **suite 623 with
-   no failures** and **33 mutations — 29 killed by the test they name, 2 by the build, 2 green by
-   design**. It adopts **six** rules — `XQ1002`, `XQ1003`, **`XQ1004`**, `AQ1001`,
-   `AQ1002 ["DiffPlex"]`, `AQ1003 ["Avalonia"]` — plus a hand-rolled nuspec dependency gate, and
-   declines `XQ1001` and `AQ1004`. ⚠ **The pin is not a pair: `XamlQuality 2026.3.924`,
-   `AssemblyQuality 2026.3.922`**, because that is what exists; `AQ1004`'s two retired axes are
-   AssemblyQuality's, so its decline stands on measurement.
+0. **Plan 00025 is approved, and its phases 0–4 are BUILT** in the scratch worktree
+   `~/c/cl/scratch/DiffView/wt-pr1` (branch `pr1-rebase`, never pushed): **suite 621 with no
+   failures**, and a full run of the mutation harness gives **61 mutations — 57 killed by the test they
+   name, 2 by the build, 2 green by design — with every one of the 44 assertions in the gate files
+   accounted for: 43 tripped first by a mutation, 1 inert at the pin**. It adopts **six** rules —
+   `XQ1002`, `XQ1003`, **`XQ1004`**, `AQ1001`, `AQ1002 ["DiffPlex"]`, `AQ1003 ["Avalonia"]` — plus a
+   hand-rolled nuspec dependency gate, and declines `XQ1001` and `AQ1004`. ⚠ **The pin is not a pair:
+   `XamlQuality 2026.3.924`, `AssemblyQuality 2026.3.922`**, the newest release of each; `AQ1004`'s
+   two retired axes are AssemblyQuality's, so its decline stands on measurement.
 
-   **Nine adversarial reviews have each found a real defect, usually in the previous round's fix.**
-   Round 9 found three inside round 8's repairs, the sharpest of them in the *evidence* rather than a
-   gate: the committed mutation harness printed each mutation's expected killer and never compared it,
-   so `killed` meant only "the filtered class went not-`Passed!`". **A round-10 review is the next
-   step, before approval.**
+   **Next: transcribe phases 0–4 onto `refactor/themeaudit-moves-to-xamlquality`**, the open pull
+   request, as real phase commits, and publish them together with its rebase — which is a force-push,
+   and Brian's. Each phase moves this item with it; phase 5 closes it and puts the twelve adversarial
+   reviews in `DECISIONS.md`.
 
-   ⭐ **`scripts/mutate-gates.{cs,sh,ps1}` is new and committed** — every earlier harness lived in
-   scratch, so the proof that a gate can fail was unreproducible outside the session that ran it. See
-   `AGENTS.md` §5, which records what it refuses to do and why.
+   ⭐ **`scripts/mutate-gates.{cs,sh,ps1}` is committed on that branch** and proves every assertion in
+   the gate files able to fail first, not merely each test. A full run takes about five minutes and is
+   owed after any change to a gate file, a gated subject or a pin; CI runs only its `--guards` half.
+   `AGENTS.md` §5 on the branch records what it refuses to do and why.
 
 0b. **Plan 00026 — an agent cannot drive this library — is opened by measurement and unwritten.**
    All eight controls this repository ships return `NoneAutomationPeer` with `ControlType` `None`
@@ -230,7 +232,7 @@ wording.
    `Bennewitz.Ninja.XamlQuality 2026.3.922` is live and carries it. Closes two holes measured in
    this repository's own gate on 2026-09-22: an empty `AutomationProperties.Name=""` passes it, and
    an element set that matches nothing passes it, so a renamed control would silently stop being
-   checked. ⚠ **This IS plan 00025, which is at draft 10 with the work built** — see item 0. Two
+   checked. ⚠ **This IS plan 00025, which is approved with the work built** — see item 0. Two
    corrections it makes to this item: the class keeps its **name** rather than being deleted, so every
    citation of it still resolves; and the element set is **derived from the assembly** rather than
    rewritten by hand, because a hand-written one was measured blindable one name at a time.
@@ -265,11 +267,11 @@ wording.
     `MainWindow.axaml:113`, the View-menu entry. Replacing it means a window of DiffView's own, fed
     by `AvaloniaDiagnosticsOptions.ConfigureLogger` adding a Serilog sink, with `EventListener` for
     diagnostic events. ⚠ That menu entry carries an `AutomationProperties.Name`, so plan 00025's
-    accessibility gate scans it — and **it does move a number**, which an earlier version of this
-    line denied. That gate floors the library's own markup at 19 and the whole scan at 60, against
-    a measured 71 of which 52 are the demo's. Removing one demo entry takes the scan to 70, which
-    the floor absorbs; removing eleven would not. ⛔ A correction to that line already got this
-    wrong once by reading only the library floor, so check both before relying on it. The rename log is at
+    accessibility gate scans it — and **it does move a number**. The gate floors the demo's own
+    reading at 41, against a measured 53: removing that one entry takes it to 52, which the floor
+    absorbs, and removing thirteen would not. The library's floor reads the library alone, and the
+    accounting equality holds whatever the demo loses, because the demo and the whole scan move
+    together. The rename log is at
     `https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/layered-editors-renames.md`.
 
     The cost of deferring is that the local feed is a hand-packed artifact no other machine can
@@ -292,8 +294,10 @@ a side editable so a run no longer opens with a menu drive, `--unified` opens th
 **`scripts/catch-crash.sh` judges a test run.** `--check <log>` reads a captured one; with no
 argument it re-runs the suite until it catches an abort and keeps that log. It exists because a
 host that dies mid-run prints `Failed!` with `failed: 0` and a short total, which any grep reads
-as success. `--expect <total>` makes a short total a failure too — **679 on `main`, 623 on the
-plan-00025 branch**, which removes `tests/ThemeAudit.Tests` along with the tool.
+as success. `--expect <total>` makes a short total a failure too. Take the total from
+`dotnet test --solution DiffView.slnx --no-build --list-tests` rather than from here: a written number
+is wrong in both directions the moment a test is added. The plan-00025 branch adds `--expect auto`,
+which reads it the same way.
 
 The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:
