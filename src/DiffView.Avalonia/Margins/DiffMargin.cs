@@ -89,7 +89,6 @@ internal abstract class DiffMargin : AbstractMargin
         ToolTip.SetTip(this, null);
     }
 
-    /// <summary>Text in the margin's inherited font, in <paramref name="brush"/>.</summary>
     /// <summary>
     /// Formats <paramref name="text"/> in the margin's own typeface, optionally overriding the
     /// weight — a one-character marker needs more of it than a line number does, and setting the
