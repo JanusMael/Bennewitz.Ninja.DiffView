@@ -241,7 +241,9 @@ no dates, no counts.
   filter is silent in the summary. A new frame test takes the attribute, or it fails two CI legs.
   What looks at rendering on Windows and macOS is a by-hand run, not this suite. A pixel assertion
   beside a capture is a property rather than a picture, so it runs everywhere and must hold at every
-  platform's rasterization.
+  platform's rasterization: it reads ink as coverage (`PixelProbe.Coverage`), never as a count of
+  pixels past a colour threshold, which measures one rasterizer's rounding. `MarkerChipTests` and
+  `MarkerGlyphTests` carry beside their bounds the per-platform readings those were derived from.
 - **The snapshot comparer tolerates anti-aliasing, not glyphs, and this is the trap that recurs.**
   `VerifySetup.ChannelTolerance` and `VerifySetup.MaxDifferingFraction` exist so a platform's
   anti-aliasing does not fail a frame; the cost is that a change smaller than that fraction passes
