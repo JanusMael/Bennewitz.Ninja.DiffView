@@ -1460,10 +1460,6 @@ internal sealed class DiffBuildController
 
     internal PaneSource? RightSource => Control.GetValue(SideBySideDiffView.RightSourceProperty);
 
-    internal bool LeftReadOnly => Control.GetValue(SideBySideDiffView.LeftReadOnlyProperty);
-
-    internal bool RightReadOnly => Control.GetValue(SideBySideDiffView.RightReadOnlyProperty);
-
     internal bool IgnoreWhitespace => Control.GetValue(SideBySideDiffView.IgnoreWhitespaceProperty);
 
     internal bool IgnoreCase => Control.GetValue(SideBySideDiffView.IgnoreCaseProperty);
@@ -1687,6 +1683,128 @@ internal sealed class DiffBuildController
     internal void ScrollToRow(int row)
     {
         ScrollToRows(row, 1);
+    }
+
+    /// <summary>Moves to the next change; at the last one it stays and the strip says so.</summary>
+    internal void NextChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        if (CurrentChangeIndex >= ChangeCount - 1)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoNext));
+            return;
+        }
+
+        SetCurrentChange(CurrentChangeIndex + 1, scroll: true);
+    }
+
+    /// <summary>Moves to the previous change; at the first one, or before any, it stays and the strip says so.</summary>
+    internal void PreviousChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        if (CurrentChangeIndex <= 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoPrevious));
+            return;
+        }
+
+        SetCurrentChange(CurrentChangeIndex - 1, scroll: true);
+    }
+
+    /// <summary>Moves to the first change.</summary>
+    internal void FirstChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        SetCurrentChange(0, scroll: true);
+    }
+
+    /// <summary>Moves to the last change.</summary>
+    internal void LastChange()
+    {
+        if (ChangeCount == 0)
+        {
+            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
+            return;
+        }
+
+        SetCurrentChange(ChangeCount - 1, scroll: true);
+    }
+
+    /// <summary>Makes block <paramref name="index"/> the current change and scrolls to it; an index the model does not have does nothing.</summary>
+    internal void GoToChange(int index)
+    {
+        if (Document is { } model && index >= 0 && index < model.Blocks.Count)
+        {
+            SetCurrentChange(index, scroll: true);
+        }
+    }
+
+    /// <summary>
+    /// Selects block <paramref name="index"/>'s lines on <paramref name="side"/>, or on both
+    /// sides where it is <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// A side the block has no lines on — the near half of an insertion or a deletion — has its
+    /// selection cleared rather than left standing. After "select this change" a selection
+    /// elsewhere would be describing a different change, and the copy arrows read the selection.
+    /// </remarks>
+    internal void SelectChange(int index, DiffSide? side)
+    {
+        if (Document is not { } model || index < 0 || index >= model.Blocks.Count)
+        {
+            return;
+        }
+
+        ChangeBlock block = model.Blocks[index];
+        foreach (DiffSide each in (DiffSide[])[DiffSide.Left, DiffSide.Right])
+        {
+            if (side is { } only && only != each)
+            {
+                continue;
+            }
+
+            SelectLines(each, block.LinesFor(each));
+        }
+    }
+
+    /// <summary>
+    /// Selects whole lines <paramref name="lines"/> — the model's 0-based counting — on
+    /// <paramref name="side"/>, clearing the selection for an empty range.
+    /// </summary>
+    private void SelectLines(DiffSide side, LineRange lines)
+    {
+        if (Pane(side) is not { } pane || pane.Document is not { } document)
+        {
+            return;
+        }
+
+        // The model can be ahead of a document an edit has shortened, so the range is clamped
+        // rather than trusted; a range entirely past the end reads as empty.
+        int first = lines.Start + 1;
+        int last = Math.Min(lines.End, document.LineCount);
+        if (lines.IsEmpty || first > last)
+        {
+            pane.TextArea.ClearSelection();
+            return;
+        }
+
+        int start = document.GetLineByNumber(first).Offset;
+        pane.Select(start, document.GetLineByNumber(last).EndOffset - start);
     }
 
     /// <summary>Rebuilds now from the panes' live text, whatever the debounce was doing.</summary>
