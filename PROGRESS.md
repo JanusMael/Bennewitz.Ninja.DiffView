@@ -18,7 +18,7 @@ plan 00025 removed `tests/ThemeAudit.Tests` along with the tool.
 | **B** — `PackagingTests` packed a configuration the suite never built | all four test jobs | **Fixed**, plan 00024 phase 1 |
 | **C** — 66 rendering tests failed | Windows and macOS only | ✅ **Retired 2026-09-24** by plan 00024 phase 3: the 64 frame cases are Linux's baselines, filtered elsewhere and counted, and the two pixel measurements read coverage |
 
-✅ **All five CI jobs pass on plan 00024 phase 3's branch** (run `36089558680`) — the first time that has
+✅ **All five CI jobs pass** (run `36089558680`, plan 00024 phase 3) — the first time that has
 been true anywhere. Windows and macOS run 557 tests, the suite less the 64 frame cases that are
 Linux's baselines, and list the 64 they left out. Defect C had counted 66 cases there: those 64 and
 the two pixel measurements that read one rasterizer's rounding.
@@ -66,8 +66,8 @@ commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, u
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
 `IDiffSurface`, on `feat/the-viewer-beside-the-editor`, pushed, 681 green. **Plan 00023 phase 1 is
-done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete** on
-`fix/the-suite-that-only-passes-here` and waits to merge.
+done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every
+CI job passes, on all three platforms.
 
 ### What ships
 
@@ -131,10 +131,6 @@ wording.
    context-menu surfaces are their own top-level windows. ⚠ The acceptance test is **drivability by
    a harness**, not screen-reader quality — the latter is why the criteria exist, not the gate.
    Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`.
-
-1. **Plan 00024 is complete on `fix/the-suite-that-only-passes-here` and waits to merge** — Brian's
-   call. All five CI jobs pass there (run `36089558680`); *Plan 00024 phases* below has the phases, and
-   `DECISIONS.md` how the rendering split was measured.
 
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
@@ -548,7 +544,7 @@ either.
 | Phase | Size | Status | Notes |
 |---|---|---|---|
 | 1 Two fixes and one question | S | done | `PackagingTests` names the configuration it packs; both test jobs keep what the gates rejected. Ended with defect A **diagnosed**, which is what it was for |
-| 2 Defect A | S | done | Folded into plan 00025 phase 0 for Linux and macOS; on Windows by reference clones checked out LF, on phase 3's branch |
+| 2 Defect A | S | done | Folded into plan 00025 phase 0 for Linux and macOS; on Windows by reference clones checked out LF, in phase 3 |
 | 3 The rendering split | M | done | `[LinuxBaseline]` filtered away from Linux and counted by CI; the two pixel measurements re-derived as coverage against every platform's readings |
 | 4 The record | S | done | `DECISIONS.md`, this file and the resume anchor. All five jobs green on run `36089558680` |
 
