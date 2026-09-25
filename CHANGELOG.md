@@ -547,6 +547,9 @@ All notable changes to DiffView are recorded here. The format follows
 - The demo's *Unified (inline) view* checkbox is now an entry of View ▸ Control, and the log's
   `[DebugFlags]` summary reads `view=` where it read `unified=`.
 
+- `DiffView.Core` and `DiffView.Avalonia` are marked trimmable, so a host publishing with
+  `TrimMode=partial` trims them too, and both build with the trim analyzer on.
+
 - **Breaking:** `DiffDocumentBuilder.Build` and `DiffSearch.Find` take their `CancellationToken`
   ahead of the optional options, and neither defaults it — `Build(left, right, cancellationToken,
   options)`. Plan 00025 phase 4, adopting `AQ1001`: a caller writes the token it passes.
