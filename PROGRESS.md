@@ -159,7 +159,8 @@ wording.
    it. Phase 4 is the hosting guide's viewer section — which of the three controls a host reaches
    for; how far the read-only guarantee goes, which is the viewer type's API and not the visual tree,
    a pane being a public type in a public template; the comma-union rule with its **owner-qualified**
-   setter; the nine pseudo-classes — and `CHANGELOG.md`.
+   setter; that a plain rule sets the direct `SplitRatio` and `CurrentChangeIndex` while a
+   pseudo-class rule setting one **throws when applied**; the nine pseudo-classes — and `CHANGELOG.md`.
    The viewer still has no find — re-confirmed 2026-09-22 rather than superseded — and **phase 4's
    hosting guide must name that gap outright**, so a host wanting read-only side-by-side with search
    meets documentation rather than silence.
