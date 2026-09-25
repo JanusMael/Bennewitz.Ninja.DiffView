@@ -40,7 +40,7 @@
          developed and tested. Test-only: ReferenceAuditTests and ThemeResolutionTests read it,
          nothing shipped does. The `theme-audit` command itself is the sibling package
          Bennewitz.Ninja.XamlQuality.ThemeAudit, installed as a dotnet tool — see README.md. -->
-    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.920" />
+    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.924" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
