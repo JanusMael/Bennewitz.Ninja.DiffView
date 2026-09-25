@@ -80,14 +80,22 @@ no dates, no counts.
   `ResourceInclude` in code is IL2026 under the trim-check; the `x:Class` dictionary is not. The `DiffView.*` tokens come from the host's `DiffViewResources.ThemeUri`
   include; `DiffBrushes.Resolve` reads them on attach, `ResourcesChanged` and
   `ActualThemeVariantChanged`, with a hard fallback per token.
-- `InlineDiffView`'s control theme is `Themes/InlineDiffView.axaml`, compiled as
-  `InlineDiffViewTheme` and merged by the control itself; the find bar, the headers and the strip
-  it hosts each merge `SideBySideDiffViewTheme` in their own constructors, so the file holds one
-  theme and nothing else.
-- `DiffViewer`'s control theme is `Themes/DiffViewer.axaml`, compiled as `DiffViewerTheme` and
-  merged by the control itself — `SideBySideDiffView`'s template without the find bar's row. The
-  headers and the strip it hosts each merge `SideBySideDiffViewTheme` in their own constructors, as
-  they do under the editor.
+- **Every control theme is a compiled dictionary of its own, merged by the control it themes and
+  holding that theme alone**: `SideBySideDiffViewTheme`, `InlineDiffViewTheme`, `DiffViewerTheme`,
+  `DiffPaneHeaderTheme`, `DiffStatusStripTheme` and `DiffFindBarTheme`, each compiled from the
+  `Themes/` file named after its control, as the presenter's is. So no theme of ours is found
+  twice on the way up from any element, and a view carries no theme for a part it does not host —
+  the viewer, which has no find bar, holds no `DiffFindBarTheme`. ⚠ **The rule is about the
+  resource path, not the files.** Before plan 00021 phase 3 every key already sat in one
+  dictionary, and the path still found each twice: the headers, the strip and the find bar each
+  merged the editor's whole dictionary beneath an editor that had merged it too. Tests
+  `ControlThemeTests.No_theme_of_ours_is_found_twice_on_the_way_up_from_any_element`,
+  `ControlThemeTests.The_viewer_carries_no_theme_for_the_find_bar_it_does_not_have`.
+- `InlineDiffView`'s template is the editor's with one pane and no connector or map, and
+  `DiffViewer`'s is the editor's without the find bar's row. The three view themes were written as
+  copies of one another, so a pseudo-class one of them styles, all three style — test
+  `ControlThemeTests.Every_pseudo_class_one_view_theme_styles_every_view_theme_styles`, which asks
+  agreement and not coverage: most of the pseudo-classes the views publish are styled by none.
 - `DiffLineNumberMargin` draws one column of the document's own numbers for a side's pane and two
   columns of the *sides'* numbers for a unified one, a context line filling both; each column is
   measured against its own side's line count (§7).
@@ -345,7 +353,7 @@ does.
 | `ScrollSync` compares before it sets and guards re-entrancy; both panes' horizontal bars are `Visible` or `Hidden` together | A feedback loop, or panes with unequal viewport heights | `ScrollSync.Follow`, `DiffBuildController.UpdateHorizontalScrollBars`; test `Scroll_sync_is_one_to_one_at_top_middle_and_bottom_with_no_feedback_loop` |
 | The scroll coupling waits for both panes' templates: `DiffPanePresenter.PaneScrollViewer` is null until `OnApplyTemplate` | Sync silently absent after a template re-application | `DiffBuildController.TryWireScrollSync` on `TemplateApplied` |
 | Every user-visible string of the composite, headers and strip goes through `DiffViewStrings` and is computed per instance, never at type initialisation | Swapping `DiffViewStrings.Resolver` before load changes nothing | `DiffBuildController.RefreshStrings`, `UpdateHeaders`, `UpdateStrip`; test `Swapping_the_string_resolver_before_load_changes_the_rendered_strings` |
-| The composite's, header's and strip's control themes are the compiled `SideBySideDiffViewTheme` merged into each control's own resources | Invisible controls without a host include, or IL2026 under the trim-check | `SideBySideDiffView`, `DiffPaneHeader`, `DiffStatusStrip` constructors |
+| The composite, each header, the strip and the find bar merge their own compiled theme — `SideBySideDiffViewTheme`, `DiffPaneHeaderTheme`, `DiffStatusStripTheme`, `DiffFindBarTheme` — into their own resources, and each dictionary holds that one theme (§4) | Invisible controls without a host include, IL2026 under the trim-check, or a theme found twice on the way up and carried by a view with no such part | the four constructors; tests `ControlThemeTests.No_theme_of_ours_is_found_twice_on_the_way_up_from_any_element`, `ControlThemeTests.The_viewer_carries_no_theme_for_the_find_bar_it_does_not_have` |
 | A rendered frame carries no machine-specific text: `CompositeHost.ZeroTimeBuilder` zeroes the build time in the test host, and the demo loads its sides on `Opened` so the smoke test can install it first | Snapshots drift by build time | `CompositeHost`, `MainWindow.OnOpened`, `SmokeSnapshotTests` |
 | Word-level pieces are read through `WordDiffLookup` over the live documents, one lookup per build result bound to that build's options; the cache is filled only by rows that rendered | Stale pieces after a rebuild, or a keystroke throwing from the renderer | `WordDiffLookup.PiecesFor` (bounds-checked), `DiffBuildController.ApplyModel`; test `WordDiffTests.Word_rectangles_cover_exactly_the_piece_columns_in_both_panes_and_the_cache_holds_only_rendered_rows` |
 | A piece rectangle's columns come from `VisualLine.GetVisualColumn`, never from the character index directly | Highlights drift by one column on padded lines and by more over tabs | `DiffLineBackgroundRenderer.DrawWordPieces` |

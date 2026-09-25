@@ -1,0 +1,145 @@
+<!--
+    The control theme of DiffFindBar, compiled as DiffFindBarTheme (the x:Class below) and merged
+    by the bar into its own resources, so the structure never depends on a host include and the
+    merge is trim-safe. Only a view with a find bar carries it: the viewer has none, and holds no
+    theme for one. Every brush is a DiffView.* token from the host's DiffView.axaml include; no
+    host theme key is referenced. The TextBox, ToggleButton and Button controls are the host's
+    own, themed by the host.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dv="using:Bennewitz.Ninja.DiffView"
+                    x:Class="Bennewitz.Ninja.DiffView.DiffFindBarTheme">
+
+  <ControlTheme x:Key="{x:Type dv:DiffFindBar}" TargetType="dv:DiffFindBar">
+    <Setter Property="Background" Value="{DynamicResource DiffView.HeaderBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource DiffView.HeaderForegroundBrush}" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+          <StackPanel Orientation="Vertical" Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBox Name="PART_Query"
+                       Width="220"
+                       MinHeight="0"
+                       Padding="6,2"
+                       VerticalAlignment="Center"
+                       PlaceholderText="{TemplateBinding QueryPlaceholder}"
+                       ToolTip.Tip="{TemplateBinding QueryName}"
+                       AutomationProperties.Name="{TemplateBinding QueryName}" />
+              <ToggleButton Name="PART_MatchCase"
+                            Content="{TemplateBinding MatchCaseText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding MatchCaseName}"
+                            AutomationProperties.Name="{TemplateBinding MatchCaseName}" />
+              <ToggleButton Name="PART_WholeWord"
+                            Content="{TemplateBinding WholeWordText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding WholeWordName}"
+                            AutomationProperties.Name="{TemplateBinding WholeWordName}" />
+              <ToggleButton Name="PART_Regex"
+                            Content="{TemplateBinding RegexText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding RegexName}"
+                            AutomationProperties.Name="{TemplateBinding RegexName}" />
+              <ToggleButton Name="PART_ChangedRowsOnly"
+                            Content="{TemplateBinding ChangedRowsOnlyText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ChangedRowsOnlyName}"
+                            AutomationProperties.Name="{TemplateBinding ChangedRowsOnlyName}" />
+
+              <!-- The scope segmented control: exactly one of the three is checked. A host with
+                   one pane hides the whole group, separator included. -->
+              <Border Width="1" Margin="2,3" Background="{DynamicResource DiffView.ConnectorBrush}"
+                      IsVisible="{TemplateBinding ShowScope}" />
+              <ToggleButton Name="PART_ScopeLeft"
+                            IsVisible="{TemplateBinding ShowScope}"
+                            Content="{TemplateBinding ScopeLeftText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ScopeLeftName}"
+                            AutomationProperties.Name="{TemplateBinding ScopeLeftName}" />
+              <ToggleButton Name="PART_ScopeRight"
+                            IsVisible="{TemplateBinding ShowScope}"
+                            Content="{TemplateBinding ScopeRightText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ScopeRightName}"
+                            AutomationProperties.Name="{TemplateBinding ScopeRightName}" />
+              <ToggleButton Name="PART_ScopeBoth"
+                            IsVisible="{TemplateBinding ShowScope}"
+                            Content="{TemplateBinding ScopeBothText}"
+                            Padding="6,2"
+                            MinHeight="0"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{TemplateBinding ScopeBothName}"
+                            AutomationProperties.Name="{TemplateBinding ScopeBothName}" />
+
+              <TextBlock Name="PART_Count"
+                         Text="{TemplateBinding CountText}"
+                         Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                         IsVisible="{TemplateBinding CountText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+
+              <Button Name="PART_Previous"
+                      Content="{TemplateBinding PreviousText}"
+                      Padding="6,2"
+                      MinHeight="0"
+                      MinWidth="0"
+                      VerticalAlignment="Center"
+                      ToolTip.Tip="{TemplateBinding PreviousName}"
+                      AutomationProperties.Name="{TemplateBinding PreviousName}" />
+              <Button Name="PART_Next"
+                      Content="{TemplateBinding NextText}"
+                      Padding="6,2"
+                      MinHeight="0"
+                      MinWidth="0"
+                      VerticalAlignment="Center"
+                      ToolTip.Tip="{TemplateBinding NextName}"
+                      AutomationProperties.Name="{TemplateBinding NextName}" />
+              <Button Name="PART_Close"
+                      Content="{TemplateBinding CloseText}"
+                      Padding="6,2"
+                      MinHeight="0"
+                      MinWidth="0"
+                      VerticalAlignment="Center"
+                      ToolTip.Tip="{TemplateBinding CloseName}"
+                      AutomationProperties.Name="{TemplateBinding CloseName}" />
+            </StackPanel>
+
+            <!-- A bad pattern and a truncated result each say so in place, under the query. -->
+            <TextBlock Name="PART_Error"
+                       Text="{TemplateBinding ErrorText}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource DiffView.StatusFailureForegroundBrush}"
+                       IsVisible="{TemplateBinding ErrorText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <TextBlock Name="PART_Notice"
+                       Text="{TemplateBinding NoticeText}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource DiffView.StatusWarningForegroundBrush}"
+                       IsVisible="{TemplateBinding NoticeText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

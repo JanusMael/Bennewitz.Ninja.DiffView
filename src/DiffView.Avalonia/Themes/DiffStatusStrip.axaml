@@ -1,0 +1,171 @@
+<!--
+    The control theme of DiffStatusStrip, compiled as DiffStatusStripTheme (the x:Class below) and
+    merged by the strip into its own resources, so the structure never depends on a host include
+    and the merge is trim-safe. All three views host it, and none of them carries its theme.
+    Every brush is a DiffView.* token from the host's DiffView.axaml include; no host theme key is
+    referenced. Pills follow ClaudeForge's status-bar family: corner radius 10, padding 6,2,
+    11 px text, each carrying its text as tooltip and automation name so nothing is colour alone.
+    The dismiss Button is the host's own, themed by the host.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dv="using:Bennewitz.Ninja.DiffView"
+                    x:Class="Bennewitz.Ninja.DiffView.DiffStatusStripTheme">
+
+  <ControlTheme x:Key="{x:Type dv:DiffStatusStrip}" TargetType="dv:DiffStatusStrip">
+    <Setter Property="Background" Value="{DynamicResource DiffView.StatusBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusForegroundBrush}" />
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+          <DockPanel>
+            <TextBlock Name="PART_Caret"
+                       DockPanel.Dock="Right"
+                       Margin="12,0,0,0"
+                       Text="{TemplateBinding CaretText}"
+                       Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                       IsVisible="{TemplateBinding CaretText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                       VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Name="PART_StatePill"
+                      CornerRadius="10"
+                      Padding="6,2"
+                      VerticalAlignment="Center"
+                      ToolTip.Tip="{TemplateBinding StateText}"
+                      AutomationProperties.Name="{TemplateBinding StateText}">
+                <TextBlock Name="PART_StateText" Text="{TemplateBinding StateText}" FontSize="11" />
+              </Border>
+              <TextBlock Name="PART_Stale"
+                         Text="{TemplateBinding StaleText}"
+                         Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                         IsVisible="{TemplateBinding IsStale}"
+                         VerticalAlignment="Center" />
+              <TextBlock Name="PART_Dirty"
+                         Text="{TemplateBinding DirtyText}"
+                         FontWeight="SemiBold"
+                         Foreground="{DynamicResource DiffView.StatusWarningForegroundBrush}"
+                         IsVisible="{TemplateBinding DirtyText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         ToolTip.Tip="{TemplateBinding DirtyText}"
+                         AutomationProperties.Name="{TemplateBinding DirtyText}"
+                         VerticalAlignment="Center" />
+              <ProgressBar Name="PART_Progress"
+                           Width="80"
+                           IsIndeterminate="True"
+                           IsVisible="{TemplateBinding IsBuildingSlowly}"
+                           ToolTip.Tip="{TemplateBinding ProgressName}"
+                           AutomationProperties.Name="{TemplateBinding ProgressName}"
+                           VerticalAlignment="Center" />
+              <TextBlock Name="PART_Counts"
+                         Text="{TemplateBinding CountsText}"
+                         Foreground="{TemplateBinding Foreground}"
+                         IsVisible="{TemplateBinding CountsText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+              <TextBlock Name="PART_Changes"
+                         Text="{TemplateBinding ChangesText}"
+                         Foreground="{TemplateBinding Foreground}"
+                         IsVisible="{TemplateBinding ChangesText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+              <TextBlock Name="PART_BuildTime"
+                         Text="{TemplateBinding BuildTimeText}"
+                         Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                         IsVisible="{TemplateBinding BuildTimeText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+              <TextBlock Name="PART_Options"
+                         Text="{TemplateBinding OptionsText}"
+                         Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                         IsVisible="{TemplateBinding OptionsText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+              <TextBlock Name="PART_Find"
+                         Text="{TemplateBinding FindText}"
+                         Foreground="{TemplateBinding Foreground}"
+                         IsVisible="{TemplateBinding FindText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                         VerticalAlignment="Center" />
+              <Border Name="PART_Transient"
+                      CornerRadius="10"
+                      Padding="6,2"
+                      VerticalAlignment="Center"
+                      IsVisible="{TemplateBinding TransientText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                      ToolTip.Tip="{TemplateBinding TransientText}"
+                      AutomationProperties.Name="{TemplateBinding TransientText}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Name="PART_TransientText" Text="{TemplateBinding TransientText}" FontSize="11" VerticalAlignment="Center" />
+                  <Button Name="PART_Dismiss"
+                          Content="×"
+                          Padding="4,0"
+                          MinHeight="0"
+                          MinWidth="0"
+                          FontSize="11"
+                          Command="{TemplateBinding DismissCommand}"
+                          IsVisible="{TemplateBinding IsTransientDismissible}"
+                          ToolTip.Tip="{TemplateBinding DismissText}"
+                          AutomationProperties.Name="{TemplateBinding DismissText}" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </DockPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:state-empty /template/ Border#PART_StatePill">
+      <Setter Property="Background" Value="{DynamicResource DiffView.HeaderBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:state-empty /template/ TextBlock#PART_StateText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.MutedForegroundBrush}" />
+    </Style>
+    <Style Selector="^:state-building /template/ Border#PART_StatePill">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusActiveBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:state-building /template/ TextBlock#PART_StateText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusActiveForegroundBrush}" />
+    </Style>
+    <Style Selector="^:state-ready /template/ Border#PART_StatePill">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusSuccessBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:state-ready /template/ TextBlock#PART_StateText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusSuccessForegroundBrush}" />
+    </Style>
+    <Style Selector="^:state-degraded /template/ Border#PART_StatePill">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusWarningBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:state-degraded /template/ TextBlock#PART_StateText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusWarningForegroundBrush}" />
+    </Style>
+    <Style Selector="^:state-failed /template/ Border#PART_StatePill">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusFailureBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:state-failed /template/ TextBlock#PART_StateText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusFailureForegroundBrush}" />
+    </Style>
+
+    <Style Selector="^:transient-active /template/ Border#PART_Transient">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusActiveBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-active /template/ TextBlock#PART_TransientText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusActiveForegroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-success /template/ Border#PART_Transient">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusSuccessBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-success /template/ TextBlock#PART_TransientText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusSuccessForegroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-warning /template/ Border#PART_Transient">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusWarningBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-warning /template/ TextBlock#PART_TransientText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusWarningForegroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-failure /template/ Border#PART_Transient">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusFailureBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-failure /template/ TextBlock#PART_TransientText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusFailureForegroundBrush}" />
+    </Style>
+    <Style Selector="^:transient-state /template/ TextBlock#PART_TransientText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.MutedForegroundBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

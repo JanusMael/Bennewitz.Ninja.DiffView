@@ -90,7 +90,7 @@ public class DiffStatusStrip : TemplatedControl
     /// <summary>Creates a strip with its compiled theme merged into its own resources.</summary>
     public DiffStatusStrip()
     {
-        Resources.MergedDictionaries.Add(new SideBySideDiffViewTheme());
+        Resources.MergedDictionaries.Add(new DiffStatusStripTheme());
         _dismiss = new DelegateCommand(() => DismissRequested?.Invoke(this, EventArgs.Empty));
         UpdatePseudoClasses();
     }

@@ -1,0 +1,102 @@
+<!--
+    The control theme of DiffPaneHeader, compiled as DiffPaneHeaderTheme (the x:Class below) and
+    merged by the header into its own resources, so the structure never depends on a host include
+    and the merge is trim-safe. All three views host it, and none of them carries its theme.
+    Every brush is a DiffView.* token from the host's DiffView.axaml include; no host theme key is
+    referenced. The badge carries its text as tooltip and automation name, so nothing is colour
+    alone.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dv="using:Bennewitz.Ninja.DiffView"
+                    x:Class="Bennewitz.Ninja.DiffView.DiffPaneHeaderTheme">
+
+  <ControlTheme x:Key="{x:Type dv:DiffPaneHeader}" TargetType="dv:DiffPaneHeader">
+    <Setter Property="Background" Value="{DynamicResource DiffView.HeaderBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource DiffView.HeaderForegroundBrush}" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}">
+          <Grid>
+            <!-- The focus accent is an overlay on the header's bottom edge: collapsed it
+                 measures nothing, so a pane taking focus moves no row and no pixel outside
+                 the header itself. -->
+            <Border Name="PART_FocusAccent"
+                    Height="2"
+                    VerticalAlignment="Bottom"
+                    IsVisible="False"
+                    Background="{DynamicResource DiffView.FocusAccentBrush}" />
+            <Border Padding="{TemplateBinding Padding}">
+              <DockPanel>
+                <Border Name="PART_Badge"
+                        DockPanel.Dock="Right"
+                        Margin="8,0,0,0"
+                        Padding="4,1"
+                        CornerRadius="3"
+                        VerticalAlignment="Center"
+                        IsVisible="{TemplateBinding Badge, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        ToolTip.Tip="{TemplateBinding Badge}"
+                        AutomationProperties.Name="{TemplateBinding Badge}">
+                  <TextBlock Name="PART_BadgeText" Text="{TemplateBinding Badge}" FontSize="11" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Name="PART_Dirty"
+                           DockPanel.Dock="Right"
+                           Margin="8,0,0,0"
+                           Text="{TemplateBinding DirtyMarker}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource DiffView.StatusWarningForegroundBrush}"
+                           VerticalAlignment="Center"
+                           IsVisible="{TemplateBinding DirtyMarker, Converter={x:Static ObjectConverters.IsNotNull}}"
+                           ToolTip.Tip="{TemplateBinding DirtyMarker}"
+                           AutomationProperties.Name="{TemplateBinding DirtyMarker}" />
+                <TextBlock Name="PART_Detail"
+                           DockPanel.Dock="Right"
+                           Margin="8,0,0,0"
+                           Text="{TemplateBinding Detail}"
+                           Foreground="{DynamicResource DiffView.MutedForegroundBrush}"
+                           VerticalAlignment="Center" />
+                <TextBlock Name="PART_Title"
+                           Text="{TemplateBinding Title}"
+                           Foreground="{TemplateBinding Foreground}"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+              </DockPanel>
+            </Border>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:pane-focused /template/ Border#PART_FocusAccent">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="^:badge-success /template/ Border#PART_Badge">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusSuccessBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:badge-success /template/ TextBlock#PART_BadgeText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusSuccessForegroundBrush}" />
+    </Style>
+    <Style Selector="^:badge-warning /template/ Border#PART_Badge">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusWarningBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:badge-warning /template/ TextBlock#PART_BadgeText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusWarningForegroundBrush}" />
+    </Style>
+    <Style Selector="^:badge-failure /template/ Border#PART_Badge">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusFailureBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:badge-failure /template/ TextBlock#PART_BadgeText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusFailureForegroundBrush}" />
+    </Style>
+    <Style Selector="^:badge-active /template/ Border#PART_Badge">
+      <Setter Property="Background" Value="{DynamicResource DiffView.StatusActiveBackgroundBrush}" />
+    </Style>
+    <Style Selector="^:badge-active /template/ TextBlock#PART_BadgeText">
+      <Setter Property="Foreground" Value="{DynamicResource DiffView.StatusActiveForegroundBrush}" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>
