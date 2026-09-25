@@ -40,7 +40,12 @@
          developed and tested. Test-only: ReferenceAuditTests and ThemeResolutionTests read it,
          nothing shipped does. The `theme-audit` command itself is the sibling package
          Bennewitz.Ninja.XamlQuality.ThemeAudit, installed as a dotnet tool — see README.md. -->
+    <!-- ⚠ The two are NOT bumped as a pair, and the difference is load-bearing. XamlQuality 924
+         carries the theme audit's digest fix, and makes XQ1003 report Skipped rather than a silent
+         Clean(0). AQ1004's two retired axes (05a6060, 044e71a) are not in AssemblyQuality 922, so
+         its decline stands on a measurement against this pin; moving the pin re-opens it. -->
     <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.924" />
+    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.922" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">

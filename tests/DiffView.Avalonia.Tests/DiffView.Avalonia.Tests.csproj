@@ -20,6 +20,7 @@
          a package reference keeps the audit without keeping a second copy of the analysis, or a
          second project claiming the `theme-audit` tool command. -->
     <PackageReference Include="Bennewitz.Ninja.XamlQuality" />
+    <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" />
     <PackageReference Include="Semi.Avalonia" />
     <PackageReference Include="Verify.XunitV3" />
   </ItemGroup>

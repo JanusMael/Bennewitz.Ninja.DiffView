@@ -125,7 +125,7 @@ wording.
    two retired axes are AssemblyQuality's, so its decline stands on measurement.
 
    **Transcribing phases 0–4 onto `refactor/themeaudit-moves-to-xamlquality`**, the open pull
-   request, as real phase commits — **landed: phases 0–2b** — to publish together with its rebase: a force-push with a
+   request, as real phase commits — **landed: phases 0–3** — to publish together with its rebase: a force-push with a
    lease on `5b4c139`, which Brian pre-authorized on 2026-09-24 for a tip that passes the suite and a
    full harness run. Each phase moves this item with it; phase 5 closes it and puts the twelve
    adversarial reviews in `DECISIONS.md`.
