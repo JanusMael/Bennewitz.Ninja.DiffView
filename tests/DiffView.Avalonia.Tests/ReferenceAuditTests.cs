@@ -1,6 +1,6 @@
-using Bennewitz.Ninja.ThemeAudit;
+using Bennewitz.Ninja.XamlQuality.ThemeAudit;
 
-namespace Bennewitz.Ninja.ThemeAudit.Tests;
+namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// The repository's own audit over the reference checkouts (plan 00001 §Phase 2): the committed
@@ -11,10 +11,17 @@ namespace Bennewitz.Ninja.ThemeAudit.Tests;
 /// project's <c>EnsureReferenceSources</c> target; a missing consumer directory fails the run
 /// naming what to fetch rather than skipping.
 /// </summary>
+/// <remarks>
+/// ⚠ This is a test of DIFFVIEW, not of the audit. The analysis itself moved to
+/// Bennewitz.Ninja.XamlQuality and is tested there; what stays here is the part that is about this
+/// repository's own themes — that the committed compat dictionaries and report match a fresh run,
+/// and that the <c>DiffView.*</c> palette clears its contrast floors. It reaches the analysis
+/// through the published <c>Bennewitz.Ninja.XamlQuality</c> package rather than a local project.
+/// </remarks>
 [Trait("Category", "Reference")]
 public sealed class ReferenceAuditTests
 {
-    private static readonly Lazy<AuditResult> Result = new(() => AuditRunner.Run(AuditConfig.Load(Path.Combine(FixturePaths.RepoRoot, "theme-audit.json"))));
+    private static readonly Lazy<AuditResult> Result = new(() => AuditRunner.Run(AuditConfig.Load(Path.Combine(RepoPaths.Root, "theme-audit.json"))));
 
     private static readonly string[] SemiVariants = ["Light", "Dark", "Aquatic", "Desert", "Dusk", "NightSky"];
 
@@ -25,14 +32,14 @@ public sealed class ReferenceAuditTests
         string fresh = MarkdownReport.Render(result);
         string committedPath = result.Config.Resolve(result.Config.Report);
 
-        Assert.True(File.Exists(committedPath), $"{committedPath} is missing; run `dotnet run --project src/ThemeAudit -- report`.");
+        Assert.True(File.Exists(committedPath), $"{committedPath} is missing; run `theme-audit report`.");
         string committed = Normalize(File.ReadAllText(committedPath));
         if (committed != Normalize(fresh))
         {
             string received = Path.ChangeExtension(committedPath, ".received.md");
             File.WriteAllText(received, fresh);
             Assert.Fail($"{result.Config.Relative(committedPath)} is stale: a fresh run differs (written to {result.Config.Relative(received)}). " +
-                        "Regenerate with `dotnet run --project src/ThemeAudit -- compat` then `-- report`, and commit the result.");
+                        "Regenerate with `theme-audit compat` then `theme-audit report`, and commit the result.");
         }
     }
 
@@ -45,14 +52,14 @@ public sealed class ReferenceAuditTests
         foreach (CompatOutcome outcome in result.Compat)
         {
             string committedPath = result.Config.Resolve(outcome.Config.Output);
-            Assert.True(File.Exists(committedPath), $"{committedPath} is missing; run `dotnet run --project src/ThemeAudit -- compat`.");
+            Assert.True(File.Exists(committedPath), $"{committedPath} is missing; run `theme-audit compat`.");
             string committed = Normalize(File.ReadAllText(committedPath));
             if (committed != Normalize(outcome.Generation.Xml))
             {
                 string received = Path.ChangeExtension(committedPath, ".received.axaml");
                 File.WriteAllText(received, outcome.Generation.Xml);
                 Assert.Fail($"{result.Config.Relative(committedPath)} is stale: a fresh generation differs (written to {result.Config.Relative(received)}). " +
-                            "Regenerate with `dotnet run --project src/ThemeAudit -- compat` and commit the result.");
+                            "Regenerate with `theme-audit compat` and commit the result.");
             }
 
             // Nothing had to fall back to a literal: every mapped and copied key closes over the target.

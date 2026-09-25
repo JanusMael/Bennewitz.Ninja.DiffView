@@ -22,7 +22,7 @@ public sealed class FoldingTests
     private static SideBySideDocument Document()
     {
         (string left, string right) = Fixture();
-        return DiffDocumentBuilder.Build(left, right).Document;
+        return DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
     }
 
     [AvaloniaFact]

@@ -130,7 +130,7 @@ public sealed class SideBySideDiffViewTests
                 gate.Wait(TimeSpan.FromSeconds(10));
             }
 
-            return DiffDocumentBuilder.Build(left, right, options, token);
+            return DiffDocumentBuilder.Build(left, right, token, options);
         };
         int completed = 0;
         host.View.BuildCompleted += (_, _) => completed++;
@@ -216,7 +216,7 @@ public sealed class SideBySideDiffViewTests
         using CompositeHost host = new();
         host.Show();
         bool fail = true;
-        host.View.Builder = (l, r, o, token) => fail ? throw new InvalidOperationException("kaboom") : DiffDocumentBuilder.Build(l, r, o, token);
+        host.View.Builder = (l, r, o, token) => fail ? throw new InvalidOperationException("kaboom") : DiffDocumentBuilder.Build(l, r, token, o);
         List<DiffBuildFailedEventArgs> failures = [];
         host.View.BuildFailed += (_, e) => failures.Add(e);
 
@@ -498,7 +498,7 @@ public sealed class SideBySideDiffViewTests
         host.View.Builder = (l, r, o, token) =>
         {
             gate.Wait(TimeSpan.FromSeconds(10));
-            return DiffDocumentBuilder.Build(l, r, o, token);
+            return DiffDocumentBuilder.Build(l, r, token, o);
         };
         host.View.IgnoreCase = true;
         Assert.Equal(DiffViewState.Building, host.View.State);

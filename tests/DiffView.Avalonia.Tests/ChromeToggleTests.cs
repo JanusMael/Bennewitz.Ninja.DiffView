@@ -151,8 +151,9 @@ public sealed class ChromeToggleTests
     [Fact]
     public void The_demos_three_chrome_entries_carry_automation_names()
     {
-        // AccessibilityCoverageTests scans the .axaml files, but its element set is a hardcoded
-        // literal that does not include MenuItem — so three unnamed entries would pass it.
+        // AccessibilityCoverageTests already requires a non-empty name on every MenuItem, these three
+        // included. What this adds is that the three entries exist, under the x:Name each toggle's
+        // handler reads.
         string xaml = File.ReadAllText(RepoPaths.Source(Path.Combine("src", "DiffView.Demo", "MainWindow.axaml")));
 
         foreach (string name in new[] { "ShowHeaders", "ShowStatusStrip", "ShowBanner" })

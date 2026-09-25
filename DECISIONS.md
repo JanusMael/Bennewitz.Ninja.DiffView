@@ -2859,3 +2859,136 @@ signature, and DiffView's own contracts.
 
 A copy kept "just in case" is how the two drift, which is the failure the arrangement exists to
 prevent: the living document is corrected, and the copy goes on saying what used to be true.
+
+## Plan 00025 — nothing adopted that cannot fail
+
+[Plan 00025](plans/00025-nothing-adopted-that-cannot-fail.md) adopts `XQ1002`, `XQ1003`, `XQ1004`,
+`AQ1001`, `AQ1002 ["DiffPlex"]` and `AQ1003 ["Avalonia"]`, adds a hand-rolled nuspec dependency gate,
+and declines `XQ1001` and `AQ1004`, each on a measurement. Its decisions table is the record of *why*
+and is frozen; what follows is what the plan asks this file to hold, and where the work parted from
+it.
+
+**Two decisions it rests on, taken in session and recorded here as the plan requires.** `AQ1001` is
+adopted by moving the token ahead of the optional parameter — decided on 2026-09-23 as a policy
+call, not as an argument from publish urgency, since the first publish is on hold with no date. And
+the phases land on `refactor/themeaudit-moves-to-xamlquality`, the open pull request, rebased onto
+`main` and published together with the rebase — a standing instruction of the same day.
+
+**What it does to plan 00021.** Plan 00021 is approved and frozen, and specifies `"DiffViewer"` added
+to `AccessibilityCoverageTests.InteractiveControlElements`, a field plan 00025 phase 1 removed. The
+element-set edit goes away and two obligations replace it: phase 2 must host a `DiffViewer` in the
+demo or exclude it with a reason, because a public control no markup of ours instantiates now turns
+the gate red; and if its theme declares interactive parts, the runtime walk must put each on screen.
+**And the two branches collide.** Plan 00021's pushed phase 1 moves the side-by-side view's
+`RefreshStrings`, its `DismissText` fill and its default builder into `DiffBuildController`, where the
+builder calls `DiffDocumentBuilder.Build` in the argument order plan 00025 phase 4 changed. Whichever
+plan lands second carries the other's change, and both ways it can go wrong are loud: the old order
+does not compile, and the two mutations that edit the moved code report `no-op`.
+
+**Where the work parted from the plan.**
+
+- `docs/theme-audit.md` regenerated **twice**, not once: in phase 0 for the pin, and in phase 1,
+  whose two theme edits move DiffView's own digest. The single scratch commit the phases were proven
+  in had hidden it; transcribing them one commit at a time, each passing on its own, showed it.
+- **Defect A is not retired on Windows.** The plan says `2026.3.924`'s digest fix retires it; PR #1's
+  first run agrees on Linux and macOS and not on `windows-latest`, whose drift test still fails on
+  exactly the rows cloned on the runner. The digest hashes raw bytes and a Windows runner checks text
+  out CRLF — proven by reproducing both digests of a one-file row from its LF and CRLF bytes, as
+  `PROGRESS.md`'s *Resume* records — and it went to XamlQuality the same day.
+- The harness prints a build error's whole line — a 140-character cut kept the path and lost the
+  cause — and `AGENTS.md` states its rebuild-on-exit once rather than twice.
+- **Merged by rebase**, because `main`'s ruleset allows only squash and rebase and a squash would
+  have folded the phases into one commit. GitHub's rebase writes new SHAs, so `PROGRESS.md` cites
+  the commits as they are on `main`, while PR #1's description cites the branch's.
+
+**How it was reached: twelve drafts, each reviewed adversarially**, and every review found something
+the draft adopted, or guarded with, that could not fire. The twelfth, with its review's findings
+fixed, is what was approved on 2026-09-24.
+
+| Draft | What it adopted that could not fire |
+|---|---|
+| 1 | `XQ1001`, which inspects nothing here |
+| 2 | A positive control reporting zero findings; a pin missing two adopted rules |
+| 3 | An `AQ1001` fix that silenced the rule; `AQ1003` against a violation it cannot see |
+| 4 | A findings scan with no assertion on it at all — blind it, plant an offender, green |
+| 5 | The same scan guarded by a count — point it at a larger unrelated directory and it passes |
+| 6 | A "derivation makes it impossible" standard covering the scan root but not the assembly subject; and a false correction about `AQ1004` from a confounded fixture (116 → 119, where the +3 was an exported type added alongside the reference) |
+| 7 | The derivation covering `ScanLibrary` but not `ScanAll`; a demo floor at its exact population (52 ≥ 52); `AQ1001` guarded by a count that held only because the UI assembly exposes no token |
+| 8 | A hand-written element set the floors could not protect one name at a time; a demo floor that was only an addend; `AQ1002`'s positive guard left as the coincidence `AQ1001`'s had just been corrected for |
+| 9 | The harness, which printed each mutation's expected killer and never compared it; and the four header names, declared in markup and filled in code, with only the declaration guarded |
+| 10 | Round 9's own repair, which guarded exactly the four names round 9 was about while `DiffFindBar` filled eleven more the same way — deleting them left the suite green at 623 |
+| 11 | Round 10's repair: the runtime walk asserted "nothing unnamed" with nothing on how much it reached, so deleting two `OpenFind()` calls, or pointing "ours" at the test assembly, let eleven unnamed controls through the whole suite. And "killed by the test it names" proved tests, not guards: eight named assertions had never been the first to fail under any mutation, including `AQ1002`'s negative guard — added because the positive one is a coincidence, and never reached because the swap died on the coincidence first |
+| 12 | Round 11's repair, twice: per-name coverage sat in a test of its own reading a rule instance of its own, so the findings instance could be built without `Menu` and the whole suite passed with the demo's menu bar unnamed, 622 of 622; and every reading came from one derivation, so narrowing it from `Control` to `TemplatedControl` in one edit dropped the minimap and the connector gutter with the gate green. Beside those, a `?? throw` a mutation tripped and nothing credited, `--guards` printing *EXPIRED* and exiting 0, and four absolute-path symlinks committed under `reference/`, which `reference/*/` does not match |
+
+**The lessons that became the standard.**
+
+- **Draft 5 was the fix for draft 4, and had the same shape of hole.** A floor over a larger
+  population is satisfied by it. Hence equalities over the same readings the floors read.
+- **Every round's worst defect was in the previous round's repair** — draft 8's two in draft 7's
+  fix, draft 10's two in draft 9's, draft 11's worst in draft 10's, both of draft 12's in draft 11's.
+  A repair written at the end of a round is reviewed least. Hence: every new or changed guard gets
+  its blinding mutation in the same change.
+- **A hand-picked subject is a floor with one name in it** — draft 8's written element set, then
+  draft 9's four hand-picked header names, one layer up each time.
+- **One derivation is one point of failure, and a reading split across tests is two.** Draft 12's
+  blindings were one edit each. The merged test answers the first and the markup cross-check the
+  second; what is left — two coordinated edits — is written into the plan rather than answered with a
+  third reading, which would fall to a third edit.
+- **The harness is evidence, so its defects are the plan's.** Round 9 found three in it, round 10
+  four, round 11 that it proved tests rather than assertions, and round 12 a `throw` its
+  completeness check could not see, a marker check that could not fail, and a final rebuild its
+  early exits skipped. The first full run after round 12's fixes then refused a mutation whose
+  pattern the fix had doubled — a `no-op` failing the run, as it exists to.
+- **Measure the rule, do not read it.** `XQ1004`'s first mutation set `Grid.Column="9"` on a
+  five-column grid and survived: the rule is about size, not indices. And the pinned `XQ1004` never
+  populates `Skipped` — measured over nine shapes — so the guard written for it is forward cover.
+- **A status claim is a claim.** Draft 10 stated a blocked force-push in the past tense; draft 11's
+  status table marked findings fixed that were half fixed, and carried a reviewer's figures without
+  re-measuring them. A harness comment said a full run takes forty minutes, and it was repeated for a
+  whole session; it takes about five.
+
+## Plan 00024 phase 3 — the rendering split
+
+Plan 00024 decided the shape: image baselines are Linux's, the two measured pixel assertions are
+re-derived rather than skipped, and CI keeps all three platforms. What the work found, and chose
+where the plan left it open:
+
+**The gate is a trait the runner filters, and CI prints what it filtered.** `[LinuxBaseline]` puts
+`Baseline=Linux` on the thirty frame tests — fifteen snapshot classes whole, and the one frame test in
+`SyntaxSnapshotTests`, whose other test is a pixel property — and `tests/Directory.Build.props`
+filters the trait out away from Linux, beside the `Category=Perf` filter that was already there. A
+filter is silent in the runner's summary: a run with `Perf` filtered prints its total and nothing
+about what it left out. So the Windows and macOS legs list the filtered tests in a step of their own,
+which is the plan's "reports as filtered-out, with a count" — ignoring exit code 8, because a listing
+that finds nothing in an assembly exits 8 and the model's test assembly holds no frame test; that
+failed the step on both legs once, while their suites passed. `ExcludeLinuxBaselines` overrides the
+default either way. The count is exact: 64 cases carry the trait, and 64 is precisely the number of
+frame cases CI failed on each platform before this.
+
+**Both pixel assertions measured the wrong thing, as the plan's risk row allowed.** They counted
+pixels past a colour threshold, which is how one rasterizer rounds a thin stroke rather than the ink
+laid down. A temporary diagnostic commit, failing on purpose on every leg so each printed its
+readings, measured the same fixtures everywhere; it was dropped before the branch landed.
+
+| Reading | Linux | Windows | macOS |
+|---|---|---|---|
+| A centred '−': exact-colour pixels either side of its chip's centre | 15 / 15 | 0 / 0 | 0 / 0 |
+| The same glyph's ink centroid against its chip's centre | −0.22 px | −0.22 px | −0.09 px |
+| '−' pixel count, against the old floor of 20 | 25 | 18 | 16 |
+| '−' / '+' / '≠' coverage | 9.96 / 18.72 / 28.49 | 10.71 / 20.08 / 29.38 | 7.38 / 17.97 / 26.71 |
+
+No bound could save the centring test, which read nothing either side of a glyph that was centred, so
+its property was re-derived: the ink's centroid, read as coverage, within 0.5 px of the chip's centre.
+The weight test could have taken a lower count; it reads coverage too, because the count measured
+macOS's '+' at 28 where Linux measures 45, and a bound over a quantity that loose would be a widened
+constant with a number beside it. Its floor, 6.0, sits midway between the lightest real marker and a
+middle dot's 4.79. Each bound was proven to fail below itself before it was committed.
+
+**Defect A's Windows remainder is fixed here, not left to upstream.** The theme audit's digest hashed
+raw bytes, and a Windows runner checks the reference clones out CRLF, so only the rows read from those
+clones moved there. `fetch-reference` now runs every git command with `core.autocrlf=false` and
+`core.eol=lf`, and each platform audits the pinned commits' own bytes; the old script, run here under
+a simulated Windows configuration, reproduced the failure, and the new one did not. Decided with Brian
+on 2026-09-24 over waiting for XamlQuality, whose own fix — a CRLF pair read as LF, and files ordered
+by their relative path — merged the same day as its #22, unreleased. That fix also covers a
+developer's own sibling checkouts, which this does not.

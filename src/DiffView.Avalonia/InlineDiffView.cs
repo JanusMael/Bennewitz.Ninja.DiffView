@@ -139,6 +139,14 @@ public class InlineDiffView : TemplatedControl
     public static readonly StyledProperty<string> PaneNameProperty =
         AvaloniaProperty.Register<InlineDiffView, string>(nameof(PaneName), string.Empty);
 
+    /// <summary>Identifies the <see cref="LeftHeaderName"/> property.</summary>
+    public static readonly StyledProperty<string> LeftHeaderNameProperty =
+        AvaloniaProperty.Register<InlineDiffView, string>(nameof(LeftHeaderName), string.Empty);
+
+    /// <summary>Identifies the <see cref="RightHeaderName"/> property.</summary>
+    public static readonly StyledProperty<string> RightHeaderNameProperty =
+        AvaloniaProperty.Register<InlineDiffView, string>(nameof(RightHeaderName), string.Empty);
+
     /// <summary>Identifies the <see cref="StatusStripName"/> property.</summary>
     public static readonly StyledProperty<string> StatusStripNameProperty =
         AvaloniaProperty.Register<InlineDiffView, string>(nameof(StatusStripName), string.Empty);
@@ -330,8 +338,8 @@ public class InlineDiffView : TemplatedControl
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
         _findPrevious = new DelegateCommand(FindPrevious, () => IsFindBarOpen);
-        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
-        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, options, token);
+        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, token, options);
+        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, token, options);
 
         // The same map and the same binder as the side-by-side view, with a smaller default:
         // there is one pane to switch to and no other side to copy to. Escape and F3 execute only
@@ -507,6 +515,20 @@ public class InlineDiffView : TemplatedControl
     {
         get => GetValue(PaneNameProperty);
         set => SetValue(PaneNameProperty, value);
+    }
+
+    /// <summary>The left header's automation name.</summary>
+    public string LeftHeaderName
+    {
+        get => GetValue(LeftHeaderNameProperty);
+        set => SetValue(LeftHeaderNameProperty, value);
+    }
+
+    /// <summary>The right header's automation name.</summary>
+    public string RightHeaderName
+    {
+        get => GetValue(RightHeaderNameProperty);
+        set => SetValue(RightHeaderNameProperty, value);
     }
 
     /// <summary>The status strip's automation name.</summary>
@@ -1630,6 +1652,8 @@ public class InlineDiffView : TemplatedControl
     private void RefreshStrings()
     {
         SetCurrentValue(PaneNameProperty, DiffViewStrings.Get(DiffViewStrings.UnifiedPaneName));
+        SetCurrentValue(LeftHeaderNameProperty, DiffViewStrings.Get(DiffViewStrings.LeftHeaderName));
+        SetCurrentValue(RightHeaderNameProperty, DiffViewStrings.Get(DiffViewStrings.RightHeaderName));
         SetCurrentValue(StatusStripNameProperty, DiffViewStrings.Get(DiffViewStrings.StatusStripName));
     }
 

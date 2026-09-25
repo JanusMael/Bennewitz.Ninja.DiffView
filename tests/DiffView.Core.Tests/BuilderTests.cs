@@ -12,7 +12,7 @@ public sealed class BuilderTests
     {
         (string left, _) = Fixtures.Small();
 
-        DiffBuildResult result = DiffDocumentBuilder.Build(left, left);
+        DiffBuildResult result = DiffDocumentBuilder.Build(left, left, CancellationToken.None);
 
         Assert.Empty(result.Document.Blocks);
         Assert.True(result.Diagnostics.Identical);
@@ -27,7 +27,7 @@ public sealed class BuilderTests
     {
         (string left, string right) = Fixtures.Small();
 
-        DiffBuildResult result = DiffDocumentBuilder.Build(left, right);
+        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, CancellationToken.None);
 
         // A using added; a field added; the constructor signature changed and a line added; the
         // Greet body changed; Farewell removed. Which lines Myers pairs where a deletion meets an
@@ -54,7 +54,7 @@ public sealed class BuilderTests
     {
         // An editor's empty document has one line, so the model does too (invariant 1); DiffPlex
         // would call it zero lines. The first right line pairs with it as modified, the rest insert.
-        SideBySideDocument document = DiffDocumentBuilder.Build(string.Empty, "a\nb\nc").Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(string.Empty, "a\nb\nc", CancellationToken.None).Document;
 
         Assert.Single(document.Left.Lines);
         Assert.Equal(
@@ -66,7 +66,7 @@ public sealed class BuilderTests
     [Fact]
     public void An_empty_right_pairs_the_first_left_line_and_deletes_the_rest()
     {
-        SideBySideDocument document = DiffDocumentBuilder.Build("a\nb\nc", string.Empty).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build("a\nb\nc", string.Empty, CancellationToken.None).Document;
 
         Assert.Single(document.Right.Lines);
         Assert.Equal(
@@ -77,7 +77,7 @@ public sealed class BuilderTests
     [Fact]
     public void Two_empty_sides_are_identical_with_one_unchanged_row()
     {
-        DiffBuildResult result = DiffDocumentBuilder.Build(string.Empty, string.Empty);
+        DiffBuildResult result = DiffDocumentBuilder.Build(string.Empty, string.Empty, CancellationToken.None);
 
         Assert.True(result.Diagnostics.Identical);
         Assert.Equal([new AlignedRow(0, 0, DiffLineKind.Unchanged)], result.Document.Rows);
@@ -90,18 +90,18 @@ public sealed class BuilderTests
         Assert.True(binary.IsBinary);
         Assert.Equal("image.png", binary.Title);
 
-        DiffBuildException left = Assert.Throws<DiffBuildException>(() => DiffDocumentBuilder.Build(binary, "text"));
+        DiffBuildException left = Assert.Throws<DiffBuildException>(() => DiffDocumentBuilder.Build(binary, "text", CancellationToken.None));
         Assert.Equal(DiffBuildErrorCode.BinaryInput, left.Code);
         Assert.StartsWith("Left side is binary", left.Message);
 
-        DiffBuildException both = Assert.Throws<DiffBuildException>(() => DiffDocumentBuilder.Build(binary, binary));
+        DiffBuildException both = Assert.Throws<DiffBuildException>(() => DiffDocumentBuilder.Build(binary, binary, CancellationToken.None));
         Assert.StartsWith("Both sides are binary", both.Message);
     }
 
     [Fact]
     public void Mixed_and_CR_only_line_endings_warn_and_still_align()
     {
-        DiffBuildResult mixed = DiffDocumentBuilder.Build("a\r\nb\nc\rd", "a\r\nb\nc\rd");
+        DiffBuildResult mixed = DiffDocumentBuilder.Build("a\r\nb\nc\rd", "a\r\nb\nc\rd", CancellationToken.None);
         DiffWarning warning = Assert.Single(mixed.Warnings);
         Assert.Equal(DiffWarningCode.MixedLineEndings, warning.Code);
         Assert.Equal("Both sides use mixed line endings.", warning.Message);
@@ -109,11 +109,11 @@ public sealed class BuilderTests
         Assert.Equal(4, mixed.Document.Left.Lines.Count);
         Assert.True(mixed.Diagnostics.Identical);
 
-        DiffBuildResult cr = DiffDocumentBuilder.Build("a\rb", "a\nb");
+        DiffBuildResult cr = DiffDocumentBuilder.Build("a\rb", "a\nb", CancellationToken.None);
         Assert.Equal("Left side uses CR-only line endings.", Assert.Single(cr.Warnings).Message);
         Assert.True(cr.Diagnostics.Identical);
 
-        Assert.Empty(DiffDocumentBuilder.Build("a\r\nb", "a\nb").Warnings);
+        Assert.Empty(DiffDocumentBuilder.Build("a\r\nb", "a\nb", CancellationToken.None).Warnings);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public sealed class BuilderTests
         Assert.Same(Encoding.Latin1, source.Encoding);
         Assert.False(source.IsBinary);
 
-        DiffBuildResult result = DiffDocumentBuilder.Build(source, "café\n");
+        DiffBuildResult result = DiffDocumentBuilder.Build(source, "café\n", CancellationToken.None);
         Assert.Equal(DiffWarningCode.Latin1Fallback, Assert.Single(result.Warnings).Code);
         Assert.True(result.Diagnostics.LeftInfo.Latin1Fallback);
     }
@@ -140,7 +140,7 @@ public sealed class BuilderTests
         string left = "a\n" + longLine + "\nc";
         string right = "a\n" + longLine.Replace("alpha", "ALPHA", StringComparison.Ordinal) + "x\nc";
 
-        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, options);
+        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, CancellationToken.None, options);
         DiffWarning warning = Assert.Single(result.Warnings);
         Assert.Equal(DiffWarningCode.LongLinesSkipped, warning.Code);
         Assert.Equal("Word-level highlighting skipped on 1 line longer than 100 characters.", warning.Message);
@@ -152,7 +152,7 @@ public sealed class BuilderTests
         Assert.Equal(1, cache.LongLinesSkipped);
 
         // With word-level off there is nothing to skip.
-        Assert.Empty(DiffDocumentBuilder.Build(left, right, options with { WordDiff = WordDiffMode.Off }).Warnings);
+        Assert.Empty(DiffDocumentBuilder.Build(left, right, CancellationToken.None, options with { WordDiff = WordDiffMode.Off }).Warnings);
     }
 
     [Fact]
@@ -162,16 +162,16 @@ public sealed class BuilderTests
         cts.Cancel();
         (string left, string right) = Fixtures.Small();
 
-        Assert.Throws<OperationCanceledException>(() => DiffDocumentBuilder.Build(left, right, null, cts.Token));
+        Assert.Throws<OperationCanceledException>(() => DiffDocumentBuilder.Build(left, right, cts.Token, null));
     }
 
     [Fact]
     public void The_options_change_what_counts_as_a_difference()
     {
-        Assert.False(DiffDocumentBuilder.Build("  a\nb", "a  \nB").Diagnostics.Identical);
-        Assert.True(DiffDocumentBuilder.Build("  a\nb", "a  \nb", new DiffOptions { IgnoreWhitespace = true }).Diagnostics.Identical);
-        Assert.True(DiffDocumentBuilder.Build("a\nb", "A\nB", new DiffOptions { IgnoreCase = true }).Diagnostics.Identical);
-        Assert.True(DiffDocumentBuilder.Build("  a\nb", "A  \nB", new DiffOptions { IgnoreWhitespace = true, IgnoreCase = true }).Diagnostics.Identical);
+        Assert.False(DiffDocumentBuilder.Build("  a\nb", "a  \nB", CancellationToken.None).Diagnostics.Identical);
+        Assert.True(DiffDocumentBuilder.Build("  a\nb", "a  \nb", CancellationToken.None, new DiffOptions { IgnoreWhitespace = true }).Diagnostics.Identical);
+        Assert.True(DiffDocumentBuilder.Build("a\nb", "A\nB", CancellationToken.None, new DiffOptions { IgnoreCase = true }).Diagnostics.Identical);
+        Assert.True(DiffDocumentBuilder.Build("  a\nb", "A  \nB", CancellationToken.None, new DiffOptions { IgnoreWhitespace = true, IgnoreCase = true }).Diagnostics.Identical);
     }
 
     [Theory]

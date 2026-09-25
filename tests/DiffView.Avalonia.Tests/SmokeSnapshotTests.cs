@@ -18,6 +18,7 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// </summary>
 /// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
 [EnglishChrome]
+[LinuxBaseline]
 public sealed class SmokeSnapshotTests
 {
     [AvaloniaTheory]

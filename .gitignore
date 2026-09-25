@@ -14,8 +14,13 @@ test-results/
 *.swp
 
 # Read-only upstream checkouts fetched on demand by scripts/fetch-reference.*
-# from reference/sources.json. Only the manifest and the README are versioned.
-reference/*/
+# from reference/sources.json. Only the three files named below are versioned. A file
+# pattern rather than `reference/*/`, because a checkout linked in from elsewhere is a
+# symlink, and to git a symlink is a file that a directory pattern does not match.
+reference/*
+!reference/README.md
+!reference/sources.json
+!reference/Directory.Packages.props
 
 # Verify: a .received file is a mismatch under review, never a commit.
 *.received.*

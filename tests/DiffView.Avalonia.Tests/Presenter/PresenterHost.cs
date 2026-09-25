@@ -23,7 +23,7 @@ internal sealed class PresenterHost : IDisposable
 
     public PresenterHost(string leftText, string rightText, double width = 700, double height = 320, DiffOptions? options = null)
     {
-        Result = DiffDocumentBuilder.Build(leftText, rightText, options);
+        Result = DiffDocumentBuilder.Build(leftText, rightText, CancellationToken.None, options);
         Window = new Window { Width = width, Height = height };
         Left = CreatePresenter(DiffSide.Left, leftText, Result.Document);
         Right = CreatePresenter(DiffSide.Right, rightText, Result.Document);

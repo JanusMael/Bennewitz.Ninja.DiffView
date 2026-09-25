@@ -12,6 +12,7 @@ namespace Bennewitz.Ninja.DiffView.Tests.Presenter;
 /// visible, in both theme variants under Semi. The pixel assertions gate; this catches what
 /// they do not.
 /// </summary>
+[LinuxBaseline]
 public sealed class PresenterSnapshotTests
 {
     [AvaloniaTheory]

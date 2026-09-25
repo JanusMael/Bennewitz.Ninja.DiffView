@@ -90,12 +90,15 @@ public sealed class PackagingTests
     /// Plan 00018 §Phase 2: the release workflow names the packages it pushes, and never globs.
     /// </summary>
     /// <remarks>
-    /// An unusual thing to assert about YAML, and the asymmetry earns it. <c>dotnet pack</c> over
-    /// this solution produces three packages, because <c>src/ThemeAudit</c> is packable too and is
-    /// local-feed-only by design — <c>NuGet.config</c> maps that exact id to <c>../nuget-local</c>.
-    /// The workflow this one was modelled on pushes <c>*.nupkg</c>; copying that glob would publish
-    /// ThemeAudit to nuget.org on the first release, and a published id cannot be withdrawn, only
+    /// An unusual thing to assert about YAML, and the asymmetry earns it. The workflow this one was
+    /// modelled on pushes <c>*.nupkg</c>, which publishes whatever the solution happens to produce
+    /// rather than what anyone chose to publish — and a published id cannot be withdrawn, only
     /// unlisted. Silent, instant and permanent against twenty lines of test.
+    /// <para>
+    /// It has been close once. <c>src/ThemeAudit</c> was packable and local-feed-only, so the glob
+    /// would have published it; that project has since moved to Bennewitz.Ninja.XamlQuality, which
+    /// removes today's third package but not the next one somebody adds.
+    /// </para>
     /// </remarks>
     [Fact]
     public void The_release_workflow_names_the_packages_it_pushes()
@@ -110,7 +113,6 @@ public sealed class PackagingTests
             File.ReadLines(path).Where(line => !line.TrimStart().StartsWith('#')));
 
         Assert.DoesNotContain("*.nupkg", instructions, StringComparison.Ordinal);
-        Assert.DoesNotContain("ThemeAudit", instructions, StringComparison.Ordinal);
         Assert.Contains("Bennewitz.Ninja.DiffView.Core.", instructions, StringComparison.Ordinal);
         Assert.Contains("Bennewitz.Ninja.DiffView.Avalonia.", instructions, StringComparison.Ordinal);
     }
@@ -136,8 +138,11 @@ public sealed class PackagingTests
     /// Plan 00019 §Phase 3: the two published packages carry the hosting guide as their readme.
     /// </summary>
     /// <remarks>
-    /// Not in <see cref="Required"/>, because <c>src/ThemeAudit</c> is packable too and is
-    /// local-feed-only by design; it carries no readme and should not be made to.
+    /// Asserted by name rather than added to <see cref="Required"/>: a readme is a promise to a
+    /// consumer, so it belongs to the packages this repository publishes rather than to every
+    /// project that happens to be packable. <c>src/ThemeAudit</c> was the standing example — it
+    /// packed to a local feed and carried no readme — and it has since moved to
+    /// Bennewitz.Ninja.XamlQuality.
     /// </remarks>
     [Fact]
     public void The_published_packages_declare_the_hosting_guide_as_their_readme()
@@ -253,9 +258,13 @@ public sealed class PackagingTests
         using Process process = Process.Start(start)
             ?? throw new InvalidOperationException($"Could not start {file}.");
 
-        string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        // Both pipes drained concurrently: stdout to EOF first deadlocks once the child fills the
+        // stderr pipe buffer — `dotnet pack` over a broken project is that shape — and the test then
+        // hangs rather than failing.
+        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderr = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
-        return (process.ExitCode, output);
+        return (process.ExitCode, stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult());
     }
 
     private static List<string> PackableProjects()
@@ -295,5 +304,94 @@ public sealed class PackagingTests
             .Elements()
             .Select(e => e.Name.LocalName)
             .ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// <c>Bennewitz.Ninja.DiffView.Core</c> declares exactly the dependencies a consumer of the
+    /// model layer should be made to restore, and no others.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>An equality, not a forbidden list.</b> "No Avalonia" is an allowlist wearing different
+    /// clothes: the next unrelated package slips in and nothing says so. Asserting the whole set
+    /// means every addition is a decision someone had to write down here.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>This is not what <c>AQ1003</c> covers, and neither contains the other.</b> That rule
+    /// reads the compiled assembly's references, so it sees a type actually *used* — including one
+    /// reached through <c>PrivateAssets="all"</c>, which never reaches a nuspec at all and hands a
+    /// consumer a <c>FileNotFoundException</c>. This sees what a consumer restores, including a
+    /// <c>PackageReference</c> nothing uses, which the rule cannot see because Roslyn emits no
+    /// reference for it. `Microsoft.Extensions.Logging.Abstractions` is exactly that shape here.
+    /// </para>
+    /// <para>
+    /// ⛔ Read off the packed nuspec rather than the csproj, because the nuspec is what nuget.org
+    /// acts on — and because <c>CentralPackageTransitivePinningEnabled</c> in
+    /// <c>Directory.Packages.props</c> can put a dependency there that no <c>PackageReference</c>
+    /// in this project mentions. A csproj-based check would be blind to its own build settings.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void The_model_package_declares_exactly_the_dependencies_it_should()
+    {
+        string[] expected = ["DiffPlex", "Microsoft.Extensions.Logging.Abstractions"];
+
+        string core = PackableProjects().Single(p => p.EndsWith("DiffView.Core.csproj", StringComparison.Ordinal));
+        string output = Path.Combine(Path.GetTempPath(), "diffview-deps-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(output);
+
+        try
+        {
+            // -c for the reason the readme test records: pack defaults to Release, the suite builds
+            // Debug, and --no-build over the wrong configuration is NU5026 on a clean checkout.
+            (int code, string log) = Run(
+                "dotnet",
+                ["pack", core, "--no-build", "-c", BuiltConfiguration, "-o", output, "-nodeReuse:false"]);
+            Assert.True(code == 0, $"dotnet pack failed for DiffView.Core:\n{log}");
+
+            string package = Assert.Single(Directory.GetFiles(output, "*.nupkg"));
+            using ZipArchive archive = ZipFile.OpenRead(package);
+
+            // One nuspec per package is NuGet's guarantee, not something this test establishes — measured:
+            // a second .nuspec packed as content never reaches the package. So this is extraction rather
+            // than a guard; as an assertion it would be one no mutation can make fail. What stops the test
+            // reading the wrong nuspec is the single-package assertion above.
+            ZipArchiveEntry entry = archive.Entries.Single(
+                e => e.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+
+            using Stream stream = entry.Open();
+            XDocument document = XDocument.Load(stream);
+
+            string[] declared =
+            [
+                .. document.Descendants()
+                    .Where(e => e.Name.LocalName == "dependency")
+                    .Select(e => e.Attribute("id")?.Value)
+                    .OfType<string>()
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal)
+            ];
+
+            // A framework reference is a different element and would otherwise be invisible here.
+            string[] frameworks =
+            [
+                .. document.Descendants()
+                    .Where(e => e.Name.LocalName == "frameworkReference")
+                    .Select(e => e.Attribute("name")?.Value)
+                    .OfType<string>()
+                    .Order(StringComparer.Ordinal)
+            ];
+
+            // Frameworks first. A shared framework that carries one of the model's packages also gets that
+            // package pruned from the dependencies — measured with ASP.NET Core and the logging
+            // abstractions — so asserted second, a framework reference could only ever be reported as a
+            // changed dependency set, and this assertion would be one nothing reaches.
+            Assert.Empty(frameworks);
+            Assert.Equal(expected.Order(StringComparer.Ordinal), declared);
+        }
+        finally
+        {
+            Directory.Delete(output, recursive: true);
+        }
     }
 }

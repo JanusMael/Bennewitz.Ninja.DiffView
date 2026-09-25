@@ -25,6 +25,7 @@ namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 /// geometry — the PNG is the thing a reviewer can look at without running the demo.
 /// The copy arrows moved to the panes under plan 00004; <c>CopyArrowMarginTests</c> has them.
 /// </remarks>
+[LinuxBaseline]
 public sealed class EditingSnapshotTests
 {
     /// <summary>Enough of a pixel to matter, in layout units.</summary>

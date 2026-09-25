@@ -43,7 +43,7 @@ public sealed class EditScalePerfTests(ITestOutputHelper output)
     {
         (string left, string right) = LargePair(200_000);
         using CompositeHost host = new(width: 1200, height: 800);
-        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, options, token);
+        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, token, options);
         host.Show();
         await host.LoadAsync(left, right);
         using (WriteableBitmap _ = host.Capture())
@@ -103,7 +103,7 @@ public sealed class EditScalePerfTests(ITestOutputHelper output)
     {
         (string left, string right) = LargePair(200_000);
         using CompositeHost host = new(width: 1200, height: 800);
-        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, options, token);
+        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, token, options);
         host.Show();
         await host.LoadAsync(left, right);
         int versionBefore = host.View.Document!.Version;
@@ -146,7 +146,7 @@ public sealed class EditScalePerfTests(ITestOutputHelper output)
     {
         (string left, string right) = LargePair(200_000);
         using CompositeHost host = new(width: 1200, height: 800);
-        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, options, token);
+        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, token, options);
         host.Show();
         await host.LoadAsync(left, right);
         int versionBefore = host.View.Document!.Version;

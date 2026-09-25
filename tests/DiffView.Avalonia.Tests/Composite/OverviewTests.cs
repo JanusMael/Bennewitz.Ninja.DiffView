@@ -45,7 +45,7 @@ public sealed class OverviewTests
     public void The_minimap_maps_pixels_to_buckets_to_rows_at_top_middle_and_bottom_on_the_200k_line_fixture()
     {
         (string left, string right) = LargePair(200_000);
-        SideBySideDocument document = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
         Assert.True(document.Rows.Count > 200_000);
         DiffMinimap minimap = new() { Document = document };
         Window window = new() { Width = 14, Height = 400, Content = minimap };

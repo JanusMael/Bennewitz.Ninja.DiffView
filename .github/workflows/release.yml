@@ -95,10 +95,10 @@ jobs:
         with:
           user: ${{ vars.NUGET_USER }}
 
-      # NAMED, NEVER GLOBBED. `dotnet pack` over this solution also produces
-      # Bennewitz.Ninja.ThemeAudit, which is local-feed-only by design: NuGet.config maps that exact
-      # id to ../nuget-local and the README installs it from there. A *.nupkg glob would publish it
-      # to nuget.org on the first release, and a published id cannot be withdrawn — only unlisted.
+      # NAMED, NEVER GLOBBED. A published package id cannot be withdrawn — only unlisted — so a
+      # *.nupkg glob publishes whatever this solution happens to produce, permanently, on the first
+      # release that adds a packable project. It came close once: src/ThemeAudit was packable and
+      # local-feed-only, and a glob would have published it.
       # PackagingTests.The_release_workflow_names_the_packages_it_pushes fails if the glob returns.
       - name: Push to NuGet.org
         run: |

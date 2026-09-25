@@ -185,6 +185,9 @@
   <data name="Header.Encoding.Text" xml:space="preserve">
     <value>텍스트</value>
   </data>
+  <data name="Header.Left.Name" xml:space="preserve">
+    <value>왼쪽 파일 헤더</value>
+  </data>
   <data name="Header.Left.Title" xml:space="preserve">
     <value>왼쪽</value>
   </data>
@@ -211,6 +214,9 @@
   </data>
   <data name="Header.NoContent" xml:space="preserve">
     <value>내용 없음</value>
+  </data>
+  <data name="Header.Right.Name" xml:space="preserve">
+    <value>오른쪽 파일 헤더</value>
   </data>
   <data name="Header.Right.Title" xml:space="preserve">
     <value>오른쪽</value>
