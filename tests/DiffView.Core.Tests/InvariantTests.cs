@@ -28,7 +28,7 @@ public sealed class InvariantTests
     [MemberData(nameof(Pairs))]
     public void Invariant_1_every_line_of_each_side_appears_exactly_once_in_rows_in_order(string name, string left, string right)
     {
-        SideBySideDocument document = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
 
         foreach (DiffSide side in new[] { DiffSide.Left, DiffSide.Right })
         {
@@ -54,7 +54,7 @@ public sealed class InvariantTests
     [MemberData(nameof(Pairs))]
     public void Invariant_2_no_row_has_both_sides_null_and_kinds_match_the_sides_present(string name, string left, string right)
     {
-        SideBySideDocument document = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
 
         Assert.All(document.Rows, row =>
         {
@@ -81,7 +81,7 @@ public sealed class InvariantTests
     [MemberData(nameof(Pairs))]
     public void Invariant_3_pieces_of_a_modified_row_concatenate_to_their_lines(string name, string left, string right)
     {
-        SideBySideDocument document = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
         string[] leftLines = LineSplitter.Split(left);
         string[] rightLines = LineSplitter.Split(right);
         WordDiffCache cache = new(DiffOptions.Default);
@@ -121,7 +121,7 @@ public sealed class InvariantTests
     [MemberData(nameof(Pairs))]
     public void Invariant_4_blocks_are_disjoint_ordered_cover_every_changed_row_and_carry_exact_line_ranges(string name, string left, string right)
     {
-        SideBySideDocument document = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
 
         int previousLast = -1;
         HashSet<int> covered = [];
@@ -165,14 +165,14 @@ public sealed class InvariantTests
     public void Invariant_4_an_empty_range_sits_where_the_next_line_of_that_side_would_go()
     {
         // "b" inserted between a and c on the right: the block's left range is empty at line 1.
-        SideBySideDocument document = DiffDocumentBuilder.Build("a\nc\n", "a\nb\nc\n").Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build("a\nc\n", "a\nb\nc\n", CancellationToken.None).Document;
         ChangeBlock block = Assert.Single(document.Blocks);
         Assert.Equal(DiffLineKind.Inserted, block.Kind);
         Assert.Equal(LineRange.Empty(1), block.LeftLines);
         Assert.Equal(new LineRange(1, 1), block.RightLines);
 
         // Deleted at the very start: the empty right range is at line 0.
-        document = DiffDocumentBuilder.Build("x\na\n", "a\n").Document;
+        document = DiffDocumentBuilder.Build("x\na\n", "a\n", CancellationToken.None).Document;
         block = Assert.Single(document.Blocks);
         Assert.Equal(new LineRange(0, 1), block.LeftLines);
         Assert.Equal(LineRange.Empty(0), block.RightLines);
@@ -188,8 +188,8 @@ public sealed class InvariantTests
         string leftVariant = left.Replace("\n", lineEnding, StringComparison.Ordinal);
         string rightVariant = right.Replace("\n", lineEnding, StringComparison.Ordinal);
 
-        AlignedRow[] reference = [.. DiffDocumentBuilder.Build(left, right).Document.Rows];
-        AlignedRow[] rows = [.. DiffDocumentBuilder.Build(leftVariant, rightVariant).Document.Rows];
+        AlignedRow[] reference = [.. DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document.Rows];
+        AlignedRow[] rows = [.. DiffDocumentBuilder.Build(leftVariant, rightVariant, CancellationToken.None).Document.Rows];
 
         Assert.Equal(reference, rows);
         Assert.Contains(reference, r => r.Kind != DiffLineKind.Unchanged);
@@ -199,7 +199,7 @@ public sealed class InvariantTests
     [MemberData(nameof(Pairs))]
     public void Invariant_6_padding_before_every_line_plus_trailing_equals_the_sides_null_rows(string name, string left, string right)
     {
-        SideBySideDocument document = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
 
         foreach (DiffSide side in new[] { DiffSide.Left, DiffSide.Right })
         {
@@ -232,7 +232,7 @@ public sealed class InvariantTests
         (string left, string right) = Fixtures.UnrelatedPair(6000, seed: 3);
         DiffOptions options = new() { AlignmentSizeThreshold = 10_000, AlignmentSimilarityFloor = 0.1 };
 
-        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, options);
+        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, CancellationToken.None, options);
 
         Assert.False(result.Diagnostics.Aligned);
         Assert.True(result.Diagnostics.Similarity < 0.01, $"similarity {result.Diagnostics.Similarity}");
@@ -251,9 +251,9 @@ public sealed class InvariantTests
         Assert.Equal(new LineRange(0, document.Right.Lines.Count), block.RightLines);
 
         // Forcing aligns; so does being under the size threshold.
-        Assert.True(DiffDocumentBuilder.Build(left, right, options with { ForceAlignment = true }).Diagnostics.Aligned);
-        Assert.True(DiffDocumentBuilder.Build(left, right, options with { AlignmentSizeThreshold = 100_000 }).Diagnostics.Aligned);
+        Assert.True(DiffDocumentBuilder.Build(left, right, CancellationToken.None, options with { ForceAlignment = true }).Diagnostics.Aligned);
+        Assert.True(DiffDocumentBuilder.Build(left, right, CancellationToken.None, options with { AlignmentSizeThreshold = 100_000 }).Diagnostics.Aligned);
         (string smallLeft, string smallRight) = Fixtures.UnrelatedPair(50, seed: 3);
-        Assert.True(DiffDocumentBuilder.Build(smallLeft, smallRight, options).Diagnostics.Aligned);
+        Assert.True(DiffDocumentBuilder.Build(smallLeft, smallRight, CancellationToken.None, options).Diagnostics.Aligned);
     }
 }

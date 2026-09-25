@@ -100,8 +100,8 @@ public static class DiffSearch
         IPaneText left,
         IPaneText right,
         string query,
-        FindOptions? options = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken,
+        FindOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(left);

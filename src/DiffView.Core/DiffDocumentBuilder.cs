@@ -16,7 +16,7 @@ public static class DiffDocumentBuilder
     /// <summary>Builds the document.</summary>
     /// <exception cref="DiffBuildException">A side is binary, or the diff engine failed.</exception>
     /// <exception cref="OperationCanceledException">Cancelled between stages.</exception>
-    public static DiffBuildResult Build(PaneSource left, PaneSource right, DiffOptions? options = null, CancellationToken cancellationToken = default)
+    public static DiffBuildResult Build(PaneSource left, PaneSource right, CancellationToken cancellationToken, DiffOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(left);
         ArgumentNullException.ThrowIfNull(right);
