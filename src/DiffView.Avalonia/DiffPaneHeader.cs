@@ -41,7 +41,7 @@ public class DiffPaneHeader : TemplatedControl
     /// <summary>Creates a header with its compiled theme merged into its own resources.</summary>
     public DiffPaneHeader()
     {
-        Resources.MergedDictionaries.Add(new SideBySideDiffViewTheme());
+        Resources.MergedDictionaries.Add(new DiffPaneHeaderTheme());
         UpdatePseudoClasses();
     }
 
@@ -73,11 +73,6 @@ public class DiffPaneHeader : TemplatedControl
         set => SetValue(BadgeKindProperty, value);
     }
 
-    /// <summary>
-    /// Whether this side's pane has keyboard focus. The header shows it as an accent along its
-    /// bottom edge — the pane's own caret is the other half of the answer, and can be scrolled
-    /// out of sight. The accent is an overlay, so showing it moves nothing.
-    /// </summary>
     /// <summary>Whether the pane holds edits that are not on disk; drives the <c>:dirty</c> class.</summary>
     public bool IsDirty
     {
@@ -92,7 +87,12 @@ public class DiffPaneHeader : TemplatedControl
         set => SetValue(DirtyMarkerProperty, value);
     }
 
-    /// <summary>Whether this header's pane has keyboard focus; drives the <c>:pane-focused</c> class.</summary>
+    /// <summary>
+    /// Whether this header's pane has keyboard focus; drives the <c>:pane-focused</c> class. The
+    /// header shows it as an accent along its bottom edge — the pane's own caret is the other half
+    /// of the answer, and can be scrolled out of sight. The accent is an overlay, so showing it moves
+    /// nothing.
+    /// </summary>
     public bool IsPaneFocused
     {
         get => GetValue(IsPaneFocusedProperty);

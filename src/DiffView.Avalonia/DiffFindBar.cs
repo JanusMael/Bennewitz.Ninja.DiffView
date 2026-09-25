@@ -196,7 +196,7 @@ public class DiffFindBar : TemplatedControl
     /// <summary>Creates a bar with its compiled theme merged into its own resources.</summary>
     public DiffFindBar()
     {
-        Resources.MergedDictionaries.Add(new SideBySideDiffViewTheme());
+        Resources.MergedDictionaries.Add(new DiffFindBarTheme());
         RefreshStrings();
     }
 

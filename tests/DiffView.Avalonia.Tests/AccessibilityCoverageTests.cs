@@ -8,6 +8,7 @@ using Avalonia.VisualTree;
 using AvaloniaEdit;
 using Bennewitz.Ninja.DiffView.Tests.Composite;
 using Bennewitz.Ninja.DiffView.Tests.Inline;
+using Bennewitz.Ninja.DiffView.Tests.Viewer;
 using Bennewitz.Ninja.XamlQuality;
 using Bennewitz.Ninja.XamlQuality.Rules;
 
@@ -83,10 +84,10 @@ public sealed class AccessibilityCoverageTests
     /// </summary>
     /// <remarks>
     /// ⛔ <b><c>Menu</c> is here because the demo's menu bar is interactive and nothing else covers it.</b>
-    /// Its fifty <c>MenuItem</c>s are covered, because <c>MenuItem</c> <em>is</em> one of the stock
+    /// Its fifty-three <c>MenuItem</c>s are covered, because <c>MenuItem</c> <em>is</em> one of the stock
     /// seventeen — which is exactly how an unnamed bar can hide among them. Proven by arithmetic rather
-    /// than assumed: the demo holds exactly fifty <c>MenuItem</c>s and the stock set inspects exactly
-    /// fifty of its elements, so it would be fifty-one if <c>Menu</c> were among them.
+    /// than assumed: the demo holds exactly fifty-three <c>MenuItem</c>s and the stock set inspects
+    /// exactly fifty-three of its elements, so it would be fifty-four if <c>Menu</c> were among them.
     /// </remarks>
     private static readonly string[] LiveFrameworkElements = [nameof(Menu)];
 
@@ -112,15 +113,15 @@ public sealed class AccessibilityCoverageTests
 
     /// <summary>
     /// A floor on what the stock seventeen inspect over the library's own markup: 8, against a
-    /// population of 14.
+    /// population of 15.
     /// </summary>
     /// <remarks>
     /// ⛔ <b>It floors the stock names only, because the derived names are floored one at a time
     /// instead</b>, by the per-name coverage in <see cref="Every_interactive_control_has_an_automation_name"/>.
     /// A single number over the whole set is what lets a name be deleted silently.
     /// <para>
-    /// ⛔ <b>What it guards is a zero, not a part count.</b> The fourteen are OUR elements matching
-    /// upstream's names — eleven are <c>DiffFindBar</c>'s own children, and the other three are the two
+    /// ⛔ <b>What it guards is a zero, not a part count.</b> The fifteen are OUR elements matching
+    /// upstream's names — eleven are <c>DiffFindBar</c>'s own children, and the other four are the three
     /// views' banner action buttons and the status strip's dismiss button — so removing a find-bar
     /// toggle is an ordinary product change that moves this count, and a floor at the population would
     /// fire on it with a message asserting a cause it does not establish. A name added upstream can
@@ -133,8 +134,8 @@ public sealed class AccessibilityCoverageTests
     private const int StockInspectedFloor = 8;
 
     /// <summary>
-    /// A floor on the demo's share of the findings scan, well under the 53 it carries so that ordinary
-    /// menu edits do not churn it — 50 of those 53 are <c>MenuItem</c>s in one file.
+    /// A floor on the demo's share of the findings scan, well under the 57 it carries so that ordinary
+    /// menu edits do not churn it — 53 of those 57 are <c>MenuItem</c>s in one file.
     /// </summary>
     /// <remarks>
     /// ⛔ <b>Asserted against the demo's own subject, not folded into a total.</b> As an addend in a
@@ -370,11 +371,12 @@ public sealed class AccessibilityCoverageTests
         List<string> unnamed = [];
         (string left, string right) = CompositeHost.SmallFixture();
 
-        // Every declared part is on screen in at least one of these four states: each view with its find
-        // bar open, and each with a build that fails — which puts the Retry action on the banner and the
-        // failure, with its dismiss button, on the strip. The coverage assertion at the end is what holds
-        // the test to that, rather than this comment; an explicit failure on the strip in the first state
-        // was measured redundant, the failing build already showing one.
+        // Every declared part is on screen in at least one of these six states: each view with its find
+        // bar open — the viewer, having none, simply loaded — and each with a build that fails, which puts
+        // the Retry action on the banner and the failure, with its dismiss button, on the strip. The
+        // coverage assertion at the end is what holds the test to that, rather than this comment; an
+        // explicit failure on the strip in the first state was measured redundant, the failing build
+        // already showing one.
         using (CompositeHost host = new())
         {
             host.Show();
@@ -409,6 +411,23 @@ public sealed class AccessibilityCoverageTests
             await unified.LoadAsync(left, right);
             InlineHost.Layout();
             Collect(unified.View, interactive, visited, unnamed);
+        }
+
+        using (ViewerHost viewer = new())
+        {
+            viewer.Show();
+            await viewer.LoadAsync(left, right);
+            ViewerHost.Layout();
+            Collect(viewer.View, interactive, visited, unnamed);
+        }
+
+        using (ViewerHost viewer = new())
+        {
+            viewer.Show();
+            viewer.View.Builder = CompositeHost.FailingBuilder;
+            await viewer.LoadAsync(left, right);
+            ViewerHost.Layout();
+            Collect(viewer.View, interactive, visited, unnamed);
         }
 
         Assert.True(

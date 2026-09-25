@@ -1958,7 +1958,6 @@ public class InlineDiffView : TemplatedControl
         RaiseNavigationCanExecuteChanged();
     }
 
-    /// <summary>Scrolls the pane so the lines sit at the centre of the viewport; rows are uniform, there being no padding.</summary>
     /// <summary>
     /// Folds the unified document's unchanged runs, keeping <paramref name="contextRows"/> lines
     /// either side of every change; <c>null</c> unfolds everything.
@@ -2092,6 +2091,7 @@ public class InlineDiffView : TemplatedControl
         }
     }
 
+    /// <summary>Scrolls the pane so the lines sit at the centre of the viewport; rows are uniform, there being no padding.</summary>
     private void ScrollToLines(int firstLine, int count)
     {
         if (_pane?.PaneScrollViewer is not { } viewer)

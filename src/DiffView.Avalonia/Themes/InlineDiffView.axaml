@@ -2,9 +2,9 @@
     The control theme of InlineDiffView, compiled as InlineDiffViewTheme (the x:Class below) and
     merged by the control into its own resources, so the structure never depends on a host
     include and the merge is trim-safe. The find bar, the headers and the status strip carry
-    their own themes from SideBySideDiffView.axaml, which each of them merges itself. Every
-    brush is a DiffView.* token from the host's DiffView.axaml include; no host theme key is
-    referenced.
+    their own themes — DiffFindBar.axaml, DiffPaneHeader.axaml and DiffStatusStrip.axaml — which
+    each of them merges itself. Every brush is a DiffView.* token from the host's DiffView.axaml
+    include; no host theme key is referenced.
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"

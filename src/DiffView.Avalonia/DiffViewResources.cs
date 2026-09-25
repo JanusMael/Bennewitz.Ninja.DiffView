@@ -35,9 +35,11 @@ public static class DiffViewResources
     public static Uri PresenterThemeUri { get; } = new("avares://DiffView.Avalonia/Themes/DiffPanePresenter.axaml");
 
     /// <summary>
-    /// The control themes of <see cref="SideBySideDiffView"/>, <see cref="DiffPaneHeader"/> and
-    /// <see cref="DiffStatusStrip"/>; their compiled form, <see cref="SideBySideDiffViewTheme"/>,
-    /// travels with the controls the same way.
+    /// The control theme of <see cref="SideBySideDiffView"/>; its compiled form,
+    /// <see cref="SideBySideDiffViewTheme"/>, travels with the control the same way. The headers, the
+    /// status strip and the find bar it hosts carry their own, which each of them merges itself:
+    /// <see cref="DiffPaneHeaderTheme"/>, <see cref="DiffStatusStripTheme"/> and
+    /// <see cref="DiffFindBarTheme"/>.
     /// </summary>
     public static Uri CompositeThemeUri { get; } = new("avares://DiffView.Avalonia/Themes/SideBySideDiffView.axaml");
 
