@@ -23,5 +23,6 @@
     "Trim Check (Release linux-x64)"
   ],
   "content": [],
-  "undocumented": {}
+  "undocumented": {},
+  "trimming": "required"
 }
