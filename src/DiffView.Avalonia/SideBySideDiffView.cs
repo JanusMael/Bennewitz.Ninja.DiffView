@@ -25,7 +25,7 @@ namespace Bennewitz.Ninja.DiffView;
 /// every transition, warning and fault is logged through <see cref="LoggerFactory"/> without a
 /// character of document text.
 /// </summary>
-public class SideBySideDiffView : TemplatedControl
+public class SideBySideDiffView : TemplatedControl, IDiffSurface
 {
     /// <summary>The template part hosting the left pane.</summary>
     public const string LeftPanePart = "PART_LeftPane";
@@ -303,6 +303,7 @@ public class SideBySideDiffView : TemplatedControl
     public static readonly DirectProperty<SideBySideDiffView, int> CaretColumnProperty =
         AvaloniaProperty.RegisterDirect<SideBySideDiffView, int>(nameof(CaretColumn), o => o.CaretColumn);
 
+    private readonly DiffBuildController _controller;
     private readonly DelegateCommand _retry;
     private readonly DelegateCommand _force;
     private readonly DelegateCommand _nextChange;
@@ -329,69 +330,7 @@ public class SideBySideDiffView : TemplatedControl
     private FindOptions _findOptions = FindOptions.Default;
     private FindResult? _findResult;
     private int _currentFindMatchIndex = -1;
-    private int _currentChangeIndex = -1;
-    private double _splitRatio = 0.5;
-    private Grid? _headersGrid;
-    private Grid? _panesGrid;
-    private ChangeConnectorGutter? _gutter;
-    private DiffMinimap? _minimap;
-    private Border? _headerLeftSpacer;
-    private Border? _headerRightSpacer;
-
-    /// <summary>
-    /// The columns `PART_Panes` and `PART_Headers` share: a map slot at either end, the two star
-    /// columns the split ratio is written into, and the connector gutter between them. The two
-    /// grids are laid out alike so a header is exactly as wide as its pane by construction.
-    /// </summary>
-    private const int LeftMinimapColumn = 0;
-    private const int LeftPaneColumn = 1;
-    private const int RightPaneColumn = 3;
-    private const int RightMinimapColumn = 4;
-    private DiffViewState _state = DiffViewState.Empty;
-    private string? _stateMessage;
-    private SideBySideDocument? _document;
-
-    /// <summary>
-    /// How the model's rows sit on screen. The identity until something folds them, which is the
-    /// arithmetic every out-of-pane surface did inline before plan 00013.
-    /// </summary>
-    private RowProjection _projection = RowProjection.Identity(0);
-
-    /// <summary>Rows either side of a change that stay visible; <c>null</c> folds nothing.</summary>
-    private int? _foldContextRows;
-
-    private int _foldMinimumRows = FoldPlan.DefaultMinimumFoldedRows;
-
-    /// <summary>
-    /// The first row of every run the reader has opened. Cleared with the model: a rebuild makes
-    /// new runs, and a row number from the old one means nothing to them.
-    /// </summary>
-    private readonly HashSet<int> _expandedFolds = [];
-    private DiffDiagnostics? _diagnostics;
-    private IReadOnlyList<DiffWarning> _warnings = [];
-    private int _changeCount;
-    private DiffBannerKind _bannerKind;
-    private string? _bannerMessage;
-    private string? _bannerActionText;
-    private bool _isStale;
-    private bool _isBuildingSlowly;
-    private TextDocument _leftDocument = new();
-    private TextDocument _rightDocument = new();
-    private DiffSide? _focusedSide;
-    private int _caretLine;
-    private int _caretColumn;
-    private TextInfo? _leftInfo;
-    private TextInfo? _rightInfo;
-
-    private StatusController? _status;
-    private ILoggerFactory? _loggerFactory;
-    private ILogger? _buildLogger;
-    private ILogger? _renderLogger;
     private ILogger? _findLogger;
-    private int _generation;
-    private CancellationTokenSource? _buildCts;
-    private ITimer? _slowTimer;
-
     private DiffFindBar? _findBar;
     private DiffSide _findReturnSide = DiffSide.Left;
     private int _findGeneration;
@@ -409,15 +348,6 @@ public class SideBySideDiffView : TemplatedControl
     private (DateTime WriteTimeUtc, long Length)? _rightStamp;
     private bool _syncingFindBar;
 
-    private DiffPanePresenter? _leftPane;
-    private DiffPanePresenter? _rightPane;
-    private DiffPaneHeader? _leftHeader;
-    private DiffPaneHeader? _rightHeader;
-    private DiffStatusStrip? _statusStrip;
-    private Button? _bannerAction;
-    private Border? _banner;
-    private ScrollSync? _sync;
-
     private readonly DiffKeyBindings _bindings;
 
     private DiffKeyMap _keyMap = new();
@@ -426,6 +356,9 @@ public class SideBySideDiffView : TemplatedControl
     public SideBySideDiffView()
     {
         Resources.MergedDictionaries.Add(new SideBySideDiffViewTheme());
+        // First, and before any command closure can run: every one of them reads state that
+        // now lives in the controller.
+        _controller = new DiffBuildController(this);
         _retry = new DelegateCommand(Retry, () => State == DiffViewState.Failed);
         _force = new DelegateCommand(ForceAlign, () => BannerKind == DiffBannerKind.TooDifferentToAlign);
         _nextChange = new DelegateCommand(NextChange, () => ChangeCount > 0);
@@ -453,12 +386,11 @@ public class SideBySideDiffView : TemplatedControl
         _showContext = new DelegateCommand(
             () => SetCurrentValue(UnchangedContextRowsProperty, DiffKeyMap.DefaultContextRows),
             () => UnchangedContextRows != DiffKeyMap.DefaultContextRows);
-        _expandFold = new DelegateCommand(ExpandFoldAtCaret, CanExpandFoldAtCaret);
+        _expandFold = new DelegateCommand(_controller.ExpandFoldAtCaret, _controller.CanExpandFoldAtCaret);
         _openFind = new DelegateCommand(OpenFind);
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
         _findPrevious = new DelegateCommand(FindPrevious, () => IsFindBarOpen);
-        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, token, options);
         Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, token, options);
 
         // The default key bindings come from the map; a host rebinds, unbinds or clears them.
@@ -467,10 +399,7 @@ public class SideBySideDiffView : TemplatedControl
         _bindings = new DiffKeyBindings(this, CommandFor);
         KeyMap = DiffKeyMap.Default();
 
-        LayoutUpdated += OnLayoutUpdated;
-        RefreshStrings();
-        UpdatePseudoClasses();
-        SetStateCore(DiffViewState.Empty, DiffViewStrings.Get(DiffViewStrings.StateEmptyMessage), log: false);
+        _controller.Initialize();
     }
 
     /// <summary>A build produced a document and the panes show it.</summary>
@@ -764,22 +693,15 @@ public class SideBySideDiffView : TemplatedControl
     /// </summary>
     public int CurrentChangeIndex
     {
-        get => _currentChangeIndex;
-        set => SetCurrentChange(value, scroll: true);
+        get => _controller.CurrentChangeIndex;
+        set => _controller.SetCurrentChange(value, scroll: true);
     }
 
     /// <summary>The left pane's share of the panes' width, 0.1 to 0.9; a drag on the gutter changes it.</summary>
     public double SplitRatio
     {
-        get => _splitRatio;
-        set
-        {
-            double clamped = Math.Clamp(value, 0.1, 0.9);
-            if (SetAndRaise(SplitRatioProperty, ref _splitRatio, clamped))
-            {
-                ApplySplit();
-            }
-        }
+        get => _controller.SplitRatio;
+        set => _controller.SplitRatio = value;
     }
 
     /// <summary>
@@ -851,116 +773,52 @@ public class SideBySideDiffView : TemplatedControl
     }
 
     /// <summary>The one state the control is in.</summary>
-    public DiffViewState State
-    {
-        get => _state;
-        private set => SetAndRaise(StateProperty, ref _state, value);
-    }
+    public DiffViewState State => _controller.State;
 
     /// <summary>What the state means to the user: the empty prompt, the warning, or the failure.</summary>
-    public string? StateMessage
-    {
-        get => _stateMessage;
-        private set => SetAndRaise(StateMessageProperty, ref _stateMessage, value);
-    }
+    public string? StateMessage => _controller.StateMessage;
 
     /// <summary>The model the panes render, or <c>null</c> before the first build lands.</summary>
-    public SideBySideDocument? Document
-    {
-        get => _document;
-        private set => SetAndRaise(DocumentProperty, ref _document, value);
-    }
+    public SideBySideDocument? Document => _controller.Document;
 
     /// <summary>What the last successful build measured.</summary>
-    public DiffDiagnostics? Diagnostics
-    {
-        get => _diagnostics;
-        private set => SetAndRaise(DiagnosticsProperty, ref _diagnostics, value);
-    }
+    public DiffDiagnostics? Diagnostics => _controller.Diagnostics;
 
     /// <summary>The last successful build's warnings.</summary>
-    public IReadOnlyList<DiffWarning> Warnings
-    {
-        get => _warnings;
-        private set => SetAndRaise(WarningsProperty, ref _warnings, value);
-    }
+    public IReadOnlyList<DiffWarning> Warnings => _controller.Warnings;
 
     /// <summary>Change blocks in the model.</summary>
-    public int ChangeCount
-    {
-        get => _changeCount;
-        private set => SetAndRaise(ChangeCountProperty, ref _changeCount, value);
-    }
+    public int ChangeCount => _controller.ChangeCount;
 
     /// <summary>Which banner is shown above the panes.</summary>
-    public DiffBannerKind BannerKind
-    {
-        get => _bannerKind;
-        private set => SetAndRaise(BannerKindProperty, ref _bannerKind, value);
-    }
+    public DiffBannerKind BannerKind => _controller.BannerKind;
 
     /// <summary>The banner's text.</summary>
-    public string? BannerMessage
-    {
-        get => _bannerMessage;
-        private set => SetAndRaise(BannerMessageProperty, ref _bannerMessage, value);
-    }
+    public string? BannerMessage => _controller.BannerMessage;
 
     /// <summary>The banner's action label, or <c>null</c> when the banner offers none.</summary>
-    public string? BannerActionText
-    {
-        get => _bannerActionText;
-        private set => SetAndRaise(BannerActionTextProperty, ref _bannerActionText, value);
-    }
+    public string? BannerActionText => _controller.BannerActionText;
 
     /// <summary>Whether the result on screen is about to be replaced by a running build.</summary>
-    public bool IsStale
-    {
-        get => _isStale;
-        private set => SetAndRaise(IsStaleProperty, ref _isStale, value);
-    }
+    public bool IsStale => _controller.IsStale;
 
     /// <summary>Whether the running build has passed <see cref="SlowBuildThreshold"/>.</summary>
-    public bool IsBuildingSlowly
-    {
-        get => _isBuildingSlowly;
-        private set => SetAndRaise(IsBuildingSlowlyProperty, ref _isBuildingSlowly, value);
-    }
+    public bool IsBuildingSlowly => _controller.IsBuildingSlowly;
 
     /// <summary>The live left document: the source text, never padded.</summary>
-    public TextDocument LeftDocument
-    {
-        get => _leftDocument;
-        private set => SetAndRaise(LeftDocumentProperty, ref _leftDocument, value);
-    }
+    public TextDocument LeftDocument => _controller.LeftDocument;
 
     /// <summary>The live right document: the source text, never padded.</summary>
-    public TextDocument RightDocument
-    {
-        get => _rightDocument;
-        private set => SetAndRaise(RightDocumentProperty, ref _rightDocument, value);
-    }
+    public TextDocument RightDocument => _controller.RightDocument;
 
     /// <summary>The pane with keyboard focus, or <c>null</c>.</summary>
-    public DiffSide? FocusedSide
-    {
-        get => _focusedSide;
-        private set => SetAndRaise(FocusedSideProperty, ref _focusedSide, value);
-    }
+    public DiffSide? FocusedSide => _controller.FocusedSide;
 
     /// <summary>The focused pane's caret line, 1-based; 0 without focus.</summary>
-    public int CaretLine
-    {
-        get => _caretLine;
-        private set => SetAndRaise(CaretLineProperty, ref _caretLine, value);
-    }
+    public int CaretLine => _controller.CaretLine;
 
     /// <summary>The focused pane's caret column, 1-based; 0 without focus.</summary>
-    public int CaretColumn
-    {
-        get => _caretColumn;
-        private set => SetAndRaise(CaretColumnProperty, ref _caretColumn, value);
-    }
+    public int CaretColumn => _controller.CaretColumn;
 
     /// <summary>
     /// Creates the four category loggers (<see cref="DiffViewLogCategories"/>) when set. State
@@ -969,27 +827,22 @@ public class SideBySideDiffView : TemplatedControl
     /// </summary>
     public ILoggerFactory? LoggerFactory
     {
-        get => _loggerFactory;
+        get => _controller.LoggerFactory;
         set
         {
-            _loggerFactory = value;
-            _buildLogger = value?.CreateLogger(DiffViewLogCategories.Build);
-            _renderLogger = value?.CreateLogger(DiffViewLogCategories.Render);
+            // Build and render belong to the shared half and are made where they are used; find
+            // is this control's alone, and the viewer will never create one.
+            _controller.LoggerFactory = value;
             _findLogger = value?.CreateLogger(DiffViewLogCategories.Find);
-            if (_leftPane is not null)
-            {
-                _leftPane.Logger = _renderLogger;
-            }
-
-            if (_rightPane is not null)
-            {
-                _rightPane.Logger = _renderLogger;
-            }
         }
     }
 
     /// <summary>The clock behind the transient messages' auto-clear and the slow-build threshold. Set it before the first build.</summary>
-    public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+    public TimeProvider TimeProvider
+    {
+        get => _controller.TimeProvider;
+        set => _controller.TimeProvider = value;
+    }
 
     /// <summary>
     /// The transient message lane; its typed helpers are the only way to emit one. The instance
@@ -998,19 +851,7 @@ public class SideBySideDiffView : TemplatedControl
     /// on it or subscribes to <see cref="StatusController.Changed"/> has to do so again after a
     /// re-attach.
     /// </summary>
-    public StatusController Status
-    {
-        get
-        {
-            if (_status is null)
-            {
-                _status = new StatusController(TimeProvider);
-                _status.Changed += OnStatusChanged;
-            }
-
-            return _status;
-        }
-    }
+    public StatusController Status => _controller.Status;
 
     /// <summary>Rebuilds after a failure.</summary>
     public ICommand RetryCommand => _retry;
@@ -1052,7 +893,11 @@ public class SideBySideDiffView : TemplatedControl
     public ICommand FindPreviousCommand => _findPrevious;
 
     /// <summary>The build routine; tests replace it to make a build slow or throw.</summary>
-    internal Func<PaneSource, PaneSource, DiffOptions, CancellationToken, DiffBuildResult> Builder { get; set; }
+    internal Func<PaneSource, PaneSource, DiffOptions, CancellationToken, DiffBuildResult> Builder
+    {
+        get => _controller.Builder;
+        set => _controller.Builder = value;
+    }
 
     /// <summary>The search routine; tests replace it to hold a search open or watch its thread.</summary>
     internal Func<SideBySideDocument, IPaneText, IPaneText, string, FindOptions, CancellationToken, FindResult> Searcher { get; set; }
@@ -1061,7 +906,7 @@ public class SideBySideDiffView : TemplatedControl
     internal int FindWorkerRowThreshold { get; set; } = 2_000;
 
     /// <summary>The in-flight build, completing when its outcome has been applied or discarded; <c>null</c> when idle.</summary>
-    internal Task? CurrentBuild { get; private set; }
+    internal Task? CurrentBuild => _controller.CurrentBuild;
 
     /// <summary>The in-flight search, completing when its outcome has been applied or discarded; <c>null</c> when idle.</summary>
     internal Task? CurrentFind { get; private set; }
@@ -1069,45 +914,39 @@ public class SideBySideDiffView : TemplatedControl
     internal DiffFindBar? FindBar => _findBar;
 
     /// <summary>The word-level lookup of the current model, bound to the options its build ran under; <c>null</c> without a model.</summary>
-    public WordDiffLookup? WordDiffLookup { get; private set; }
+    public WordDiffLookup? WordDiffLookup => _controller.WordDiffLookup;
 
-    internal ChangeConnectorGutter? Gutter => _gutter;
+    internal ChangeConnectorGutter? Gutter => _controller.Gutter;
 
-    internal DiffMinimap? Minimap => _minimap;
+    internal DiffMinimap? Minimap => _controller.Minimap;
 
-    internal DiffPanePresenter? LeftPane => _leftPane;
+    internal DiffPanePresenter? LeftPane => _controller.LeftPane;
 
-    internal DiffPanePresenter? RightPane => _rightPane;
+    internal DiffPanePresenter? RightPane => _controller.RightPane;
 
-    internal DiffPaneHeader? LeftHeader => _leftHeader;
+    internal DiffPaneHeader? LeftHeader => _controller.LeftHeader;
 
-    internal DiffPaneHeader? RightHeader => _rightHeader;
+    internal DiffPaneHeader? RightHeader => _controller.RightHeader;
 
-    internal DiffStatusStrip? StatusStrip => _statusStrip;
+    internal DiffStatusStrip? StatusStrip => _controller.StatusStrip;
 
     // The controller as it stands, without building one: the public Status getter is lazy,
     // so asking it whether the field was released would create what it was asked about.
-    internal StatusController? StatusOrNull => _status;
+    internal StatusController? StatusOrNull => _controller.StatusOrNull;
 
-    internal Button? BannerAction => _bannerAction;
+    internal Button? BannerAction => _controller.BannerAction;
 
-    internal Grid? HeadersGrid => _headersGrid;
+    internal Grid? HeadersGrid => _controller.HeadersGrid;
 
-    internal Border? Banner => _banner;
+    internal Border? Banner => _controller.Banner;
 
-    internal ScrollSync? Sync => _sync;
+    internal ScrollSync? Sync => _controller.Sync;
 
     /// <summary>Runs the build again with the current sources and options; the panes' faults are cleared.</summary>
-    public void Retry()
-    {
-        RequestBuild(keepModel: true);
-    }
+    public void Retry() => _controller.Retry();
 
     /// <summary>Aligns the sides regardless of similarity: sets <see cref="ForceAlignment"/>, which rebuilds.</summary>
-    public void ForceAlign()
-    {
-        ForceAlignment = true;
-    }
+    public void ForceAlign() => _controller.ForceAlign();
 
     /// <summary>Moves to the next change; at the last one it stays and the strip says so.</summary>
     public void NextChange()
@@ -1124,7 +963,7 @@ public class SideBySideDiffView : TemplatedControl
             return;
         }
 
-        SetCurrentChange(CurrentChangeIndex + 1, scroll: true);
+        _controller.SetCurrentChange(CurrentChangeIndex + 1, scroll: true);
     }
 
     /// <summary>Moves to the previous change; at the first one, or before any, it stays and the strip says so.</summary>
@@ -1142,7 +981,7 @@ public class SideBySideDiffView : TemplatedControl
             return;
         }
 
-        SetCurrentChange(CurrentChangeIndex - 1, scroll: true);
+        _controller.SetCurrentChange(CurrentChangeIndex - 1, scroll: true);
     }
 
     /// <summary>Moves to the first change.</summary>
@@ -1154,7 +993,7 @@ public class SideBySideDiffView : TemplatedControl
             return;
         }
 
-        SetCurrentChange(0, scroll: true);
+        _controller.SetCurrentChange(0, scroll: true);
     }
 
     /// <summary>Moves to the last change.</summary>
@@ -1166,7 +1005,7 @@ public class SideBySideDiffView : TemplatedControl
             return;
         }
 
-        SetCurrentChange(ChangeCount - 1, scroll: true);
+        _controller.SetCurrentChange(ChangeCount - 1, scroll: true);
     }
 
     /// <summary>Moves keyboard focus to the other pane; to the left one when neither has it.</summary>
@@ -1177,10 +1016,7 @@ public class SideBySideDiffView : TemplatedControl
     }
 
     /// <summary>Scrolls both panes so <paramref name="row"/> sits at the centre of the viewport.</summary>
-    public void ScrollToRow(int row)
-    {
-        ScrollToRows(row, 1);
-    }
+    public void ScrollToRow(int row) => _controller.ScrollToRow(row);
 
     /// <summary>
     /// Opens the find bar, pre-fills the query from the focused pane's selection when it is a
@@ -1203,7 +1039,7 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         UpdateFindBar();
-        UpdateStrip();
+        _controller.UpdateStrip();
 
         // The bar has only just become visible; an unmeasured control cannot take focus, so a
         // failed attempt is retried below the layout pass's priority.
@@ -1227,7 +1063,7 @@ public class SideBySideDiffView : TemplatedControl
         SetAndRaise(IsFindBarOpenProperty, ref _isFindBarOpen, false);
         ApplyFindResult(null);
         UpdateFindBar();
-        UpdateStrip();
+        _controller.UpdateStrip();
         Pane(_findReturnSide)?.TextArea.Focus();
     }
 
@@ -1244,307 +1080,84 @@ public class SideBySideDiffView : TemplatedControl
     }
 
     /// <summary>The pane for <paramref name="side"/>, once the template has applied.</summary>
-    internal DiffPanePresenter? Pane(DiffSide side)
+    internal DiffPanePresenter? Pane(DiffSide side) => _controller.Pane(side);
+
+    /// <summary>Applies a folding option without going through the property, for the suite.</summary>
+    internal RowProjection ApplyFolds(int? contextRows, int minimumFoldedRows = FoldPlan.DefaultMinimumFoldedRows)
     {
-        return side == DiffSide.Left ? _leftPane : _rightPane;
+        return _controller.ApplyFolds(contextRows, minimumFoldedRows);
     }
 
     /// <inheritdoc/>
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
-        DetachParts();
-
-        _leftPane = e.NameScope.Find<DiffPanePresenter>(LeftPanePart);
-        _rightPane = e.NameScope.Find<DiffPanePresenter>(RightPanePart);
-        _leftHeader = e.NameScope.Find<DiffPaneHeader>(LeftHeaderPart);
-        _rightHeader = e.NameScope.Find<DiffPaneHeader>(RightHeaderPart);
-        _statusStrip = e.NameScope.Find<DiffStatusStrip>(StatusStripPart);
-        _bannerAction = e.NameScope.Find<Button>(BannerActionPart);
-        _banner = e.NameScope.Find<Border>(BannerPart);
-        _headersGrid = e.NameScope.Find<Grid>(HeadersPart);
-        _headerLeftSpacer = e.NameScope.Find<Border>(HeaderLeftSpacerPart);
-        _headerRightSpacer = e.NameScope.Find<Border>(HeaderRightSpacerPart);
-        _panesGrid = e.NameScope.Find<Grid>(PanesPart);
-        _gutter = e.NameScope.Find<ChangeConnectorGutter>(GutterPart);
-        _minimap = e.NameScope.Find<DiffMinimap>(MinimapPart);
-        _findBar = e.NameScope.Find<DiffFindBar>(FindBarPart);
-
-        ApplyChromeVisibility();
-
-        AttachPane(_leftPane, DiffSide.Left);
-        AttachPane(_rightPane, DiffSide.Right);
-        if (_statusStrip is not null)
-        {
-            _statusStrip.DismissRequested += OnDismissRequested;
-        }
-
-        if (_bannerAction is not null)
-        {
-            _bannerAction.Click += OnBannerActionClicked;
-        }
-
-        if (_gutter is not null)
-        {
-            // Both paths, because a host that sets the option in XAML is wired here and never
-            // reaches the property-change handler — the gap plan 00004 had to fix for CanCopyOut.
-            _foldContextRows = UnchangedContextRows;
-            _gutter.Document = Document;
-            _gutter.Projection = _projection;
-            _gutter.CurrentChangeIndex = CurrentChangeIndex;
-            _gutter.BlockClicked += OnGutterBlockClicked;
-            _gutter.ResizeDragged += OnGutterResizeDragged;
-            _gutter.ContextRequested += OnConnectorContextRequested;
-        }
-
-        if (_leftHeader is not null)
-        {
-            _leftHeader.ContextRequested += OnLeftHeaderContextRequested;
-        }
-
-        if (_rightHeader is not null)
-        {
-            _rightHeader.ContextRequested += OnRightHeaderContextRequested;
-        }
-
-        if (_minimap is not null)
-        {
-            _minimap.Document = Document;
-            _minimap.Projection = _projection;
-            _minimap.CurrentChangeIndex = CurrentChangeIndex;
-            // Both paths, because a host that sets the flag in XAML is wired here and never
-            // reaches the property-change handler — the gap plan 00004 had to fix for CanCopyOut.
-            _minimap.IsVisible = ShowMinimap;
-            ApplyMinimapPlacement();
-            _minimap.JumpRequested += OnMinimapJumpRequested;
-            _minimap.ContextRequested += OnMinimapContextRequested;
-        }
-
-        if (_findBar is not null)
-        {
-            _findBar.QueryChanged += OnFindBarQueryChanged;
-            _findBar.OptionsChanged += OnFindBarOptionsChanged;
-            _findBar.NextRequested += OnFindBarNextRequested;
-            _findBar.PreviousRequested += OnFindBarPreviousRequested;
-            _findBar.CloseRequested += OnFindBarCloseRequested;
-        }
-
-        ApplySplit();
-        TryWireScrollSync();
-        UpdateHeaders();
-        UpdateFindBar();
-        UpdateStrip();
-        UpdateBanner();
-        UpdateOverview();
+        _controller.ApplyTemplate(e);
     }
 
     /// <inheritdoc/>
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-
-        // The order is load-bearing. Dispose raises Changed synchronously into UpdateStrip,
-        // which reads the field, so the field must still hold the controller being disposed.
-        // Nulled first, these two lines release one controller and immediately build another.
-        _status?.Dispose();
-        _status = null;
+        _controller.OnDetached();
     }
 
     /// <inheritdoc/>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == LeftSourceProperty)
+        if (change.Property == LeftReadOnlyProperty)
         {
-            OnSourceChanged(DiffSide.Left, change.GetNewValue<PaneSource?>());
-        }
-        else if (change.Property == RightSourceProperty)
-        {
-            OnSourceChanged(DiffSide.Right, change.GetNewValue<PaneSource?>());
-        }
-        else if (change.Property == LeftReadOnlyProperty)
-        {
-            if (_leftPane is not null)
+            if (_controller.LeftPane is not null)
             {
-                _leftPane.IsReadOnly = LeftReadOnly;
+                _controller.LeftPane.IsReadOnly = LeftReadOnly;
             }
 
             // A pane offers an arrow when the *other* side can receive the copy, so the left
             // side's flag drives the right pane's arrows.
-            if (_rightPane is not null)
+            if (_controller.RightPane is not null)
             {
-                _rightPane.CanCopyOut = !LeftReadOnly;
+                _controller.RightPane.CanCopyOut = !LeftReadOnly;
             }
 
             RaiseNavigationCanExecuteChanged();
         }
         else if (change.Property == RightReadOnlyProperty)
         {
-            if (_rightPane is not null)
+            if (_controller.RightPane is not null)
             {
-                _rightPane.IsReadOnly = RightReadOnly;
+                _controller.RightPane.IsReadOnly = RightReadOnly;
             }
 
-            if (_leftPane is not null)
+            if (_controller.LeftPane is not null)
             {
-                _leftPane.CanCopyOut = !RightReadOnly;
+                _controller.LeftPane.CanCopyOut = !RightReadOnly;
             }
 
             RaiseNavigationCanExecuteChanged();
-        }
-        else if (change.Property == IgnoreWhitespaceProperty
-                 || change.Property == IgnoreCaseProperty
-                 || change.Property == WordDiffProperty
-                 || change.Property == MaxWordDiffLineLengthProperty
-                 || change.Property == ForceAlignmentProperty)
-        {
-            RequestBuild(keepModel: true);
-        }
-        else if (change.Property == SyncHorizontalScrollProperty && _sync is not null)
-        {
-            _sync.SyncHorizontal = SyncHorizontalScroll;
-            _sync.Align();
-        }
-        else if (change.Property == IsCaretBlinkEnabledProperty)
-        {
-            ForEachPane(pane => pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled);
-        }
-        else if (change.Property == UseSyntaxHighlightingProperty)
-        {
-            ForEachPane(pane => pane.UseSyntaxHighlighting = UseSyntaxHighlighting);
-        }
-        else if (change.Property == ShowMinimapProperty)
-        {
-            if (_minimap is not null)
-            {
-                _minimap.IsVisible = ShowMinimap;
-            }
-
-            ApplyMinimapPlacement();
-        }
-        else if (change.Property == MinimapPlacementProperty)
-        {
-            ApplyMinimapPlacement();
-        }
-        else if (change.Property == ShowWhitespaceProperty
-                 || change.Property == ShowLineEndingsProperty
-                 || change.Property == TabWidthProperty)
-        {
-            ForEachPane(ApplyDisplayOptions);
-        }
-        else if (change.Property == UnchangedContextRowsProperty)
-        {
-            // A change of option opens every run the reader had opened: they were opened against
-            // a different set of folds, and keeping them would leave gaps the option did not ask
-            // for.
-            _expandedFolds.Clear();
-            ApplyFolds(UnchangedContextRows);
-        }
-        else if (change.Property == PaneFontSizeProperty || change.Property == PaneFontFamilyProperty)
-        {
-            ForEachPane(ApplyPaneFont);
-        }
-        else if (change.Property == ShowHeadersProperty || change.Property == ShowStatusStripProperty)
-        {
-            ApplyChromeVisibility();
-        }
-        else if (change.Property == StateProperty
-                 || change.Property == BannerKindProperty
-                 || change.Property == ShowBannerProperty)
-        {
-            UpdatePseudoClasses();
-            _retry.RaiseCanExecuteChanged();
-            _force.RaiseCanExecuteChanged();
         }
         else if (change.Property == ChangeCountProperty)
         {
             RaiseNavigationCanExecuteChanged();
         }
+
+        if (change.Property == StateProperty
+            || change.Property == BannerKindProperty
+            || change.Property == ShowBannerProperty)
+        {
+            // Not an else-branch: the controller sets the pseudo-classes from the same three, and
+            // these two commands are this control's to re-evaluate.
+            _retry.RaiseCanExecuteChanged();
+            _force.RaiseCanExecuteChanged();
+        }
+
+        _controller.OnPropertyChanged(change);
     }
 
     // ── Sources and builds ─────────────────────────────────────────────────────────────────
 
-    private void OnSourceChanged(DiffSide side, PaneSource? source)
-    {
-        DiffViewLog.SourceAssigned(_buildLogger, side, source);
-        TextInfo? info = source is null ? null : TextProbe.Probe(source);
-        TextDocument document = new(source?.Text ?? string.Empty);
-
-        // A re-diff armed by an edit to the document being replaced describes text that is about
-        // to stop existing; the build this method requests supersedes it anyway.
-        _reDiffTimer?.Dispose();
-        _reDiffTimer = null;
-
-        if (side == DiffSide.Left)
-        {
-            _leftDocument.TextChanged -= OnLeftTextChanged;
-            _leftDocument.Changed -= OnLeftDocumentChanged;
-            _leftModifiedLines.Clear();
-            _leftInfo = info;
-            _leftEdited = false;
-            _leftDirty = false;
-            _leftStamp = StampOf(source);
-            LeftDocument = document;
-            document.TextChanged += OnLeftTextChanged;
-            document.Changed += OnLeftDocumentChanged;
-        }
-        else
-        {
-            _rightDocument.TextChanged -= OnRightTextChanged;
-            _rightDocument.Changed -= OnRightDocumentChanged;
-            _rightModifiedLines.Clear();
-            _rightInfo = info;
-            _rightEdited = false;
-            _rightDirty = false;
-            _rightStamp = StampOf(source);
-            RightDocument = document;
-            document.TextChanged += OnRightTextChanged;
-            document.Changed += OnRightDocumentChanged;
-        }
-
-        DiffPanePresenter? pane = Pane(side);
-        if (pane is not null)
-        {
-            pane.Document = document;
-            // The grammar follows the file, not the build, so it is chosen here.
-            pane.SyntaxFileName = SyntaxFileNameOf(source);
-        }
-
-        // The old model described the old text; nothing of it applies to the new document.
-        RequestBuild(keepModel: false);
-    }
-
-    /// <summary>What the grammar is chosen from: the file the side came from, or what it is called.</summary>
-    private static string? SyntaxFileNameOf(PaneSource? source)
-    {
-        return source?.Path ?? source?.Title;
-    }
-
     /// <summary>Whether <paramref name="side"/> has been edited since its source was assigned.</summary>
     public bool IsEdited(DiffSide side) => side == DiffSide.Left ? _leftEdited : _rightEdited;
-
-    /// <summary>
-    /// What the next build compares: the assigned source, or the pane's live text once the user
-    /// has edited it. The encoding, the path and the title come from the source either way —
-    /// they are what a save writes back with, and typing does not change them.
-    /// </summary>
-    private PaneSource? EffectiveSource(DiffSide side)
-    {
-        PaneSource? source = side == DiffSide.Left ? LeftSource : RightSource;
-        if (source is null || !IsEdited(side))
-        {
-            return source;
-        }
-
-        // Read on the UI thread, like every other text the worker sees.
-        TextDocument document = side == DiffSide.Left ? LeftDocument : RightDocument;
-        return new PaneSource(document.Text)
-        {
-            Encoding = source.Encoding,
-            Path = source.Path,
-            Title = source.Title,
-        };
-    }
 
     private void OnLeftDocumentChanged(object? sender, DocumentChangeEventArgs e) => OnDocumentChanged(DiffSide.Left, e);
 
@@ -1661,8 +1274,8 @@ public class SideBySideDiffView : TemplatedControl
             _rightDirty = true;
         }
 
-        UpdateHeaders();
-        UpdateStrip();
+        _controller.UpdateHeaders();
+        _controller.UpdateStrip();
 
         // The matches were offsets into text that has just moved under them, so they are wrong
         // now rather than merely stale. The search re-runs with the build.
@@ -1691,7 +1304,7 @@ public class SideBySideDiffView : TemplatedControl
             {
                 _reDiffTimer?.Dispose();
                 _reDiffTimer = null;
-                RequestBuild(keepModel: true);
+                _controller.ReDiff(keepModel: true);
             }),
             state: null,
             ReDiffDelay,
@@ -1721,7 +1334,7 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         PaneSource? source = side == DiffSide.Left ? LeftSource : RightSource;
-        string name = HeaderTitle(side, source);
+        string name = DiffBuildController.HeaderTitle(side, source);
         if (source?.Path is not { Length: > 0 } path)
         {
             ReportSave(DiffViewStrings.Format(DiffViewStrings.SaveNoPath, name));
@@ -1735,7 +1348,7 @@ public class SideBySideDiffView : TemplatedControl
             return SaveOutcome.ChangedOnDisk;
         }
 
-        TextInfo? info = side == DiffSide.Left ? _leftInfo : _rightInfo;
+        TextInfo? info = side == DiffSide.Left ? _controller.LeftInfo : _controller.RightInfo;
         TextDocument document = side == DiffSide.Left ? LeftDocument : RightDocument;
         try
         {
@@ -1761,8 +1374,8 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         Status.SetSuccess(DiffViewStrings.Format(DiffViewStrings.SaveSucceeded, name));
-        UpdateHeaders();
-        UpdateStrip();
+        _controller.UpdateHeaders();
+        _controller.UpdateStrip();
         return SaveOutcome.Saved;
     }
 
@@ -1806,8 +1419,8 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         PushModifiedLines(side);
-        UpdateHeaders();
-        UpdateStrip();
+        _controller.UpdateHeaders();
+        _controller.UpdateStrip();
         ReDiffNow();
     }
 
@@ -1929,7 +1542,7 @@ public class SideBySideDiffView : TemplatedControl
     /// </summary>
     public DiffHeaderContext HeaderContextAt(DiffSide side)
     {
-        DiffPaneHeader? header = side == DiffSide.Left ? _leftHeader : _rightHeader;
+        DiffPaneHeader? header = side == DiffSide.Left ? _controller.LeftHeader : _controller.RightHeader;
         return new DiffHeaderContext(
             side,
             header?.Title ?? string.Empty,
@@ -2210,7 +1823,7 @@ public class SideBySideDiffView : TemplatedControl
     {
         if (Document is { } model && index >= 0 && index < model.Blocks.Count)
         {
-            SetCurrentChange(index, scroll: true);
+            _controller.SetCurrentChange(index, scroll: true);
         }
     }
 
@@ -2339,7 +1952,7 @@ public class SideBySideDiffView : TemplatedControl
 
     private void OnKeyMapChanged(object? sender, EventArgs e) => RebuildKeyBindings();
 
-    private void RebuildKeyBindings() => _bindings.Rebuild(_keyMap, _renderLogger);
+    private void RebuildKeyBindings() => _bindings.Rebuild(_keyMap, _controller.RenderLogger);
 
     /// <summary>
     /// Whether the selection in <paramref name="fromSide"/>'s pane could be copied to the other
@@ -2498,7 +2111,7 @@ public class SideBySideDiffView : TemplatedControl
     /// <summary>The terminator a copied run should carry on <paramref name="side"/>.</summary>
     private string NewLineOf(DiffSide side)
     {
-        TextInfo? info = side == DiffSide.Left ? _leftInfo : _rightInfo;
+        TextInfo? info = side == DiffSide.Left ? _controller.LeftInfo : _controller.RightInfo;
         return info?.LineEnding switch
         {
             LineEnding.CrLf => "\r\n",
@@ -2536,21 +2149,10 @@ public class SideBySideDiffView : TemplatedControl
         return loaded is { } was && StampOf(path) is { } now && (now.WriteTimeUtc != was.WriteTimeUtc || now.Length != was.Length);
     }
 
-    /// <summary>
-    /// What to call a side in a save message: the same name its header shows. The banner is left
-    /// alone deliberately — it reports what the *build* did, and a save is not a build.
-    /// </summary>
-    private static string HeaderTitle(DiffSide side, PaneSource? source)
-    {
-        return source?.Title
-               ?? (source?.Path is { } path ? System.IO.Path.GetFileName(path) : null)
-               ?? DiffViewStrings.Get(side == DiffSide.Left ? DiffViewStrings.LeftTitle : DiffViewStrings.RightTitle);
-    }
-
     private void ReportSave(string message)
     {
         Status.SetWarning(message);
-        UpdateStrip();
+        _controller.UpdateStrip();
     }
 
     /// <summary>Rebuilds now from the panes' live text, whatever the debounce was doing.</summary>
@@ -2558,901 +2160,12 @@ public class SideBySideDiffView : TemplatedControl
     {
         _reDiffTimer?.Dispose();
         _reDiffTimer = null;
-        RequestBuild(keepModel: true);
-    }
-
-    private void RequestBuild(bool keepModel)
-    {
-        PaneSource? left = EffectiveSource(DiffSide.Left);
-        PaneSource? right = EffectiveSource(DiffSide.Right);
-        if (left is null || right is null)
-        {
-            CancelBuild();
-            ApplyModel(null, [], null, null);
-            SetState(DiffViewState.Empty, DiffViewStrings.Get(DiffViewStrings.StateEmptyMessage));
-            SetBanner(DiffBannerKind.None, null, null);
-            IsStale = false;
-            _status?.Dismiss();
-            UpdateHeaders();
-            UpdateStrip();
-            return;
-        }
-
-        CancelBuild();
-        int generation = ++_generation;
-        CancellationTokenSource cts = new();
-        _buildCts = cts;
-        DiffOptions options = ComposeOptions();
-
-        if (!keepModel)
-        {
-            ApplyModel(null, [], null, null);
-        }
-
-        _leftPane?.ResetFaults();
-        _rightPane?.ResetFaults();
-        IsStale = Document is not null;
-        SetState(DiffViewState.Building, null);
-        SetBanner(DiffBannerKind.None, null, null);
-        Status.SetActive(DiffViewStrings.Get(DiffViewStrings.BuildRunning));
-        StartSlowTimer(generation);
-        DiffViewLog.BuildStarted(_buildLogger, generation, options);
-        UpdateHeaders();
-        UpdateStrip();
-
-        CurrentBuild = RunBuildAsync(generation, left, right, options, cts.Token);
-    }
-
-    private async Task RunBuildAsync(int generation, PaneSource left, PaneSource right, DiffOptions options, CancellationToken token)
-    {
-        DiffBuildResult? result = null;
-        DiffBuildException? failure = null;
-        bool cancelled = false;
-        try
-        {
-            // Text was captured on the UI thread; the worker never sees a TextDocument.
-            result = await Task.Run(() => Builder(left, right, options, token), token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            cancelled = true;
-        }
-        catch (DiffBuildException ex)
-        {
-            failure = ex;
-        }
-        catch (Exception ex)
-        {
-            failure = new DiffBuildException(DiffBuildErrorCode.DiffFailed, ex.Message, ex);
-        }
-
-        if (Dispatcher.UIThread.CheckAccess())
-        {
-            Complete(generation, result, failure, cancelled, options);
-        }
-        else
-        {
-            await Dispatcher.UIThread.InvokeAsync(() => Complete(generation, result, failure, cancelled, options));
-        }
-    }
-
-    private void Complete(int generation, DiffBuildResult? result, DiffBuildException? failure, bool cancelled, DiffOptions options)
-    {
-        if (generation != _generation)
-        {
-            // Latest wins: a newer build superseded this one; its outcome is discarded silently.
-            DiffViewLog.BuildSuperseded(_buildLogger, generation, _generation);
-            return;
-        }
-
-        StopSlowTimer();
-        CurrentBuild = null;
-        if (cancelled)
-        {
-            DiffViewLog.BuildCancelled(_buildLogger, generation);
-            return;
-        }
-
-        if (failure is not null)
-        {
-            ApplyFailure(generation, failure);
-        }
-        else
-        {
-            ApplyResult(generation, result!, options);
-        }
-    }
-
-    private void ApplyResult(int generation, DiffBuildResult result, DiffOptions options)
-    {
-        // A decorator that faulted while this build ran — a grammar that would not install, say —
-        // keeps the control Degraded once it lands. It is read before the model is applied,
-        // because applying one re-enables every decorator and forgets its faults.
-        RenderFaultEventArgs? fault = PaneFault();
-        ApplyModel(result.Document, result.Warnings, result.Diagnostics, options);
-        IsStale = false;
-        foreach (DiffWarning warning in result.Warnings)
-        {
-            DiffViewLog.BuildWarning(_buildLogger, warning);
-        }
-
-        DiffViewLog.BuildCompleted(_buildLogger, generation, result.Diagnostics, result.Warnings.Count);
-
-        DiffWarning? tooDifferent = result.Warnings.FirstOrDefault(w => w.Code == DiffWarningCode.TooDifferentToAlign);
-        if (tooDifferent is not null)
-        {
-            SetBanner(DiffBannerKind.TooDifferentToAlign, tooDifferent.Message, DiffViewStrings.Get(DiffViewStrings.BannerForce));
-        }
-        else if (result.Diagnostics.Identical)
-        {
-            SetBanner(DiffBannerKind.Identical, DiffViewStrings.Get(DiffViewStrings.BannerIdentical), null);
-        }
-        else
-        {
-            SetBanner(DiffBannerKind.None, null, null);
-        }
-
-        string? message = result.Warnings.Count == 0 ? fault?.Message : string.Join(" ", result.Warnings.Select(w => w.Message));
-        SetState(message is null ? DiffViewState.Ready : DiffViewState.Degraded, message);
-
-        if (result.Warnings.Count > 0)
-        {
-            Status.SetWarning(message!);
-        }
-        else if (fault is not null)
-        {
-            Status.SetFailure(message!);
-        }
-        else if (result.Diagnostics.Identical)
-        {
-            Status.SetSuccess(DiffViewStrings.Get(DiffViewStrings.BuildIdentical));
-        }
-        else
-        {
-            Status.SetSuccess(DiffViewStrings.Format(
-                DiffViewStrings.BuildCompleted,
-                result.Diagnostics.RowCount.ToString("N0", CultureInfo.CurrentCulture),
-                result.Diagnostics.BuildTime.TotalMilliseconds.ToString("F0", CultureInfo.CurrentCulture)));
-        }
-
-        UpdateHeaders();
-        UpdateStrip();
-        BuildCompleted?.Invoke(this, new DiffBuildCompletedEventArgs(result));
-    }
-
-    private void ApplyFailure(int generation, DiffBuildException failure)
-    {
-        DiffViewLog.BuildFailed(_buildLogger, generation, failure);
-        IsStale = false;
-        SetBanner(DiffBannerKind.Error, failure.Message, DiffViewStrings.Get(DiffViewStrings.BannerRetry));
-        SetState(DiffViewState.Failed, failure.Message);
-        Status.SetFailure(failure.Message);
-        UpdateHeaders();
-        UpdateStrip();
-        BuildFailed?.Invoke(this, new DiffBuildFailedEventArgs(failure));
-    }
-
-    /// <summary>
-    /// The first fault either pane is still carrying: one its decorators raised since they were
-    /// last re-enabled, or the one that turned its syntax highlighting off, which outlives a
-    /// rebuild because a rebuild is not what would fix it.
-    /// </summary>
-    private RenderFaultEventArgs? PaneFault()
-    {
-        return _leftPane?.Faults.FirstOrDefault()
-               ?? _rightPane?.Faults.FirstOrDefault()
-               ?? _leftPane?.SyntaxFault
-               ?? _rightPane?.SyntaxFault;
-    }
-
-    private void ApplyModel(SideBySideDocument? document, IReadOnlyList<DiffWarning> warnings, DiffDiagnostics? diagnostics, DiffOptions? options)
-    {
-        Document = document;
-        Warnings = warnings;
-        Diagnostics = diagnostics;
-        ChangeCount = document?.Blocks.Count ?? 0;
-        // One lookup per result, bound to the options the build ran under, over the live documents.
-        WordDiffLookup = document is null || options is null
-            ? null
-            : new WordDiffLookup(new WordDiffCache(options), LeftDocument, RightDocument, document);
-        foreach (DiffPanePresenter? pane in new[] { _leftPane, _rightPane })
-        {
-            if (pane is null)
-            {
-                continue;
-            }
-
-            pane.DiffDocument = document;
-            pane.WordDiffLookup = WordDiffLookup;
-        }
-
-        // A new model is a new row space. The option carries over, the runs the reader opened do
-        // not: a row number from the old model names a different run in this one.
-        _expandedFolds.Clear();
-        _projection = RowProjection.Identity(document?.Rows.Count ?? 0);
-
-        if (_gutter is not null)
-        {
-            _gutter.Document = document;
-            _gutter.Projection = _projection;
-        }
-
-        if (_minimap is not null)
-        {
-            _minimap.Document = document;
-            _minimap.Projection = _projection;
-        }
-
-        // The matches were found over rows the old model defined; the search runs again against
-        // the new one while the bar is open.
-        ApplyFindResult(null);
-        RequestFind();
-
-        // The blocks are new: no current change until the user picks one.
-        SetCurrentChange(-1, scroll: false);
-
-        // And the runs are new, so they are computed again for this model rather than carried.
-        RefreshFolds();
-    }
-
-    private void CancelBuild()
-    {
-        StopSlowTimer();
-        if (_buildCts is { } cts)
-        {
-            _buildCts = null;
-            cts.Cancel();
-            cts.Dispose();
-        }
-    }
-
-    private DiffOptions ComposeOptions()
-    {
-        return new DiffOptions
-        {
-            IgnoreWhitespace = IgnoreWhitespace,
-            IgnoreCase = IgnoreCase,
-            WordDiff = WordDiff,
-            MaxWordDiffLineLength = MaxWordDiffLineLength,
-            ForceAlignment = ForceAlignment,
-        };
-    }
-
-    private void StartSlowTimer(int generation)
-    {
-        StopSlowTimer();
-        IsBuildingSlowly = false;
-        _slowTimer = TimeProvider.CreateTimer(
-            _ => Dispatcher.UIThread.Post(() =>
-            {
-                if (generation == _generation && State == DiffViewState.Building)
-                {
-                    IsBuildingSlowly = true;
-                    UpdateStrip();
-                }
-            }),
-            state: null,
-            SlowBuildThreshold,
-            Timeout.InfiniteTimeSpan);
-    }
-
-    private void StopSlowTimer()
-    {
-        _slowTimer?.Dispose();
-        _slowTimer = null;
-        IsBuildingSlowly = false;
+        _controller.ReDiff(keepModel: true);
     }
 
     // ── State, banner, strip, headers ──────────────────────────────────────────────────────
 
-    private void SetState(DiffViewState state, string? message)
-    {
-        SetStateCore(state, message, log: true);
-    }
-
-    private void SetStateCore(DiffViewState state, string? message, bool log)
-    {
-        DiffViewState previous = State;
-        bool changed = previous != state || StateMessage != message;
-        State = state;
-        StateMessage = message;
-        if (changed && log)
-        {
-            DiffViewLog.StateChanged(_buildLogger, previous, state, message);
-        }
-    }
-
-    private void SetBanner(DiffBannerKind kind, string? message, string? action)
-    {
-        BannerKind = kind;
-        BannerMessage = message;
-        BannerActionText = action;
-        UpdateBanner();
-    }
-
-    private void UpdateBanner()
-    {
-        if (_bannerAction is not null)
-        {
-            _bannerAction.Content = BannerActionText;
-        }
-    }
-
-    /// <summary>
-    /// The two parts whose visibility this control owns outright. Called from the template
-    /// path and from the property-change path, because a host that sets a flag in XAML is
-    /// wired by the first and never reaches the second — the gap plan 00004 fixed for
-    /// <c>CanCopyOut</c>. The banner is not here: its visibility belongs to a style, and a
-    /// write from code would outrank that style permanently.
-    /// </summary>
-    private void ApplyChromeVisibility()
-    {
-        if (_headersGrid is not null)
-        {
-            _headersGrid.IsVisible = ShowHeaders;
-        }
-
-        if (_statusStrip is not null)
-        {
-            _statusStrip.IsVisible = ShowStatusStrip;
-        }
-    }
-
-    private void UpdatePseudoClasses()
-    {
-        // ShowBanner joins the class that already owns the banner's visibility rather than
-        // writing IsVisible on the part: a code write lands at LocalValue, outranks the style
-        // for the life of the control, and would strand an empty banner on screen the next
-        // time a build had nothing to say. So :banner-none now means "not shown", which is
-        // wider than "nothing to say" — the only writer is this method.
-        PseudoClasses.Set(":banner-none", BannerKind == DiffBannerKind.None || !ShowBanner);
-        PseudoClasses.Set(":banner-error", BannerKind == DiffBannerKind.Error);
-        PseudoClasses.Set(":banner-degraded", BannerKind == DiffBannerKind.TooDifferentToAlign);
-        PseudoClasses.Set(":banner-identical", BannerKind == DiffBannerKind.Identical);
-        PseudoClasses.Set(":empty", State == DiffViewState.Empty);
-        PseudoClasses.Set(":building", State == DiffViewState.Building);
-        PseudoClasses.Set(":ready", State == DiffViewState.Ready);
-        PseudoClasses.Set(":degraded", State == DiffViewState.Degraded);
-        PseudoClasses.Set(":failed", State == DiffViewState.Failed);
-    }
-
-    private void RefreshStrings()
-    {
-        SetCurrentValue(LeftPaneNameProperty, DiffViewStrings.Get(DiffViewStrings.LeftPaneName));
-        SetCurrentValue(RightPaneNameProperty, DiffViewStrings.Get(DiffViewStrings.RightPaneName));
-        SetCurrentValue(LeftHeaderNameProperty, DiffViewStrings.Get(DiffViewStrings.LeftHeaderName));
-        SetCurrentValue(RightHeaderNameProperty, DiffViewStrings.Get(DiffViewStrings.RightHeaderName));
-        SetCurrentValue(StatusStripNameProperty, DiffViewStrings.Get(DiffViewStrings.StatusStripName));
-        SetCurrentValue(GutterNameProperty, DiffViewStrings.Get(DiffViewStrings.ConnectorGutterName));
-        SetCurrentValue(MinimapNameProperty, DiffViewStrings.Get(DiffViewStrings.MinimapName));
-    }
-
-    private void UpdateHeaders()
-    {
-        UpdateHeader(_leftHeader, DiffSide.Left, LeftSource, _leftInfo);
-        UpdateHeader(_rightHeader, DiffSide.Right, RightSource, _rightInfo);
-    }
-
-    private void UpdateHeader(DiffPaneHeader? header, DiffSide side, PaneSource? source, TextInfo? info)
-    {
-        if (header is null)
-        {
-            return;
-        }
-
-        header.IsPaneFocused = FocusedSide == side;
-        header.IsDirty = IsDirty(side);
-        header.DirtyMarker = header.IsDirty ? DiffViewStrings.Get(DiffViewStrings.HeaderDirty) : null;
-        header.Title = source?.Title
-                       ?? (source?.Path is { } path ? Path.GetFileName(path) : null)
-                       ?? DiffViewStrings.Get(side == DiffSide.Left ? DiffViewStrings.LeftTitle : DiffViewStrings.RightTitle);
-
-        if (source is null || info is null)
-        {
-            header.Detail = DiffViewStrings.Get(DiffViewStrings.NoContent);
-            header.Badge = null;
-            header.BadgeKind = StatusKind.None;
-            return;
-        }
-
-        header.Detail = DiffViewStrings.Format(
-            DiffViewStrings.HeaderDetail,
-            info.LineCount == 1 ? DiffViewStrings.Get(DiffViewStrings.LineCountOne) : DiffViewStrings.Format(DiffViewStrings.LineCount, info.LineCount.ToString("N0", CultureInfo.CurrentCulture)),
-            info.Encoding?.WebName.ToUpperInvariant() ?? DiffViewStrings.Get(DiffViewStrings.EncodingText),
-            LineEndingText(info.LineEnding),
-            DiffViewStrings.Format(DiffViewStrings.CharCount, info.Length.ToString("N0", CultureInfo.CurrentCulture)));
-
-        if (info.IsBinary)
-        {
-            header.Badge = DiffViewStrings.Get(DiffViewStrings.BadgeBinary);
-            header.BadgeKind = StatusKind.Failure;
-        }
-        else if (info.Length == 0)
-        {
-            header.Badge = DiffViewStrings.Get(DiffViewStrings.BadgeEmpty);
-            header.BadgeKind = StatusKind.Warning;
-        }
-        else if (Diagnostics is { Identical: true } && !IsStale)
-        {
-            header.Badge = DiffViewStrings.Get(DiffViewStrings.BadgeIdentical);
-            header.BadgeKind = StatusKind.Success;
-        }
-        else
-        {
-            header.Badge = null;
-            header.BadgeKind = StatusKind.None;
-        }
-    }
-
-    private static string LineEndingText(LineEnding ending)
-    {
-        return DiffViewStrings.Get(ending switch
-        {
-            LineEnding.Lf => DiffViewStrings.LineEndingLf,
-            LineEnding.CrLf => DiffViewStrings.LineEndingCrLf,
-            LineEnding.Cr => DiffViewStrings.LineEndingCr,
-            LineEnding.Mixed => DiffViewStrings.LineEndingMixed,
-            _ => DiffViewStrings.LineEndingNone,
-        });
-    }
-
-    /// <summary>Which sides hold unsaved edits, named as their headers name them; null for none.</summary>
-    private string? DirtySidesText()
-    {
-        bool left = IsDirty(DiffSide.Left);
-        bool right = IsDirty(DiffSide.Right);
-        if (!left && !right)
-        {
-            return null;
-        }
-
-        string names = left && right
-            ? HeaderTitle(DiffSide.Left, LeftSource) + ", " + HeaderTitle(DiffSide.Right, RightSource)
-            : HeaderTitle(left ? DiffSide.Left : DiffSide.Right, left ? LeftSource : RightSource);
-        return DiffViewStrings.Format(DiffViewStrings.StatusDirty, names);
-    }
-
-    private void UpdateStrip()
-    {
-        DiffStatusStrip? strip = _statusStrip;
-        if (strip is null)
-        {
-            return;
-        }
-
-        strip.State = State;
-        strip.StateText = DiffViewStrings.Get(State switch
-        {
-            DiffViewState.Empty => DiffViewStrings.StateEmpty,
-            DiffViewState.Building => DiffViewStrings.StateBuilding,
-            DiffViewState.Ready => DiffViewStrings.StateReady,
-            DiffViewState.Degraded => DiffViewStrings.StateDegraded,
-            _ => DiffViewStrings.StateFailed,
-        });
-        strip.DirtyText = DirtySidesText();
-        strip.IsStale = IsStale;
-        strip.StaleText = DiffViewStrings.Get(DiffViewStrings.StatusStale);
-        strip.IsBuildingSlowly = IsBuildingSlowly;
-        strip.ProgressName = DiffViewStrings.Get(DiffViewStrings.StatusProgressName);
-        strip.DismissText = DiffViewStrings.Get(DiffViewStrings.StatusDismiss);
-
-        if (Diagnostics is { } diagnostics)
-        {
-            strip.CountsText = DiffViewStrings.Format(DiffViewStrings.StatusCounts, diagnostics.Inserted, diagnostics.Deleted, diagnostics.Modified);
-            strip.ChangesText = CurrentChangeIndex >= 0
-                ? DiffViewStrings.Format(DiffViewStrings.StatusChangeOf, (CurrentChangeIndex + 1).ToString("N0", CultureInfo.CurrentCulture), ChangeCount.ToString("N0", CultureInfo.CurrentCulture))
-                : ChangeCount switch
-                {
-                    0 => DiffViewStrings.Get(DiffViewStrings.StatusNoChanges),
-                    1 => DiffViewStrings.Get(DiffViewStrings.StatusChangeOne),
-                    _ => DiffViewStrings.Format(DiffViewStrings.StatusChanges, ChangeCount.ToString("N0", CultureInfo.CurrentCulture)),
-                };
-            strip.BuildTimeText = DiffViewStrings.Format(DiffViewStrings.StatusBuildTime, diagnostics.BuildTime.TotalMilliseconds.ToString("F0", CultureInfo.CurrentCulture));
-        }
-        else
-        {
-            strip.CountsText = null;
-            strip.ChangesText = null;
-            strip.BuildTimeText = null;
-        }
-
-        List<string> options = [];
-        if (IgnoreWhitespace)
-        {
-            options.Add(DiffViewStrings.Get(DiffViewStrings.OptionIgnoreWhitespace));
-        }
-
-        if (IgnoreCase)
-        {
-            options.Add(DiffViewStrings.Get(DiffViewStrings.OptionIgnoreCase));
-        }
-
-        if (WordDiff == WordDiffMode.Off)
-        {
-            options.Add(DiffViewStrings.Get(DiffViewStrings.OptionWordDiffOff));
-        }
-        else if (WordDiff == WordDiffMode.Character)
-        {
-            options.Add(DiffViewStrings.Get(DiffViewStrings.OptionWordDiffCharacter));
-        }
-
-        if (ForceAlignment)
-        {
-            options.Add(DiffViewStrings.Get(DiffViewStrings.OptionForceAlignment));
-        }
-
-        strip.OptionsText = options.Count == 0 ? null : string.Join(" · ", options);
-        strip.FindText = FindStripText();
-        strip.CaretText = FocusedSide is null ? null : DiffViewStrings.Format(DiffViewStrings.StatusCaret, CaretLine, CaretColumn);
-
-        // The field, never the lazy getter. A refresh must not build a controller for a view
-        // that has left the tree — that is what re-armed the timer the detach had released.
-        // With no controller the getter would have built one reading exactly these defaults.
-        StatusController? status = _status;
-        strip.TransientText = status?.Text;
-        strip.TransientKind = status?.Kind ?? StatusKind.None;
-        strip.IsTransientDismissible = status?.IsDismissible ?? false;
-    }
-
-    private void OnStatusChanged(object? sender, EventArgs e)
-    {
-        UpdateStrip();
-    }
-
-    private void OnDismissRequested(object? sender, EventArgs e)
-    {
-        Status.Dismiss();
-    }
-
-    private void OnBannerActionClicked(object? sender, RoutedEventArgs e)
-    {
-        switch (BannerKind)
-        {
-            case DiffBannerKind.Error:
-                Retry();
-                break;
-            case DiffBannerKind.TooDifferentToAlign:
-                ForceAlign();
-                break;
-            default:
-                break;
-        }
-    }
-
     // ── Panes ──────────────────────────────────────────────────────────────────────────────
-
-    private void AttachPane(DiffPanePresenter? pane, DiffSide side)
-    {
-        if (pane is null)
-        {
-            return;
-        }
-
-        pane.Side = side;
-        pane.Document = side == DiffSide.Left ? LeftDocument : RightDocument;
-        pane.DiffDocument = Document;
-        pane.WordDiffLookup = WordDiffLookup;
-        pane.IsReadOnly = side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
-        // The other side's flag: a pane offers a copy arrow when the side it would copy to is
-        // editable, not when it is itself.
-        pane.CanCopyOut = side == DiffSide.Left ? !RightReadOnly : !LeftReadOnly;
-        pane.ModifiedLines = side == DiffSide.Left ? _leftModifiedLines : _rightModifiedLines;
-        pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
-        // The logger first: assigning the file name may install a grammar, which logs.
-        pane.Logger = _renderLogger;
-        pane.UseSyntaxHighlighting = UseSyntaxHighlighting;
-        pane.SyntaxFileName = SyntaxFileNameOf(side == DiffSide.Left ? LeftSource : RightSource);
-        ApplyDisplayOptions(pane);
-        ApplyPaneFont(pane);
-        // The left bar is hidden and the right one reflects both: after priming the extents are equal.
-        pane.VerticalScrollBarVisibility = side == DiffSide.Left ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
-        pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
-        pane.RenderFault += OnPaneRenderFault;
-        pane.CopyOutRequested += OnPaneCopyOutRequested;
-        pane.FoldExpandRequested += OnFoldExpandRequested;
-        pane.CopySelectionRequested += OnPaneCopySelectionRequested;
-        pane.ContextMenuRequested += OnPaneContextMenuRequested;
-        pane.TemplateApplied += OnPaneTemplateApplied;
-        pane.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
-        pane.TextArea.GotFocus += OnPaneGotFocus;
-        pane.TextArea.LostFocus += OnPaneLostFocus;
-    }
-
-    /// <summary>Runs <paramref name="action"/> over whichever panes the template has produced.</summary>
-    private void ForEachPane(Action<DiffPanePresenter> action)
-    {
-        if (_leftPane is not null)
-        {
-            action(_leftPane);
-        }
-
-        if (_rightPane is not null)
-        {
-            action(_rightPane);
-        }
-    }
-
-    private void ApplyDisplayOptions(DiffPanePresenter pane)
-    {
-        pane.ShowWhitespace = ShowWhitespace;
-        pane.ShowLineEndings = ShowLineEndings;
-        pane.TabWidth = TabWidth;
-    }
-
-    /// <summary>
-    /// The font, when this control names one: an unset size or family leaves the pane's own
-    /// theme in charge, so the local value is cleared rather than overwritten with a default.
-    /// </summary>
-    private void ApplyPaneFont(DiffPanePresenter pane)
-    {
-        if (double.IsNaN(PaneFontSize))
-        {
-            pane.ClearValue(FontSizeProperty);
-        }
-        else
-        {
-            pane.FontSize = PaneFontSize;
-        }
-
-        if (PaneFontFamily is { } family)
-        {
-            pane.FontFamily = family;
-        }
-        else
-        {
-            pane.ClearValue(FontFamilyProperty);
-        }
-    }
-
-    private void DetachParts()
-    {
-        foreach (DiffPanePresenter? pane in new[] { _leftPane, _rightPane })
-        {
-            if (pane is null)
-            {
-                continue;
-            }
-
-            pane.RenderFault -= OnPaneRenderFault;
-            pane.TemplateApplied -= OnPaneTemplateApplied;
-            pane.TextArea.Caret.PositionChanged -= OnCaretPositionChanged;
-            pane.TextArea.GotFocus -= OnPaneGotFocus;
-            pane.TextArea.LostFocus -= OnPaneLostFocus;
-        }
-
-        if (_statusStrip is not null)
-        {
-            _statusStrip.DismissRequested -= OnDismissRequested;
-        }
-
-        if (_bannerAction is not null)
-        {
-            _bannerAction.Click -= OnBannerActionClicked;
-        }
-
-        if (_gutter is not null)
-        {
-            _gutter.BlockClicked -= OnGutterBlockClicked;
-            _gutter.ResizeDragged -= OnGutterResizeDragged;
-            _gutter.ContextRequested -= OnConnectorContextRequested;
-        }
-
-        if (_leftHeader is not null)
-        {
-            _leftHeader.ContextRequested -= OnLeftHeaderContextRequested;
-        }
-
-        if (_rightHeader is not null)
-        {
-            _rightHeader.ContextRequested -= OnRightHeaderContextRequested;
-        }
-
-        if (_minimap is not null)
-        {
-            _minimap.JumpRequested -= OnMinimapJumpRequested;
-            _minimap.ContextRequested -= OnMinimapContextRequested;
-        }
-
-        if (_findBar is not null)
-        {
-            _findBar.QueryChanged -= OnFindBarQueryChanged;
-            _findBar.OptionsChanged -= OnFindBarOptionsChanged;
-            _findBar.NextRequested -= OnFindBarNextRequested;
-            _findBar.PreviousRequested -= OnFindBarPreviousRequested;
-            _findBar.CloseRequested -= OnFindBarCloseRequested;
-        }
-
-        _sync?.Dispose();
-        _sync = null;
-    }
-
-    private void OnPaneTemplateApplied(object? sender, TemplateAppliedEventArgs e)
-    {
-        TryWireScrollSync();
-    }
-
-    private void TryWireScrollSync()
-    {
-        if (_sync is not null || _leftPane?.PaneScrollViewer is not { } left || _rightPane?.PaneScrollViewer is not { } right)
-        {
-            return;
-        }
-
-        _sync = new ScrollSync(left, right) { SyncHorizontal = SyncHorizontalScroll };
-        left.ScrollChanged += OnPaneScrollChanged;
-        right.ScrollChanged += OnPaneScrollChanged;
-        UpdateHorizontalScrollBars();
-    }
-
-    private void OnPaneScrollChanged(object? sender, ScrollChangedEventArgs e)
-    {
-        if (e.ExtentDelta != default || e.ViewportDelta != default)
-        {
-            UpdateHorizontalScrollBars();
-        }
-
-        UpdateOverview();
-    }
-
-    private void OnLayoutUpdated(object? sender, EventArgs e)
-    {
-        UpdateOverview();
-    }
-
-    /// <summary>Feeds the gutter and the minimap the panes' row geometry and scroll position.</summary>
-    private void UpdateOverview()
-    {
-        if (_leftPane is null)
-        {
-            return;
-        }
-
-        double lineHeight = _leftPane.TextArea.TextView.DefaultLineHeight;
-        if (lineHeight <= 0)
-        {
-            return;
-        }
-
-        if (_gutter is not null)
-        {
-            _gutter.RowHeight = lineHeight;
-            _gutter.VerticalOffset = _leftPane.VerticalOffset;
-            _gutter.ContentOffset = _leftPane.TextArea.TextView.TranslatePoint(new Point(0, 0), _gutter)?.Y ?? 0;
-        }
-
-        if (_minimap is not null)
-        {
-            _minimap.ViewportStartRow = _leftPane.VerticalOffset / lineHeight;
-            _minimap.ViewportRowCount = _leftPane.ViewportHeight / lineHeight;
-        }
-    }
-
-    /// <summary>
-    /// Folds the model's unchanged runs, keeping <paramref name="contextRows"/> rows either side
-    /// of every change; <c>null</c> unfolds everything. Returns the projection now in force.
-    /// </summary>
-    internal RowProjection ApplyFolds(int? contextRows, int minimumFoldedRows = FoldPlan.DefaultMinimumFoldedRows)
-    {
-        _foldContextRows = contextRows;
-        _foldMinimumRows = minimumFoldedRows;
-        return RefreshFolds();
-    }
-
-    /// <summary>
-    /// Recomputes the folds for the current model and the runs the reader has expanded, and
-    /// applies them to the panes and the two surfaces outside them.
-    /// </summary>
-    private RowProjection RefreshFolds()
-    {
-        SideBySideDocument? document = Document;
-        IReadOnlyList<FoldedRun> planned = document is null || _foldContextRows is null
-            ? []
-            : [.. FoldPlan.For(document, _foldContextRows.Value, _foldMinimumRows)
-                          .Where(run => !_expandedFolds.Contains(run.FirstRow))];
-
-        _projection = RowProjection.Of(document?.Rows.Count ?? 0, planned);
-
-        // The line ranges come from the projection's own folds rather than from the plan. A run
-        // the projection declined is a run neither pane may collapse, and taking them from two
-        // different lists is how the panes would come to disagree.
-        foreach (DiffPanePresenter? pane in new[] { _leftPane, _rightPane })
-        {
-            if (pane is null)
-            {
-                continue;
-            }
-
-            List<(int First, int Last)> ranges = [];
-            if (document is not null)
-            {
-                for (int fold = 0; fold < _projection.FoldCount; fold++)
-                {
-                    if (FoldPlan.LinesOf(document, _projection.FoldAt(fold), pane.Side) is { } range)
-                    {
-                        ranges.Add(range);
-                    }
-                }
-            }
-
-            pane.SetCollapsedLines(ranges);
-        }
-
-        if (_gutter is not null)
-        {
-            _gutter.Projection = _projection;
-        }
-
-        if (_minimap is not null)
-        {
-            _minimap.Projection = _projection;
-        }
-
-        UpdateOverview();
-        RaiseFoldingCanExecuteChanged();
-        return _projection;
-    }
-
-    /// <summary>
-    /// The run the caret is on, which is the only run a keyboard can name: a row behind a
-    /// placeholder is not on screen and the caret cannot reach it, so what the caret can be on is
-    /// the placeholder's own line.
-    /// </summary>
-    private FoldedRun? FoldAtCaret()
-    {
-        // A caret is in exactly one pane; where nothing is focused, the left is the side whose
-        // line numbers the strip and the key map already speak of first.
-        DiffSide side = FocusedSide ?? DiffSide.Left;
-        if (Document is not { } document || Pane(side) is not { } pane)
-        {
-            return null;
-        }
-
-        int caretLine = pane.TextArea.Caret.Line;
-        for (int fold = 0; fold < _projection.FoldCount; fold++)
-        {
-            FoldedRun run = _projection.FoldAt(fold);
-            if (FoldPlan.LinesOf(document, run, side) is { } lines && lines.First - 1 == caretLine)
-            {
-                return run;
-            }
-        }
-
-        return null;
-    }
-
-    private bool CanExpandFoldAtCaret() => FoldAtCaret() is not null;
-
-    /// <summary>
-    /// Opens the run hiding <paramref name="modelRow"/>, if one is. Find walks to matches the
-    /// model has, and a match the reader is being taken to has to be a match they can see — the
-    /// alternative is a count that means something different once anything is folded.
-    /// </summary>
-    private void RevealRow(int modelRow)
-    {
-        // A match on a placeholder's own row is already on screen, so nothing needs opening.
-        if (!_projection.IsHidden(modelRow))
-        {
-            return;
-        }
-
-        ExpandFoldContaining(modelRow);
-    }
-
-    /// <summary>
-    /// Opens the run <paramref name="modelRow"/> belongs to, the placeholder's own row included —
-    /// which is the row a reader points at when they ask for the rows hidden <em>here</em>.
-    /// </summary>
-    private void ExpandFoldContaining(int modelRow)
-    {
-        int fold = _projection.FoldContaining(modelRow);
-        if (fold < 0)
-        {
-            return;
-        }
-
-        _expandedFolds.Add(_projection.FoldAt(fold).FirstRow);
-        RefreshFolds();
-    }
 
     /// <summary>
     /// The menu's own <see cref="DiffCommand.ExpandFold"/>: the run under the pointer rather than
@@ -3466,40 +2179,8 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         return new DelegateCommand(
-            () => ExpandFoldContaining(modelRow),
-            () => _projection.FoldContaining(modelRow) >= 0);
-    }
-
-    private void ExpandFoldAtCaret()
-    {
-        if (FoldAtCaret() is { } run)
-        {
-            _expandedFolds.Add(run.FirstRow);
-            RefreshFolds();
-        }
-    }
-
-    /// <summary>
-    /// A placeholder was clicked. The pane reports a line on its own side; which run that is is a
-    /// row range, so the fold is found by asking each taken fold what it collapses on that side.
-    /// </summary>
-    private void OnFoldExpandRequested(object? sender, int firstCollapsedLine)
-    {
-        if (sender is not DiffPanePresenter pane || Document is not { } document)
-        {
-            return;
-        }
-
-        for (int fold = 0; fold < _projection.FoldCount; fold++)
-        {
-            FoldedRun run = _projection.FoldAt(fold);
-            if (FoldPlan.LinesOf(document, run, pane.Side) is { } lines && lines.First == firstCollapsedLine)
-            {
-                _expandedFolds.Add(run.FirstRow);
-                RefreshFolds();
-                return;
-            }
-        }
+            () => _controller.ExpandFoldContaining(modelRow),
+            () => _controller.Projection.FoldContaining(modelRow) >= 0);
     }
 
     private void OnPaneCopyOutRequested(object? sender, int blockIndex)
@@ -3518,11 +2199,6 @@ public class SideBySideDiffView : TemplatedControl
         }
     }
 
-    private void OnGutterBlockClicked(object? sender, int blockIndex)
-    {
-        SetCurrentChange(blockIndex, scroll: true);
-    }
-
     /// <summary>
     /// A right-click on the connector. The block is the one the polygon under the pointer draws,
     /// from the same hit-test the left-click uses — not the block nearest the pointer's row,
@@ -3536,20 +2212,20 @@ public class SideBySideDiffView : TemplatedControl
     /// </remarks>
     private void OnConnectorContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (e.Handled || _gutter is null || Document is not { } model)
+        if (e.Handled || _controller.Gutter is null || Document is not { } model)
         {
             return;
         }
 
         // The gutter is not focusable, so every request that reaches it carries a pointer.
-        if (!e.TryGetPosition(_gutter, out Point point) || _gutter.PolygonAt(point) is not { } polygon)
+        if (!e.TryGetPosition(_controller.Gutter, out Point point) || _controller.Gutter.PolygonAt(point) is not { } polygon)
         {
             return;
         }
 
         ChangeBlock block = model.Blocks[polygon.BlockIndex];
-        int row = Math.Clamp(_gutter.RowAt(point.Y) ?? block.FirstRow, block.FirstRow, block.LastRow);
-        e.Handled = OpenMenu(_gutter, RowContext(DiffPaneRegion.ConnectorGutter, model, row, side: null, block), point);
+        int row = Math.Clamp(_controller.Gutter.RowAt(point.Y) ?? block.FirstRow, block.FirstRow, block.LastRow);
+        e.Handled = OpenMenu(_controller.Gutter, RowContext(DiffPaneRegion.ConnectorGutter, model, row, side: null, block), point);
     }
 
     /// <summary>
@@ -3563,19 +2239,19 @@ public class SideBySideDiffView : TemplatedControl
     /// </remarks>
     private void OnMinimapContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (e.Handled || _minimap is null || Document is not { } model || model.Rows.Count == 0)
+        if (e.Handled || _controller.Minimap is null || Document is not { } model || model.Rows.Count == 0)
         {
             return;
         }
 
-        if (!e.TryGetPosition(_minimap, out Point point))
+        if (!e.TryGetPosition(_controller.Minimap, out Point point))
         {
             return;
         }
 
-        int row = Math.Clamp(_minimap.RowForClick(point.Y), 0, model.Rows.Count - 1);
-        ChangeBlock? block = _leftPane?.Metadata.BlockAtRow(row);
-        e.Handled = OpenMenu(_minimap, RowContext(DiffPaneRegion.OverviewMap, model, row, _minimap.LaneAt(point.X), block), point);
+        int row = Math.Clamp(_controller.Minimap.RowForClick(point.Y), 0, model.Rows.Count - 1);
+        ChangeBlock? block = _controller.LeftPane?.Metadata.BlockAtRow(row);
+        e.Handled = OpenMenu(_controller.Minimap, RowContext(DiffPaneRegion.OverviewMap, model, row, _controller.Minimap.LaneAt(point.X), block), point);
     }
 
     /// <summary>
@@ -3684,127 +2360,6 @@ public class SideBySideDiffView : TemplatedControl
         e.Handled = OpenMenu(header, HeaderContextAt(side), pointer);
     }
 
-    private void OnGutterResizeDragged(object? sender, double delta)
-    {
-        if (_leftPane is null || _rightPane is null)
-        {
-            return;
-        }
-
-        double panes = _leftPane.Bounds.Width + _rightPane.Bounds.Width;
-        if (panes <= 0)
-        {
-            return;
-        }
-
-        SplitRatio = (_leftPane.Bounds.Width + delta) / panes;
-    }
-
-    /// <summary>
-    /// Moves the map between the panes grid's two <c>Auto</c> slots and tells it which of its own
-    /// edges now faces the panes. The empty slot takes no width, so the arrangement it is not in
-    /// costs nothing.
-    /// </summary>
-    private void ApplyMinimapPlacement()
-    {
-        if (_minimap is null)
-        {
-            return;
-        }
-
-        bool onLeft = MinimapPlacement == MinimapPlacement.Left;
-        Grid.SetColumn(_minimap, onLeft ? LeftMinimapColumn : RightMinimapColumn);
-        _minimap.MirrorEdges = onLeft;
-
-        // The header row has a slot at each end too, and the one over the map has to be exactly
-        // as wide as the map is — or the header stops lining up with the pane under it, which is
-        // the failure §6 has warned about since the gutter first moved.
-        double reserved = ShowMinimap ? DiffMinimap.MapWidth : 0;
-        if (_headerLeftSpacer is not null)
-        {
-            _headerLeftSpacer.Width = onLeft ? reserved : 0;
-        }
-
-        if (_headerRightSpacer is not null)
-        {
-            _headerRightSpacer.Width = onLeft ? 0 : reserved;
-        }
-    }
-
-    private void OnMinimapJumpRequested(object? sender, int row)
-    {
-        ScrollToRow(row);
-    }
-
-    private void ApplySplit()
-    {
-        foreach (Grid? grid in new[] { _headersGrid, _panesGrid })
-        {
-            if (grid is null || grid.ColumnDefinitions.Count <= RightPaneColumn)
-            {
-                continue;
-            }
-
-            grid.ColumnDefinitions[LeftPaneColumn].Width = new GridLength(SplitRatio, GridUnitType.Star);
-            grid.ColumnDefinitions[RightPaneColumn].Width = new GridLength(1 - SplitRatio, GridUnitType.Star);
-        }
-    }
-
-    private void SetCurrentChange(int index, bool scroll)
-    {
-        int clamped = ChangeCount == 0 ? -1 : Math.Clamp(index, -1, ChangeCount - 1);
-        SetAndRaise(CurrentChangeIndexProperty, ref _currentChangeIndex, clamped);
-        ChangeBlock? block = clamped < 0 || Document is null ? null : Document.Blocks[clamped];
-        foreach (DiffPanePresenter? pane in new[] { _leftPane, _rightPane })
-        {
-            if (pane is not null)
-            {
-                pane.CurrentBlock = block;
-            }
-        }
-
-        if (_gutter is not null)
-        {
-            _gutter.CurrentChangeIndex = clamped;
-        }
-
-        if (_minimap is not null)
-        {
-            _minimap.CurrentChangeIndex = clamped;
-        }
-
-        if (scroll && block is not null)
-        {
-            ScrollToRows(block.FirstRow, block.RowCount);
-        }
-
-        UpdateStrip();
-        RaiseNavigationCanExecuteChanged();
-    }
-
-    /// <summary>
-    /// Scrolls both panes so the rows sit at the centre of the viewport. Every <i>visible</i> row
-    /// is one line height once primed, so the rows are projected before they are multiplied.
-    /// </summary>
-    private void ScrollToRows(int firstRow, int rowCount)
-    {
-        if (_leftPane?.PaneScrollViewer is not { } viewer)
-        {
-            return;
-        }
-
-        double lineHeight = _leftPane.TextArea.TextView.DefaultLineHeight;
-        double viewport = viewer.Viewport.Height;
-        double extent = viewer.Extent.Height;
-        int firstVisible = _projection.VisibleRowOf(firstRow);
-        int endVisible = _projection.VisibleRowOf(Math.Max(firstRow, firstRow + rowCount - 1)) + 1;
-        double top = firstVisible * lineHeight;
-        double height = Math.Max(0, endVisible - firstVisible) * lineHeight;
-        double target = top - Math.Max(0, (viewport - height) / 2);
-        target = Math.Clamp(target, 0, Math.Max(0, extent - viewport));
-        viewer.Offset = new Vector(viewer.Offset.X, target);
-    }
-
     private void RaiseNavigationCanExecuteChanged()
     {
         _nextChange.RaiseCanExecuteChanged();
@@ -3885,7 +2440,7 @@ public class SideBySideDiffView : TemplatedControl
         }
 
         UpdateFindBar();
-        UpdateStrip();
+        _controller.UpdateStrip();
     }
 
     /// <summary>Selects the match in its own pane, focuses that pane, and centres its row in both.</summary>
@@ -3915,8 +2470,8 @@ public class SideBySideDiffView : TemplatedControl
             {
                 // The run first, then the scroll: a row that is still folded projects to its
                 // placeholder, and the pane would stop somewhere the match is not.
-                RevealRow(lines[match.Line].Row);
-                ScrollToRows(lines[match.Line].Row, 1);
+                _controller.RevealRow(lines[match.Line].Row);
+                _controller.ScrollToRows(lines[match.Line].Row, 1);
             }
         }
     }
@@ -4069,25 +2624,25 @@ public class SideBySideDiffView : TemplatedControl
             }
         }
 
-        if (_leftPane is not null)
+        if (_controller.LeftPane is not null)
         {
-            _leftPane.SearchMatches = left;
-            _leftPane.CurrentSearchMatch = null;
+            _controller.LeftPane.SearchMatches = left;
+            _controller.LeftPane.CurrentSearchMatch = null;
         }
 
-        if (_rightPane is not null)
+        if (_controller.RightPane is not null)
         {
-            _rightPane.SearchMatches = right;
-            _rightPane.CurrentSearchMatch = null;
+            _controller.RightPane.SearchMatches = right;
+            _controller.RightPane.CurrentSearchMatch = null;
         }
 
-        if (_minimap is not null)
+        if (_controller.Minimap is not null)
         {
-            _minimap.MatchRows = rows.Count == 0 ? null : rows;
+            _controller.Minimap.MatchRows = rows.Count == 0 ? null : rows;
         }
 
         UpdateFindBar();
-        UpdateStrip();
+        _controller.UpdateStrip();
         RaiseFindCanExecuteChanged();
     }
 
@@ -4230,92 +2785,183 @@ public class SideBySideDiffView : TemplatedControl
         CloseFind();
     }
 
-    /// <summary>
-    /// Both panes show a horizontal bar, or neither: a bar takes height from its viewport, and
-    /// the panes must keep equal viewports.
-    /// </summary>
-    private void UpdateHorizontalScrollBars()
+
+    // ── The controller's seam ──────────────────────────────────────────────────────────────
+
+    // Implemented explicitly, so none of it reaches this control's public surface. What the
+    // editor answers here is what a viewer would answer differently: every one of these is a
+    // verb it has, or a piece of state only editing produces.
+
+    /// <inheritdoc/>
+    TemplatedControl IDiffSurface.Control => this;
+
+    /// <inheritdoc/>
+    IPseudoClasses IDiffSurface.PseudoClasses => PseudoClasses;
+
+    /// <inheritdoc/>
+    bool IDiffSurface.SetAndRaise<T>(DirectPropertyBase<T> property, ref T field, T value)
     {
-        if (_leftPane is null || _rightPane is null)
+        return SetAndRaise(property, ref field, value);
+    }
+
+    /// <inheritdoc/>
+    void IDiffSurface.OnPartsAttached(TemplateAppliedEventArgs e)
+    {
+        _findBar = e.NameScope.Find<DiffFindBar>(FindBarPart);
+
+        if (_controller.Gutter is not null)
         {
-            return;
+            _controller.Gutter.ContextRequested += OnConnectorContextRequested;
         }
 
-        const double slack = 0.5;
-        bool needed = _leftPane.ExtentWidth > _leftPane.ViewportWidth + slack
-                      || _rightPane.ExtentWidth > _rightPane.ViewportWidth + slack;
-        ScrollBarVisibility visibility = needed ? ScrollBarVisibility.Visible : ScrollBarVisibility.Hidden;
-        if (_leftPane.HorizontalScrollBarVisibility != visibility)
+        if (_controller.LeftHeader is not null)
         {
-            _leftPane.HorizontalScrollBarVisibility = visibility;
+            _controller.LeftHeader.ContextRequested += OnLeftHeaderContextRequested;
         }
 
-        if (_rightPane.HorizontalScrollBarVisibility != visibility)
+        if (_controller.RightHeader is not null)
         {
-            _rightPane.HorizontalScrollBarVisibility = visibility;
+            _controller.RightHeader.ContextRequested += OnRightHeaderContextRequested;
+        }
+
+        if (_controller.Minimap is not null)
+        {
+            _controller.Minimap.ContextRequested += OnMinimapContextRequested;
+        }
+
+        if (_findBar is not null)
+        {
+            _findBar.QueryChanged += OnFindBarQueryChanged;
+            _findBar.OptionsChanged += OnFindBarOptionsChanged;
+            _findBar.NextRequested += OnFindBarNextRequested;
+            _findBar.PreviousRequested += OnFindBarPreviousRequested;
+            _findBar.CloseRequested += OnFindBarCloseRequested;
+        }
+
+        // Before the controller writes the strip, which reads this control's find lane.
+        UpdateFindBar();
+    }
+
+    /// <inheritdoc/>
+    void IDiffSurface.OnPartsDetaching()
+    {
+        if (_controller.Gutter is not null)
+        {
+            _controller.Gutter.ContextRequested -= OnConnectorContextRequested;
+        }
+
+        if (_controller.LeftHeader is not null)
+        {
+            _controller.LeftHeader.ContextRequested -= OnLeftHeaderContextRequested;
+        }
+
+        if (_controller.RightHeader is not null)
+        {
+            _controller.RightHeader.ContextRequested -= OnRightHeaderContextRequested;
+        }
+
+        if (_controller.Minimap is not null)
+        {
+            _controller.Minimap.ContextRequested -= OnMinimapContextRequested;
+        }
+
+        if (_findBar is not null)
+        {
+            _findBar.QueryChanged -= OnFindBarQueryChanged;
+            _findBar.OptionsChanged -= OnFindBarOptionsChanged;
+            _findBar.NextRequested -= OnFindBarNextRequested;
+            _findBar.PreviousRequested -= OnFindBarPreviousRequested;
+            _findBar.CloseRequested -= OnFindBarCloseRequested;
         }
     }
 
-    private void OnPaneRenderFault(object? sender, RenderFaultEventArgs e)
+    /// <inheritdoc/>
+    void IDiffSurface.OnPaneAttached(DiffPanePresenter pane, DiffSide side)
     {
-        // The pane has logged it under the Render category; here it becomes state.
-        if (State is DiffViewState.Ready or DiffViewState.Degraded)
+        pane.IsReadOnly = side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
+        // The other side's flag: a pane offers a copy arrow when the side it would copy to is
+        // editable, not when it is itself.
+        pane.CanCopyOut = side == DiffSide.Left ? !RightReadOnly : !LeftReadOnly;
+        pane.ModifiedLines = side == DiffSide.Left ? _leftModifiedLines : _rightModifiedLines;
+        pane.CopyOutRequested += OnPaneCopyOutRequested;
+        pane.CopySelectionRequested += OnPaneCopySelectionRequested;
+        pane.ContextMenuRequested += OnPaneContextMenuRequested;
+    }
+
+    /// <inheritdoc/>
+    void IDiffSurface.OnModelApplied()
+    {
+        ApplyFindResult(null);
+        RequestFind();
+    }
+
+    /// <inheritdoc/>
+    void IDiffSurface.OnSourceReplaced(DiffSide side, TextDocument document)
+    {
+        // A re-diff armed by an edit to the document being replaced describes text that is about
+        // to stop existing; the build the controller requests supersedes it anyway.
+        _reDiffTimer?.Dispose();
+        _reDiffTimer = null;
+
+        // The controller has not assigned the new document yet, so these still read the old one —
+        // which is the only moment its handlers can be taken off.
+        if (side == DiffSide.Left)
         {
-            SetState(DiffViewState.Degraded, e.Message);
-        }
-
-        Status.SetFailure(e.Message);
-        UpdateStrip();
-        RenderFault?.Invoke(this, e);
-    }
-
-    private void OnPaneGotFocus(object? sender, RoutedEventArgs e)
-    {
-        FocusedSide = ReferenceEquals(sender, _leftPane?.TextArea) ? DiffSide.Left : DiffSide.Right;
-        UpdateCaret();
-    }
-
-    private void OnPaneLostFocus(object? sender, RoutedEventArgs e)
-    {
-        if ((FocusedSide == DiffSide.Left && ReferenceEquals(sender, _leftPane?.TextArea))
-            || (FocusedSide == DiffSide.Right && ReferenceEquals(sender, _rightPane?.TextArea)))
-        {
-            FocusedSide = null;
-            UpdateCaret();
-        }
-    }
-
-    private void OnCaretPositionChanged(object? sender, EventArgs e)
-    {
-        UpdateCaret();
-    }
-
-    private void UpdateCaret()
-    {
-        DiffPanePresenter? pane = FocusedSide is { } side ? Pane(side) : null;
-        if (pane is null)
-        {
-            CaretLine = 0;
-            CaretColumn = 0;
+            _controller.LeftDocument.TextChanged -= OnLeftTextChanged;
+            _controller.LeftDocument.Changed -= OnLeftDocumentChanged;
+            _leftModifiedLines.Clear();
+            _leftEdited = false;
+            _leftDirty = false;
+            _leftStamp = StampOf(LeftSource);
+            document.TextChanged += OnLeftTextChanged;
+            document.Changed += OnLeftDocumentChanged;
         }
         else
         {
-            CaretLine = pane.TextArea.Caret.Line;
-            CaretColumn = pane.TextArea.Caret.Column;
+            _controller.RightDocument.TextChanged -= OnRightTextChanged;
+            _controller.RightDocument.Changed -= OnRightDocumentChanged;
+            _rightModifiedLines.Clear();
+            _rightEdited = false;
+            _rightDirty = false;
+            _rightStamp = StampOf(RightSource);
+            document.TextChanged += OnRightTextChanged;
+            document.Changed += OnRightDocumentChanged;
         }
-
-        // Which pane has focus is a header state as well as a caret: the accent says so where the
-        // caret cannot, having been scrolled away.
-        if (_leftHeader is not null)
-        {
-            _leftHeader.IsPaneFocused = FocusedSide == DiffSide.Left;
-        }
-
-        if (_rightHeader is not null)
-        {
-            _rightHeader.IsPaneFocused = FocusedSide == DiffSide.Right;
-        }
-
-        UpdateStrip();
     }
+
+    /// <inheritdoc/>
+    void IDiffSurface.OnChangeSetMoved() => RaiseNavigationCanExecuteChanged();
+
+    /// <inheritdoc/>
+    void IDiffSurface.OnFoldsChanged() => RaiseFoldingCanExecuteChanged();
+
+    /// <inheritdoc/>
+    bool IDiffSurface.IsDirty(DiffSide side) => IsDirty(side);
+
+    /// <inheritdoc/>
+    string? IDiffSurface.FindStripText() => FindStripText();
+
+    /// <inheritdoc/>
+    bool IDiffSurface.IsEdited(DiffSide side) => IsEdited(side);
+
+    /// <inheritdoc/>
+    void IDiffSurface.OnDocumentReplaced(DiffSide side, TextDocument oldValue, TextDocument newValue)
+    {
+        // The storage is the controller's and the notification is this type's: a DirectProperty
+        // registered against this control is not in a sibling's registry, so SetAndRaise cannot
+        // reach across and the change is raised here instead.
+        RaisePropertyChanged(
+            side == DiffSide.Left ? LeftDocumentProperty : RightDocumentProperty,
+            oldValue,
+            newValue);
+    }
+
+    /// <inheritdoc/>
+    void IDiffSurface.RaiseBuildCompleted(DiffBuildCompletedEventArgs e) => BuildCompleted?.Invoke(this, e);
+
+    /// <inheritdoc/>
+    void IDiffSurface.RaiseBuildFailed(DiffBuildFailedEventArgs e) => BuildFailed?.Invoke(this, e);
+
+    /// <inheritdoc/>
+    void IDiffSurface.RaiseRenderFault(RenderFaultEventArgs e) => RenderFault?.Invoke(this, e);
 }

@@ -65,7 +65,8 @@ commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, u
 
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
-`IDiffSurface`, on `feat/the-viewer-beside-the-editor`, pushed, 681 green. **Plan 00023 phase 1 is
+`IDiffSurface`, on `feat/the-viewer-beside-the-editor`, rebased onto the `main` that carries plans
+00024 and 00025, 623 green. **Plan 00023 phase 1 is
 done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every
 CI job passes, on all three platforms.
 
@@ -149,9 +150,15 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done and pushed:
-   `DiffBuildController` (1,872 lines) and `IDiffSurface` (17 members, not the ~15 the plan
-   estimated), 681 green. Phase 2 is `DiffViewer` itself, and it **no longer gates the release**.
+4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done: `DiffBuildController` and
+   `IDiffSurface` (17 members, not the ~15 the plan estimated), rebased across plans 00024 and 00025
+   with what that carried recorded in `DECISIONS.md` — 623 green, main's 621 and the surface gate's
+   two. Phase 2 is `DiffViewer` itself, and it **no longer gates the release**. It arrives owing three
+   things to the gates: the demo hosts one or `AccessibilityCoverageTests.Excluded` names it with a
+   reason, per plan 00025; the runtime walk puts its interactive parts on screen, per plan 00025; and
+   `TemplatePartTests` sees its parts — the controller looks them up by `SideBySideDiffView`'s
+   constants, so XQ1003 checks a second host's theme only against the parts that host declares
+   itself, and a `DiffViewer` declaring none arrives as a new skip.
    The viewer still has no find — re-confirmed 2026-09-22 rather than superseded — and **phase 4's
    hosting guide must name that gap outright**, so a host wanting read-only side-by-side with search
    meets documentation rather than silence.
