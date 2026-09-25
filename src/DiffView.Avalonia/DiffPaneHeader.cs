@@ -41,7 +41,7 @@ public class DiffPaneHeader : TemplatedControl
     /// <summary>Creates a header with its compiled theme merged into its own resources.</summary>
     public DiffPaneHeader()
     {
-        Resources.MergedDictionaries.Add(new SideBySideDiffViewTheme());
+        Resources.MergedDictionaries.Add(new DiffPaneHeaderTheme());
         UpdatePseudoClasses();
     }
 

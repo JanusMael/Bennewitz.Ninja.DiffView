@@ -3,9 +3,10 @@
     the control into its own resources, so the structure never depends on a host include and the
     merge is trim-safe. It is SideBySideDiffView's template without the find bar: the headers, the
     banner, the panes with the connector gutter and the overview map, and the status strip. The
-    headers and the strip carry their own themes from SideBySideDiffView.axaml, which each of them
-    merges itself. Every brush is a DiffView.* token from the host's DiffView.axaml include; no
-    host theme key is referenced.
+    headers and the strip carry their own themes, DiffPaneHeader.axaml and DiffStatusStrip.axaml,
+    which each of them merges itself; nothing in the viewer's tree carries the find bar's. Every
+    brush is a DiffView.* token from the host's DiffView.axaml include; no host theme key is
+    referenced.
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
