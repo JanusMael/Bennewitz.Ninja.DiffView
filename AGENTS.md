@@ -453,16 +453,14 @@ why.
   right at real size, in a real window, at the real DPI — which is what Windows and macOS runs are
   still owed for.
 
-- **An Avalonia menu popup is its own X window**, override-redirect and unnamed, so a grab of the
-  main window does not contain it. To drive a menu: click the menu button, find the new large
-  unnamed child of the root in `xwininfo -root -children`, grab *that* to read the item positions,
-  then click at the popup's screen origin plus the item's offset. Keyboard accelerators
-  (`alt+v`, then the item's letter) did **not** work through `xdotool` here; clicking did.
-- The demo's View menu is taller than its popup and scrolls, so an item below the fold cannot be
-  clicked from the first grab. `xdotool click 5` with the pointer over the popup scrolls it; grab
-  again afterwards, because every position has moved. **New demo items belong in a submenu** for
-  the same reason — a submenu is one more row here and its own popup to grab, where four more
-  rows push something else off the end.
+- **Driving a menu, a tooltip or an accelerator with `xdotool` is XamlQuality's to document**, and it
+  does: `docs/avalonia-gotchas.md` in `JanusMael/Bennewitz.Ninja.XamlQuality`, under *Linux platform
+  integration*, the entry *Driving an Avalonia app with `xdotool`: a menu is its own X window, a
+  tooltip never appears, and accelerators do not arrive* — how to find and grab a menu's popup, scroll
+  it and grab again, and why a click arrives where hover and an accelerator do not.
+- **New demo items belong in a submenu.** The demo's View menu is already taller than its popup and
+  scrolls, and a submenu is one more row here and its own popup to grab, where four more rows push
+  something else off the end.
 
 ### When the whole session is wedged rather than not presenting
 
@@ -512,13 +510,10 @@ Both cost time on **2026-09-13**, driving plan 00014 phase 4.
 
 ### Tooltips cannot be driven from here
 
-`xdotool mousemove` puts the pointer where you ask — a captured frame shows the cursor on the target
-— but **no tooltip ever appears**, because synthetic motion does not produce the dwell state
-Avalonia's tooltip service waits on. Same class as the accelerator finding above: clicks reach the
-app, hover does not.
-
-So a tooltip is judged from the headless tests that assert its text, never from a frame. Do not
-record a by-hand pass as having covered tooltip layout in a locale; nothing covers that yet.
+No tooltip appears under synthetic pointer motion — the XamlQuality entry cited above records the
+measurement. So a tooltip is judged from the headless tests that assert its text, never from a
+frame. Do not record a by-hand pass as having covered tooltip layout in a locale; nothing covers that
+yet.
 
 ### Driving a locale
 
