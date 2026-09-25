@@ -2897,6 +2897,9 @@ does not compile, and the two mutations that edit the moved code report `no-op`.
   `PROGRESS.md`'s *Resume* records — and it went to XamlQuality the same day.
 - The harness prints a build error's whole line — a 140-character cut kept the path and lost the
   cause — and `AGENTS.md` states its rebuild-on-exit once rather than twice.
+- **Merged by rebase**, because `main`'s ruleset allows only squash and rebase and a squash would
+  have folded the phases into one commit. GitHub's rebase writes new SHAs, so `PROGRESS.md` cites
+  the commits as they are on `main`, while PR #1's description cites the branch's.
 
 **How it was reached: twelve drafts, each reviewed adversarially**, and every review found something
 the draft adopted, or guarded with, that could not fire. The twelfth, with its review's findings

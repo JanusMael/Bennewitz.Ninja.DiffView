@@ -8,10 +8,9 @@ workflow written dormant in plan 00018 found **three defects that had been green
 twenty-three plans**. Everything below the fold is still true; what changed is that "green" now
 means something it did not mean before, because it is no longer a statement about one machine.
 
-**`main` carries plan 00024 phase 1**, and is pushed. `dotnet build DiffView.slnx -warnaserror` is
-clean. ⚠ **The suite is 679 on `main` and 621 on the plan-00025 branch** — that branch removes
-`tests/ThemeAudit.Tests` along with the tool, so a smaller number there is correct and merging makes
-`main` 621.
+**`main` carries plan 00025**, merged from PR #1 on 2026-09-24, and is pushed. `dotnet build
+DiffView.slnx -warnaserror` is clean. The suite is **621** — smaller than the 679 it was, because
+plan 00025 removed `tests/ThemeAudit.Tests` along with the tool.
 
 | Defect | Where | State |
 |---|---|---|
@@ -65,8 +64,8 @@ endings either. Reported to XamlQuality on 2026-09-24 with that evidence.
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
 `IDiffSurface`, on `feat/the-viewer-beside-the-editor`, pushed, 681 green. **Plan 00023 phase 1 is
-done.** **Plan 00024 is approved and phase 1 has landed on `main`.** **Plan 00025 is complete on PR
-#1** and waits to merge.
+done.** **Plan 00024 is approved and phase 1 has landed on `main`.** **Plan 00025 is complete and
+merged** (PR #1, 2026-09-24).
 
 ### What ships
 
@@ -122,19 +121,6 @@ file header says and *Decisions* records; the parity gate proves keys and placeh
 wording.
 
 ### Open
-
-0. **Plan 00025 is complete on PR #1 and waits to merge** — Brian's call. The pull request carries
-   it whole, one commit per phase plus the mutation harness and this record; *Plan 00025 phases*
-   below has them. `Build & Test (ubuntu-latest)` agrees, which is the plan's done criterion, and so
-   do the culture leg and the trim check. Windows and macOS stay red on defect C, and Windows also on
-   defect A's remainder (item 1), so two of the five required checks are red and the merge takes the
-   admin bypass. Renaming and re-describing the pull request is the last step, now its content is
-   complete.
-
-   ⭐ **`scripts/mutate-gates.{cs,sh,ps1}` proves every assertion in the gate files able to fail
-   first.** A full run takes about five minutes and is owed after any change to a gate file, a gated
-   subject or a pin; CI runs only its `--guards` half, which passed on its first run. `AGENTS.md` §5
-   records what the harness refuses to do and why.
 
 0b. **Plan 00026 — an agent cannot drive this library — is opened by measurement and unwritten.**
    All eight controls this repository ships return `NoneAutomationPeer` with `ControlType` `None`
@@ -248,8 +234,7 @@ wording.
     restore, so CI and any fresh checkout stay dependent on a folder here, and the gap widens with
     each AppServices release.
 
-Items 3, 6, 9 and 10 are Brian's own, and so is merging PR #1. Nothing else is in flight; new work
-needs a new plan under
+Items 3, 6, 9 and 10 are Brian's own. Nothing else is in flight; new work needs a new plan under
 `plans/`.
 
 ### Running it
@@ -265,10 +250,13 @@ a side editable so a run no longer opens with a menu drive, `--unified` opens th
 **`scripts/catch-crash.sh` judges a test run.** `--check <log>` reads a captured one; with no
 argument it re-runs the suite until it catches an abort and keeps that log. It exists because a
 host that dies mid-run prints `Failed!` with `failed: 0` and a short total, which any grep reads
-as success. `--expect <total>` makes a short total a failure too. Take the total from
-`dotnet test --solution DiffView.slnx --no-build --list-tests` rather than from here: a written number
-is wrong in both directions the moment a test is added. The plan-00025 branch adds `--expect auto`,
-which reads it the same way.
+as success. **`--expect auto`** makes a short total a failure too: it reads the suite's size from
+`dotnet test --list-tests` against the current build, so no number is written here — a written one
+is wrong in both directions the moment a test is added.
+
+**`scripts/mutate-gates.sh` proves the static-analysis gates able to fail.** A full run takes about
+five minutes and is owed after any change to a gate file, a gated subject or a pin; CI runs only its
+`--guards` half. `AGENTS.md` §5 records what it refuses to do and why.
 
 The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:
@@ -550,14 +538,14 @@ either.
 
 | Phase | Size | Status | Notes |
 |---|---|---|---|
-| 0 The pin | S | done — `c8adb41` | `XamlQuality` `2026.3.920` → `2026.3.924`; `docs/theme-audit.md` regenerated, the ClaudeForge row at the predicted `b7ea0ec438c5`; `.gitignore` ignores everything under `reference/` but its three versioned files. Suite 613 |
-| 1 The a11y gate | M | done — `21e3286` | `XQ1002` over an element set derived from the assembly, one adopted instance for findings and per-name coverage, the markup cross-check, both subjects floored and accounted, and the runtime walk over four states; the header automation names in all eight locales; the demo's menu bar named. `docs/theme-audit.md` regenerated a second time, for the two themes' new bindings. Suite 615 |
-| 2 Template parts | XS | done — `6a53c1d` | `XQ1003`, 34 inspected against a floor of 20, and the expected `Skipped` pair. Suite 616 |
-| 2b Fixed grid slots | XS | done — `409963b` | `XQ1004`, 22 inspected against a floor of 12, its `Skipped` guard marked `inert-at-pin`. Suite 617 |
-| 3 Surface and layering | S | done — `3c51ac1` | `AQ1002 ["DiffPlex"]`, `AQ1003 ["Avalonia"]`, the nuspec dependency gate, and `AssemblyQuality 2026.3.922`. Suite 620 |
-| 4 `AQ1001` | S | done — `4ae24a8` | The token before the options in `Build` and `Find` — breaking — across 71 call sites in 17 files, and the gate with its standing control. Suite 621 |
-| The mutation harness | — | done — `fb0d601` | `scripts/mutate-gates.{cs,sh,ps1}`, `scripts/xq1004-skips.{cs,sh,ps1}`, `catch-crash --expect auto`, the concurrent pipe reads, CI's `--guards` step and `AGENTS.md` §5 |
-| 5 The record | S | done | This file, `DECISIONS.md` and `CHANGELOG.md` |
+| 0 The pin | S | done — `eb711be` | `XamlQuality` `2026.3.920` → `2026.3.924`; `docs/theme-audit.md` regenerated, the ClaudeForge row at the predicted `b7ea0ec438c5`; `.gitignore` ignores everything under `reference/` but its three versioned files. Suite 613 |
+| 1 The a11y gate | M | done — `2499b7e` | `XQ1002` over an element set derived from the assembly, one adopted instance for findings and per-name coverage, the markup cross-check, both subjects floored and accounted, and the runtime walk over four states; the header automation names in all eight locales; the demo's menu bar named. `docs/theme-audit.md` regenerated a second time, for the two themes' new bindings. Suite 615 |
+| 2 Template parts | XS | done — `2e6f046` | `XQ1003`, 34 inspected against a floor of 20, and the expected `Skipped` pair. Suite 616 |
+| 2b Fixed grid slots | XS | done — `707dde4` | `XQ1004`, 22 inspected against a floor of 12, its `Skipped` guard marked `inert-at-pin`. Suite 617 |
+| 3 Surface and layering | S | done — `afeb954` | `AQ1002 ["DiffPlex"]`, `AQ1003 ["Avalonia"]`, the nuspec dependency gate, and `AssemblyQuality 2026.3.922`. Suite 620 |
+| 4 `AQ1001` | S | done — `f99aa4d` | The token before the options in `Build` and `Find` — breaking — across 71 call sites in 17 files, and the gate with its standing control. Suite 621 |
+| The mutation harness | — | done — `2b5d468` | `scripts/mutate-gates.{cs,sh,ps1}`, `scripts/xq1004-skips.{cs,sh,ps1}`, `catch-crash --expect auto`, the concurrent pipe reads, CI's `--guards` step and `AGENTS.md` §5 |
+| 5 The record | S | done — `b938fb4` | This file, `DECISIONS.md` and `CHANGELOG.md` |
 
 ## Plan 00025 verification
 
@@ -569,6 +557,7 @@ either.
 | `Build & Test (ubuntu-latest)` agrees | Yes, 621 of 621, and so do `Culture Leg (de-DE)` and `Trim Check`. Locally the suite passed in `en-US` and `de-DE` alike |
 | Windows and macOS | Red, as the plan expected, on defect C's 66 — and Windows on one more: defect A's CRLF remainder, which this plan's first CI run found |
 | The transcription is faithful | The pushed tip differs from the scratch branch the phases were proven on only in `main`'s own records, this file's phase marker, one folded `AGENTS.md` statement, and the harness printing a build error's whole line |
+| Merged | Rebase-merged by admin on 2026-09-24 — `main`'s ruleset allows only squash and rebase, and two required checks are red — so each phase is its own commit on `main`; the merged tree is the pull request's plus `main`'s own §9 commit, and nothing else |
 
 ## Plan 00024 phases
 
