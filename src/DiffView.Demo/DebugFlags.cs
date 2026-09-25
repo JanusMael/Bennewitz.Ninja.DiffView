@@ -11,6 +11,19 @@ internal enum DemoTheme
     Simple,
 }
 
+/// <summary>Which of the library's three controls the demo puts on screen.</summary>
+internal enum DemoView
+{
+    /// <summary><see cref="SideBySideDiffView"/>, the editor.</summary>
+    SideBySide,
+
+    /// <summary><see cref="InlineDiffView"/>, the unified view.</summary>
+    Unified,
+
+    /// <summary><see cref="DiffViewer"/>, the read-only viewer.</summary>
+    Viewer,
+}
+
 /// <summary>
 /// Command-line flags for the demo. Two-phase, in ClaudeForge's order: <see cref="Parse"/> runs
 /// before the logging pipeline exists and emits nothing; <see cref="LogSummary"/> runs after it
@@ -32,8 +45,12 @@ internal static class DebugFlags
     /// <summary>File to open in the right pane. <c>--right &lt;path&gt;</c>.</summary>
     public static string? RightPath { get; private set; }
 
-    /// <summary>Start in the unified (inline) view rather than side by side. <c>--unified</c>.</summary>
-    public static bool Unified { get; private set; }
+    /// <summary>
+    /// The view the demo starts in: side by side by default, the unified view with <c>--unified</c>,
+    /// the read-only viewer with <c>--viewer</c>. One choice, as the View menu's Control submenu is;
+    /// given both flags, the last one wins and a warning says so.
+    /// </summary>
+    public static DemoView View { get; private set; } = DemoView.SideBySide;
 
     /// <summary>
     /// Which sides start editable: <c>left</c>, <c>right</c> or <c>both</c>.
@@ -80,6 +97,8 @@ internal static class DebugFlags
     /// <summary>Parses <paramref name="args"/>. Emits no log lines; problems are deferred to <see cref="LogSummary"/>.</summary>
     public static void Parse(string[] args)
     {
+        DemoView? chosenView = null;
+
         // Index-based loop: two-token flags consume their value by advancing i.
         for (int i = 0; i < args.Length; i++)
         {
@@ -130,7 +149,10 @@ internal static class DebugFlags
 
                     break;
                 case "--unified":
-                    Unified = true;
+                    ChooseView(ref chosenView, DemoView.Unified);
+                    break;
+                case "--viewer":
+                    ChooseView(ref chosenView, DemoView.Viewer);
                     break;
                 case "--edit":
                     if (TryTakeValue(args, ref i, flag, out string? sides))
@@ -199,8 +221,8 @@ internal static class DebugFlags
 
         Deferred.Clear();
         Log.Information(
-            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} unified={Unified} edit={Edit} culture={Culture} level={Level}",
-            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", Unified, EditSummary, Culture?.Name ?? "(machine)", MinimumLevel);
+            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} view={View} edit={Edit} culture={Culture} level={Level}",
+            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", View, EditSummary, Culture?.Name ?? "(machine)", MinimumLevel);
     }
 
     /// <summary>Restores every flag to its default. Test cleanup hook.</summary>
@@ -210,11 +232,27 @@ internal static class DebugFlags
         Variant = "default";
         LeftPath = null;
         RightPath = null;
-        Unified = false;
+        View = DemoView.SideBySide;
         EditLeft = false;
         EditRight = false;
+        Culture = null;
         MinimumLevel = LogEventLevel.Information;
         Deferred.Clear();
+    }
+
+    /// <summary>
+    /// Records a view flag. The two view flags are one choice, so a second replaces the first rather
+    /// than combining with it, and the deferred warning names the view the demo starts in.
+    /// </summary>
+    private static void ChooseView(ref DemoView? chosen, DemoView view)
+    {
+        if (chosen is { } earlier && earlier != view)
+        {
+            Deferred.Add($"Both --unified and --viewer given; the last one wins, so the demo starts in the {view} view.");
+        }
+
+        chosen = view;
+        View = view;
     }
 
     private static bool TryTakeValue(string[] args, ref int index, string flag, out string value)

@@ -4,10 +4,11 @@
 #   scripts/run-demo.sh                          # a pair with plenty of changes
 #   scripts/run-demo.sh LEFT RIGHT               # your own pair
 #   scripts/run-demo.sh --unified                # the unified view instead
+#   scripts/run-demo.sh --viewer                 # the read-only viewer instead
 #   scripts/run-demo.sh --variant Dark LEFT RIGHT
 #
 # Anything this script does not recognise is passed straight to the demo, whose own flags are
-# --left, --right, --theme, --variant, --unified and --log-level.
+# --left, --right, --theme, --variant, --unified, --viewer, --edit, --culture and --log-level.
 set -eu
 
 here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -33,6 +34,7 @@ echo "left  $left"
 echo "right $right"
 echo
 echo "Things to try:"
+echo "  View → Control               the editor, the unified view or the read-only viewer"
 echo "  View → Show overview map     turns the two-lane map beside the panes on and off"
 echo "  drag the box on the map      scrolls continuously; a click anywhere else jumps"
 echo "  scroll wheel over the map    scrolls the panes"

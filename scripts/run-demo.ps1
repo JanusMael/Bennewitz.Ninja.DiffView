@@ -7,10 +7,11 @@ Runs the DiffView demo on a pair of files, for looking at the control by hand.
 ./scripts/run-demo.ps1
 ./scripts/run-demo.ps1 -Left src/A.cs -Right src/B.cs
 ./scripts/run-demo.ps1 -Extra '--variant','Dark'
+./scripts/run-demo.ps1 -Extra '--viewer'
 
 .NOTES
-The demo's own flags are --left, --right, --theme, --variant, --unified and --log-level; pass any
-of them through -Extra.
+The demo's own flags are --left, --right, --theme, --variant, --unified, --viewer, --edit, --culture
+and --log-level; pass any of them through -Extra.
 #>
 [CmdletBinding()]
 param(
@@ -32,6 +33,7 @@ Write-Host "left  $Left"
 Write-Host "right $Right"
 Write-Host ''
 Write-Host 'Things to try:'
+Write-Host '  View -> Control               the editor, the unified view or the read-only viewer'
 Write-Host '  View -> Show overview map     turns the two-lane map beside the panes on and off'
 Write-Host '  drag the box on the map       scrolls continuously; a click anywhere else jumps'
 Write-Host '  scroll wheel over the map     scrolls the panes'

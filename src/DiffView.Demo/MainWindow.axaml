@@ -40,8 +40,17 @@
         <MenuItem x:Name="ShowContext" Header="Show differences with _context" ToggleType="Radio" GroupName="folding"
                   Click="OnShowContext" AutomationProperties.Name="Fold the matching runs but keep three rows around every change" />
         <Separator />
-        <MenuItem x:Name="UnifiedView" Header="_Unified (inline) view" ToggleType="CheckBox"
-                  Click="OnToggleUnifiedView" AutomationProperties.Name="Show the comparison unified in one pane" />
+        <!-- Which of the three controls is on screen: one choice, so no two switches can disagree
+             about it, and a submenu rather than three more rows in a menu already taller than most
+             windows. -->
+        <MenuItem Header="_Control" AutomationProperties.Name="Which control the demo hosts">
+          <MenuItem x:Name="EditorView" Header="_Side by side, editable" ToggleType="Radio" GroupName="control"
+                    Click="OnChooseView" AutomationProperties.Name="Host the side-by-side view, which edits, copies and finds" />
+          <MenuItem x:Name="UnifiedView" Header="_Unified (inline)" ToggleType="Radio" GroupName="control"
+                    Click="OnChooseView" AutomationProperties.Name="Show the comparison unified in one pane" />
+          <MenuItem x:Name="ViewerView" Header="Side by side, read-only _viewer" ToggleType="Radio" GroupName="control"
+                    Click="OnChooseView" AutomationProperties.Name="Host the read-only viewer: two panes, with no find, no editing and no menus" />
+        </MenuItem>
         <MenuItem x:Name="ShowMinimap" Header="Show overview _map" ToggleType="CheckBox" IsChecked="True"
                   Click="OnToggleShowMinimap" AutomationProperties.Name="Show the two-lane overview map beside the panes" />
         <MenuItem x:Name="MinimapOnLeft" Header="Overview map on the le_ft" ToggleType="CheckBox"
@@ -122,11 +131,12 @@
       <TextBlock x:Name="StatusText" FontSize="12" />
     </Border>
 
-    <!-- Both views, one showing: only the one on screen carries the sources, so the other
-         neither builds nor holds a model. -->
+    <!-- All three views, one showing: only the one on screen carries the sources, so the others
+         neither build nor hold a model. -->
     <Panel>
       <dv:SideBySideDiffView x:Name="Diff" AutomationProperties.Name="Side-by-side diff" />
       <dv:InlineDiffView x:Name="Unified" IsVisible="False" AutomationProperties.Name="Unified diff" />
+      <dv:DiffViewer x:Name="Viewer" IsVisible="False" AutomationProperties.Name="Read-only diff viewer" />
     </Panel>
   </DockPanel>
 </Window>

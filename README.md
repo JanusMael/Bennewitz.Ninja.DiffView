@@ -97,10 +97,15 @@ Run the demo under a different theme or variant:
 dotnet run --project src/DiffView.Demo -- --theme fluent --variant dark
 ```
 
-Open two files in the unified view, which View → Unified (inline) view also switches to:
+Open two files in the unified view, or in the read-only viewer — View → Control switches between
+those two and the side-by-side editor:
 
 ```bash
 dotnet run --project src/DiffView.Demo -- --unified --left one.cs --right two.cs
+```
+
+```bash
+dotnet run --project src/DiffView.Demo -- --viewer --left one.cs --right two.cs
 ```
 
 ## Releasing

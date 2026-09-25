@@ -34,10 +34,13 @@ public sealed partial class MainWindow : Window
         Unified.BuildFailed += (_, _) => UpdateStatus();
         Unified.RenderFault += (_, _) => UpdateStatus();
 
-        // --unified starts in the unified view; the menu item is the same switch.
-        UnifiedView.IsChecked = DebugFlags.Unified;
-        Unified.IsVisible = DebugFlags.Unified;
-        Diff.IsVisible = !DebugFlags.Unified;
+        Viewer.LoggerFactory = DemoLogging.Factory;
+        Viewer.BuildCompleted += (_, _) => UpdateStatus();
+        Viewer.BuildFailed += (_, _) => UpdateStatus();
+        Viewer.RenderFault += (_, _) => UpdateStatus();
+
+        // --unified or --viewer starts in that view; the Control submenu is the same choice.
+        ShowView(DebugFlags.View);
 
         // --edit left|right|both starts a side editable, through the same two menu items, so
         // there is one switch per side rather than a flag and a menu that can disagree. The
@@ -50,8 +53,8 @@ public sealed partial class MainWindow : Window
         RefreshGestureLabels();
 
         // A host's own entry, through the amend shape: inserted after the control's copy items so
-        // that its position is something the demo can be looked at to check. Both views, because
-        // the seam is the same one on each.
+        // that its position is something the demo can be looked at to check. Both views that have
+        // menus, because the seam is the same one on each; the viewer opens none to amend.
         Diff.PaneContextMenuOpening += OnPaneContextMenuOpening;
         Unified.PaneContextMenuOpening += OnPaneContextMenuOpening;
         Diff.HeaderContextMenuOpening += OnHeaderContextMenuOpening;
@@ -95,25 +98,63 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Hands the sources to the view that is on screen and takes them away from the other, so
-    /// only one of the two builds, holds a model and keeps two documents alive.
+    /// Hands the sources to the view that is on screen and takes them away from the others, so
+    /// only one of the three builds, holds a model and keeps two documents alive. The views off
+    /// screen are emptied first, so no moment has two of them holding the sources.
     /// </summary>
     private void ApplySources()
     {
-        if (UnifiedView.IsChecked)
+        DemoView view = CurrentView;
+        if (view != DemoView.SideBySide)
         {
             Diff.LeftSource = null;
             Diff.RightSource = null;
-            Unified.LeftSource = _left;
-            Unified.RightSource = _right;
         }
-        else
+
+        if (view != DemoView.Unified)
         {
             Unified.LeftSource = null;
             Unified.RightSource = null;
-            Diff.LeftSource = _left;
-            Diff.RightSource = _right;
         }
+
+        if (view != DemoView.Viewer)
+        {
+            Viewer.LeftSource = null;
+            Viewer.RightSource = null;
+        }
+
+        switch (view)
+        {
+            case DemoView.Unified:
+                Unified.LeftSource = _left;
+                Unified.RightSource = _right;
+                break;
+            case DemoView.Viewer:
+                Viewer.LeftSource = _left;
+                Viewer.RightSource = _right;
+                break;
+            default:
+                Diff.LeftSource = _left;
+                Diff.RightSource = _right;
+                break;
+        }
+    }
+
+    /// <summary>The view on screen, read off the Control submenu, which is the one place it is kept.</summary>
+    private DemoView CurrentView =>
+        UnifiedView.IsChecked ? DemoView.Unified
+        : ViewerView.IsChecked ? DemoView.Viewer
+        : DemoView.SideBySide;
+
+    /// <summary>Ticks one view's entry in the Control submenu and puts that view, and only it, on screen.</summary>
+    private void ShowView(DemoView view)
+    {
+        EditorView.IsChecked = view == DemoView.SideBySide;
+        UnifiedView.IsChecked = view == DemoView.Unified;
+        ViewerView.IsChecked = view == DemoView.Viewer;
+        Diff.IsVisible = view == DemoView.SideBySide;
+        Unified.IsVisible = view == DemoView.Unified;
+        Viewer.IsVisible = view == DemoView.Viewer;
     }
 
     private PaneSource LoadSource(string? path, string fixtureFileName)
@@ -225,22 +266,23 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Swaps the two views over. The options travel with the switch, and only the view on screen
-    /// keeps the sources, so nothing is built twice.
+    /// Puts the chosen view on screen. The options travel with the switch, and only the view on
+    /// screen keeps the sources, so nothing is built twice.
     /// </summary>
-    private void OnToggleUnifiedView(object? sender, RoutedEventArgs e)
+    private void OnChooseView(object? sender, RoutedEventArgs e)
     {
-        bool unified = UnifiedView.IsChecked;
-        Unified.IsVisible = unified;
-        Diff.IsVisible = !unified;
+        ShowView(ReferenceEquals(sender, UnifiedView) ? DemoView.Unified
+            : ReferenceEquals(sender, ViewerView) ? DemoView.Viewer
+            : DemoView.SideBySide);
         ApplySources();
         UpdateStatus();
     }
 
     // ── Editing (plan 00003) ───────────────────────────────────────────────────────────────
     //
-    // The unified view stays read-only whatever these say: its document is composed from both
-    // sides, so half its lines belong to one file and half to the other.
+    // The unified view and the viewer stay read-only whatever these say: the unified document is
+    // composed from both sides, so half its lines belong to one file and half to the other, and
+    // the viewer has no editing to switch on.
 
     private void OnToggleEditLeft(object? sender, RoutedEventArgs e)
     {
@@ -264,6 +306,12 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private void Copy(DiffSide side)
     {
+        if (CurrentView == DemoView.Viewer)
+        {
+            Note("The viewer copies nothing: it has no arrows and no copy verbs.");
+            return;
+        }
+
         if (!Diff.CanCopyToward(side))
         {
             Note(Diff.CurrentChangeIndex < 0
@@ -280,26 +328,37 @@ public sealed partial class MainWindow : Window
 
     private void OnPreviousChange(object? sender, RoutedEventArgs e) => Navigate(next: false);
 
+    /// <summary>
+    /// The walk, on whichever view is on screen. The viewer binds no key, so for it these two
+    /// entries stand in for the F7 and Shift+F7 the other two views answer.
+    /// </summary>
     private void Navigate(bool next)
     {
-        if (UnifiedView.IsChecked)
+        switch (CurrentView)
         {
-            if (next)
-            {
+            case DemoView.Unified when next:
                 Unified.NextChange();
-            }
-            else
-            {
+                break;
+            case DemoView.Unified:
                 Unified.PreviousChange();
-            }
-        }
-        else if (next)
-        {
-            Diff.NextChange();
-        }
-        else
-        {
-            Diff.PreviousChange();
+                break;
+            case DemoView.Viewer when next:
+                Viewer.NextChange();
+                break;
+            case DemoView.Viewer:
+                Viewer.PreviousChange();
+                break;
+            default:
+                if (next)
+                {
+                    Diff.NextChange();
+                }
+                else
+                {
+                    Diff.PreviousChange();
+                }
+
+                break;
         }
 
         UpdateStatus();
@@ -449,17 +508,21 @@ public sealed partial class MainWindow : Window
     {
         Diff.IgnoreWhitespace = IgnoreWhitespace.IsChecked;
         Unified.IgnoreWhitespace = IgnoreWhitespace.IsChecked;
+        Viewer.IgnoreWhitespace = IgnoreWhitespace.IsChecked;
     }
 
     private void OnToggleIgnoreCase(object? sender, RoutedEventArgs e)
     {
         Diff.IgnoreCase = IgnoreCase.IsChecked;
         Unified.IgnoreCase = IgnoreCase.IsChecked;
+        Viewer.IgnoreCase = IgnoreCase.IsChecked;
     }
 
     private void OnToggleSyncHorizontal(object? sender, RoutedEventArgs e)
     {
+        // The two views with two panes; the unified view has one to scroll.
         Diff.SyncHorizontalScroll = SyncHorizontal.IsChecked;
+        Viewer.SyncHorizontalScroll = SyncHorizontal.IsChecked;
     }
 
     private void OnToggleSyntax(object? sender, RoutedEventArgs e)
@@ -468,6 +531,7 @@ public sealed partial class MainWindow : Window
         // --left / --right, to see this do anything.
         Diff.UseSyntaxHighlighting = UseSyntax.IsChecked;
         Unified.UseSyntaxHighlighting = UseSyntax.IsChecked;
+        Viewer.UseSyntaxHighlighting = UseSyntax.IsChecked;
     }
 
     private void OnShowAllRows(object? sender, RoutedEventArgs e) => SetFolding(null);
@@ -477,54 +541,63 @@ public sealed partial class MainWindow : Window
     private void OnShowContext(object? sender, RoutedEventArgs e) => SetFolding(DiffKeyMap.DefaultContextRows);
 
     /// <summary>
-    /// Both views, because the option is either view's and the demo switches between them with
+    /// All three views, because the option is each view's and the demo switches between them with
     /// the comparison already loaded.
     /// </summary>
     private void SetFolding(int? contextRows)
     {
         Diff.UnchangedContextRows = contextRows;
         Unified.UnchangedContextRows = contextRows;
+        Viewer.UnchangedContextRows = contextRows;
     }
 
     private void OnToggleShowMinimap(object? sender, RoutedEventArgs e)
     {
-        // The unified view has no minimap, so this reaches the side-by-side control only.
+        // The unified view has no minimap, so this reaches the two views with two panes only.
         Diff.ShowMinimap = ShowMinimap.IsChecked;
+        Viewer.ShowMinimap = ShowMinimap.IsChecked;
     }
 
     private void OnToggleShowHeaders(object? sender, RoutedEventArgs e)
     {
         Diff.ShowHeaders = ShowHeaders.IsChecked;
         Unified.ShowHeaders = ShowHeaders.IsChecked;
+        Viewer.ShowHeaders = ShowHeaders.IsChecked;
     }
 
     private void OnToggleShowStatusStrip(object? sender, RoutedEventArgs e)
     {
         Diff.ShowStatusStrip = ShowStatusStrip.IsChecked;
         Unified.ShowStatusStrip = ShowStatusStrip.IsChecked;
+        Viewer.ShowStatusStrip = ShowStatusStrip.IsChecked;
     }
 
     private void OnToggleShowBanner(object? sender, RoutedEventArgs e)
     {
         Diff.ShowBanner = ShowBanner.IsChecked;
         Unified.ShowBanner = ShowBanner.IsChecked;
+        Viewer.ShowBanner = ShowBanner.IsChecked;
     }
 
     private void OnToggleMinimapPlacement(object? sender, RoutedEventArgs e)
     {
-        Diff.MinimapPlacement = MinimapOnLeft.IsChecked ? MinimapPlacement.Left : MinimapPlacement.Right;
+        MinimapPlacement placement = MinimapOnLeft.IsChecked ? MinimapPlacement.Left : MinimapPlacement.Right;
+        Diff.MinimapPlacement = placement;
+        Viewer.MinimapPlacement = placement;
     }
 
     private void OnToggleShowWhitespace(object? sender, RoutedEventArgs e)
     {
         Diff.ShowWhitespace = ShowWhitespace.IsChecked;
         Unified.ShowWhitespace = ShowWhitespace.IsChecked;
+        Viewer.ShowWhitespace = ShowWhitespace.IsChecked;
     }
 
     private void OnToggleShowLineEndings(object? sender, RoutedEventArgs e)
     {
         Diff.ShowLineEndings = ShowLineEndings.IsChecked;
         Unified.ShowLineEndings = ShowLineEndings.IsChecked;
+        Viewer.ShowLineEndings = ShowLineEndings.IsChecked;
     }
 
     private void OnTabWidth(object? sender, RoutedEventArgs e)
@@ -533,6 +606,7 @@ public sealed partial class MainWindow : Window
         {
             Diff.TabWidth = width;
             Unified.TabWidth = width;
+            Viewer.TabWidth = width;
         }
     }
 
@@ -547,25 +621,37 @@ public sealed partial class MainWindow : Window
             : double.NaN;
         Diff.PaneFontSize = paneFont;
         Unified.PaneFontSize = paneFont;
+        Viewer.PaneFontSize = paneFont;
     }
 
     private void OnFind(object? sender, RoutedEventArgs e)
     {
-        // The control's own Ctrl+F does this too; the item is here so the feature is findable.
-        if (UnifiedView.IsChecked)
+        // The control's own Ctrl+F does this too; the item is here so the feature is findable. The
+        // viewer has no find at all — plan 00021 left it out on purpose — so the item says so
+        // rather than doing nothing.
+        switch (CurrentView)
         {
-            Unified.OpenFind();
-        }
-        else
-        {
-            Diff.OpenFind();
+            case DemoView.Unified:
+                Unified.OpenFind();
+                break;
+            case DemoView.Viewer:
+                Note("The viewer has no find: switch to the side-by-side or the unified view to search.");
+                break;
+            default:
+                Diff.OpenFind();
+                break;
         }
     }
 
     /// <summary>The status lane of the view on screen, which is where the demo's own notes go.</summary>
     private StatusController Status()
     {
-        return UnifiedView.IsChecked ? Unified.Status : Diff.Status;
+        return CurrentView switch
+        {
+            DemoView.Unified => Unified.Status,
+            DemoView.Viewer => Viewer.Status,
+            _ => Diff.Status,
+        };
     }
 
     private void OnToggleLiveLog(object? sender, RoutedEventArgs e)
@@ -631,7 +717,12 @@ public sealed partial class MainWindow : Window
         // logs path is one hover away, in the Debug menu, and in the log itself. A note carries a
         // path only when a flag named one, which no snapshot does.
         string palette = ColourBlindPalette.IsChecked ? "colour-blind" : "default";
-        string layout = UnifiedView.IsChecked ? "unified" : "side by side";
+        string layout = CurrentView switch
+        {
+            DemoView.Unified => "unified",
+            DemoView.Viewer => "viewer",
+            _ => "side by side",
+        };
         string note = _note is null ? string.Empty : $"   ·   {_note}";
         string editable = (EditLeft.IsChecked, EditRight.IsChecked) switch
         {
