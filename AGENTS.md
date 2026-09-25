@@ -374,6 +374,16 @@ wrong conclusion during the work above: an `ssh` probe that had actually failed 
 succeeded, because `head` exits 0 regardless. Capture the status without a pipe, or read
 `${PIPESTATUS[0]}`. The same trap applies to any pipeline whose last stage always succeeds.
 
+### Avalonia and drivable-UI lessons go to XamlQuality
+
+`docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` in `JanusMael/Bennewitz.Ninja.XamlQuality` are
+the one living copy of each. A new Avalonia foot-gun, a lesson about driving or verifying a desktop UI
+by agent, or a correction to either document goes to the XamlQuality session by message — `ListAgents`
+shows it as XamlQuality — with the versions and the measurement or source behind it, or as an issue in
+that repository when no session is running. Keep no copy here: once a lesson lands there, what stays in
+this file is a pointer, plus whatever is specific to DiffView or to this machine. `DECISIONS.md` records
+why.
+
 ## 9. Looking at the running app on this Linux box
 
 > Written after four plans' worth of UI work had been judged only on headless frames, because

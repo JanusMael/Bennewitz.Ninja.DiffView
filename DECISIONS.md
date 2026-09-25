@@ -2842,3 +2842,20 @@ is already the `RootNamespace` of every file here.
 **The timing was the cheap moment and will not come again.** A nuget.org Trusted Publishing policy
 binds owner, repository *and* workflow filename. Nothing had run and no policy existed, so the
 rename cost two lines; after a policy exists it costs recreating it.
+
+## Avalonia and drivable-UI lessons live in XamlQuality
+
+Asked by the XamlQuality session on 2026-09-24 and decided by Brian the same day:
+`docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` in `JanusMael/Bennewitz.Ninja.XamlQuality` are
+the one living copy of each, and DiffView sends what it learns there rather than keeping it.
+`AGENTS.md` §8 is the standing rule.
+
+**What moves and what stays.** Three of `AGENTS.md` §9's lessons are general rather than DiffView's:
+an Avalonia menu popup is its own override-redirect X window, synthetic pointer motion never raises a
+tooltip, and `xdotool` keyboard accelerators do not reach the app where clicks do. They went to
+XamlQuality with their measurements, and each becomes a pointer here when it lands there. What stays
+is what no other repository could use as written: this machine's capture recipes, its wedged-session
+signature, and DiffView's own contracts.
+
+A copy kept "just in case" is how the two drift, which is the failure the arrangement exists to
+prevent: the living document is corrected, and the copy goes on saying what used to be true.
