@@ -240,6 +240,56 @@ public sealed class PackagingTests
         }
     }
 
+    /// <summary>
+    /// Every packable assembly carries the <c>IsTrimmable</c> mark, read off the compiled output.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>The mark travels inside the package</b>, as <c>[AssemblyMetadata("IsTrimmable", "True")]</c>,
+    /// and an app publishing with <c>TrimMode=partial</c> trims ONLY assemblies that carry it. Without it
+    /// a consumer's trimmed publish keeps the assembly whole and outside its trim analysis. Nothing
+    /// fails, so nothing would notice. The trim check's publish cannot see this either: it uses
+    /// <c>TrimMode=link</c>, which trims every assembly whether it is marked or not.
+    /// </para>
+    /// <para>
+    /// Read from the DLL rather than the project file, because the DLL is what a consumer's publish
+    /// obeys. Plan 00004 in Bennewitz.Ninja.Templates, whose template carries the same test.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Every_packable_assembly_is_marked_trimmable()
+    {
+        string output = Path.GetDirectoryName(typeof(PackagingTests).Assembly.Location)!;
+        List<string> projects = PackableProjects();
+
+        Assert.NotEmpty(projects);
+        List<string> unmarked = [];
+
+        foreach (string project in projects)
+        {
+            string assembly = Path.GetFileNameWithoutExtension(project) + ".dll";
+            string path = Path.Combine(output, assembly);
+
+            // A project missing from the output would otherwise be skipped rather than checked.
+            Assert.True(File.Exists(path), $"{assembly} is not in {output}, so its mark cannot be checked.");
+
+            bool marked = Assembly.LoadFrom(path)
+                .GetCustomAttributes<AssemblyMetadataAttribute>()
+                .Any(a => a.Key == "IsTrimmable"
+                          && string.Equals(a.Value, "True", StringComparison.OrdinalIgnoreCase));
+
+            if (!marked)
+            {
+                unmarked.Add(assembly);
+            }
+        }
+
+        Assert.True(
+            unmarked.Count == 0,
+            "These packable assemblies are not marked trimmable, so a consumer publishing with "
+            + "TrimMode=partial ships them whole and outside its trim analysis: " + string.Join(", ", unmarked));
+    }
+
     private static (int Code, string Output) Run(string file, string[] arguments)
     {
         ProcessStartInfo start = new()

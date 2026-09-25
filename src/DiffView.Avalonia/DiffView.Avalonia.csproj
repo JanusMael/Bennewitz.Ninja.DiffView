@@ -17,6 +17,12 @@
     <RootNamespace>Bennewitz.Ninja.DiffView</RootNamespace>
     <!-- Public API is documented; a missing comment is a build error (CS1591 under warnings-as-errors). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Marked trimmable, with the trim analyzer on every build (plan 00004 in
+         Bennewitz.Ninja.Templates). The mark is compiled in, and a consumer's TrimMode=partial
+         publish trims only marked assemblies. The analyzer cannot see compiled XAML; the trim
+         check's TrimMode=link publish of the demo is the ILLink pass that can. -->
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <!-- The neutral resource IS English, so no en satellite is ever probed for: a lookup under any
          en-* culture resolves in the main assembly. Localization/Strings.resx is generated from
          DiffViewStrings.EnglishDefaults by scripts/gen-strings.cs; the locale files beside it are
