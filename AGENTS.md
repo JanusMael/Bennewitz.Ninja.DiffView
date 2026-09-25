@@ -80,12 +80,13 @@ no dates, no counts.
   `ResourceInclude` in code is IL2026 under the trim-check; the `x:Class` dictionary is not. The `DiffView.*` tokens come from the host's `DiffViewResources.ThemeUri`
   include; `DiffBrushes.Resolve` reads them on attach, `ResourcesChanged` and
   `ActualThemeVariantChanged`, with a hard fallback per token.
-- **Every control theme is a compiled dictionary of its own, merged by the control it themes and
-  holding that theme alone**: `SideBySideDiffViewTheme`, `InlineDiffViewTheme`, `DiffViewerTheme`,
-  `DiffPaneHeaderTheme`, `DiffStatusStripTheme` and `DiffFindBarTheme`, each compiled from the
-  `Themes/` file named after its control, as the presenter's is. So no theme of ours is found
-  twice on the way up from any element, and a view carries no theme for a part it does not host —
-  the viewer, which has no find bar, holds no `DiffFindBarTheme`. ⚠ **The rule is about the
+- **Each control of this library has its theme in a compiled dictionary of its own, merged by that
+  control and holding nothing else**: `SideBySideDiffViewTheme`, `InlineDiffViewTheme`,
+  `DiffViewerTheme`, `DiffPaneHeaderTheme`, `DiffStatusStripTheme` and `DiffFindBarTheme`, each
+  compiled from the `Themes/` file named after its control — as the presenter's is, which holds the
+  theme it applies to its text area beside its own. So no theme of ours is found twice on the way
+  up from any element, and a view carries no theme for a part it does not host — the viewer, which
+  has no find bar, holds no `DiffFindBarTheme`. ⚠ **The rule is about the
   resource path, not the files.** Before plan 00021 phase 3 every key already sat in one
   dictionary, and the path still found each twice: the headers, the strip and the find bar each
   merged the editor's whole dictionary beneath an editor that had merged it too. Tests
