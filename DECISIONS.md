@@ -3257,3 +3257,26 @@ the map's lanes. Not a snapshot: nothing is stored, and both frames are the runn
 the comparison holds on every rasterizer. The mutation that proves it is the one §5 of `AGENTS.md`
 warns a stored snapshot cannot see — copy arrows appearing in the viewer's number margins, a change
 smaller than a row.
+
+## A direct property can be styled — until the style has an activator
+
+Plan 00021's *Property re-ownership* section says a direct property "cannot be set from a style at
+all", and its Testing table limits the styling claim to "the 30 that can be styled at all". The
+XamlQuality session corrected that on 2026-09-25, from Avalonia's source at 12.1.3, and it holds at
+this repository's 12.1.2, measured with the two controls themselves
+(`~/c/cl/scratch/DiffView/round13/StyleProbe`). A style **with no activator** sets a writable direct
+property: one setter on `dv:SideBySideDiffView.SplitRatio` put 0.7 on both controls. A style **with**
+one — `:pointerover` — loads, and then throws `InvalidOperationException`, *"Cannot set direct
+property 'SplitRatio' … because the style has an activator"*, from the call that shows the window,
+before any pointer is over anything.
+
+Phase 4's guide has to say both halves for `SplitRatio` and `CurrentChangeIndex`, the two writable
+direct properties the viewer shares: a plain rule sets them, and a pseudo-class rule that sets one
+throws as soon as it applies.
+
+The same exchange added two things this phase's record did not have. The registry lists every
+direct property a type registers, private ones included — `AvaloniaPropertyRegistry.Instance.GetRegisteredDirect(type)`
+is public — so no visibility hides a registration, and "not even internally" in `AGENTS.md` §6 is the
+only form of the rule that holds. And a setter qualified with the editor's identity loads and silently
+sets nothing on a control that registered its own property of that name, which is the case
+`SharedRegistrationTests.Every_property_the_viewer_carries_is_the_editors_own_registration` closes.
