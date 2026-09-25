@@ -258,9 +258,13 @@ public sealed class PackagingTests
         using Process process = Process.Start(start)
             ?? throw new InvalidOperationException($"Could not start {file}.");
 
-        string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        // Both pipes drained concurrently: stdout to EOF first deadlocks once the child fills the
+        // stderr pipe buffer — `dotnet pack` over a broken project is that shape — and the test then
+        // hangs rather than failing.
+        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderr = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
-        return (process.ExitCode, output);
+        return (process.ExitCode, stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult());
     }
 
     private static List<string> PackableProjects()
