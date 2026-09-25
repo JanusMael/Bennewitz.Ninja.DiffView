@@ -202,8 +202,11 @@ no dates, no counts.
   strays reports where it strayed to. Where position matters, assert it against something the
   decorator does not choose: `DiffLineNumberMargin.LastColumnRight` names the edge the numbers
   were aligned to, which is why a copy arrow shifted four pixels survived every other assertion.
-- `AccessibilityCoverageTests` counts `DiffPanePresenter` and `TextEditor` as interactive, so
-  every pane in a view carries `AutomationProperties.Name`.
+- `AccessibilityCoverageTests` derives its element set from the library — every public `Control` it
+  ships, less `Excluded`, plus the framework names in `LiveFrameworkElements` and `ForwardCover` — so
+  every pane in a view carries `AutomationProperties.Name` and a new public control is covered the
+  moment it exists. Each name is floored on its own: one that covers nothing fails, and so does a
+  forward-cover name that starts covering something.
 - **A test that asserts English text says so, with `[EnglishChrome]`.** `HeadlessTestApp` pins the
   UI culture to `en-US` and `DIFFVIEW_TEST_UI_CULTURE` flips it; CI's `culture-leg` job flips it to
   `de-DE` over the whole suite. A test that fails only there was asserting English without saying
