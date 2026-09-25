@@ -125,9 +125,10 @@ wording.
    two retired axes are AssemblyQuality's, so its decline stands on measurement.
 
    **Next: transcribe phases 0–4 onto `refactor/themeaudit-moves-to-xamlquality`**, the open pull
-   request, as real phase commits, and publish them together with its rebase — which is a force-push,
-   and Brian's. Each phase moves this item with it; phase 5 closes it and puts the twelve adversarial
-   reviews in `DECISIONS.md`.
+   request, as real phase commits, and publish them together with its rebase — a force-push with a
+   lease on `5b4c139`, which Brian pre-authorized on 2026-09-24 for a tip that passes the suite and a
+   full harness run. Each phase moves this item with it; phase 5 closes it and puts the twelve
+   adversarial reviews in `DECISIONS.md`.
 
    ⭐ **`scripts/mutate-gates.{cs,sh,ps1}` is committed on that branch** and proves every assertion in
    the gate files able to fail first, not merely each test. A full run takes about five minutes and is
@@ -180,36 +181,26 @@ wording.
    decision is Linux-only baselines plus the owed by-hand runs; the artifacts from run `35780424399`
    hold the evidence.
 
+   **It is next after plan 00025**, decided 2026-09-24. `main`'s ruleset requires all five checks,
+   `Build & Test` on Windows and macOS among them, so until this lands every pull request merges only
+   by the admin bypass.
+
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
-   remote exists. **Two preconditions remain and both are Brian's**: a nuget.org Trusted Publishing
-   policy naming owner, repository and workflow filename, and `NUGET_USER`.
+   remote exists. **One precondition remains, and it is Brian's**: a nuget.org Trusted Publishing
+   policy naming owner, repository and workflow filename.
 
-   ⛔ **`NUGET_USER` is a repository VARIABLE, here and everywhere. The workflow was wrong and has
-   been corrected; the repository settings have not.** `release.yml` was written in plan 00018 from
-   a template that said `secrets.`, and read `secrets.NUGET_USER` until 2026-09-23, when it was
-   changed to `vars.NUGET_USER`. A nuget.org profile name is not a secret, and the convention is
-   the same in every repository here — a `secrets.` reading is a defect to fix, not a local shape to
-   accommodate.
-
-   **Two steps, and only one is done:**
-
-   | Step | State |
-   |---|---|
-   | `release.yml` reads `vars.NUGET_USER` | ✅ done 2026-09-23 |
-   | The repository has `NUGET_USER` as a **variable** | ❌ **not done — Brian's** |
-
-   ⚠ `gh secret list` shows `NUGET_USER` set as a **secret** on 2026-09-20 and `gh variable list` is
-   empty, so **a release dispatched right now would fail**. Set the variable, then delete the
-   secret, which otherwise only preserves the ambiguity. DiffView's publish being on hold is what
-   makes this safe to leave half-done for the moment. The failure mode when these disagree is
-   "NUGET_USER is not set" while `gh secret list` shows it present — which sends you looking
-   anywhere but at the `vars.`/`secrets.` prefix, and cost a round on
-   `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
+   ✅ **`NUGET_USER` is a repository VARIABLE, as in every repository here — done 2026-09-24.** It
+   reads `JanusMael`, the value each sibling repository carries, and `release.yml` reads
+   `vars.NUGET_USER`. The secret of the same name that stood in for it since 2026-09-20 is deleted,
+   because a variable and a secret that disagree fail as "NUGET_USER is not set" while
+   `gh secret list` shows it present — which sends you looking anywhere but at the
+   `vars.`/`secrets.` prefix, and cost a round on `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
+   The end-to-end check is the release workflow's credential preflight, a dispatch with the version
+   blank, and it has not been run.
 
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
-   manages that release. DiffView's publish being on hold does not hold XamlQuality's, and defect A
-   waits on the latter rather than the former.
+   manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
 4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done and pushed:
    `DiffBuildController` (1,872 lines) and `IDiffSurface` (17 members, not the ~15 the plan
