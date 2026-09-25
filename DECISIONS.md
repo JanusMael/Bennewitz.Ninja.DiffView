@@ -3368,3 +3368,17 @@ bump hostage to work that has its own plan.
 The locale caveat — machine-generated translations, unread by a native speaker, stated where a
 consumer reads it — is plan 00027, on its own branch, rather than a commit riding plan 00021's pull
 request (Brian, 2026-09-25).
+
+## The `925` pin bumps go before plan 00023's phases 2–3
+
+XamlQuality `2026.3.925` and AssemblyQuality `2026.3.925` were both released on 2026-09-25, after the
+order above was decided. Each renames every rule id — `XQ100n` to `BNXQ100n`, `AQ100n` to
+`BNAQ100n` — and between them they touch the gate files, assertion messages, mutation names and
+documents of the one harness that proves those gates, so taking them together costs one pass over
+those files and one full `scripts/mutate-gates.sh` run where two bumps would cost two. XamlQuality measured `BNXQ1003`
+against plan 00021's tip, so that measurement is freshest now; and plan 00026 adopts `BNXQ1006`,
+which only the XamlQuality bump brings, so that bump has to come before plan 00026 whatever else
+moves. The order is therefore (Brian, 2026-09-25): plan 00021; then both bumps, in one plan and one
+branch; then plan 00023's phases 2–3, plan 00026 and plan 00023's phases 4–5, as decided above. The
+bumps' own plan decides `BNXQ1004`, `BNXQ1005` and `AQ1004` on measurements; this entry decides only
+where it goes.

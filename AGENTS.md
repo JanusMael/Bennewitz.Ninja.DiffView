@@ -488,13 +488,21 @@ git -C /home/janus/c/cl/ClaudeForge worktree add <scratch-path> -b <branch> main
 Announce the intent to the ClaudeForge session first if one is running (`ListAgents`); if none is,
 there is nothing to collide with, but the worktree rule still stands.
 
-**An agent session cannot use SSH.** The sandbox's network is host-and-port allowlisted: probed
-2026-09-08, `github.com:443` and `api.github.com:443` connect, while `github.com:22`,
-`ssh.github.com:443` and `1.1.1.1:22` all time out. So an SSH remote hangs until it is killed, and
-GitHub's port-443 SSH endpoint is not a way around it. This is independent of the developer's own
-machine, where SSH works.
+**Whether an agent session can use SSH depends on the session, so probe it rather than assume.** On
+2026-09-08 a sandboxed session's network was host-and-port allowlisted: `github.com:443` and
+`api.github.com:443` connected, while `github.com:22`, `ssh.github.com:443` and `1.1.1.1:22` all
+timed out, so an SSH remote hung until it was killed and GitHub's port-443 SSH endpoint was no way
+around it. On 2026-09-25 a session in the desktop app reached `github.com:22`: `ssh -T` authenticated
+and `git fetch` over the `git@` remote worked. The probe bounds itself, so it needs no `timeout`,
+which macOS does not ship:
 
-Push over HTTPS with `gh` as the credential helper, which is how ClaudeForge PR #44 landed:
+```bash
+ssh -T -o BatchMode=yes -o ConnectTimeout=8 git@github.com
+```
+
+Exit 1 with *"successfully authenticated"* is a working SSH; a timeout is not. HTTPS works either
+way, so it stays the way to push — with `gh` as the credential helper, which is how ClaudeForge
+PR #44 landed:
 
 ```bash
 git -c credential.helper='!gh auth git-credential' push https://github.com/JanusMael/ClaudeForge.git HEAD

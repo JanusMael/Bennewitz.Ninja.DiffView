@@ -8,9 +8,14 @@ workflow written dormant in plan 00018 found **three defects that had been green
 twenty-three plans**. Everything below the fold is still true; what changed is that "green" now
 means something it did not mean before, because it is no longer a statement about one machine.
 
-**`main` carries plan 00025**, merged from PR #1 on 2026-09-24, and is pushed. `dotnet build
-DiffView.slnx -warnaserror` is clean. The suite is **621** — smaller than the 679 it was, because
-plan 00025 removed `tests/ThemeAudit.Tests` along with the tool.
+**`main` carries plans 00025 and 00024 and two build changes from `Bennewitz.Ninja.Templates`' plan
+00004**: PR #3 takes AutoVersioning to `2026.3.916` and drops `IsContinuousIntegration`, which
+nothing read, and PR #5 turns the trim analyzer on and marks both libraries trimmable — a mark
+`PackagingTests.Every_packable_assembly_is_marked_trimmable` reads back off the compiled assemblies.
+Plan 00021 sits on all four.
+`dotnet build DiffView.slnx -warnaserror` is clean over the lot, the trim analyzer included, and the
+suite with plan 00021 is **658** — plan 00025's 621, which is smaller than the 679 before it because
+that plan removed `tests/ThemeAudit.Tests` along with the tool, plus plan 00021's 36 and #5's one.
 
 | Defect | Where | State |
 |---|---|---|
@@ -61,16 +66,17 @@ text out CRLF. Proven by arithmetic on the one-file row: *AvaloniaEdit Fluent th
 rooting fix was right and incomplete: a digest that describes *what* was audited must not see line
 endings either. Reported to XamlQuality on 2026-09-24 with that evidence. **Fixed twice over**:
 DiffView's reference clones now check out LF on every platform, so Windows audits the pinned
-commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, unreleased).
+commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, in `2026.3.925`,
+which this repository does not pin yet).
 
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
-review before any code was written. **Plan 00021 is complete** — `DiffBuildController` and
+review before any code was written. **Plan 00021 is complete** (PR #6) — `DiffBuildController` and
 `IDiffSurface`, then `DiffViewer`, then one compiled theme per control and the viewer in the demo,
-then the hosting guide's account of the three controls — on `feat/the-viewer-beside-the-editor`,
-rebased onto the `main` that carries plans 00024 and 00025, 657 green; its pull request is Brian's to
-merge. **Plan 00023 phase 1 is done.** **Plan 00025 is
-complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all
-three platforms.
+then the hosting guide's account of the three controls — rebased onto `main` a second time once #3
+and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed publish without an
+`IL` warning. The viewer **does not gate the release**, and it has no find, which the hosting guide
+names outright. **Plan 00023 phase 1 is done.** **Plan 00025 is complete and merged** (PR #1,
+2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms.
 
 ### What ships
 
@@ -141,8 +147,9 @@ wording.
    a harness**, not screen-reader quality — the latter is why the criteria exist, not the gate.
    Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`. **Placed 2026-09-25**: after
    plan 00023's phases 2–3 and before its phase 4, drafted alongside the first two for approval —
-   `DECISIONS.md` has why. `XQ1006` (XamlQuality PR #27, unreleased) reports the same controls and is
-   adopted with this plan, not before it.
+   `DECISIONS.md` has why. `BNXQ1006`, XamlQuality's `CustomControlPeerRule` — `XQ1006` while it was
+   that repository's PR #27, and released in `2026.3.925` — reports the same controls and is adopted
+   with this plan, not at the pin bump that first carries it (item 7).
 
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
@@ -161,15 +168,10 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-4. **Plan 00021 is complete; its pull request is Brian's to merge** — decided 2026-09-25: it is
-   opened once phase 4 is pushed, and he merges it. The viewer **does not gate the release**, and it
-   still has no find — re-confirmed 2026-09-22 rather than superseded — which the hosting guide now
-   names outright, in its three-controls section and among the places the control stops. This item
-   goes when the pull request lands.
-
 5. **Plan 00023 phases 2–5 — the window harness.** Phase 1 (`catch-crash`) is merged. The rest
-   follows 00021, split around plan 00026 (decided 2026-09-25): phases 2–3 — the X11 driver and
-   `run-demo --detach` — next; phases 4–5, the Windows back end and the record, after 00026.
+   follows the `925` pin bumps of item 7 and is split around plan 00026 (both decided 2026-09-25):
+   phases 2–3 — the X11 driver and `run-demo --detach` — after the bumps; phases 4–5, the Windows
+   back end and the record, after 00026.
 
 6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
@@ -179,22 +181,31 @@ wording.
    its own branch and pull request, so plan 00021's stays about the viewer. The README is public now,
    so the caveat is owed to its readers already, not only to the package's.
 
-7. **Re-evaluate `AQ1004` and `AQ1002`'s configuration at the next AssemblyQuality release.**
-   `05a6060` and `044e71a`, unreleased on 2026-09-24, retire two of the three reasons plan 00025
-   declined `AQ1004` — it cannot detect its own inertness, and it reads exported types only — and
-   give `AQ1002` `Only(namespaces)`, under which its stock set reads 0. The work is a pin bump and a
-   re-measurement against the decline plan 00025 records.
+7. **The `925` pin bumps — next, both together (decided 2026-09-25).** XamlQuality `2026.3.925` and
+   AssemblyQuality `2026.3.925` are both released, and one plan and one branch take them, after plan
+   00021 and before plan 00023's phases 2–3. Each renames every rule id — `XQ100n` → `BNXQ100n`,
+   `AQ100n` → `BNAQ100n` — in the gate files one harness proves, so one full `scripts/mutate-gates.sh`
+   run proves both; plan 00025 is frozen and keeps the old ids. `DECISIONS.md` has why they go first.
+   The AssemblyQuality half is the re-evaluation of `AQ1004` and `AQ1002`'s configuration: `05a6060`
+   and `044e71a`, both in `2026.3.925`, retire two of the three reasons plan 00025 declined `AQ1004` —
+   it cannot detect its own inertness, and it reads exported types only — and give `AQ1002`
+   `Only(namespaces)`, under which its stock set reads 0. That half is a pin bump and a re-measurement
+   against the decline plan 00025 records. The XamlQuality half is item 8, and two rules that release
+   adds: `BNXQ1005`, `KeyBindingFocusRule`, which nothing here has measured yet, and `BNXQ1006`, which
+   waits for plan 00026 (item 0b).
 
-8. **At the next XamlQuality release, re-measure `XQ1004`'s `Skipped` guard.** Its `inert-at-pin`
-   marker in `GridSlotTests` expires the moment the pin moves, and `--guards` fails CI until it is
-   answered: `scripts/xq1004-skips.sh` exits 0 to re-mark it at the new version and 1 when the guard
-   is owed a mutation. XamlQuality built the fix on 2026-09-24 (its #20, unreleased): a placement a
-   markup value cannot decide goes to `Skipped`, and `Inspected` counts only placements measured
-   against a fixed slot. ⚠ **On DiffView that reads 0 inspected** — 23 of its 24 grid children
-   declare no size — **so `GridSlotTests`' floor of 12 fails at that bump, and truthfully.** By plan
-   00025's own standard a rule that inspects nothing here is not adopted, so that bump is where
-   `XQ1004` is re-decided, not re-floored. The same release carries the digest fix (#22), which
-   XamlQuality expects to move no committed digest.
+8. **At the XamlQuality bump, re-measure `XQ1004`'s `Skipped` guard** — `BNXQ1004` from
+   `2026.3.925`. Its `inert-at-pin` marker in `GridSlotTests` expires the moment the pin moves, and
+   `--guards` fails CI until it is answered: `scripts/xq1004-skips.sh` exits 0 to re-mark it at the
+   new version and 1 when the guard is owed a mutation. XamlQuality's fix, its #20, is in
+   `2026.3.925`: a placement a markup value cannot decide goes to `Skipped`, and `Inspected` counts
+   only placements measured against a fixed slot. ⚠ **On DiffView that reads 0 inspected** — 23 of
+   its 24 grid children declare no size — **so `GridSlotTests`' floor of 12 fails at that bump, and
+   truthfully.** By plan 00025's own standard a rule that inspects nothing here is not adopted, so
+   that bump is where `XQ1004` is re-decided, not re-floored. The same release carries the digest fix
+   (#22), which leaves a digest generated on Linux where it was, and `BNXQ1003`'s credit to the
+   control whose template a lookup is made on (#30, this repository's proposal), which XamlQuality
+   measured at plan 00021's tip: `DiffBuildController`'s skip goes, 47 inspected, 0 findings.
 
 9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. The suite passes on those
    platforms now, without its Linux-only baselines, which makes these runs the only look anything
@@ -633,7 +644,7 @@ either.
 | 1 The controller | L | done | `DiffBuildController` and `IDiffSurface`, 17 members; `SideBySideDiffView` moved onto them with its public surface gated unchanged; rebased across plans 00024 and 00025, pushed, CI green on all five jobs |
 | 2 The viewer | M | done | The navigation verbs moved into the controller first; `DiffViewer` and `DiffViewerTheme`; `AddOwner` brought forward from phase 3 with its gate; no document or model property registered; `ViewerHost`; the three gates that saw it arrive; the viewer's own tests, 28 cases |
 | 3 The theme split and the demo | M | done | One compiled theme per control — `DiffFindBarTheme`, `DiffPaneHeaderTheme`, `DiffStatusStripTheme` — merged by its own control, so no theme is found twice on the way up and the viewer carries no find bar's; the pseudo-class drift gate; the demo's View ▸ Control and `--viewer`, which retired `Excluded[DiffViewer]`; three stale summaries found beside the edit |
-| 4 The record | S | done | The hosting guide: which of the three controls to reach for, the viewer's missing find named outright twice, how far its read-only guarantee goes, styling both with an owner-qualified comma-union rule, direct properties under a pseudo-class, and the nine pseudo-classes — every API name under the guide's citation gate. `CHANGELOG.md`; this file |
+| 4 The record | S | done | The hosting guide: which of the three controls to reach for, the viewer's missing find named outright twice, how far its read-only guarantee goes, styling both with an owner-qualified comma-union rule, direct properties under a pseudo-class, and the nine pseudo-classes — every API name under the guide's citation gate. `CHANGELOG.md`; this file. Rebased onto `main` a second time after #3 and #5, to exactly the tree `main` merged into the branch gives — which built clean under `-warnaserror` with the trim analyzer on, passed 658 in `en-US` and `de-DE` under `catch-crash --expect auto`, kept `--guards` clean and published trimmed without an `IL` warning before it was pushed |
 
 ## Plan 00021 phase 3 verification
 
