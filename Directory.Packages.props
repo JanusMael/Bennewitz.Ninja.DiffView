@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Tooling">
-    <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.819" />
+    <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.916" />
     <!-- The theme and contrast analysis this repository's audit runs on. It used to be
          src/ThemeAudit here; it now lives in Bennewitz.Ninja.XamlQuality, which is where it is
          developed and tested. Test-only: ReferenceAuditTests and ThemeResolutionTests read it,
