@@ -1,8 +1,9 @@
 # Hosting DiffView
 
-Side-by-side and unified text diff controls for Avalonia 12, built on AvaloniaEdit: row-aligned
-panes, line and word-level highlighting, change navigation, a minimap, find across either or both
-panes, syntax highlighting, and optional in-pane editing.
+Text diff controls for Avalonia 12, built on AvaloniaEdit: an editable side-by-side view, a unified
+view, and a read-only side-by-side viewer. Row-aligned panes, line and word-level highlighting,
+change navigation, a minimap, find across either or both panes, syntax highlighting, and optional
+in-pane editing.
 
 This document is for someone putting the control into their own application. It is not an API
 reference — every public member carries XML documentation, and your IDE will show it. It is the path
@@ -20,9 +21,9 @@ reference and the namespace you import are three different strings:
 | **Namespace** | `Bennewitz.Ninja.DiffView` | `Bennewitz.Ninja.DiffView.Core` |
 
 The control package depends on the model package, so installing the first is enough. There is no
-type named `DiffView` — the controls are `SideBySideDiffView` and `InlineDiffView` — and the
-namespace carries no `Avalonia` segment, because a segment of that name shadows the framework's own
-root from inside the assembly.
+type named `DiffView` — the controls are `SideBySideDiffView`, `InlineDiffView` and `DiffViewer` —
+and the namespace carries no `Avalonia` segment, because a segment of that name shadows the
+framework's own root from inside the assembly.
 
 There is also **no XAML namespace definition**, so there is no `https://` URI to import. You write
 the CLR form, exactly as the quickstart does.
@@ -96,6 +97,40 @@ Semi **and** host other Fluent-templated controls, merge `DiffViewResources.Flue
 the theme. `DiffViewResources.SimpleCompatUri` is its sibling. Neither is needed for DiffView's own
 controls; the symptom they cure is a control that renders invisible rather than throwing.
 
+## Three controls, and which to reach for
+
+| Control | Panes | Edits | Find | Context menus and key bindings |
+|---|---|---|---|---|
+| `SideBySideDiffView` | Two, row-aligned | Either side, once switched on | Yes | Yes |
+| `InlineDiffView` | One, unified | Never | Yes | Yes, with fewer verbs |
+| `DiffViewer` | Two, row-aligned | Never | **No** | **None** |
+
+**`SideBySideDiffView` is the editor, and both of its sides start read-only** — editing is a flip,
+below. Read-only, it is still the control with the verbs: its context menus show the copy, save and
+revert entries greyed rather than absent, its find bar opens on Ctrl+F, and its key bindings are
+live.
+
+**`InlineDiffView`** is the same model rendered into one pane instead of two, in `diff -u` order. It
+takes the same sources — `InlineDiffView.LeftSource` and `InlineDiffView.RightSource` — and most of
+the same display properties. Use it where horizontal space is short.
+
+**`DiffViewer` is a control to scroll and look at.** The same two panes, gutters, overview map,
+headers, banner and status strip as the editor, and none of the verbs: no find, no context menus, no
+copy arrows, no save or revert, and no key bindings beyond what a text pane does with an arrow key or
+Page Down. The map still jumps, a click on the connector between the panes still makes that change
+the current one, folding still folds, and `DiffViewer.NextChange` and `DiffViewer.PreviousChange`
+walk the changes from code. It is the editor's sibling, not its subclass, so no reference to it
+reaches a verb it lacks.
+
+⚠ **Read-only, side by side, with search, is not one of the three.** The viewer has no find, by
+decision rather than by omission. If you need search over two read-only panes, host the editor and
+leave both sides read-only, which is where it starts.
+
+**How far "read-only" goes.** The guarantee is the viewer's API, and it is not the visual tree's. No
+public member of `DiffViewer` hands out the editable document a pane holds. But each pane is a public
+`DiffPanePresenter` in a public template, so a host that walks the visual tree to one reaches its
+`DiffPanePresenter.Document`: that is the host deciding to edit, not the control letting it.
+
 ## The properties that carry the control
 
 You will not need most of the surface. These are the ones that change what a reader sees:
@@ -117,6 +152,10 @@ Navigation is `SideBySideDiffView.NextChange` and `SideBySideDiffView.PreviousCh
 indicator. Find is `SideBySideDiffView.FindQuery`, `SideBySideDiffView.IsFindBarOpen` and
 `SideBySideDiffView.FindResult`.
 
+`DiffViewer` has every property in the table under its own name — `DiffViewer.ShowMinimap`,
+`DiffViewer.UnchangedContextRows` and the rest — and the same navigation, and none of the find
+members.
+
 ## Editing is a flip, not a mode
 
 Set `SideBySideDiffView.LeftReadOnly` or `SideBySideDiffView.RightReadOnly` to `false` and that side
@@ -133,16 +172,63 @@ change across is `SideBySideDiffView.CopyBlock` or `SideBySideDiffView.CopyTowar
 
 **Key bindings.** `SideBySideDiffView.KeyMap` is a mutable map from command to gesture. Start from
 `DiffKeyMap.Default` (or `DiffKeyMap.UnifiedDefault` for the inline view), change what you want, and
-assign it back.
+assign it back. The viewer binds no keys and has no map to change.
 
 **Context menus.** Handle `SideBySideDiffView.PaneContextMenuOpening` to add, remove or reorder
 entries before a pane's menu opens; `SideBySideDiffView.HeaderContextMenuOpening` does the same for
-the headers. To replace the menu wholesale instead, set `SideBySideDiffView.PaneContextMenu`.
+the headers. To replace the menu wholesale instead, set `SideBySideDiffView.PaneContextMenu`. The
+viewer opens no menu of its own, so a `ContextMenu` you set on it is the one a right-click opens.
 
 **Text.** See below — it is not opt-in.
 
 **Logging.** Set `SideBySideDiffView.LoggerFactory` and the control logs builds, faults and grammar
 resolution through it.
+
+## Styling the viewer and the editor together
+
+The two are unrelated types, so there is no base type to write one selector against. A comma-union
+selector reaches both — with the setter's property **qualified by an owner**:
+
+```xml
+<Style Selector="dv|DiffViewer, dv|SideBySideDiffView">
+  <Setter Property="dv:SideBySideDiffView.ShowMinimap" Value="False" />
+</Style>
+```
+
+Unqualified, `Property="ShowMinimap"` does not load: a union's target type is the alternatives'
+nearest common base, `TemplatedControl`, which has no such property. Qualified by either control, one
+setter reaches both, because every property the viewer shares with the editor is the editor's own
+registration. The general form of the trap is in XamlQuality's
+[Avalonia gotchas](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md),
+*In a selector with a comma, an unqualified setter property is looked up on the alternatives' common
+base*.
+
+Two of the properties they share are **direct** properties: `DiffViewer.SplitRatio` and
+`DiffViewer.CurrentChangeIndex`, and the editor's of the same names. A plain rule sets them. A rule
+with a pseudo-class — `:pointerover`, or any of the nine below — loads, and then throws
+`InvalidOperationException` the moment it applies, before any pointer is over anything.
+
+### The nine pseudo-classes
+
+A pseudo-class is the only way to style on a view's state through a selector: the state is a
+property, and a selector cannot test one. All three views carry the same nine, through the same
+states:
+
+| Pseudo-class | Set while |
+|---|---|
+| `:empty` | A side has no source yet — `DiffViewState.Empty` |
+| `:building` | A build is running — `DiffViewState.Building` |
+| `:ready` | `DiffViewState.Ready` |
+| `:degraded` | The build succeeded with a warning, or a decorator faulted — `DiffViewState.Degraded` |
+| `:failed` | `DiffViewState.Failed` |
+| `:banner-none` | The banner is **not shown**: nothing to say, or `SideBySideDiffView.ShowBanner` is off |
+| `:banner-error` | The banner reports a failed build |
+| `:banner-degraded` | The banner reports the sides too different to align |
+| `:banner-identical` | The banner reports the sides identical |
+
+`:banner-none` means *not shown*, which is wider than *nothing to say*: with the banner switched off,
+a view carries `:banner-none` beside the class of the banner it would have shown. The controls' own
+themes style only the four banner classes; the five state classes are yours.
 
 ## Localization happens whether you ask or not
 
@@ -194,12 +280,6 @@ counts.
 
 Binary input is **detected and reported, not diffed**: the banner says so and the panes stay empty.
 
-## The unified view
-
-`InlineDiffView` is the same model rendered into one pane instead of two. It takes the same sources
-— `InlineDiffView.LeftSource` and `InlineDiffView.RightSource` — and most of the same display
-properties. Use it where horizontal space is short.
-
 ## Where the control stops
 
 These are deliberate non-goals, not gaps awaiting a patch:
@@ -209,6 +289,8 @@ These are deliberate non-goals, not gaps awaiting a patch:
 - **Binary, hex and image compare.** Binary content is detected and reported only.
 - **Rule-based "unimportant differences".** Whitespace and case are the two axes; there is no
   rule engine for ignoring generated regions or reordered members.
+- **Search in the read-only viewer.** `DiffViewer` has no find; the editor, whose sides start
+  read-only, has it.
 - **Right-to-left text.** A named non-goal; the eight shipped locales are all left-to-right.
 
 ## Working on DiffView itself

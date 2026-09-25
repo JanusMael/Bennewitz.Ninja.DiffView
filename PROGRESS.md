@@ -64,10 +64,11 @@ DiffView's reference clones now check out LF on every platform, so Windows audit
 commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, unreleased).
 
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
-review before any code was written. **Plan 00021 phases 1 to 3 are done** — `DiffBuildController`
-and `IDiffSurface`, then `DiffViewer`, then one compiled theme per control and the viewer in the
-demo — on `feat/the-viewer-beside-the-editor`, rebased onto the `main` that carries plans 00024 and
-00025, 657 green; phase 4, the record, remains. **Plan 00023 phase 1 is done.** **Plan 00025 is
+review before any code was written. **Plan 00021 is complete** — `DiffBuildController` and
+`IDiffSurface`, then `DiffViewer`, then one compiled theme per control and the viewer in the demo,
+then the hosting guide's account of the three controls — on `feat/the-viewer-beside-the-editor`,
+rebased onto the `main` that carries plans 00024 and 00025, 657 green; its pull request is Brian's to
+merge. **Plan 00023 phase 1 is done.** **Plan 00025 is
 complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all
 three platforms.
 
@@ -160,18 +161,11 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-4. **Plan 00021 phase 4 — the viewer's record.** Phases 1 to 3 are done on
-   `feat/the-viewer-beside-the-editor` — *Plan 00021 phases* below — and the viewer **does not gate
-   the release**. Phase 4 is the hosting guide's viewer section — which of the three controls a host
-   reaches for; how far the read-only guarantee goes, which is the viewer type's API and not the
-   visual tree, a pane being a public type in a public template; the comma-union rule with its
-   **owner-qualified** setter; that a plain rule sets the direct `SplitRatio` and
-   `CurrentChangeIndex` while a pseudo-class rule setting one **throws when applied**; the nine
-   pseudo-classes — and `CHANGELOG.md`. The viewer still has no find — re-confirmed 2026-09-22
-   rather than superseded — and **phase 4's hosting guide must name that gap outright**, so a host
-   wanting read-only side-by-side with search meets documentation rather than silence. **Landing,
-   decided 2026-09-25**: once phase 4 is pushed, the pull request is opened with its description
-   written, and Brian merges it.
+4. **Plan 00021 is complete; its pull request is Brian's to merge** — decided 2026-09-25: it is
+   opened once phase 4 is pushed, and he merges it. The viewer **does not gate the release**, and it
+   still has no find — re-confirmed 2026-09-22 rather than superseded — which the hosting guide now
+   names outright, in its three-controls section and among the places the control stops. This item
+   goes when the pull request lands.
 
 5. **Plan 00023 phases 2–5 — the window harness.** Phase 1 (`catch-crash`) is merged. The rest
    follows 00021, split around plan 00026 (decided 2026-09-25): phases 2–3 — the X11 driver and
@@ -639,7 +633,7 @@ either.
 | 1 The controller | L | done | `DiffBuildController` and `IDiffSurface`, 17 members; `SideBySideDiffView` moved onto them with its public surface gated unchanged; rebased across plans 00024 and 00025, pushed, CI green on all five jobs |
 | 2 The viewer | M | done | The navigation verbs moved into the controller first; `DiffViewer` and `DiffViewerTheme`; `AddOwner` brought forward from phase 3 with its gate; no document or model property registered; `ViewerHost`; the three gates that saw it arrive; the viewer's own tests, 28 cases |
 | 3 The theme split and the demo | M | done | One compiled theme per control — `DiffFindBarTheme`, `DiffPaneHeaderTheme`, `DiffStatusStripTheme` — merged by its own control, so no theme is found twice on the way up and the viewer carries no find bar's; the pseudo-class drift gate; the demo's View ▸ Control and `--viewer`, which retired `Excluded[DiffViewer]`; three stale summaries found beside the edit |
-| 4 The record | S | not started | The hosting guide's viewer section, `DECISIONS.md`, `PROGRESS.md`, `CHANGELOG.md` |
+| 4 The record | S | done | The hosting guide: which of the three controls to reach for, the viewer's missing find named outright twice, how far its read-only guarantee goes, styling both with an owner-qualified comma-union rule, direct properties under a pseudo-class, and the nine pseudo-classes — every API name under the guide's citation gate. `CHANGELOG.md`; this file |
 
 ## Plan 00021 phase 3 verification
 
