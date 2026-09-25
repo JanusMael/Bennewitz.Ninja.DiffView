@@ -3113,3 +3113,147 @@ commit, because without it that commit would not build or would not pass:
 own rule is no counts, and this rebase is why: one of them had already moved. Checking every
 citation against where its member is now declared also found one phase 1 missed: the find row cited
 `ApplyModel` as the view's, and it names the seam call the controller makes instead.
+
+## Plan 00021 phase 2: `AddOwner` came forward from phase 3, because the controller speaks the editor's identities
+
+The plan puts `AddOwner` and its equality gate in phase 3. Phase 2 could not build a viewer without
+them. `DiffBuildController` dispatches on `change.Property == SideBySideDiffView.ShowMinimapProperty`
+and raises through `SetAndRaise(SideBySideDiffView.StateProperty, …)`, so a viewer whose properties
+were registered afresh would compare unequal on every branch and never apply a toggle — silently,
+since nothing throws. Measured before the control was written (`~/c/cl/scratch/DiffView/DirectProbe`,
+Avalonia 12.1.2, 14 checks): a change raised through the editor's direct instance on a sibling that
+`AddOwner`s it reaches that sibling's observables, `PropertyChanged`, `INotifyPropertyChanged`, its
+own class handlers and both kinds of binding. The one thing that does not carry over is a class
+handler registered for the **editor type**, which does not fire for the viewer; `src` has none.
+
+The gate came forward with it: `SharedRegistrationTests.Every_property_the_viewer_carries_is_the_editors_own_registration`
+holds every property field the viewer declares, of any visibility, to three things — it equals the
+editor's field of the same name, it is registered on the viewer, and a styled one is the editor's own
+instance. So does the styling claim that only makes sense once the registrations are shared:
+`SharedRegistrationTests.One_comma_union_rule_styles_both_controls_through_one_setter`.
+
+## The viewer registers no document, and the reason is `GetValue`, not visibility
+
+The first cut of the viewer `AddOwner`ed `Document`, `Diagnostics`, `Warnings`, `LeftDocument` and
+`RightDocument` as **internal** fields, on the ground that the controller's `SetAndRaise` through the
+editor's identity needed the viewer's registry to resolve them. Both halves of that were wrong, and
+the first half was a hole in the read-only guarantee.
+
+`AvaloniaObject.GetValue` resolves a direct property by its id against the object's own type. An
+internal registration therefore let the editor's **public** identity read the viewer's value:
+`viewer.GetValue(SideBySideDiffView.LeftDocumentProperty)` returned the live document, and an
+`Insert` through it succeeded (`~/c/cl/scratch/DiffView/round13/LeakProbe`). `GetObservable` did the
+same, and a `PropertyChanged` listener received the document as `NewValue` every time a source was
+replaced. The same resolution re-opened what Appendix A trimmed: the model, the diagnostics and the
+warnings were pollable again through the editor's public identities, which is exactly the "second,
+pollable path" the trim existed to remove.
+
+And the controller does not need the registrations. The same probe measured a sibling that never
+registered the editor's direct property: `SetAndRaise` through that identity stores the value,
+matches in the sibling's `OnPropertyChanged`, and raises both `PropertyChanged` and
+`INotifyPropertyChanged`. With the five fields gone, reading the editor's identities through a viewer
+throws `ArgumentException`, as reading any property it never registered does — measured for the two
+documents, the model and the warnings, the diagnostics being the same path — and the viewer's
+`IDiffSurface.OnDocumentReplaced` raises nothing.
+
+The plan's test for this — no public member of `DiffViewer` returns a `TextDocument` — **passed
+throughout the leak**, because no member did. `SurfaceGateTests.The_viewer_hands_out_no_TextDocument`
+keeps that half and adds the one that failed: every public property identity in this library and in
+AvaloniaEdit that carries a document is read through a viewer, and none may return one of its own.
+`ViewerStateTests.The_seam_answers_for_its_own_control` holds the notification half.
+
+What stays reachable, and is not a leak: the model and its diagnostics still travel as `NewValue` on
+`PropertyChanged`, since the controller raises them through the editor's identities — the same
+immutable data `BuildCompleted` carries. And a pane is a public type in a public template, so a host
+that walks the visual tree to a `DiffPanePresenter` reaches its document. The read-only guarantee is
+the viewer type's API, not the visual tree's; phase 4's hosting guide has to say how far it goes.
+
+The mechanism is Avalonia's, not ours, so it went to the XamlQuality session on 2026-09-25 for
+`docs/avalonia-gotchas.md`, with the measurements, per `AGENTS.md` §8.
+
+## The viewer's allow-list is equality, not a subset
+
+The plan's Testing table says the viewer's surface is *a subset of* its allow-list. A subset lets a
+member vanish with the gate green, and once the package is published a vanished member is the break.
+`SurfaceGateTests.DiffViewer_reachable_surface_matches_its_allow_list` asserts equality, as the
+editor's gate always has, so a removal is the same deliberate edit to `fixtures/api/viewer.txt` that
+an addition already was. The mutation that separates the two — a public member of the viewer made
+internal — fails the equality gate and would pass a subset one.
+
+The fixture is the viewer's own reflection dump, in the gate's format: Appendix A's Keep table, the
+constructor, and plan 00025's two header names, which postdate the appendix. It was generated rather
+than taken from the draft derived during phase 1, because that draft carried three event lines that
+do not belong — `FindCompleted`, `PaneContextMenuOpening` and `HeaderContextMenuOpening`. The
+derivation read an event line's second token, which is the handler type, as the member's name, so no
+event ever matched the editor-only list; and the checker that compared the draft against the Keep
+table read events the same way, so it confirmed the draft. Cross-checked by name with the event read
+from the line's last token (`~/c/cl/scratch/DiffView/round13/keep_vs_dump.py`).
+
+## A rule that styles both controls needs an owner-qualified setter
+
+The plan documents `Selector="local|DiffViewer, local|SideBySideDiffView"` as the way to reach both
+controls without a shared class. Measured (`~/c/cl/scratch/DiffView/round13/StyleProbe`, the runtime
+XAML loader, Avalonia 12.1.2): with `Property="ShowMinimap"` the rule **does not load** — a union's
+target type is the nearest common base, `TemplatedControl`, which has no such property. With
+`dv:SideBySideDiffView.ShowMinimap`, `dv:DiffViewer.ShowMinimap` or the parenthesised form it loads,
+and one setter reaches both, because a styled property owned through `AddOwner` is one instance.
+
+Phase 4's guide must print the qualified form. The test pins both halves — the unqualified rule
+failing and the qualified one reaching both — so the guide and the framework cannot part silently.
+Sent to the XamlQuality session with the other on 2026-09-25; the compiled XAML path was not
+measured.
+
+## "The controller runs without a visual tree" holds without a window, not without a control
+
+The plan's Testing table has the controller "constructed directly and driven through a build, with
+no control, no template and no headless app". Phase 1 never wrote it, and as worded it cannot be
+written. The seam hands the controller a `TemplatedControl`, and the controller reads every option
+from it through `Control.GetValue`, so there is no controller without a control; and this suite
+creates its controls on the headless dispatcher, so there is no test without the headless app.
+
+Decided 2026-09-25 by Brian: narrow the claim to what holds, and test that.
+`ViewerStateTests.A_viewer_that_is_never_shown_builds_to_ready` drives a viewer that is never shown —
+no window, no template, every part absent — through a build to `Ready`, its result raised and its
+changes walkable. `AGENTS.md` §6 said the orchestration "can be driven with no visual tree" and now
+says exactly that much, citing the test.
+
+## The navigation verbs moved into the controller before the viewer existed
+
+The plan puts navigation on both controls. Phase 1 left the bodies of the four walks, `GoToChange`
+and `SelectChange` on the editor, so a viewer implementing them again would have been the second copy
+the controller exists to prevent. The commit *the navigation verbs move into the controller* moved
+them into `DiffBuildController`, with `SelectLines` behind `SelectChange`, and both controls now
+forward to one implementation. The same commit removed
+the controller's `LeftReadOnly` and `RightReadOnly`: nothing read either, and each read a property
+only the editor registers, so on the viewer it would silently have answered the editor's default.
+
+## `DiffFindBar` is no longer the only exclusion, and the harness's floor mutation had to learn it
+
+Plan 00025 records *"`DiffFindBar` is the only exclusion"*. Phase 2 excludes `DiffViewer` as well,
+until phase 3's demo instantiates it — the case plan 00025 provides for, a new public control either
+hosted by the demo or named in `AccessibilityCoverageTests.Excluded` with a reason — and the exclusion
+test skips a control no markup of ours instantiates, so the entry holds until the demo hosts an
+unnamed one.
+
+The second entry broke a premise nothing had written down. The harness mutation *"the only exclusion
+is removed"* deleted `DiffFindBar`'s entry by name, so with `DiffViewer`'s standing the set was never
+empty: the floor, `Assert.NotEmpty(Excluded)`, stayed green and the per-name coverage failed instead.
+The full run over the phase 2 commit reported exactly that — one kill by the wrong test, and the floor
+untripped — which is the harness doing its job over a slice the previous session had verified with
+the suite alone. The mutation, now *"every exclusion is removed"*, empties the set whatever it holds,
+and survives phase 3 retiring `DiffViewer`'s entry.
+
+## The viewer carries plan 00025's header names
+
+Appendix A was written before plan 00025 gave the editor `LeftHeaderName` and `RightHeaderName`. The
+viewer has both headers, so it carries both names — the allow-list's eight lines beyond the appendix.
+
+## The viewer draws the editor's frame, compared as two frames
+
+`ViewerDrawingTests.The_viewer_draws_exactly_what_the_editor_draws` compares the editor's and the
+viewer's whole frames pixel for pixel, with no tolerance, beside each decorator's own record of what it
+drew — the connector's polygons, the margins' `LastColumnRight` and chips, the current-block outline,
+the map's lanes. Not a snapshot: nothing is stored, and both frames are the running platform's own, so
+the comparison holds on every rasterizer. The mutation that proves it is the one §5 of `AGENTS.md`
+warns a stored snapshot cannot see — copy arrows appearing in the viewer's number margins, a change
+smaller than a row.
