@@ -165,6 +165,45 @@ public sealed class ViewerStateTests
         Assert.Null(viewer.View.StatusStrip!.FindText);
     }
 
+    /// <summary>
+    /// The orchestration needs no window and no template: a viewer that is never shown builds, moves
+    /// through its states, raises its result and walks its changes, with every part simply absent.
+    /// </summary>
+    /// <remarks>
+    /// Plan 00021 asked for more — the controller with no control at all, and no headless app. The
+    /// seam rules out the first, since the controller reads its options from the control it is
+    /// handed, and this suite's dispatcher rules out the second; <c>DECISIONS.md</c> records the
+    /// narrowing. What is left is the half a host can rely on: nothing waits for a template.
+    /// </remarks>
+    [AvaloniaFact]
+    public async Task A_viewer_that_is_never_shown_builds_to_ready()
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        DiffViewer viewer = new()
+        {
+            TimeProvider = new FakeTimeProvider(),
+            Builder = CompositeHost.ZeroTimeBuilder,
+        };
+        List<DiffBuildCompletedEventArgs> completed = [];
+        viewer.BuildCompleted += (_, e) => completed.Add(e);
+
+        viewer.LeftSource = left;
+        viewer.RightSource = right;
+        Assert.Equal(DiffViewState.Building, viewer.State);
+        Task build = viewer.CurrentBuild ?? throw new InvalidOperationException("Assigning both sources started no build.");
+        await build;
+        ViewerHost.Layout();
+
+        Assert.Null(viewer.LeftPane);
+        Assert.Null(viewer.Minimap);
+        Assert.Equal(DiffViewState.Ready, viewer.State);
+        Assert.Equal(5, viewer.ChangeCount);
+        Assert.Same(viewer.Document, Assert.Single(completed).Result.Document);
+
+        viewer.NextChange();
+        Assert.Equal(0, viewer.CurrentChangeIndex);
+    }
+
     private static void AssertOneSet(View[] views, string step, params string[] expected)
     {
         string[] first = PseudoClassesOf(views[0].Control);
