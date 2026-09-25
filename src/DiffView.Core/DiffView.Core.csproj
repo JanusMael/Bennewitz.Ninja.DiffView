@@ -15,6 +15,12 @@
          it. Plan 00018 left this unset for that reason and handed it to plan 00019. The value is the
          file's name *inside the package*, which is why it carries no directory. -->
     <PackageReadmeFile>hosting-diffview.md</PackageReadmeFile>
+    <!-- Marked trimmable, with the trim analyzer on every build (plan 00004 in
+         Bennewitz.Ninja.Templates). The mark is compiled in, and a consumer's TrimMode=partial
+         publish trims only marked assemblies. The analyzer cannot see compiled XAML; the trim
+         check's TrimMode=link publish of the demo is the ILLink pass that can. -->
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
   </PropertyGroup>
 
   <ItemGroup>
