@@ -66,7 +66,7 @@ commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, u
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
 `IDiffSurface`, on `feat/the-viewer-beside-the-editor`, rebased onto the `main` that carries plans
-00024 and 00025, 623 green. **Plan 00023 phase 1 is
+00024 and 00025, 623 green; **phase 2, the viewer, is in progress**. **Plan 00023 phase 1 is
 done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every
 CI job passes, on all three platforms.
 
@@ -153,12 +153,19 @@ wording.
 4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done: `DiffBuildController` and
    `IDiffSurface` (17 members, not the ~15 the plan estimated), rebased across plans 00024 and 00025
    with what that carried recorded in `DECISIONS.md` — 623 green, main's 621 and the surface gate's
-   two. Phase 2 is `DiffViewer` itself, and it **no longer gates the release**. It arrives owing three
-   things to the gates: the demo hosts one or `AccessibilityCoverageTests.Excluded` names it with a
-   reason, per plan 00025; the runtime walk puts its interactive parts on screen, per plan 00025; and
-   `TemplatePartTests` sees its parts — the controller looks them up by `SideBySideDiffView`'s
-   constants, so XQ1003 checks a second host's theme only against the parts that host declares
-   itself, and a `DiffViewer` declaring none arrives as a new skip.
+   two; CI green on all five jobs. Phase 2, `DiffViewer`, **no longer gates the release**, and is in
+   progress. In: the navigation verbs moved into the controller so both views share them; the control
+   itself, every shared property the editor's own registration through `AddOwner`, and **no document
+   or model property registered at all** — an internal one let the editor's public identity read the
+   viewer's live document; its theme, `DiffViewerTheme`, the editor's template without the find bar;
+   `ViewerHost`; the three gates that saw it arrive — `AccessibilityCoverageTests.Excluded` names it
+   until phase 3's demo hosts it, the runtime walk realises a loaded and a failing viewer, and
+   `TemplatePartTests` holds the controller's lookups to every host's own constants; and the viewer's
+   own tests, each proven able to fail by a targeted mutation — its surface equal to
+   `fixtures/api/viewer.txt`, the `AddOwner` gate, no document handed out, the editor's frame pixel for
+   pixel, no menu on six surfaces, no key but the pane's, the walks, the map and the connector,
+   folding, every chrome dual path, one pseudo-class set across all three views, and the seam's
+   answers. Still owed by phase 2: the mutation harness over the new gate lines, and the record.
    The viewer still has no find — re-confirmed 2026-09-22 rather than superseded — and **phase 4's
    hosting guide must name that gap outright**, so a host wanting read-only side-by-side with search
    meets documentation rather than silence.

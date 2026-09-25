@@ -94,7 +94,8 @@ internal interface IDiffSurface
     /// A side's document was replaced. The controller owns the storage; raising the change is the
     /// control's, because the property is registered against the control's own type and a
     /// <c>DirectProperty</c> of one sibling is not in the other's registry. Editor: the public
-    /// accessor's notification. Viewer: an internal one.
+    /// accessor's notification. Viewer: nothing — it registers no document property, because any
+    /// registration would let the editor's public identity read the viewer's document.
     /// </summary>
     void OnDocumentReplaced(DiffSide side, TextDocument oldValue, TextDocument newValue);
 

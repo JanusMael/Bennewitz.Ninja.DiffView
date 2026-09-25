@@ -92,6 +92,33 @@ internal static class PixelProbe
         return new PixelRect(x, y, Math.Max(0, r - x), Math.Max(0, b - y));
     }
 
+    /// <summary>
+    /// The pixels inside <paramref name="area"/> at which two frames differ: how many, and the first
+    /// found. Exact, with no tolerance, because it is for two frames one rasterizer drew in the same
+    /// process — where any difference at all is a difference in what was drawn.
+    /// </summary>
+    public static (int Count, PixelPoint? First) Differing(WriteableBitmap a, WriteableBitmap b, PixelRect area)
+    {
+        using ILockedFramebuffer first = a.Lock();
+        using ILockedFramebuffer second = b.Lock();
+        PixelRect clipped = area.Intersect(new PixelRect(first.Size)).Intersect(new PixelRect(second.Size));
+        int count = 0;
+        PixelPoint? at = null;
+        for (int y = clipped.Y; y < clipped.Bottom; y++)
+        {
+            for (int x = clipped.X; x < clipped.Right; x++)
+            {
+                if (Read(first, x, y) != Read(second, x, y))
+                {
+                    count++;
+                    at ??= new PixelPoint(x, y);
+                }
+            }
+        }
+
+        return (count, at);
+    }
+
     public static bool IsDark(Color c) => c.R < 100 && c.G < 100 && c.B < 100;
 
     public static bool IsRed(Color c) => c.R > 180 && c.G < 90 && c.B < 90;
