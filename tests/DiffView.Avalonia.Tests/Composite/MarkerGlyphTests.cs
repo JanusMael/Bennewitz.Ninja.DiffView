@@ -51,8 +51,14 @@ public sealed class MarkerGlyphTests
         }
         """;
 
-    /// <summary>Ink a marker must put down to be scannable; a single digit lays down about 29.</summary>
-    private const int InkFloor = 20;
+    /// <summary>
+    /// Ink a marker must lay down to be scannable, read as coverage — see <see cref="PixelProbe.Coverage"/>.
+    /// What CI measured, Linux / Windows / macOS: '−' 9.96 / 10.71 / 7.38, '+' 18.72 / 20.08 / 17.97,
+    /// '≠' 28.49 / 29.38 / 26.71, and a line-number digit 17.5 / 16.6 / 22.4 for scale. The floor sits
+    /// midway between the lightest of them, macOS's '−' at 7.38, and a middle dot '·', which lays down
+    /// 4.79 here — room either side for another rasterizer.
+    /// </summary>
+    private const double InkFloor = 6.0;
 
     [AvaloniaFact]
     public void The_vocabulary_is_one_family_of_operators()
@@ -72,7 +78,6 @@ public sealed class MarkerGlyphTests
         await host.LoadAsync(Left, Right);
 
         using WriteableBitmap frame = host.Capture();
-        Color gutter = PresenterHost.Token("DiffView.GutterBackgroundBrush");
 
         // One block of each kind, so every glyph is on screen: the left owns the deletion, the
         // right owns the insertion, and both own the modified row.
@@ -80,7 +85,7 @@ public sealed class MarkerGlyphTests
             [DiffLineKind.Deleted, DiffLineKind.Modified, DiffLineKind.Inserted],
             host.View.Document!.Blocks.Select(b => b.Kind));
 
-        Dictionary<DiffLineKind, int> ink = [];
+        Dictionary<DiffLineKind, double> ink = [];
         foreach (DiffPanePresenter pane in (DiffPanePresenter[])[host.Left, host.Right])
         {
             foreach ((int line, DiffLineKind kind) in pane.ChangeMarkerMargin.LastRendered)
@@ -90,21 +95,21 @@ public sealed class MarkerGlyphTests
                     continue;
                 }
 
-                ink[kind] = Math.Max(ink.GetValueOrDefault(kind), Ink(host, frame, pane, line, gutter));
+                ink[kind] = Math.Max(ink.GetValueOrDefault(kind), Ink(host, frame, pane, line, kind));
             }
         }
 
         Assert.Equal(3, ink.Count);
-        foreach ((DiffLineKind kind, int painted) in ink)
+        foreach ((DiffLineKind kind, double painted) in ink)
         {
             Assert.True(
                 painted >= InkFloor,
-                $"the {kind} marker '{ChangeMarkerMargin.GlyphFor(kind)}' painted {painted} pixels, under the {InkFloor} floor");
+                FormattableString.Invariant($"the {kind} marker '{ChangeMarkerMargin.GlyphFor(kind)}' laid down {painted:0.00} of ink, under the {InkFloor} floor"));
         }
     }
 
-    /// <summary>Pixels the marker cell of <paramref name="line"/> paints over the gutter background.</summary>
-    private static int Ink(CompositeHost host, WriteableBitmap frame, DiffPanePresenter pane, int line, Color background)
+    /// <summary>The ink the marker in <paramref name="line"/>'s cell lays over its chip, read as coverage.</summary>
+    private static double Ink(CompositeHost host, WriteableBitmap frame, DiffPanePresenter pane, int line, DiffLineKind kind)
     {
         ChangeMarkerMargin margin = pane.ChangeMarkerMargin;
         double rowHeight = pane.TextArea.TextView.DefaultLineHeight;
@@ -113,8 +118,11 @@ public sealed class MarkerGlyphTests
                      + (pane.Metadata.PaddingBefore(line) * rowHeight);
         Point origin = margin.TranslatePoint(new Point(0, 0), host.Window)!.Value;
 
-        // The bar lives at the inner edge and is not a glyph, so the probe stops short of it.
+        // The bar lives at the inner edge and is not a glyph, so the probe stops short of it. ⛔ Coverage,
+        // not a count of pixels past a threshold, which measures how one rasterizer rounds a thin stroke:
+        // it read the same '−' as 25 pixels on Linux, 18 on Windows and 16 on macOS.
         PixelRect cell = PixelProbe.Inside(origin.X, origin.Y + top, origin.X + margin.Bounds.Width - 3, origin.Y + top + rowHeight, inset: 0);
-        return PixelProbe.Count(frame, cell, c => !PresenterHost.Near(c, background, tolerance: 24));
+        return PixelProbe.Coverage(
+            frame, cell, PresenterHost.Token($"DiffView.MarkerChip{kind}Brush"), PresenterHost.Token($"DiffView.Marker{kind}Brush")).Mass;
     }
 }

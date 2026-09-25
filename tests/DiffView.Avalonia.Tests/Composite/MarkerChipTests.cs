@@ -120,6 +120,13 @@ public sealed class MarkerChipTests
         }
     }
 
+    /// <summary>
+    /// How far a glyph's ink may sit from its chip's centre. What CI measured, Deleted then Modified:
+    /// −0.22 and −0.30 px on Linux and on Windows, −0.09 and −0.10 px on macOS. The defect this guards
+    /// moved a glyph a whole pixel.
+    /// </summary>
+    private const double CentringTolerance = 0.5;
+
     [AvaloniaFact]
     public async Task The_glyph_is_centred_in_its_chip()
     {
@@ -134,15 +141,19 @@ public sealed class MarkerChipTests
 
         foreach ((Rect chip, DiffLineKind kind) in margin.LastChips)
         {
-            // The glyph's ink, weighed either side of the chip's centre line. The bug this test
-            // exists for put the chip a pixel off the glyph, which no reported rectangle can show.
-            Color marker = PresenterHost.Token(kind == DiffLineKind.Deleted
-                ? "DiffView.MarkerDeletedBrush"
-                : "DiffView.MarkerModifiedBrush");
-            int left = Ink(frame, origin, new Rect(chip.Left, chip.Top, chip.Width / 2, chip.Height), marker);
-            int right = Ink(frame, origin, new Rect(chip.Center.X, chip.Top, chip.Width / 2, chip.Height), marker);
-            Assert.True(left > 0 && right > 0, $"{kind}: glyph ink was {left} and {right}");
-            Assert.True(Math.Abs(left - right) <= Math.Max(left, right) / 3, $"{kind}: glyph ink is lopsided, {left} against {right}");
+            // Where the glyph's ink falls across its chip. The bug this test exists for put the chip a
+            // pixel off the glyph, which no reported rectangle can show. ⛔ Read as coverage, never as
+            // pixels of the marker's exact colour, which a centred '−' has none of on Windows and macOS.
+            Color marker = PresenterHost.Token($"DiffView.Marker{kind}Brush");
+            Color ground = PresenterHost.Token($"DiffView.MarkerChip{kind}Brush");
+            PixelRect area = PixelProbe.Inside(origin.X + chip.Left, origin.Y + chip.Top, origin.X + chip.Right, origin.Y + chip.Bottom, inset: 0);
+            (double mass, double centroid) = PixelProbe.Coverage(frame, area, ground, marker);
+            Assert.True(mass > 0, $"{kind}: its chip carries no glyph ink at all");
+
+            double offset = centroid - (origin.X + chip.Center.X);
+            Assert.True(
+                Math.Abs(offset) <= CentringTolerance,
+                FormattableString.Invariant($"{kind}: the glyph's ink sits {offset:0.00} px off its chip's centre, past the {CentringTolerance} px tolerance"));
         }
     }
 
