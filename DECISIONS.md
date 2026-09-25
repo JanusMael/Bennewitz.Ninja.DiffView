@@ -3280,3 +3280,18 @@ is public — so no visibility hides a registration, and "not even internally" i
 only form of the rule that holds. And a setter qualified with the editor's identity loads and silently
 sets nothing on a control that registered its own property of that name, which is the case
 `SharedRegistrationTests.Every_property_the_viewer_carries_is_the_editors_own_registration` closes.
+
+## Both Avalonia lessons of phase 2 are XamlQuality's now
+
+The two lessons sent on 2026-09-25 landed the same day in `docs/avalonia-gotchas.md` of
+`JanusMael/Bennewitz.Ninja.XamlQuality`, pull request #26: under *Styling / theming*, *In a selector
+with a comma, an unqualified setter property is looked up on the alternatives' common base*; under
+*Templates / controls*, *A direct property is never private: one shared with `AddOwner` answers to the
+original owner's public field*. XamlQuality measured them wider than DiffView had, on Avalonia 12.1.3:
+the compiled XAML path fails the comma-union rule too, with `AVLN2000`; `SetValue` writes through a
+shared registration as `GetValue` reads through it; and `PropertyChanged` hands the value out even
+where nothing was registered.
+
+Per `AGENTS.md` §8, the viewer's ledger in §6 now points at those two entries instead of restating
+the mechanism. The phase 2 entries above keep their measurements, because they are why DiffView
+decided what it did.
