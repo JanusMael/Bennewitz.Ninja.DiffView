@@ -949,64 +949,16 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
     public void ForceAlign() => _controller.ForceAlign();
 
     /// <summary>Moves to the next change; at the last one it stays and the strip says so.</summary>
-    public void NextChange()
-    {
-        if (ChangeCount == 0)
-        {
-            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
-            return;
-        }
-
-        if (CurrentChangeIndex >= ChangeCount - 1)
-        {
-            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoNext));
-            return;
-        }
-
-        _controller.SetCurrentChange(CurrentChangeIndex + 1, scroll: true);
-    }
+    public void NextChange() => _controller.NextChange();
 
     /// <summary>Moves to the previous change; at the first one, or before any, it stays and the strip says so.</summary>
-    public void PreviousChange()
-    {
-        if (ChangeCount == 0)
-        {
-            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
-            return;
-        }
-
-        if (CurrentChangeIndex <= 0)
-        {
-            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoPrevious));
-            return;
-        }
-
-        _controller.SetCurrentChange(CurrentChangeIndex - 1, scroll: true);
-    }
+    public void PreviousChange() => _controller.PreviousChange();
 
     /// <summary>Moves to the first change.</summary>
-    public void FirstChange()
-    {
-        if (ChangeCount == 0)
-        {
-            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
-            return;
-        }
-
-        _controller.SetCurrentChange(0, scroll: true);
-    }
+    public void FirstChange() => _controller.FirstChange();
 
     /// <summary>Moves to the last change.</summary>
-    public void LastChange()
-    {
-        if (ChangeCount == 0)
-        {
-            Status.SetWarning(DiffViewStrings.Get(DiffViewStrings.NavigationNoChanges));
-            return;
-        }
-
-        _controller.SetCurrentChange(ChangeCount - 1, scroll: true);
-    }
+    public void LastChange() => _controller.LastChange();
 
     /// <summary>Moves keyboard focus to the other pane; to the left one when neither has it.</summary>
     public void SwitchPane()
@@ -1819,13 +1771,7 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
     /// connector's left-click has always done, given a name so that a menu can offer it and a
     /// host can bind it; an index the model does not have does nothing.
     /// </summary>
-    public void GoToChange(int index)
-    {
-        if (Document is { } model && index >= 0 && index < model.Blocks.Count)
-        {
-            _controller.SetCurrentChange(index, scroll: true);
-        }
-    }
+    public void GoToChange(int index) => _controller.GoToChange(index);
 
     /// <summary>
     /// Selects block <paramref name="index"/>'s lines on <paramref name="side"/>, or on both
@@ -1836,49 +1782,7 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
     /// selection cleared rather than left standing. After "select this change" a selection
     /// elsewhere would be describing a different change, and the copy arrows read the selection.
     /// </remarks>
-    public void SelectChange(int index, DiffSide? side)
-    {
-        if (Document is not { } model || index < 0 || index >= model.Blocks.Count)
-        {
-            return;
-        }
-
-        ChangeBlock block = model.Blocks[index];
-        foreach (DiffSide each in (DiffSide[])[DiffSide.Left, DiffSide.Right])
-        {
-            if (side is { } only && only != each)
-            {
-                continue;
-            }
-
-            SelectLines(each, block.LinesFor(each));
-        }
-    }
-
-    /// <summary>
-    /// Selects whole lines <paramref name="lines"/> — the model's 0-based counting — on
-    /// <paramref name="side"/>, clearing the selection for an empty range.
-    /// </summary>
-    private void SelectLines(DiffSide side, LineRange lines)
-    {
-        if (Pane(side) is not { } pane || pane.Document is not { } document)
-        {
-            return;
-        }
-
-        // The model can be ahead of a document an edit has shortened, so the range is clamped
-        // rather than trusted; a range entirely past the end reads as empty.
-        int first = lines.Start + 1;
-        int last = Math.Min(lines.End, document.LineCount);
-        if (lines.IsEmpty || first > last)
-        {
-            pane.TextArea.ClearSelection();
-            return;
-        }
-
-        int start = document.GetLineByNumber(first).Offset;
-        pane.Select(start, document.GetLineByNumber(last).EndOffset - start);
-    }
+    public void SelectChange(int index, DiffSide? side) => _controller.SelectChange(index, side);
 
     /// <summary>Whether <paramref name="side"/> refuses typing.</summary>
     private bool ReadOnly(DiffSide side) => side == DiffSide.Left ? LeftReadOnly : RightReadOnly;
