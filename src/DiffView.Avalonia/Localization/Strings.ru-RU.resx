@@ -185,6 +185,9 @@
   <data name="Header.Encoding.Text" xml:space="preserve">
     <value>текст</value>
   </data>
+  <data name="Header.Left.Name" xml:space="preserve">
+    <value>Заголовок левого файла</value>
+  </data>
   <data name="Header.Left.Title" xml:space="preserve">
     <value>Слева</value>
   </data>
@@ -211,6 +214,9 @@
   </data>
   <data name="Header.NoContent" xml:space="preserve">
     <value>Нет содержимого</value>
+  </data>
+  <data name="Header.Right.Name" xml:space="preserve">
+    <value>Заголовок правого файла</value>
   </data>
   <data name="Header.Right.Title" xml:space="preserve">
     <value>Справа</value>

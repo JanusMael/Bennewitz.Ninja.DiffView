@@ -34,6 +34,12 @@ public static class DiffViewStrings
     /// <summary>Automation name of the change-marker margin.</summary>
     public const string ChangeMarkersMarginName = "ChangeMarkersMargin.Name";
 
+    /// <summary>Automation name of the header above the left pane.</summary>
+    public const string LeftHeaderName = "Header.Left.Name";
+
+    /// <summary>Automation name of the header above the right pane.</summary>
+    public const string RightHeaderName = "Header.Right.Name";
+
     /// <summary>Automation name of the status strip.</summary>
     public const string StatusStripName = "StatusStrip.Name";
 
@@ -460,6 +466,8 @@ public static class DiffViewStrings
         [UnifiedPaneName] = "Unified pane",
         [LineNumbersMarginName] = "Line numbers",
         [ChangeMarkersMarginName] = "Change markers",
+        [LeftHeaderName] = "Left file header",
+        [RightHeaderName] = "Right file header",
         [StatusStripName] = "Status",
         [RenderFault] = "{0} failed and was disabled: {1}",
         [RenderFaultOnLine] = "{0} failed on line {1} and was disabled: {2}",

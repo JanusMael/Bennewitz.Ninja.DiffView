@@ -40,8 +40,8 @@ _none_
 
 | Consumer | Directories | Files | References | Distinct keys | Own keys | Digest | Audited against |
 |---|---|---:|---:|---:|---:|---|---|
-| DiffView | `src/DiffView.Avalonia/Themes` | 6 | 68 | 18 | 50 | `090b1062fa4a` | all |
-| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 6 | 68 | 18 | 50 | `090b1062fa4a` | all |
+| DiffView | `src/DiffView.Avalonia/Themes` | 6 | 68 | 18 | 50 | `491b9b785636` | all |
+| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 6 | 68 | 18 | 50 | `491b9b785636` | all |
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `60346377b215` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `76fecb00930b` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d20b807c8919` | Fluent, Semi, Semi + compat |

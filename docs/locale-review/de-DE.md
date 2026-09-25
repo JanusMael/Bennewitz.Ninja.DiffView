@@ -4,7 +4,7 @@
 `src/DiffView.Avalonia/Localization/Strings.de-DE.resx`, against the key in the first column; this document is
 regenerated from it and a test fails if the two drift apart.
 
-These 143 strings were **machine-translated and have not been read by a speaker of
+These 145 strings were **machine-translated and have not been read by a speaker of
 German (Germany)**. That is what this document exists to change. What is already guaranteed is
 structural — every key present, every placeholder preserved — and none of it is about whether the
 wording is right, natural, or the register a developer tool should use.
@@ -74,6 +74,7 @@ To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture d
 | `Header.Detail` | The header detail line: {0} lines, {1} encoding, {2} line endings, {3} size. | `{0}` `{1}` `{2}` `{3}` | {0} · {1} · {2} · {3} | {0} · {1} · {2} · {3} |
 | `Header.Dirty` | The marker on a pane whose edits are not on disk. | — | Unsaved | Ungespeichert |
 | `Header.Encoding.Text` | The encoding when the source came from text rather than bytes. | — | text | Text |
+| `Header.Left.Name` | Automation name of the header above the left pane. | — | Left file header | Kopfzeile der linken Datei |
 | `Header.Left.Title` | The left header's title when the source has none. | — | Left | Links |
 | `Header.LineEnding.Cr` | CR line endings. | — | CR | CR |
 | `Header.LineEnding.CrLf` | CRLF line endings. | — | CRLF | CRLF |
@@ -83,6 +84,7 @@ To see a string in place: `dotnet run --project src/DiffView.Demo -- --culture d
 | `Header.Lines` | {0} lines. | `{0}` | {0} lines | {0} Zeilen |
 | `Header.Lines.One` | Exactly one line. | — | 1 line | 1 Zeile |
 | `Header.NoContent` | A header with no source. | — | No content | Kein Inhalt |
+| `Header.Right.Name` | Automation name of the header above the right pane. | — | Right file header | Kopfzeile der rechten Datei |
 | `Header.Right.Title` | The right header's title when the source has none. | — | Right | Rechts |
 | `Kind.Deleted` | A deleted row's kind. | — | deleted | gelöscht |
 | `Kind.Inserted` | An inserted row's kind. | — | inserted | eingefügt |

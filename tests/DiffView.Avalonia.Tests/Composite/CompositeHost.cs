@@ -44,6 +44,14 @@ internal sealed class CompositeHost : IDisposable
         return result with { Diagnostics = result.Diagnostics with { BuildTime = TimeSpan.Zero } };
     }
 
+    /// <summary>
+    /// A builder that always fails, which puts a view in <c>Failed</c> with the Retry action on its banner.
+    /// Shared by both views' hosts, and kept out of the gate files so that nothing there throws — the
+    /// mutation harness counts only assertions as guards, and rejects a <c>throw</c> in a gate file.
+    /// </summary>
+    public static DiffBuildResult FailingBuilder(PaneSource left, PaneSource right, DiffOptions options, CancellationToken token) =>
+        throw new InvalidOperationException("the build fails on purpose");
+
     public SideBySideDiffView View { get; }
 
     public Window Window { get; }
