@@ -59,7 +59,8 @@ jobs:
       # tests/Directory.Build.props): they were rendered and reviewed on Linux, and another platform's
       # rasterization differs without anything being wrong. A filter is silent in the test summary —
       # tests that quietly vanish read as tests that passed — so this says how many were left out,
-      # and which.
+      # and which. --ignore-exit-code 8 because the model's test assembly holds no frame test, and a
+      # listing that finds none in an assembly exits 8.
       - name: Linux-only baselines left out here
         if: ${{ !cancelled() && runner.os != 'Linux' }}
         run: >
@@ -67,6 +68,7 @@ jobs:
           --no-build -c Debug --list-tests
           -p:ExcludeLinuxBaselines=false
           --filter-trait Baseline=Linux
+          --ignore-exit-code 8
 
       # ⛔ The mutation harness's standing half. A guard marked inert-at-pin is excused only at the
       # version it was measured against, so a pin bump is exactly the change that lands green while
