@@ -2813,6 +2813,87 @@ the *survivors*: the panes' height, which grows by what the part gave up and ret
 when the part comes back. `MinimapLaneTests` already did this for the map; `ChromeToggleTests` does
 it for the other three.
 
+## Plan 00021 phase 1: what the controller actually moved, against what the plan said
+
+The plan quotes **2,785 lines** as the shared half. That number is right for the shape it was
+measured on and wrong for the shape that was built. The spike measured a **base class**, where the
+53 property registrations and their 53 public CLR wrappers move *up* with everything else. Under the
+controller they do not move at all: they are `SideBySideDiffView`'s public surface, gated at 307, and
+a controller is not a control.
+
+Measured on the branch, by the same tool that produced the split (`~/c/cl/scratch/DiffView/split.py`,
+110 members named in `move-list.txt`):
+
+| | Lines |
+|---|---|
+| `SideBySideDiffView` before | 4,297 |
+| `SideBySideDiffView` after | 2,945 |
+| `DiffBuildController` | 1,872 |
+| `IDiffSurface` | 111 |
+
+**1,226 lines were cut and pasted verbatim.** The controller is larger than that because it also
+carries the state region — the accessors for the 14 direct properties whose storage moved and the 23
+styled properties it reads back — and the lifecycle members the control used to hold inline
+(`ApplyTemplate`, `Initialize`, `OnPropertyChanged`, `OnDetached`). The sum of the two files exceeds
+the original by roughly 630 lines, which is the seam, the forwarders and their documentation. The
+plan's claim that the controller **rewrites less** than an extension block holds; its line figure
+does not, and this is the record of that.
+
+## The variation points are eleven, not ten
+
+The plan names ten and the compiler found an eleventh: **`OnFoldsChanged`**. `RefreshFolds` calls
+`RaiseFoldingCanExecuteChanged`, which touches `_showAllRows`, `_showDifferencesOnly`, `_showContext`
+and `_expandFold` — four `DelegateCommand`s that are the surface's own public API, exactly as the
+four navigation commands behind point 6 are. It cannot fold into point 6: a fold moves no change and
+a change moves no fold, and the two fire from different places.
+
+`IDiffSurface` is therefore **17 members**: three re-exposures, eleven variation points, three event
+raises. The plan said ~15.
+
+The three re-exposures are also not quite the three the plan named. `InvalidateVisual` needs no
+member of its own — it is public on `Visual` and reachable through `Control`, the accessor that
+gives the controller `GetValue`, `SetCurrentValue` and the resources. `PseudoClasses` and
+`SetAndRaise` are genuinely protected and do need one each.
+
+## Phase 1 branched from `b768766`, not the `bf4b14f` the plan names
+
+The plan's Conventions section names `bf4b14f` as the base. `main` had moved six commits past it by
+the time phase 1 started, and one of those six is `aa090b3` — plan 00023 phase 1, `catch-crash`,
+which the same Conventions paragraph says **lands first** precisely so a false green cannot hide
+inside a move this size. Branching from the named hash would have excluded the thing the plan asked
+for. Branched from `b768766`, which contains `bf4b14f`.
+
+## A public member cannot name an internal type, so the gate does not pretend to check it
+
+`SurfaceGateTests` was written with two assertions about leaking and ships with one. The second —
+that `DiffBuildController` never appears in a public signature — cannot fail: a public member
+returning an internal type is **CS0050**, and one taking it is CS0051. This was found by mutation,
+not by reading: `public DiffBuildController Leaked => _controller;` never reached a test runner.
+
+The same mutation pass killed a second false assumption. `public RowProjection ApplyFolds(...)` was
+the first candidate for proving the surface dump can go red, and it is also CS0050 — `RowProjection`
+is internal. A mutation that adds a documented public member of a public type
+(`public int LeakedRowCount => 0;`) is the one that compiles, and it kills the gate. Under
+`-warnaserror` with `GenerateDocumentationFile`, a mutation that adds a public member must carry a
+doc comment or it fails as CS1591 instead, which is the compiler talking and not the test.
+
+What survives is the assertion that earns its place: every `IDiffSurface` member is implemented
+**explicitly**, checked through `GetInterfaceMap` and `IsPrivate` rather than by looking for names.
+Looking for names would have been wrong as well as weak — `IsDirty` and `IsEdited` are public verbs
+of the editor that the seam deliberately reuses.
+
+## `OnSourceReplaced` is called before the document is assigned, and that ordering is the contract
+
+The controller owns `_leftDocument` and `_rightDocument`; the editor owns the four handlers on them
+and the per-side editing state. The seam call comes **first**, while the fields still hold the
+outgoing documents — that is the only moment the editor can take its handlers off them. The new
+document is passed in so the editor can put its handlers on, and the controller assigns the field
+immediately afterwards.
+
+The stamp of the file on disk is not passed. The editor reads `LeftSource` / `RightSource` itself,
+which are already the new values: `OnSourceChanged` runs off the property-change path, so the styled
+property has been written by the time anything is notified.
+
 ## The repository is `Bennewitz.Ninja.DiffView`, not `DiffView`
 
 Plan 00018 named `https://github.com/JanusMael/DiffView` and the metadata carried it. The repository
@@ -2992,3 +3073,43 @@ a simulated Windows configuration, reproduced the failure, and the new one did n
 on 2026-09-24 over waiting for XamlQuality, whose own fix — a CRLF pair read as LF, and files ordered
 by their relative path — merged the same day as its #22, unreleased. That fix also covers a
 developer's own sibling checkouts, which this does not.
+
+## Plan 00021 phase 1, carried across plans 00024 and 00025
+
+Phase 1 was pushed before plans 00024 and 00025 landed, and on 2026-09-24 it was rebased onto the
+`main` that carries them rather than merged forward, so the branch still reads as one change. Main
+had changed code that phase 1 moves or measures in five places. Each carry sits inside phase 1's own
+commit, because without it that commit would not build or would not pass:
+
+- **`Build` and `Find` take the token before the options** since plan 00025 phase 4. Phase 1 had
+  moved `Builder`'s default into `DiffBuildController`, and `Searcher`'s stays on the view; both
+  defaults now call main's argument order. The delegate types a host or a test assigns are unchanged.
+- **The header names are filled in the controller.** Plan 00025 fills `LeftHeaderName` and
+  `RightHeaderName` in `RefreshStrings`, which phase 1 moved; the two fills moved with it, through
+  `Control.SetCurrentValue`.
+- **Two mutations name the controller.** "The side-by-side view stops filling its header names" and
+  the side-by-side half of "the status strip stops filling its dismiss name" edit
+  `DiffBuildController.cs`. `Sub` refuses a pattern that matches the wrong number of times, so left
+  alone they would have stopped the harness rather than passed it.
+- **The surface baseline grew by exactly plan 00025's eight members**, 307 to 315 — the two header
+  names, their two property fields and four accessors. This was established from the other side:
+  main's own surface, dumped from the code *before* the refactor, is the baseline the branch is now
+  compared against, byte for byte. So the gate still says the refactor moved nothing out of reach,
+  and every member it newly lists is main's.
+- **XQ1003 skips the controller, and the parts gate now says why that is harmless.** Plan 00025's
+  `TemplatePartTests` expects exactly two skips, and the rebased suite failed it with a third:
+  `DiffBuildController`. XamlQuality 924 credits a `PART_` literal passed to a `Find` call to the
+  type whose code makes the call, and takes every lookup to be on that type's own template. Phase 1
+  moved `ApplyTemplate`'s thirteen lookups into the controller, which has no theme, so the rule names
+  it with the parts it did not check. Measured, nothing was lost — `Inspected` stays 34, and all
+  thirteen are `SideBySideDiffView` constants, which the rule still checks against that view's theme
+  — but that held by construction and nothing asserted it. The gate now expects the third skip and
+  asserts the construction: every part the skip names is a constant of the view, and there is at
+  least one. A new mutation, a lookup by a name the view does not declare, trips that assertion
+  first. The rule reports the parts only inside its reason, so they are read out of that prose; the
+  count is what keeps a change of wording from passing it vacuously.
+
+`AGENTS.md` loses the counts phase 1 wrote into §6 — the surface's size and the seam's. That file's
+own rule is no counts, and this rebase is why: one of them had already moved. Checking every
+citation against where its member is now declared also found one phase 1 missed: the find row cited
+`ApplyModel` as the view's, and it names the seam call the controller makes instead.

@@ -53,6 +53,7 @@ const string FindBar = "src/DiffView.Avalonia/DiffFindBar.cs";
 const string SbsTheme = "src/DiffView.Avalonia/Themes/SideBySideDiffView.axaml";
 const string DemoView = "src/DiffView.Demo/MainWindow.axaml";
 const string SbsSource = "src/DiffView.Avalonia/SideBySideDiffView.cs";
+const string SbsController = "src/DiffView.Avalonia/DiffBuildController.cs";
 const string InlineSource = "src/DiffView.Avalonia/InlineDiffView.cs";
 
 const string ProbeControl = "src/DiffView.Avalonia/MutationProbeControl.cs";
@@ -388,6 +389,14 @@ List<Mutation> mutations =
         () => Sub(SbsSource, @"MinimapPart = ""PART_Minimap""", @"MinimapPart = ""PART_NoSuchPartInAnyTheme"""),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
+    // The controller looks parts up on its host's template, so the rule credits them to the controller
+    // and checks them against no theme; they are covered only while each is a name the view declares.
+    // ⚠ The name must differ from every constant: a literal equal to one compiles to the same IL.
+    new("the controller looks up a part the view does not declare", PartsClass,
+        () => Sub(SbsController, @"e\.NameScope\.Find<DiffMinimap>\(SideBySideDiffView\.MinimapPart\)",
+            @"e.NameScope.Find<DiffMinimap>(""PART_Map"")"),
+        "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
+
     // Which controls are skipped is the precise form of the blinding guard, so it needs a mutation of
     // its own: one of the two legitimately part-less controls gains a part, and stops being skipped.
     new("a themed control with no parts gains one", PartsClass,
@@ -420,8 +429,8 @@ List<Mutation> mutations =
     // code that fills the property goes. The markup scan cannot see this — without the runtime check,
     // both of these leave the whole suite green, measured rather than argued.
     new("the side-by-side view stops filling its header names", A11yClass,
-        () => Sub(SbsSource,
-            @"\n\s*SetCurrentValue\((?:Left|Right)HeaderNameProperty, DiffViewStrings\.Get\(DiffViewStrings\.(?:Left|Right)HeaderName\)\);",
+        () => Sub(SbsController,
+            @"\n\s*Control\.SetCurrentValue\(SideBySideDiffView\.(?:Left|Right)HeaderNameProperty, DiffViewStrings\.Get\(DiffViewStrings\.(?:Left|Right)HeaderName\)\);",
             "", 2),
         "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
 
@@ -446,7 +455,7 @@ List<Mutation> mutations =
     // is visible only while a failure shows — which is exactly why hiding what is off screen needed the
     // walk to put every part on screen, and the coverage assertion to hold it to that.
     new("the status strip stops filling its dismiss name", A11yClass,
-        () => Sub(SbsSource, @"\n\s*strip\.DismissText = DiffViewStrings\.Get\(DiffViewStrings\.StatusDismiss\);", "")
+        () => Sub(SbsController, @"\n\s*strip\.DismissText = DiffViewStrings\.Get\(DiffViewStrings\.StatusDismiss\);", "")
             && Sub(InlineSource, @"\n\s*strip\.DismissText = DiffViewStrings\.Get\(DiffViewStrings\.StatusDismiss\);", ""),
         "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
 

@@ -1,0 +1,315 @@
+Constructor .ctor()
+Event       event EventHandler`1 BuildCompleted
+Event       event EventHandler`1 BuildFailed
+Event       event EventHandler`1 FindCompleted
+Event       event EventHandler`1 HeaderContextMenuOpening
+Event       event EventHandler`1 PaneContextMenuOpening
+Event       event EventHandler`1 RenderFault
+Field       DirectProperty`2 BannerActionTextProperty
+Field       DirectProperty`2 BannerKindProperty
+Field       DirectProperty`2 BannerMessageProperty
+Field       DirectProperty`2 CaretColumnProperty
+Field       DirectProperty`2 CaretLineProperty
+Field       DirectProperty`2 ChangeCountProperty
+Field       DirectProperty`2 CurrentChangeIndexProperty
+Field       DirectProperty`2 CurrentFindMatchIndexProperty
+Field       DirectProperty`2 DiagnosticsProperty
+Field       DirectProperty`2 DocumentProperty
+Field       DirectProperty`2 FindOptionsProperty
+Field       DirectProperty`2 FindQueryProperty
+Field       DirectProperty`2 FindResultProperty
+Field       DirectProperty`2 FocusedSideProperty
+Field       DirectProperty`2 IsBuildingSlowlyProperty
+Field       DirectProperty`2 IsFindBarOpenProperty
+Field       DirectProperty`2 IsStaleProperty
+Field       DirectProperty`2 LeftDocumentProperty
+Field       DirectProperty`2 RightDocumentProperty
+Field       DirectProperty`2 SplitRatioProperty
+Field       DirectProperty`2 StateMessageProperty
+Field       DirectProperty`2 StateProperty
+Field       DirectProperty`2 WarningsProperty
+Field       String BannerActionPart
+Field       String BannerPart
+Field       String FindBarPart
+Field       String GutterPart
+Field       String HeaderLeftSpacerPart
+Field       String HeaderRightSpacerPart
+Field       String HeadersPart
+Field       String LeftHeaderPart
+Field       String LeftPanePart
+Field       String MinimapPart
+Field       String PanesPart
+Field       String RightHeaderPart
+Field       String RightPanePart
+Field       String StatusStripPart
+Field       StyledProperty`1 ForceAlignmentProperty
+Field       StyledProperty`1 GutterNameProperty
+Field       StyledProperty`1 IgnoreCaseProperty
+Field       StyledProperty`1 IgnoreWhitespaceProperty
+Field       StyledProperty`1 IsCaretBlinkEnabledProperty
+Field       StyledProperty`1 LeftHeaderNameProperty
+Field       StyledProperty`1 LeftPaneNameProperty
+Field       StyledProperty`1 LeftReadOnlyProperty
+Field       StyledProperty`1 LeftSourceProperty
+Field       StyledProperty`1 LiveReDiffProperty
+Field       StyledProperty`1 MaxWordDiffLineLengthProperty
+Field       StyledProperty`1 MinimapNameProperty
+Field       StyledProperty`1 MinimapPlacementProperty
+Field       StyledProperty`1 PaneFontFamilyProperty
+Field       StyledProperty`1 PaneFontSizeProperty
+Field       StyledProperty`1 ReDiffDelayProperty
+Field       StyledProperty`1 RightHeaderNameProperty
+Field       StyledProperty`1 RightPaneNameProperty
+Field       StyledProperty`1 RightReadOnlyProperty
+Field       StyledProperty`1 RightSourceProperty
+Field       StyledProperty`1 ShowBannerProperty
+Field       StyledProperty`1 ShowHeadersProperty
+Field       StyledProperty`1 ShowLineEndingsProperty
+Field       StyledProperty`1 ShowMinimapProperty
+Field       StyledProperty`1 ShowStatusStripProperty
+Field       StyledProperty`1 ShowWhitespaceProperty
+Field       StyledProperty`1 StatusStripNameProperty
+Field       StyledProperty`1 SyncHorizontalScrollProperty
+Field       StyledProperty`1 TabWidthProperty
+Field       StyledProperty`1 UnchangedContextRowsProperty
+Field       StyledProperty`1 UseSyntaxHighlightingProperty
+Field       StyledProperty`1 WordDiffProperty
+Field       TimeSpan FindDebounce
+Field       TimeSpan ReDiffDebounce
+Field       TimeSpan SlowBuildThreshold
+Method      Boolean CanCopyBlock(Int32, DiffSide)
+Method      Boolean CanCopySelection(DiffSide)
+Method      Boolean CanCopyToward(DiffSide)
+Method      Boolean CanSave(DiffSide)
+Method      Boolean CopyBlock(Int32, DiffSide)
+Method      Boolean CopyCurrentBlock(DiffSide)
+Method      Boolean CopySelection(DiffSide)
+Method      Boolean CopyToward(DiffSide)
+Method      Boolean IsDirty(DiffSide)
+Method      Boolean IsEdited(DiffSide)
+Method      Boolean get_ForceAlignment()
+Method      Boolean get_IgnoreCase()
+Method      Boolean get_IgnoreWhitespace()
+Method      Boolean get_IsBuildingSlowly()
+Method      Boolean get_IsCaretBlinkEnabled()
+Method      Boolean get_IsFindBarOpen()
+Method      Boolean get_IsStale()
+Method      Boolean get_LeftReadOnly()
+Method      Boolean get_LiveReDiff()
+Method      Boolean get_RightReadOnly()
+Method      Boolean get_ShowBanner()
+Method      Boolean get_ShowHeaders()
+Method      Boolean get_ShowLineEndings()
+Method      Boolean get_ShowMinimap()
+Method      Boolean get_ShowStatusStrip()
+Method      Boolean get_ShowWhitespace()
+Method      Boolean get_SyncHorizontalScroll()
+Method      Boolean get_UseSyntaxHighlighting()
+Method      ContextMenu get_HeaderContextMenu()
+Method      ContextMenu get_PaneContextMenu()
+Method      DiffBannerKind get_BannerKind()
+Method      DiffDiagnostics get_Diagnostics()
+Method      DiffHeaderContext HeaderContextAt(DiffSide)
+Method      DiffKeyMap get_KeyMap()
+Method      DiffViewState get_State()
+Method      Double get_PaneFontSize()
+Method      Double get_SplitRatio()
+Method      FindOptions get_FindOptions()
+Method      FindResult get_FindResult()
+Method      FontFamily get_PaneFontFamily()
+Method      ICommand CommandFor(DiffCommand)
+Method      ICommand get_CloseFindCommand()
+Method      ICommand get_CopyToLeftCommand()
+Method      ICommand get_CopyToRightCommand()
+Method      ICommand get_FindNextCommand()
+Method      ICommand get_FindPreviousCommand()
+Method      ICommand get_FirstChangeCommand()
+Method      ICommand get_ForceAlignmentCommand()
+Method      ICommand get_LastChangeCommand()
+Method      ICommand get_NextChangeCommand()
+Method      ICommand get_OpenFindCommand()
+Method      ICommand get_PreviousChangeCommand()
+Method      ICommand get_RetryCommand()
+Method      ICommand get_SwitchPaneCommand()
+Method      ILoggerFactory get_LoggerFactory()
+Method      IReadOnlyList`1 get_Warnings()
+Method      IReadOnlySet`1 ModifiedLines(DiffSide)
+Method      Int32 get_CaretColumn()
+Method      Int32 get_CaretLine()
+Method      Int32 get_ChangeCount()
+Method      Int32 get_CurrentChangeIndex()
+Method      Int32 get_CurrentFindMatchIndex()
+Method      Int32 get_MaxWordDiffLineLength()
+Method      Int32 get_TabWidth()
+Method      KeyGesture GestureFor(DiffCommand)
+Method      MinimapPlacement get_MinimapPlacement()
+Method      Nullable`1 get_FocusedSide()
+Method      Nullable`1 get_UnchangedContextRows()
+Method      PaneSource get_LeftSource()
+Method      PaneSource get_RightSource()
+Method      SaveOutcome Save(DiffSide)
+Method      SideBySideDocument get_Document()
+Method      StatusController get_Status()
+Method      String get_BannerActionText()
+Method      String get_BannerMessage()
+Method      String get_FindQuery()
+Method      String get_GutterName()
+Method      String get_LeftHeaderName()
+Method      String get_LeftPaneName()
+Method      String get_MinimapName()
+Method      String get_RightHeaderName()
+Method      String get_RightPaneName()
+Method      String get_StateMessage()
+Method      String get_StatusStripName()
+Method      TextDocument get_LeftDocument()
+Method      TextDocument get_RightDocument()
+Method      TimeProvider get_TimeProvider()
+Method      TimeSpan get_ReDiffDelay()
+Method      Void CloseFind()
+Method      Void FindNext()
+Method      Void FindPrevious()
+Method      Void FirstChange()
+Method      Void ForceAlign()
+Method      Void GoToChange(Int32)
+Method      Void LastChange()
+Method      Void NextChange()
+Method      Void OpenFind()
+Method      Void PreviousChange()
+Method      Void ReDiffNow()
+Method      Void Retry()
+Method      Void Revert(DiffSide)
+Method      Void ScrollToRow(Int32)
+Method      Void SelectChange(Int32, Nullable`1)
+Method      Void SwitchPane()
+Method      Void add_BuildCompleted(EventHandler`1)
+Method      Void add_BuildFailed(EventHandler`1)
+Method      Void add_FindCompleted(EventHandler`1)
+Method      Void add_HeaderContextMenuOpening(EventHandler`1)
+Method      Void add_PaneContextMenuOpening(EventHandler`1)
+Method      Void add_RenderFault(EventHandler`1)
+Method      Void remove_BuildCompleted(EventHandler`1)
+Method      Void remove_BuildFailed(EventHandler`1)
+Method      Void remove_FindCompleted(EventHandler`1)
+Method      Void remove_HeaderContextMenuOpening(EventHandler`1)
+Method      Void remove_PaneContextMenuOpening(EventHandler`1)
+Method      Void remove_RenderFault(EventHandler`1)
+Method      Void set_CurrentChangeIndex(Int32)
+Method      Void set_CurrentFindMatchIndex(Int32)
+Method      Void set_FindOptions(FindOptions)
+Method      Void set_FindQuery(String)
+Method      Void set_ForceAlignment(Boolean)
+Method      Void set_GutterName(String)
+Method      Void set_HeaderContextMenu(ContextMenu)
+Method      Void set_IgnoreCase(Boolean)
+Method      Void set_IgnoreWhitespace(Boolean)
+Method      Void set_IsCaretBlinkEnabled(Boolean)
+Method      Void set_IsFindBarOpen(Boolean)
+Method      Void set_KeyMap(DiffKeyMap)
+Method      Void set_LeftHeaderName(String)
+Method      Void set_LeftPaneName(String)
+Method      Void set_LeftReadOnly(Boolean)
+Method      Void set_LeftSource(PaneSource)
+Method      Void set_LiveReDiff(Boolean)
+Method      Void set_LoggerFactory(ILoggerFactory)
+Method      Void set_MaxWordDiffLineLength(Int32)
+Method      Void set_MinimapName(String)
+Method      Void set_MinimapPlacement(MinimapPlacement)
+Method      Void set_PaneContextMenu(ContextMenu)
+Method      Void set_PaneFontFamily(FontFamily)
+Method      Void set_PaneFontSize(Double)
+Method      Void set_ReDiffDelay(TimeSpan)
+Method      Void set_RightHeaderName(String)
+Method      Void set_RightPaneName(String)
+Method      Void set_RightReadOnly(Boolean)
+Method      Void set_RightSource(PaneSource)
+Method      Void set_ShowBanner(Boolean)
+Method      Void set_ShowHeaders(Boolean)
+Method      Void set_ShowLineEndings(Boolean)
+Method      Void set_ShowMinimap(Boolean)
+Method      Void set_ShowStatusStrip(Boolean)
+Method      Void set_ShowWhitespace(Boolean)
+Method      Void set_SplitRatio(Double)
+Method      Void set_StatusStripName(String)
+Method      Void set_SyncHorizontalScroll(Boolean)
+Method      Void set_TabWidth(Int32)
+Method      Void set_TimeProvider(TimeProvider)
+Method      Void set_UnchangedContextRows(Nullable`1)
+Method      Void set_UseSyntaxHighlighting(Boolean)
+Method      Void set_WordDiff(WordDiffMode)
+Method      WordDiffLookup get_WordDiffLookup()
+Method      WordDiffMode get_WordDiff()
+Property    Boolean ForceAlignment get set
+Property    Boolean IgnoreCase get set
+Property    Boolean IgnoreWhitespace get set
+Property    Boolean IsBuildingSlowly get
+Property    Boolean IsCaretBlinkEnabled get set
+Property    Boolean IsFindBarOpen get set
+Property    Boolean IsStale get
+Property    Boolean LeftReadOnly get set
+Property    Boolean LiveReDiff get set
+Property    Boolean RightReadOnly get set
+Property    Boolean ShowBanner get set
+Property    Boolean ShowHeaders get set
+Property    Boolean ShowLineEndings get set
+Property    Boolean ShowMinimap get set
+Property    Boolean ShowStatusStrip get set
+Property    Boolean ShowWhitespace get set
+Property    Boolean SyncHorizontalScroll get set
+Property    Boolean UseSyntaxHighlighting get set
+Property    ContextMenu HeaderContextMenu get set
+Property    ContextMenu PaneContextMenu get set
+Property    DiffBannerKind BannerKind get
+Property    DiffDiagnostics Diagnostics get
+Property    DiffKeyMap KeyMap get set
+Property    DiffViewState State get
+Property    Double PaneFontSize get set
+Property    Double SplitRatio get set
+Property    FindOptions FindOptions get set
+Property    FindResult FindResult get
+Property    FontFamily PaneFontFamily get set
+Property    ICommand CloseFindCommand get
+Property    ICommand CopyToLeftCommand get
+Property    ICommand CopyToRightCommand get
+Property    ICommand FindNextCommand get
+Property    ICommand FindPreviousCommand get
+Property    ICommand FirstChangeCommand get
+Property    ICommand ForceAlignmentCommand get
+Property    ICommand LastChangeCommand get
+Property    ICommand NextChangeCommand get
+Property    ICommand OpenFindCommand get
+Property    ICommand PreviousChangeCommand get
+Property    ICommand RetryCommand get
+Property    ICommand SwitchPaneCommand get
+Property    ILoggerFactory LoggerFactory get set
+Property    IReadOnlyList`1 Warnings get
+Property    Int32 CaretColumn get
+Property    Int32 CaretLine get
+Property    Int32 ChangeCount get
+Property    Int32 CurrentChangeIndex get set
+Property    Int32 CurrentFindMatchIndex get set
+Property    Int32 MaxWordDiffLineLength get set
+Property    Int32 TabWidth get set
+Property    MinimapPlacement MinimapPlacement get set
+Property    Nullable`1 FocusedSide get
+Property    Nullable`1 UnchangedContextRows get set
+Property    PaneSource LeftSource get set
+Property    PaneSource RightSource get set
+Property    SideBySideDocument Document get
+Property    StatusController Status get
+Property    String BannerActionText get
+Property    String BannerMessage get
+Property    String FindQuery get set
+Property    String GutterName get set
+Property    String LeftHeaderName get set
+Property    String LeftPaneName get set
+Property    String MinimapName get set
+Property    String RightHeaderName get set
+Property    String RightPaneName get set
+Property    String StateMessage get
+Property    String StatusStripName get set
+Property    TextDocument LeftDocument get
+Property    TextDocument RightDocument get
+Property    TimeProvider TimeProvider get set
+Property    TimeSpan ReDiffDelay get set
+Property    WordDiffLookup WordDiffLookup get
+Property    WordDiffMode WordDiff get set
