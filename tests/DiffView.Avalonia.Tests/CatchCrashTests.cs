@@ -82,8 +82,11 @@ public sealed class CatchCrashTests
         using Process process = Process.Start(start)
             ?? throw new InvalidOperationException("Could not start dotnet run.");
 
-        string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        // Both pipes drained concurrently: stdout to EOF first deadlocks once the child fills the
+        // stderr pipe buffer, and the test then hangs rather than failing.
+        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderr = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
-        return (process.ExitCode, output);
+        return (process.ExitCode, stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult());
     }
 }

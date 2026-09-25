@@ -55,6 +55,16 @@ jobs:
           --report-trx
           --results-directory ./test-results
 
+      # ⛔ The mutation harness's standing half. A guard marked inert-at-pin is excused only at the
+      # version it was measured against, so a pin bump is exactly the change that lands green while
+      # that guard stops being excused; this fails on that, and on a `throw` in a gate file, which the
+      # harness cannot attribute a failure to. It proves no guard — a full run does that, and one is
+      # owed after any change to a gate file, a gated subject or a pin (AGENTS.md §5). One OS, because
+      # it reads files; !cancelled() so a red test step does not hide it.
+      - name: Mutation-harness guards
+        if: ${{ !cancelled() && runner.os == 'Linux' }}
+        run: dotnet run scripts/mutate-gates.cs -- --guards
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

@@ -147,6 +147,64 @@ no dates, no counts.
   `TestLogSink.AssertNoWarnings` afterwards; a new headless test is proven able to fail before
   it is committed; `Perf` tests are excluded by default and `Reference` tests need the checkouts
   the `EnsureReferenceSources` target fetches.
+- **The static-analysis gates' mutations are committed, not scratch: `scripts/mutate-gates.sh`.**
+  Each mutation declares what must happen to it — a **named test** must fail, the **build** must
+  reject it with a **named diagnostic**, or it must stay **green** because it encodes a gate's blind
+  spot — and the harness compares its verdict against that declaration. `--list` names them,
+  `--guards` lists the guards they must cover, `--only <text>` runs a subset. A gate whose mutation
+  merely survives reports clean over a codebase that is not, which reads as coverage.
+- **Three verdicts look like success and are not**, which is why `Expect` is compared rather than
+  printed: a kill by a *different* test in the filtered class (`wrong-killer`), a kill by the
+  *compiler* before the gate ran — or, for a mutation that exists to be a build kill, a failure without
+  its diagnostic (`killed-by-the-build`; `AddPublicMember`'s comment records how easily an edit slips
+  into that) — and a **test-host abort**, no summary outcome or `Failed!` with no failing test, per the
+  bullet below (`aborted`). Each fails the run; an uncompared expectation would make `killed` mean only
+  "the filtered class went not-`Passed!`".
+- ⭐ **A guard is proven only when a mutation makes it the FIRST assertion to fail**, because a test
+  stops there and "killed by the test it names" says nothing about the assertions after that one. The
+  harness derives every assertion in the gate files (`GateFiles`, plus the nuspec gate's method),
+  attributes each failure to the gate-file line its trace stops on — mapped back through any edit the
+  mutation made to that file — and a full run fails every assertion no mutation reached first. A
+  `--only` run proves only what it reached and judges nothing. ⚠ **It cannot see an assertion that was
+  never written**: a gate with no floor has no floor to trip, so a new or changed guard gets its
+  blinding mutation in the same change.
+- **A guard is an assertion, so a gate file holds no `throw`.** A `?? throw` or a throwing switch arm
+  is tripped by mutations and credited to nothing, which would put a guard beyond the check above; the
+  harness refuses to start while any gate-file line throws. Setup that must fail — the runtime walk's
+  failing build — lives outside the gate files, in `CompositeHost.FailingBuilder`.
+- **An assertion that cannot fail at the current pin is marked, not claimed.** The line above it reads
+  `// inert-at-pin: <package> <version>`, which excuses that one guard only while
+  `Directory.Packages.props` pins the package at that version. A moved pin, or a mutation that trips the
+  guard anyway, fails the run. For XQ1004's marker, `scripts/xq1004-skips.sh` re-measures the claim
+  against whatever is pinned.
+- **The proof is point-in-time: a full run is owed after any change to a gate file, a gated subject or
+  a pin.** A full run takes minutes and CI does not make one. What CI runs is `--guards`, on Linux in
+  `build-and-test` — the standing half, in seconds: it lists the derived guards, judges each marker
+  against the current pin, and exits non-zero on an expired marker or a gate-file `throw`. It proves no
+  guard.
+- **Two mutations must stay green, and that is asserted**: `PrivateAssets="all"` hides a used type
+  from the nuspec gate, and Roslyn emits no reference for an unused package, so `AQ1003` and the
+  nuspec gate are each blind to exactly what the other catches. A red there is `unexpected-red` and
+  fails — the complementarity claim is the whole reason both are adopted.
+- **`scripts/mutate-gates.sh` refuses to start on a dirty `src` or `tests`** unless `--force`,
+  because it reverts both before every mutation and an earlier generation of these harnesses
+  repeatedly destroyed uncommitted work that way. It also checks the revert *worked* afterwards, and
+  reads `--untracked-files=all` so a `status.showUntrackedFiles=no` config cannot hide the file
+  `git clean` is about to delete. What a mutation may touch is **derived**, not listed: the whole
+  repository's status is compared before and after every edit, and anything written outside the
+  reverted scope is put back and stops the run — it would otherwise be reported as a no-op, survive the
+  revert, and contaminate every mutation after it. ⚠ **Edit nothing in the worktree while a run is in
+  progress**: an edit outside `src` and `tests` reads as a mutation's stray, and is put back.
+- **A `no-op` means the mutation matched nothing, and it fails the run.** It is *not* a surviving
+  mutation and not a pass: the gate was never exercised. The code moved and the mutation needs
+  re-pointing. When a construct is deliberately designed out of existence, its mutation is **deleted**
+  and the plan records why — a permanently unappliable mutation is not evidence.
+- ⛔ **Reverting a mutation does not unbuild it, so the harness rebuilds on every exit it controls**
+  once mutations have started, from a `finally`. A run killed outright cannot, and a
+  `dotnet test --no-build` straight after one is worthless: the last mutation's assemblies sit in
+  `bin/` while the source is reverted, so the run tests mutated code against clean markup — measured,
+  `GridSlotTests` reported **nothing inspected** where it inspects its whole population, and the gate
+  was briefly suspected of the harness's defect. Rebuild first.
 - `PresenterHost` under `tests/DiffView.Avalonia.Tests/Presenter` is the fixture for presenter
   tests; `ThemeSwap` and `ThemeTargets` cover the ten theme targets.
 - **A test-host abort reads as a pass to any grep, so judge the whole summary.** When the host dies
@@ -157,7 +215,11 @@ no dates, no counts.
   `scripts/catch-crash.sh` is the guard: `--check <log>` judges a captured run, and with no argument
   it re-runs the suite until it catches one and keeps that log. Its load-bearing clause is that the
   summary outcome must say `Passed!` — no arithmetic over the counts can see an abort, because
-  412 + 0 + 0 closes perfectly. Pass `--expect 679` to make a short total a failure too.
+  412 + 0 + 0 closes perfectly. Pass **`--expect auto`** to make a short total a failure too: it
+  reads the suite's size from `dotnet test --list-tests` against the current build. ⛔ **Never write the
+  number down.** `Judge` compares with `!=`, so a stale count is wrong in both directions at once —
+  every clean run reports a false abort, and the one-test-short run the flag exists to catch passes.
+  With `--check`, discovery reads the build that is here now, so judge a log from the build that made it.
 - `CompositeHost` keeps syntax highlighting **off** unless a test passes `syntax: true`, for the
   reason it keeps the caret from blinking: TextMateSharp tokenizes on its own thread, so a frame
   captured without waiting is a coin toss. A test that wants colour waits on
