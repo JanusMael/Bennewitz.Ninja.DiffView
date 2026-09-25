@@ -14,6 +14,7 @@ namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 /// the mechanism was measured on.
 /// </remarks>
 [EnglishChrome]
+[LinuxBaseline]
 public sealed class NavigationSnapshotTests
 {
     [AvaloniaTheory]

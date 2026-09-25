@@ -14,6 +14,7 @@ namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 /// </summary>
 /// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
 [EnglishChrome]
+[LinuxBaseline]
 public sealed class ViewOptionsSnapshotTests
 {
     private const string Left = "\tone\t  two\nalpha\nbeta\n";

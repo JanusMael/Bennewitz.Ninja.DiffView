@@ -30,6 +30,7 @@ public sealed class SyntaxSnapshotTests
     [InlineData("Json", "Light")]
     [InlineData("Json", "Dark")]
     [EnglishChrome]
+    [LinuxBaseline]
     public async Task A_colourised_pair_renders_under_the_diff_backgrounds(string language, string variant)
     {
         TestLogSink.Instance.Clear();
