@@ -54,6 +54,7 @@ const string SbsTheme = "src/DiffView.Avalonia/Themes/SideBySideDiffView.axaml";
 const string DemoView = "src/DiffView.Demo/MainWindow.axaml";
 const string SbsSource = "src/DiffView.Avalonia/SideBySideDiffView.cs";
 const string SbsController = "src/DiffView.Avalonia/DiffBuildController.cs";
+const string ViewerSource = "src/DiffView.Avalonia/DiffViewer.cs";
 const string InlineSource = "src/DiffView.Avalonia/InlineDiffView.cs";
 
 const string ProbeControl = "src/DiffView.Avalonia/MutationProbeControl.cs";
@@ -397,6 +398,14 @@ List<Mutation> mutations =
             @"e.NameScope.Find<DiffMinimap>(""PART_Map"")"),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
+    // The same lookups run on every host's template, and the rule checks a host's theme only against
+    // what that host declares: the viewer dropping one leaves its theme's copy of the part unchecked
+    // while the editor's still is.
+    new("the viewer stops declaring a part the controller looks up", PartsClass,
+        () => Sub(ViewerSource, @"public const string MinimapPart = SideBySideDiffView\.MinimapPart;",
+            @"public const string MinimapPart = ""Minimap"";"),
+        "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
+
     // Which controls are skipped is the precise form of the blinding guard, so it needs a mutation of
     // its own: one of the two legitimately part-less controls gains a part, and stops being skipped.
     new("a themed control with no parts gains one", PartsClass,
@@ -469,8 +478,15 @@ List<Mutation> mutations =
 
     new("the walk never fails a build", A11yClass,
         () => Sub(A11yGate,
-            @"(?:host|unified)\.View\.Builder = CompositeHost\.FailingBuilder;",
-            "/* the build succeeds */", 2),
+            @"(?:host|unified|viewer)\.View\.Builder = CompositeHost\.FailingBuilder;",
+            "/* the build succeeds */", 3),
+        "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
+
+    // The viewer's parts are declared by a theme no markup of ours instantiates, so only the walk sees
+    // them — and only the viewer's own states reach them, which is what dropping both shows.
+    new("the walk never shows a viewer", A11yClass,
+        () => Sub(A11yGate, @"Collect\(viewer\.View, interactive, visited, unnamed\);",
+            "/* the viewer is left out */", 2),
         "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
 
     new("the walk's notion of ours is the test assembly", A11yClass,
