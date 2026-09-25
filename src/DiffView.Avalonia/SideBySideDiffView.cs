@@ -458,8 +458,8 @@ public class SideBySideDiffView : TemplatedControl
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
         _findPrevious = new DelegateCommand(FindPrevious, () => IsFindBarOpen);
-        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
-        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, options, token);
+        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, token, options);
+        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, token, options);
 
         // The default key bindings come from the map; a host rebinds, unbinds or clears them.
         // Escape and F3 execute only while the find bar is open, and a binding that does not

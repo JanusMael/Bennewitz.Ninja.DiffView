@@ -10,7 +10,7 @@ public sealed class InlineDocumentTests
     public void Identical_inputs_emit_one_line_per_row_and_no_blocks()
     {
         (string left, _) = Fixtures.Small();
-        SideBySideDocument model = DiffDocumentBuilder.Build(left, left).Document;
+        SideBySideDocument model = DiffDocumentBuilder.Build(left, left, CancellationToken.None).Document;
 
         InlineDocument inline = InlineDocument.Build(model);
 
@@ -26,7 +26,7 @@ public sealed class InlineDocumentTests
     public void Every_displayed_line_appears_exactly_once_and_the_counts_add_up()
     {
         (string left, string right) = Fixtures.Small();
-        SideBySideDocument model = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument model = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
 
         InlineDocument inline = InlineDocument.Build(model);
 
@@ -51,7 +51,7 @@ public sealed class InlineDocumentTests
     public void A_change_block_prints_its_removals_before_its_additions()
     {
         // Two lines replaced by three: one block, whose left lines come first as a group.
-        SideBySideDocument model = DiffDocumentBuilder.Build("a\nOLD1\nOLD2\nz", "a\nNEW1\nNEW2\nNEW3\nz").Document;
+        SideBySideDocument model = DiffDocumentBuilder.Build("a\nOLD1\nOLD2\nz", "a\nNEW1\nNEW2\nNEW3\nz", CancellationToken.None).Document;
         ChangeBlock block = Assert.Single(model.Blocks);
 
         InlineDocument inline = InlineDocument.Build(model);
@@ -80,7 +80,7 @@ public sealed class InlineDocumentTests
     [Fact]
     public void A_modified_row_keeps_its_kind_on_both_halves_and_a_pure_delete_or_insert_does_not()
     {
-        SideBySideDocument model = DiffDocumentBuilder.Build("keep\nchanged left\ngone\n", "keep\nchanged right\nadded\n").Document;
+        SideBySideDocument model = DiffDocumentBuilder.Build("keep\nchanged left\ngone\n", "keep\nchanged right\nadded\n", CancellationToken.None).Document;
 
         InlineDocument inline = InlineDocument.Build(model);
 
@@ -105,7 +105,7 @@ public sealed class InlineDocumentTests
     [Fact]
     public void The_right_line_of_a_context_row_is_not_displayed_and_maps_to_nothing()
     {
-        SideBySideDocument model = DiffDocumentBuilder.Build("same\nleft only\n", "same\nright only\n").Document;
+        SideBySideDocument model = DiffDocumentBuilder.Build("same\nleft only\n", "same\nright only\n", CancellationToken.None).Document;
 
         InlineDocument inline = InlineDocument.Build(model);
 
@@ -117,7 +117,7 @@ public sealed class InlineDocumentTests
     [Fact]
     public void Out_of_range_lines_and_blocks_map_to_nothing_rather_than_throwing()
     {
-        SideBySideDocument model = DiffDocumentBuilder.Build("a\n", "b\n").Document;
+        SideBySideDocument model = DiffDocumentBuilder.Build("a\n", "b\n", CancellationToken.None).Document;
 
         InlineDocument inline = InlineDocument.Build(model);
 
@@ -132,7 +132,7 @@ public sealed class InlineDocumentTests
     public void Every_block_maps_to_a_contiguous_range_holding_exactly_its_own_rows()
     {
         (string left, string right) = Fixtures.SimilarPair(600, seed: 11);
-        SideBySideDocument model = DiffDocumentBuilder.Build(left, right).Document;
+        SideBySideDocument model = DiffDocumentBuilder.Build(left, right, CancellationToken.None).Document;
 
         InlineDocument inline = InlineDocument.Build(model);
 
@@ -175,7 +175,7 @@ public sealed class InlineDocumentTests
         // Past the size threshold with nothing in common, the gate refuses to align and the
         // builder concatenates: one block, every deletion before every insertion.
         (string left, string right) = Fixtures.UnrelatedPair(6_000, seed: 3);
-        DiffBuildResult result = DiffDocumentBuilder.Build(left, right);
+        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, CancellationToken.None);
         Assert.False(result.Diagnostics.Aligned);
 
         InlineDocument inline = InlineDocument.Build(result.Document);

@@ -338,8 +338,8 @@ public class InlineDiffView : TemplatedControl
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
         _findPrevious = new DelegateCommand(FindPrevious, () => IsFindBarOpen);
-        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
-        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, options, token);
+        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, token, options);
+        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, token, options);
 
         // The same map and the same binder as the side-by-side view, with a smaller default:
         // there is one pane to switch to and no other side to copy to. Escape and F3 execute only

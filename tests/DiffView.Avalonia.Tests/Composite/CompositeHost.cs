@@ -40,7 +40,7 @@ internal sealed class CompositeHost : IDisposable
     /// </summary>
     public static DiffBuildResult ZeroTimeBuilder(PaneSource left, PaneSource right, DiffOptions options, CancellationToken token)
     {
-        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, options, token);
+        DiffBuildResult result = DiffDocumentBuilder.Build(left, right, token, options);
         return result with { Diagnostics = result.Diagnostics with { BuildTime = TimeSpan.Zero } };
     }
 

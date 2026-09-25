@@ -11,11 +11,17 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// </summary>
 /// <remarks>
 /// ⛔ <b>No rule's <c>Inspected</c> here can tell a live configuration from a dead one.</b>
-/// <c>SurfaceLeakRule</c> and <c>ForbiddenReferenceRule</c> both
+/// <c>SurfaceLeakRule</c>, <c>ForbiddenReferenceRule</c> and <c>CancellationTokenRule</c> all
 /// increment it *before* testing their predicate, so a misspelled prefix — or a predicate that has
 /// stopped firing — reports the same numbers as a clean assembly. Each gate below therefore carries a
 /// positive control that must produce a finding, using the **same rule instance** — a control built
 /// from a different prefix proves only that the library works.
+/// <para>
+/// ⚠ <b>That holds of <c>AQ1001</c> as much as of the other two.</b> Measured reporting
+/// <c>inspected=2 findings=1</c> over a fixture, its <c>Inspected</c> is a candidate count like the
+/// others', so a dead predicate over <c>DiffView.Core</c> would report today's <c>2 / 0</c> exactly.
+/// <see cref="TokenDefaultControl"/> is its control.
+/// </para>
 /// </remarks>
 public sealed class AssemblyQualityTests
 {
@@ -67,6 +73,18 @@ public sealed class AssemblyQualityTests
     {
         /// <summary>Never called; its signature is the whole point.</summary>
         public static DiffPlex.Model.DiffResult? Leaks() => null;
+    }
+
+    /// <summary>
+    /// A public method defaulting its <see cref="CancellationToken"/>, so <c>AQ1001</c>'s gate has
+    /// something its own rule instance must find. Removing the default turns that control red.
+    /// </summary>
+    public static class TokenDefaultControl
+    {
+        /// <summary>Never called; its signature is the whole point.</summary>
+        public static void Defaults(CancellationToken cancellationToken = default)
+        {
+        }
     }
 
     [Fact]
@@ -131,5 +149,39 @@ public sealed class AssemblyQualityTests
         Assert.True(
             control.Findings.Count > 0,
             $"The positive control found nothing, so '{UiFramework}' is not a prefix this rule can act on.");
+    }
+
+    /// <summary>
+    /// ⚠ <b>Reports today, and that is the point of the gate.</b> Adopting <c>AQ1001</c> means the
+    /// two public entry points take a <see cref="CancellationToken"/> the caller had to write.
+    /// </summary>
+    [Fact]
+    public void No_public_entry_point_defaults_its_cancellation_token()
+    {
+        AssemblyScanContext model = Scan("DiffView.Core");
+
+        // ⛔ Not `Inspected > 0` alone. That catches a swapped subject only while the UI assembly
+        // happens to expose no public method taking a token — a coincidence of today's API, not a
+        // property. One ordinary `RefreshAsync(CancellationToken)` on a view and the swap survives.
+        Assert.DoesNotContain(
+            model.Assemblies[0].GetReferencedAssemblies(),
+            a => a.Name?.StartsWith(UiFramework, StringComparison.Ordinal) == true);
+
+        CancellationTokenRule rule = new();
+        AssemblyRuleResult result = rule.Analyze(model);
+
+        Assert.True(result.Inspected > 0, "AQ1001 examined no tokens at all — it has stopped looking.");
+        Assert.True(
+            result.Findings.Count == 0,
+            "A public method defaults its CancellationToken:" + Environment.NewLine
+            + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
+
+        // ⛔ The standing control. AQ1001's Inspected is a candidate count like the other two rules', so
+        // a predicate that has stopped firing reports today's 2 / 0 exactly — and the risk is a pin bump,
+        // which a one-time mutation such as "a new method with a defaulted token" never sees again.
+        AssemblyRuleResult control = rule.Analyze(AssemblyScanContext.Of(typeof(TokenDefaultControl).Assembly));
+        Assert.Contains(
+            control.Findings,
+            f => f.Subject.Contains(nameof(TokenDefaultControl), StringComparison.Ordinal));
     }
 }

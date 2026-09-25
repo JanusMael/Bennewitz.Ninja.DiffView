@@ -44,7 +44,7 @@ public sealed class ScalePerfTests(ITestOutputHelper output)
         (string left, string right) = LargePair(200_000);
         using CompositeHost host = new(width: 1200, height: 800);
         // The real builder, not the host's time-zeroing one: this test wants the number.
-        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, options, token);
+        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, token, options);
         host.Show();
 
         Stopwatch stopwatch = Stopwatch.StartNew();
@@ -94,7 +94,7 @@ public sealed class ScalePerfTests(ITestOutputHelper output)
         string right = left[..^5] + "amet!";
 
         using CompositeHost host = new(width: 1200, height: 400);
-        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, options, token);
+        host.View.Builder = static (l, r, options, token) => DiffDocumentBuilder.Build(l, r, token, options);
         host.View.SyncHorizontalScroll = true;
         host.Show();
 
