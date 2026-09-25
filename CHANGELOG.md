@@ -8,6 +8,21 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00025 — static-analysis gates, each proven able to fail: `XQ1002` interactive automation names
+  over an element set derived from the assembly, with a runtime walk that checks every declared
+  interactive part on screen; `XQ1003` template parts; `XQ1004` fixed grid slots; `AQ1002` and
+  `AQ1003`, keeping DiffPlex off `DiffView.Core`'s public surface and every UI framework out of its
+  references; `AQ1001` defaulted cancellation tokens; and a gate on the dependencies
+  `DiffView.Core`'s package declares.
+- `scripts/mutate-gates.{cs,sh,ps1}`, the committed mutation harness that proves every assertion in
+  those gates able to fail first, and `scripts/xq1004-skips.{cs,sh,ps1}`, which re-measures the one
+  guard excused at the current pin. CI runs the harness's `--guards` check on Linux.
+- `catch-crash --expect auto`, which takes the suite's size from `dotnet test --list-tests` instead
+  of a number someone wrote down.
+- `LeftHeaderName` and `RightHeaderName` on both views, so each pane header carries an automation
+  name — `Header.Left.Name` and `Header.Right.Name`, translated in all eight shipped locales. The
+  demo's menu bar is named too.
+
 - Plan 00022 — `ShowHeaders`, `ShowStatusStrip` and `ShowBanner` on both views, each on by default,
   so a host can switch the pane headers, the status strip and the banner off the way `ShowMinimap`
   already switches the overview map. Switching one off takes what it carries: the headers carry the
@@ -509,6 +524,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **Breaking:** `DiffDocumentBuilder.Build` and `DiffSearch.Find` take their `CancellationToken`
+  ahead of the optional options, and neither defaults it — `Build(left, right, cancellationToken,
+  options)`. Plan 00025 phase 4, adopting `AQ1001`: a caller writes the token it passes.
+- `Bennewitz.Ninja.XamlQuality` moves to `2026.3.924`, whose theme-audit digest no longer depends on
+  the directory a dependency is checked out in, and `docs/theme-audit.md` is regenerated for it.
+  `Bennewitz.Ninja.AssemblyQuality 2026.3.922` joins the tests.
 - `SideBySideDiffView.Status` and `InlineDiffView.Status` return one controller per attach rather
   than one for the life of the view. A host that stores the reference across a detach meets
   `ObjectDisposedException`; a host that sets an auto-clear delay on it or subscribes to `Changed`
