@@ -302,11 +302,13 @@ List<Mutation> mutations =
         () => AddExclusion(@"[nameof(DiffStatusStrip)] = ""   "","),
         "Every_exclusion_either_names_itself_or_has_no_element_of_ours_to_check"),
 
-    // The exclusion test's own floor: with nothing excluded it would check nothing and pass.
-    new("the only exclusion is removed", A11yClass,
+    // The exclusion test's own floor: with nothing excluded it would check nothing and pass. Every entry
+    // goes, not one: while DiffViewer's exclusion stood beside DiffFindBar's, removing the find bar's
+    // left the floor holding and the per-name coverage failing instead — a kill by the wrong test.
+    new("every exclusion is removed", A11yClass,
         () => Sub(A11yGate,
-            @"\[nameof\(DiffFindBar\)\] =\s*""names itself in its own constructor.*?two sources for one string\."",",
-            ""),
+            @"(private static readonly Dictionary<string, string> Excluded = new\(StringComparer\.Ordinal\)\s*\{).*?(\r?\n    \};)",
+            "$1$2"),
         "Every_exclusion_either_names_itself_or_has_no_element_of_ours_to_check"),
 
     new("an exclusion names a type this library does not export", A11yClass,
