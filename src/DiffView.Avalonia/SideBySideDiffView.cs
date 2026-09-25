@@ -191,6 +191,14 @@ public class SideBySideDiffView : TemplatedControl
     public static readonly StyledProperty<string> RightPaneNameProperty =
         AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(RightPaneName), string.Empty);
 
+    /// <summary>Identifies the <see cref="LeftHeaderName"/> property.</summary>
+    public static readonly StyledProperty<string> LeftHeaderNameProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(LeftHeaderName), string.Empty);
+
+    /// <summary>Identifies the <see cref="RightHeaderName"/> property.</summary>
+    public static readonly StyledProperty<string> RightHeaderNameProperty =
+        AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(RightHeaderName), string.Empty);
+
     /// <summary>Identifies the <see cref="StatusStripName"/> property.</summary>
     public static readonly StyledProperty<string> StatusStripNameProperty =
         AvaloniaProperty.Register<SideBySideDiffView, string>(nameof(StatusStripName), string.Empty);
@@ -450,8 +458,8 @@ public class SideBySideDiffView : TemplatedControl
         _closeFind = new DelegateCommand(CloseFind, () => IsFindBarOpen);
         _findNext = new DelegateCommand(FindNext, () => IsFindBarOpen);
         _findPrevious = new DelegateCommand(FindPrevious, () => IsFindBarOpen);
-        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, options, token);
-        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, options, token);
+        Builder = static (left, right, options, token) => DiffDocumentBuilder.Build(left, right, token, options);
+        Searcher = static (document, left, right, query, options, token) => DiffSearch.Find(document, left, right, query, token, options);
 
         // The default key bindings come from the map; a host rebinds, unbinds or clears them.
         // Escape and F3 execute only while the find bar is open, and a binding that does not
@@ -712,6 +720,20 @@ public class SideBySideDiffView : TemplatedControl
     {
         get => GetValue(RightPaneNameProperty);
         set => SetValue(RightPaneNameProperty, value);
+    }
+
+    /// <summary>The left header's automation name, from <see cref="DiffViewStrings"/>.</summary>
+    public string LeftHeaderName
+    {
+        get => GetValue(LeftHeaderNameProperty);
+        set => SetValue(LeftHeaderNameProperty, value);
+    }
+
+    /// <summary>The right header's automation name, from <see cref="DiffViewStrings"/>.</summary>
+    public string RightHeaderName
+    {
+        get => GetValue(RightHeaderNameProperty);
+        set => SetValue(RightHeaderNameProperty, value);
     }
 
     /// <summary>The status strip's automation name, from <see cref="DiffViewStrings"/>.</summary>
@@ -2898,6 +2920,8 @@ public class SideBySideDiffView : TemplatedControl
     {
         SetCurrentValue(LeftPaneNameProperty, DiffViewStrings.Get(DiffViewStrings.LeftPaneName));
         SetCurrentValue(RightPaneNameProperty, DiffViewStrings.Get(DiffViewStrings.RightPaneName));
+        SetCurrentValue(LeftHeaderNameProperty, DiffViewStrings.Get(DiffViewStrings.LeftHeaderName));
+        SetCurrentValue(RightHeaderNameProperty, DiffViewStrings.Get(DiffViewStrings.RightHeaderName));
         SetCurrentValue(StatusStripNameProperty, DiffViewStrings.Get(DiffViewStrings.StatusStripName));
         SetCurrentValue(GutterNameProperty, DiffViewStrings.Get(DiffViewStrings.ConnectorGutterName));
         SetCurrentValue(MinimapNameProperty, DiffViewStrings.Get(DiffViewStrings.MinimapName));

@@ -15,11 +15,17 @@
 // `succeeded:` reads that as success, which is how it went unnoticed the first time. So the rule
 // here is deliberately not a grep: a run is healthy only if the summary says Passed!, nothing
 // failed, the arithmetic closes, and — when --expect is given — the total is the whole suite.
+// ⚠ --expect is an EQUALITY, not a floor, so a written number is wrong in both directions the moment it
+// is stale: one below the suite and every clean run reports a false abort while the one-test-short run it
+// exists to catch passes. So `--expect auto` reads the suite's size from `dotnet test --list-tests`
+// against the current build, and no document needs to carry the number.
 //
 //   dotnet run scripts/catch-crash.cs                          20 attempts, default settings
 //   dotnet run scripts/catch-crash.cs -- --attempts 5
-//   dotnet run scripts/catch-crash.cs -- --expect 676          a short total is a crash too
-//   dotnet run scripts/catch-crash.cs -- --check run.log       judge one captured log, run nothing
+//   dotnet run scripts/catch-crash.cs -- --expect auto         a short total is a crash too
+//   dotnet run scripts/catch-crash.cs -- --check run.log --expect auto
+//                                                              judge one captured log against the build
+//                                                              that is here now — so capture it from it
 //
 // Anything after `--` that this does not recognise is passed to `dotnet test`.
 // The .sh and .ps1 wrappers beside this file run it from the repository root for you.
@@ -30,6 +36,7 @@ using System.Text.RegularExpressions;
 string? checkPath = null;
 int attempts = 20;
 int? expect = null;
+bool expectAuto = false;
 string prefix = "catch-crash";
 List<string> passThrough = [];
 
@@ -44,7 +51,16 @@ for (int i = 0; i < args.Length; i++)
             attempts = int.Parse(args[++i], CultureInfo.InvariantCulture);
             break;
         case "--expect" when i + 1 < args.Length:
-            expect = int.Parse(args[++i], CultureInfo.InvariantCulture);
+            string value = args[++i];
+            if (string.Equals(value, "auto", StringComparison.Ordinal))
+            {
+                expectAuto = true;
+            }
+            else
+            {
+                expect = int.Parse(value, CultureInfo.InvariantCulture);
+            }
+
             break;
         case "--prefix" when i + 1 < args.Length:
             prefix = args[++i];
@@ -57,6 +73,11 @@ for (int i = 0; i < args.Length; i++)
 
 if (checkPath is not null)
 {
+    if (expectAuto && (expect = Discover(passThrough)) is null)
+    {
+        return 2;
+    }
+
     Verdict only = Judge(File.ReadAllText(checkPath), exitCode: 0, expect);
     Console.WriteLine(only.Healthy ? "healthy" : "NOT HEALTHY: " + only.Reason);
     return only.Healthy ? 0 : 1;
@@ -66,6 +87,13 @@ for (int attempt = 1; attempt <= attempts; attempt++)
 {
     string log = $"{prefix}-{attempt}.log";
     int code = RunSuite(passThrough, log);
+
+    // Discovered after the first run rather than before it, because that run is what builds.
+    if (expectAuto && expect is null && (expect = Discover(passThrough)) is null)
+    {
+        return 2;
+    }
+
     Verdict verdict = Judge(File.ReadAllText(log), code, expect);
 
     Console.WriteLine($"run {attempt}: exit={code} {(verdict.Healthy ? "healthy" : verdict.Reason)}");
@@ -101,10 +129,51 @@ static int RunSuite(List<string> extra, string logPath)
     using System.Diagnostics.Process process = System.Diagnostics.Process.Start(start)
         ?? throw new InvalidOperationException("Could not start dotnet test.");
 
-    string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+    // ⛔ Both pipes drained CONCURRENTLY: reading stdout to EOF first deadlocks the pair once the child
+    // fills the stderr pipe buffer, and a hung catch-crash reads as a slow suite rather than a defect.
+    Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+    Task<string> stderr = process.StandardError.ReadToEndAsync();
     process.WaitForExit();
-    File.WriteAllText(logPath, output);
+    File.WriteAllText(logPath, stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult());
     return process.ExitCode;
+}
+
+// The suite's size as `dotnet test --list-tests` discovers it from the build that is here now. Null,
+// with the reason printed, when discovery reports no count — never a guess.
+static int? Discover(List<string> extra)
+{
+    System.Diagnostics.ProcessStartInfo start = new()
+    {
+        FileName = "dotnet",
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+    };
+    foreach (string a in (string[])["test", "--solution", "DiffView.slnx", "--no-build", "--list-tests"])
+    {
+        start.ArgumentList.Add(a);
+    }
+
+    foreach (string a in extra.Where(a => !string.Equals(a, "--no-build", StringComparison.Ordinal)))
+    {
+        start.ArgumentList.Add(a);
+    }
+
+    using System.Diagnostics.Process process = System.Diagnostics.Process.Start(start)
+        ?? throw new InvalidOperationException("Could not start dotnet test --list-tests.");
+    Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+    Task<string> stderr = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    string output = stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult();
+
+    Match m = Regex.Match(output, @"Discovered (?<n>\d+) tests? in \d+ assembl");
+    if (!m.Success)
+    {
+        Console.Error.WriteLine("catch-crash: --expect auto found no 'Discovered N tests' line in dotnet test --list-tests:");
+        Console.Error.WriteLine(output);
+        return null;
+    }
+
+    return int.Parse(m.Groups["n"].Value, CultureInfo.InvariantCulture);
 }
 
 /// <summary>

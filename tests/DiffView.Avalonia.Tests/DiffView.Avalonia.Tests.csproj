@@ -14,6 +14,13 @@
     <PackageReference Include="Avalonia.Skia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Themes.Simple" />
+    <!-- The audit's scanners read the token and theme files ThemeResolutionTests checks at runtime,
+         and ReferenceAuditTests runs the whole audit over the reference checkouts. This was
+         src/ThemeAudit in this repository until the analysis moved to Bennewitz.Ninja.XamlQuality;
+         a package reference keeps the audit without keeping a second copy of the analysis, or a
+         second project claiming the `theme-audit` tool command. -->
+    <PackageReference Include="Bennewitz.Ninja.XamlQuality" />
+    <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" />
     <PackageReference Include="Semi.Avalonia" />
     <PackageReference Include="Verify.XunitV3" />
   </ItemGroup>
@@ -21,8 +28,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/DiffView.Avalonia/DiffView.Avalonia.csproj" />
     <ProjectReference Include="../../src/DiffView.Demo/DiffView.Demo.csproj" />
-    <!-- The audit tool's scanners read the token and theme files the resolution tests check at runtime. -->
-    <ProjectReference Include="../../src/ThemeAudit/ThemeAudit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

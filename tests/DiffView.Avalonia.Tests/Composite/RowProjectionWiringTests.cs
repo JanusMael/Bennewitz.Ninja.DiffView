@@ -212,6 +212,6 @@ public sealed class RowProjectionWiringTests
             right.Append(i % 50 == 10 ? "LINE " : "line ").Append(i).Append('\n');
         }
 
-        return DiffDocumentBuilder.Build(left.ToString(), right.ToString()).Document;
+        return DiffDocumentBuilder.Build(left.ToString(), right.ToString(), CancellationToken.None).Document;
     }
 }

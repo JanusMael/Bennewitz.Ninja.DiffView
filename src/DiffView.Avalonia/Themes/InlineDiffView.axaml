@@ -21,9 +21,11 @@
                found. Neither carries the focus accent — with one pane, which has focus says
                nothing. -->
           <Grid Name="PART_Headers" ColumnDefinitions="*,1,*">
-            <dv:DiffPaneHeader Name="PART_LeftHeader" />
+            <dv:DiffPaneHeader Name="PART_LeftHeader"
+                               AutomationProperties.Name="{TemplateBinding LeftHeaderName}" />
             <Border Grid.Column="1" Background="{DynamicResource DiffView.ConnectorBrush}" />
-            <dv:DiffPaneHeader Name="PART_RightHeader" Grid.Column="2" />
+            <dv:DiffPaneHeader Name="PART_RightHeader" Grid.Column="2"
+                               AutomationProperties.Name="{TemplateBinding RightHeaderName}" />
           </Grid>
 
           <Border Name="PART_Banner" Grid.Row="1" Padding="10,6">

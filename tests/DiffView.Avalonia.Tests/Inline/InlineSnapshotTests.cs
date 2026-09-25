@@ -14,6 +14,7 @@ namespace Bennewitz.Ninja.DiffView.Tests.Inline;
 /// </summary>
 /// <remarks>Every test here is a frame, and a frame is a picture of English chrome — see <see cref="EnglishChromeAttribute"/>.</remarks>
 [EnglishChrome]
+[LinuxBaseline]
 public sealed class InlineSnapshotTests
 {
     private const string Left = "using System;\nnamespace Demo;\n\nclass Greeter\n{\n    public string Greet(string name) => $\"Hello {name}\";\n\n    public void Farewell() { }\n}\n";

@@ -8,24 +8,24 @@ workflow written dormant in plan 00018 found **three defects that had been green
 twenty-three plans**. Everything below the fold is still true; what changed is that "green" now
 means something it did not mean before, because it is no longer a statement about one machine.
 
-**`main` carries plan 00024 phase 1**, and is pushed. `dotnet build DiffView.slnx -warnaserror` is
-clean. ⚠ **The suite is 679 on `main` and 623 on the plan-00025 branch** — that branch removes
-`tests/ThemeAudit.Tests` along with the tool, so a smaller number there is correct and merging makes
-`main` 623.
+**`main` carries plan 00025**, merged from PR #1 on 2026-09-24, and is pushed. `dotnet build
+DiffView.slnx -warnaserror` is clean. The suite is **621** — smaller than the 679 it was, because
+plan 00025 removed `tests/ThemeAudit.Tests` along with the tool.
 
 | Defect | Where | State |
 |---|---|---|
-| **A** — `docs/theme-audit.md` stale on every CI machine | was all four test jobs | ✅ **RETIRED 2026-09-24.** `XamlQuality 2026.3.924` carries the fix; the report regenerates once. Done on the plan-00025 branch, whose suite is **623 with no failures** |
+| **A** — `docs/theme-audit.md` stale on CI | was all four test jobs | ✅ **Retired 2026-09-24**: `XamlQuality 2026.3.924`'s rooting fix on Linux and macOS, and on Windows reference clones checked out LF |
 | **B** — `PackagingTests` packed a configuration the suite never built | all four test jobs | **Fixed**, plan 00024 phase 1 |
-| **C** — **66** rendering tests fail | Windows and macOS only | Plan 00024 phase 3. A decision, not a bug |
+| **C** — 66 rendering tests failed | Windows and macOS only | ✅ **Retired 2026-09-24** by plan 00024 phase 3: the 64 frame cases are Linux's baselines, filtered elsewhere and counted, and the two pixel measurements read coverage |
 
-⚠ **Defect C is 66, not the 32 recorded until 2026-09-24.** Measured from CI: Windows fails **67 of
-613**, of which one is defect A. The 32 came from run `35780424399`, before plans 00022–00024 added
-baselines, and was stale by roughly double. The XamlQuality session reached the same 66 independently.
+✅ **All five CI jobs pass** (run `36089558680`, plan 00024 phase 3) — the first time that has
+been true anywhere. Windows and macOS run 557 tests, the suite less the 64 frame cases that are
+Linux's baselines, and list the 64 they left out. Defect C had counted 66 cases there: those 64 and
+the two pixel measurements that read one rasterizer's rounding.
 
 ⚠ **The red `Culture Leg (de-DE)` was never a localization defect.** It failed **1 of 613** — the same
-defect-A test as `ubuntu-latest`. The leg's name invites the wrong conclusion; nothing in it was about
-German.
+defect-A test as `ubuntu-latest` — and passes on PR #1, 621 of 621. The leg's name invites the wrong
+conclusion; nothing in it was about German.
 
 **Defect A is the one worth reading about**, because the shape of it is the lesson. The theme
 audit's content digest hashed each file's path *relative to the configuration's own directory*
@@ -53,10 +53,21 @@ colour-blind twin sharing one value as they should, both AvaloniaEdit themes, Fl
 ClaudeForge. That the *prediction* held is what makes the diagnosis complete rather than merely a
 report that moved: a different value would have meant the root cause was only partly understood.
 
+⛔ **And then Windows.** PR #1's first run (`36083597792`) has `windows-latest` still failing the drift
+test, on exactly the rows whose files come from checkouts cloned on the runner; DiffView's own two
+rows, pinned LF by `.gitattributes`, match. The digest hashes raw bytes, and a Windows runner checks
+text out CRLF. Proven by arithmetic on the one-file row: *AvaloniaEdit Fluent theme* hashes to
+`60346377b215` as LF — the committed value — and to `63465b5f74f7` as CRLF, exactly Windows'. The
+rooting fix was right and incomplete: a digest that describes *what* was audited must not see line
+endings either. Reported to XamlQuality on 2026-09-24 with that evidence. **Fixed twice over**:
+DiffView's reference clones now check out LF on every platform, so Windows audits the pinned
+commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, unreleased).
+
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
 `IDiffSurface`, on `feat/the-viewer-beside-the-editor`, pushed, 681 green. **Plan 00023 phase 1 is
-done.** **Plan 00024 is approved and phase 1 has landed on `main`.**
+done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every
+CI job passes, on all three platforms.
 
 ### What ships
 
@@ -113,25 +124,6 @@ wording.
 
 ### Open
 
-0. **Plan 00025 is at draft 10, unapproved, and all of its phases 0–4 are BUILT** in the scratch
-   worktree `~/c/cl/scratch/DiffView/wt-pr1` (branch `pr1-rebase`, tip never pushed): **suite 623 with
-   no failures** and **33 mutations — 29 killed by the test they name, 2 by the build, 2 green by
-   design**. It adopts **six** rules — `XQ1002`, `XQ1003`, **`XQ1004`**, `AQ1001`,
-   `AQ1002 ["DiffPlex"]`, `AQ1003 ["Avalonia"]` — plus a hand-rolled nuspec dependency gate, and
-   declines `XQ1001` and `AQ1004`. ⚠ **The pin is not a pair: `XamlQuality 2026.3.924`,
-   `AssemblyQuality 2026.3.922`**, because that is what exists; `AQ1004`'s two retired axes are
-   AssemblyQuality's, so its decline stands on measurement.
-
-   **Nine adversarial reviews have each found a real defect, usually in the previous round's fix.**
-   Round 9 found three inside round 8's repairs, the sharpest of them in the *evidence* rather than a
-   gate: the committed mutation harness printed each mutation's expected killer and never compared it,
-   so `killed` meant only "the filtered class went not-`Passed!`". **A round-10 review is the next
-   step, before approval.**
-
-   ⭐ **`scripts/mutate-gates.{cs,sh,ps1}` is new and committed** — every earlier harness lived in
-   scratch, so the proof that a gate can fail was unreproducible outside the session that ran it. See
-   `AGENTS.md` §5, which records what it refuses to do and why.
-
 0b. **Plan 00026 — an agent cannot drive this library — is opened by measurement and unwritten.**
    All eight controls this repository ships return `NoneAutomationPeer` with `ControlType` `None`
    and honour no automation pattern, against `Button`/`TextBox` answering `Button`+`Invoke` and
@@ -140,74 +132,22 @@ wording.
    a harness**, not screen-reader quality — the latter is why the criteria exist, not the gate.
    Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`.
 
-1. ✅ **Plan 00024 phase 2 is DONE as of 2026-09-24, folded into plan 00025 phase 0.** `XamlQuality
-   2026.3.924` shipped the digest fix (`4f7bd62`, PR #3); the pin bump, the regenerated
-   `docs/theme-audit.md` and the `b7ea0ec438c5` verification are all on the plan-00025 branch.
-
-   ⚠ **It was folded in rather than done separately on purpose**: plan 00025's own risk row says a pin
-   bump *"belongs in a change that looks at"* the gates, and its phase 0 **is** the pin. Doing it in a
-   plan about digests would have done the looking in the wrong change. The bump also moved `XQ1003`
-   from 33 to 34 (`1d9ccac` reads parts from compiled code) with **no floor edit needed**, and made
-   `XQ1004` measurable against a release, which is the only reason draft 9 had declined it.
-
-   ⚠ **Upstream has moved since that merge — re-check before assuming.** As of 2026-09-23
-   `main` is at `02e945b` with six further commits from another session: `XQ1004` (a Grid slot a
-   control does not fit in), `XQ1005`, and an Avalonia gotchas reference. A release now carries all
-   of that, not only the digest fix, so it deserves its own verification pass rather than the one
-   run on 2026-09-22.
-
-   **Then, here**: bump the pin, regenerate `docs/theme-audit.md`, and confirm the ClaudeForge row
-   reads **`b7ea0ec438c5`** — predicted from the same 43 files under the new rooting and identical
-   in both layouts, so a different value means the diagnosis was incomplete rather than that the
-   report simply moved. CI should agree.
-
-   ⚠ The fix **rebases every digest once**, not only rows resolved outside the tree, because the
-   root moves from the configuration directory to each scanned set's own common ancestor. Nothing
-   breaks silently — the drift test fails loudly and a regenerate fixes it.
-
-2. **Plan 00024 phase 3 — defect C — is the only one that is a decision rather than a bug.** ⚠ **66**
-   rendering tests fail on Windows and macOS at 10–13% of pixels differing: glyph rasterization, not
-   antialiasing. **This said 32 until 2026-09-24**, a figure from run `35780424399` that plans
-   00022–00024 had since roughly doubled; CI reports Windows failing 67 of 613, one of which was
-   defect A. The bundled `DejaVuSansMono` fixes *which* glyphs are drawn and nothing about *how*
-   they are rasterized; macOS is arm64 besides. Linux is green only because every verified PNG was
-   generated on Linux. **Two of the 66 are not baselines at all** —
-   `MarkerChipTests.The_glyph_is_centred_in_its_chip` and
-   `MarkerGlyphTests.Every_marker_is_heavy_enough_to_scan` measure the frame, so no baseline strategy
-   touches them: two pixel measurements are simply tighter than the platform spread. The plan's
-   decision is Linux-only baselines plus the owed by-hand runs; the artifacts from run `35780424399`
-   hold the evidence.
-
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
-   remote exists. **Two preconditions remain and both are Brian's**: a nuget.org Trusted Publishing
-   policy naming owner, repository and workflow filename, and `NUGET_USER`.
+   remote exists. **One precondition remains, and it is Brian's**: a nuget.org Trusted Publishing
+   policy naming owner, repository and workflow filename.
 
-   ⛔ **`NUGET_USER` is a repository VARIABLE, here and everywhere. The workflow was wrong and has
-   been corrected; the repository settings have not.** `release.yml` was written in plan 00018 from
-   a template that said `secrets.`, and read `secrets.NUGET_USER` until 2026-09-23, when it was
-   changed to `vars.NUGET_USER`. A nuget.org profile name is not a secret, and the convention is
-   the same in every repository here — a `secrets.` reading is a defect to fix, not a local shape to
-   accommodate.
-
-   **Two steps, and only one is done:**
-
-   | Step | State |
-   |---|---|
-   | `release.yml` reads `vars.NUGET_USER` | ✅ done 2026-09-23 |
-   | The repository has `NUGET_USER` as a **variable** | ❌ **not done — Brian's** |
-
-   ⚠ `gh secret list` shows `NUGET_USER` set as a **secret** on 2026-09-20 and `gh variable list` is
-   empty, so **a release dispatched right now would fail**. Set the variable, then delete the
-   secret, which otherwise only preserves the ambiguity. DiffView's publish being on hold is what
-   makes this safe to leave half-done for the moment. The failure mode when these disagree is
-   "NUGET_USER is not set" while `gh secret list` shows it present — which sends you looking
-   anywhere but at the `vars.`/`secrets.` prefix, and cost a round on
-   `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
+   ✅ **`NUGET_USER` is a repository VARIABLE, as in every repository here — done 2026-09-24.** It
+   reads `JanusMael`, the value each sibling repository carries, and `release.yml` reads
+   `vars.NUGET_USER`. The secret of the same name that stood in for it since 2026-09-20 is deleted,
+   because a variable and a secret that disagree fail as "NUGET_USER is not set" while
+   `gh secret list` shows it present — which sends you looking anywhere but at the
+   `vars.`/`secrets.` prefix, and cost a round on `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
+   The end-to-end check is the release workflow's credential preflight, a dispatch with the version
+   blank, and it has not been run.
 
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
-   manages that release. DiffView's publish being on hold does not hold XamlQuality's, and defect A
-   waits on the latter rather than the former.
+   manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
 4. **Plan 00021 phases 2–4 — the viewer.** Phase 1 is done and pushed:
    `DiffBuildController` (1,872 lines) and `IDiffSurface` (17 members, not the ~15 the plan
@@ -226,28 +166,26 @@ wording.
    `.resx` headers alone. **Unstarted, and it has no plan**; whether it needs a number was asked and
    never answered.
 
-7. **Adopt `XQ1002` and delete `AccessibilityCoverageTests`.** Unblocked —
-   `Bennewitz.Ninja.XamlQuality 2026.3.922` is live and carries it. Closes two holes measured in
-   this repository's own gate on 2026-09-22: an empty `AutomationProperties.Name=""` passes it, and
-   an element set that matches nothing passes it, so a renamed control would silently stop being
-   checked. ⚠ **This IS plan 00025, which is at draft 10 with the work built** — see item 0. Two
-   corrections it makes to this item: the class keeps its **name** rather than being deleted, so every
-   citation of it still resolves; and the element set is **derived from the assembly** rather than
-   rewritten by hand, because a hand-written one was measured blindable one name at a time.
+7. **Re-evaluate `AQ1004` and `AQ1002`'s configuration at the next AssemblyQuality release.**
+   `05a6060` and `044e71a`, unreleased on 2026-09-24, retire two of the three reasons plan 00025
+   declined `AQ1004` — it cannot detect its own inertness, and it reads exported types only — and
+   give `AQ1002` `Only(namespaces)`, under which its stock set reads 0. The work is a pin bump and a
+   re-measurement against the decline plan 00025 records.
 
-8. **`AQ1001` reports two findings here**, from this author's own new
-   `Bennewitz.Ninja.AssemblyQuality 2026.3.922`: `DiffDocumentBuilder.Build` and `DiffSearch.Find`
-   take defaulted `CancellationToken`s on public API about to publish. A policy call, not a defect —
-   the BCL defaults its own tokens everywhere, and the rule says so in its own documentation.
+8. **At the next XamlQuality release, re-measure `XQ1004`'s `Skipped` guard.** Its `inert-at-pin`
+   marker in `GridSlotTests` expires the moment the pin moves, and `--guards` fails CI until it is
+   answered: `scripts/xq1004-skips.sh` exits 0 to re-mark it at the new version and 1 when the guard
+   is owed a mutation. XamlQuality built the fix on 2026-09-24 (its #20, unreleased): a placement a
+   markup value cannot decide goes to `Skipped`, and `Inspected` counts only placements measured
+   against a fixed slot. ⚠ **On DiffView that reads 0 inspected** — 23 of its 24 grid children
+   declare no size — **so `GridSlotTests`' floor of 12 fails at that bump, and truthfully.** By plan
+   00025's own standard a rule that inspects nothing here is not adopted, so that bump is where
+   `XQ1004` is re-decided, not re-floored. The same release carries the digest fix (#22), which
+   XamlQuality expects to move no committed digest.
 
-   ⚠ **The call was taken on 2026-09-23 and is plan 00025 phase 4: adopted, by moving the token ahead
-   of the optional parameter** across 71 call sites in 17 files. Recorded as a decision rather than as
-   an argument from publish urgency, which item 3 makes false — the window does not close while the
-   publish is on hold.
-
-9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. Reframed by 00024: the
-   *suite* does not pass on those platforms, so a by-hand run was never the first obstacle. Plan
-   00023's harness is what would make them repeatable.
+9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. The suite passes on those
+   platforms now, without its Linux-only baselines, which makes these runs the only look anything
+   takes at rendering there. Plan 00023's harness is what would make them repeatable.
 
 10. **`LayeredEditors.Avalonia.Diagnostics` → `Bennewitz.Ninja.AppServices.Avalonia`: deferred
     2026-09-23, deliberately.** The demo keeps its hand-packed `1.0.1` from `../nuget-local`, and
@@ -265,11 +203,11 @@ wording.
     `MainWindow.axaml:113`, the View-menu entry. Replacing it means a window of DiffView's own, fed
     by `AvaloniaDiagnosticsOptions.ConfigureLogger` adding a Serilog sink, with `EventListener` for
     diagnostic events. ⚠ That menu entry carries an `AutomationProperties.Name`, so plan 00025's
-    accessibility gate scans it — and **it does move a number**, which an earlier version of this
-    line denied. That gate floors the library's own markup at 19 and the whole scan at 60, against
-    a measured 71 of which 52 are the demo's. Removing one demo entry takes the scan to 70, which
-    the floor absorbs; removing eleven would not. ⛔ A correction to that line already got this
-    wrong once by reading only the library floor, so check both before relying on it. The rename log is at
+    accessibility gate scans it — and **it does move a number**. The gate floors the demo's own
+    reading at 41, against a measured 53: removing that one entry takes it to 52, which the floor
+    absorbs, and removing thirteen would not. The library's floor reads the library alone, and the
+    accounting equality holds whatever the demo loses, because the demo and the whole scan move
+    together. The rename log is at
     `https://github.com/JanusMael/Bennewitz.Ninja.Templates/blob/main/docs/layered-editors-renames.md`.
 
     The cost of deferring is that the local feed is a hand-packed artifact no other machine can
@@ -292,19 +230,29 @@ a side editable so a run no longer opens with a menu drive, `--unified` opens th
 **`scripts/catch-crash.sh` judges a test run.** `--check <log>` reads a captured one; with no
 argument it re-runs the suite until it catches an abort and keeps that log. It exists because a
 host that dies mid-run prints `Failed!` with `failed: 0` and a short total, which any grep reads
-as success. `--expect <total>` makes a short total a failure too — **679 on `main`, 623 on the
-plan-00025 branch**, which removes `tests/ThemeAudit.Tests` along with the tool.
+as success. **`--expect auto`** makes a short total a failure too: it reads the suite's size from
+`dotnet test --list-tests` against the current build, so no number is written here — a written one
+is wrong in both directions the moment a test is added.
+
+**`scripts/mutate-gates.sh` proves the static-analysis gates able to fail.** A full run takes about
+five minutes and is owed after any change to a gate file, a gated subject or a pin; CI runs only its
+`--guards` half. `AGENTS.md` §5 records what it refuses to do and why.
 
 The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:
 
 ```bash
-dotnet run --project src/ThemeAudit -- compat
+theme-audit compat
 ```
 
 ```bash
-dotnet run --project src/ThemeAudit -- report
+theme-audit report
 ```
+
+The tool is `Bennewitz.Ninja.XamlQuality.ThemeAudit` (`dotnet tool install --global
+Bennewitz.Ninja.XamlQuality.ThemeAudit`); it was `src/ThemeAudit` in this repository until the
+analysis moved to Bennewitz.Ninja.XamlQuality. The reviewed key tables it generates from stay
+here, in `mappings/`.
 
 ## History — plan by plan
 
@@ -566,14 +514,48 @@ either.
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
 
+## Plan 00025 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 0 The pin | S | done — `eb711be` | `XamlQuality` `2026.3.920` → `2026.3.924`; `docs/theme-audit.md` regenerated, the ClaudeForge row at the predicted `b7ea0ec438c5`; `.gitignore` ignores everything under `reference/` but its three versioned files. Suite 613 |
+| 1 The a11y gate | M | done — `2499b7e` | `XQ1002` over an element set derived from the assembly, one adopted instance for findings and per-name coverage, the markup cross-check, both subjects floored and accounted, and the runtime walk over four states; the header automation names in all eight locales; the demo's menu bar named. `docs/theme-audit.md` regenerated a second time, for the two themes' new bindings. Suite 615 |
+| 2 Template parts | XS | done — `2e6f046` | `XQ1003`, 34 inspected against a floor of 20, and the expected `Skipped` pair. Suite 616 |
+| 2b Fixed grid slots | XS | done — `707dde4` | `XQ1004`, 22 inspected against a floor of 12, its `Skipped` guard marked `inert-at-pin`. Suite 617 |
+| 3 Surface and layering | S | done — `afeb954` | `AQ1002 ["DiffPlex"]`, `AQ1003 ["Avalonia"]`, the nuspec dependency gate, and `AssemblyQuality 2026.3.922`. Suite 620 |
+| 4 `AQ1001` | S | done — `f99aa4d` | The token before the options in `Build` and `Find` — breaking — across 71 call sites in 17 files, and the gate with its standing control. Suite 621 |
+| The mutation harness | — | done — `2b5d468` | `scripts/mutate-gates.{cs,sh,ps1}`, `scripts/xq1004-skips.{cs,sh,ps1}`, `catch-crash --expect auto`, the concurrent pipe reads, CI's `--guards` step and `AGENTS.md` §5 |
+| 5 The record | S | done — `b938fb4` | This file, `DECISIONS.md` and `CHANGELOG.md` |
+
+## Plan 00025 verification
+
+| Done-when item | Result |
+|---|---|
+| Every phase stands alone | Each commit built with `-warnaserror` and passed the whole suite on its own: 613, 615, 616, 617, 620, 621 |
+| Every guard can fail | A full harness run on the pushed tip: 61 mutations as expected — 57 killed by the test they name, 2 by the build as `AVLN1001`, 2 green by design — and all 44 assertions in the gate files accounted for, 43 tripped first and 1 inert at `2026.3.924` |
+| The standing half runs in CI | `Mutation-harness guards` passed on `ubuntu-latest` on its first run |
+| `Build & Test (ubuntu-latest)` agrees | Yes, 621 of 621, and so do `Culture Leg (de-DE)` and `Trim Check`. Locally the suite passed in `en-US` and `de-DE` alike |
+| Windows and macOS | Red, as the plan expected, on defect C's 66 — and Windows on one more: defect A's CRLF remainder, which this plan's first CI run found |
+| The transcription is faithful | The pushed tip differs from the scratch branch the phases were proven on only in `main`'s own records, this file's phase marker, one folded `AGENTS.md` statement, and the harness printing a build error's whole line |
+| Merged | Rebase-merged by admin on 2026-09-24 — `main`'s ruleset allows only squash and rebase, and two required checks are red — so each phase is its own commit on `main`; the merged tree is the pull request's plus `main`'s own §9 commit, and nothing else |
+
 ## Plan 00024 phases
 
 | Phase | Size | Status | Notes |
 |---|---|---|---|
 | 1 Two fixes and one question | S | done | `PackagingTests` names the configuration it packs; both test jobs keep what the gates rejected. Ended with defect A **diagnosed**, which is what it was for |
-| 2 Defect A | S | **blocked** | Fixed upstream and merged in `Bennewitz.Ninja.XamlQuality`; waiting on a release. The caldate scheme means the next tag is tomorrow's — `2026.3.922` is spent, and tagging `.923` today would make the package version disagree with the assembly attributes AutoVersioning stamps from build time |
-| 3 The rendering split | M | not started | Independent of A and B. The `received-*` artifacts from run `35780424399` carry the raw material: 3.1 MB of macOS PNGs, 1.9 MB of Windows |
-| 4 The record | S | not started | |
+| 2 Defect A | S | done | Folded into plan 00025 phase 0 for Linux and macOS; on Windows by reference clones checked out LF, in phase 3 |
+| 3 The rendering split | M | done | `[LinuxBaseline]` filtered away from Linux and counted by CI; the two pixel measurements re-derived as coverage against every platform's readings |
+| 4 The record | S | done | `DECISIONS.md`, this file and the resume anchor. All five jobs green on run `36089558680` |
+
+## Plan 00024 phase 3 verification
+
+| Done-when item | Result |
+|---|---|
+| A skipped snapshot is visibly skipped | Windows and macOS list, in a step of their own, the 64 frame cases they filtered out, by name; the runner's summary alone would say nothing |
+| The two measured assertions hold at their new bound | On all three platforms, from readings each platform measured itself; and each fails below its bound — a glyph shifted a pixel either way (0.78 and −1.22 px against 0.5), and a middle dot (4.79 against 6.0) |
+| The existing tests | Green on all five CI jobs for the first time, run `36089558680`: ubuntu and the culture leg run 621, Windows and macOS 557 plus the 64 they list |
+| Defect A on Windows | The drift test passes there; simulated here first, under a global `core.autocrlf=true`: the old clone carried 385 CR bytes in one file and failed, the new one carries none |
 
 ## Plan 00024 phase 1 verification
 

@@ -196,6 +196,18 @@ static void Git(string? workingDirectory, IEnumerable<string> arguments)
         UseShellExecute = false,
     };
 
+    // ⛔ Every checkout here is LF, on every platform. A Windows runner converts text to CRLF on
+    // checkout (core.autocrlf=true there), and the theme audit hashes the bytes it reads, so a CRLF
+    // clone produced a different report on Windows than the same pinned commit produces on Linux and
+    // macOS — measured: one theme file hashed `60346377b215` as LF and `63465b5f74f7` as CRLF, and only
+    // the rows read from these clones moved. The pinned commit's own bytes are what the audit is about,
+    // and these two settings are what hand them over unchanged; DiffView's own files get the same from
+    // its .gitattributes.
+    start.ArgumentList.Add("-c");
+    start.ArgumentList.Add("core.autocrlf=false");
+    start.ArgumentList.Add("-c");
+    start.ArgumentList.Add("core.eol=lf");
+
     if (workingDirectory is not null)
     {
         start.ArgumentList.Add("-C");

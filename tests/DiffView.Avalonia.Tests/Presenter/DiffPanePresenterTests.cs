@@ -145,7 +145,7 @@ public sealed class DiffPanePresenterTests
         Assert.Equal(rows * lineHeight, view.DocumentHeight, Tolerance);
 
         // Against itself the left side has no padding: every previously padded line must return to one row.
-        SideBySideDocument identical = DiffDocumentBuilder.Build(left, left).Document;
+        SideBySideDocument identical = DiffDocumentBuilder.Build(left, left, CancellationToken.None).Document;
         host.Left.DiffDocument = identical;
         PresenterHost.Layout();
         Assert.Equal(identical.Version, host.Left.MetadataVersion);
@@ -338,7 +338,7 @@ public sealed class DiffPanePresenterTests
 
         // A new model gives the generator another chance.
         pane.PaddingSourceForTesting = null;
-        pane.DiffDocument = DiffDocumentBuilder.Build(host.Document.Left.Lines.Count.ToString(), "x").Document;
+        pane.DiffDocument = DiffDocumentBuilder.Build(host.Document.Left.Lines.Count.ToString(), "x", CancellationToken.None).Document;
         pane.DiffDocument = host.Document;
         PresenterHost.Layout();
         Assert.False(pane.PaddingGenerator.IsDisabled);

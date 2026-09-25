@@ -14,13 +14,13 @@ public sealed class DiffSearchTests
     private const string Left = "foo bar\nthe Foo\ngone foo\nlast\ntail";
     private const string Right = "foo bar\nthe fooBar\nlast\nxfoo foo\ntail";
 
-    private static readonly SideBySideDocument Document = DiffDocumentBuilder.Build(Left, Right).Document;
+    private static readonly SideBySideDocument Document = DiffDocumentBuilder.Build(Left, Right, CancellationToken.None).Document;
     private static readonly StringPaneText LeftText = new(Left);
     private static readonly StringPaneText RightText = new(Right);
 
     private static FindResult Find(string query, FindOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return DiffSearch.Find(Document, LeftText, RightText, query, options, cancellationToken);
+        return DiffSearch.Find(Document, LeftText, RightText, query, cancellationToken, options);
     }
 
     [Fact]
@@ -123,10 +123,10 @@ public sealed class DiffSearchTests
         // The lookahead keeps the pattern off the non-backtracking engine; (a+)+$ on a run of a's
         // followed by b is exponential in the backtracking one.
         string line = new string('a', 40) + "b";
-        SideBySideDocument document = DiffDocumentBuilder.Build(line, line).Document;
+        SideBySideDocument document = DiffDocumentBuilder.Build(line, line, CancellationToken.None).Document;
         FindOptions options = new() { UseRegex = true, MatchTimeout = TimeSpan.FromMilliseconds(50) };
 
-        FindResult result = DiffSearch.Find(document, new StringPaneText(line), new StringPaneText(line), "(?=a)(a+)+$", options);
+        FindResult result = DiffSearch.Find(document, new StringPaneText(line), new StringPaneText(line), "(?=a)(a+)+$", CancellationToken.None, options);
 
         Assert.NotNull(result.Error);
         Assert.Contains("took longer than 50 ms", result.Error);
@@ -160,7 +160,7 @@ public sealed class DiffSearchTests
     public void A_pane_text_shorter_than_the_document_is_tolerated()
     {
         // The editor's snapshot may lag a rebuild by a keystroke; a line past its end is skipped, never thrown on.
-        FindResult result = DiffSearch.Find(Document, new StringPaneText("foo"), new StringPaneText("foo"), "foo");
+        FindResult result = DiffSearch.Find(Document, new StringPaneText("foo"), new StringPaneText("foo"), "foo", CancellationToken.None);
 
         Assert.Equal([new FindMatch(DiffSide.Left, 0, 0, 3), new FindMatch(DiffSide.Right, 0, 0, 3)], result.Matches);
     }

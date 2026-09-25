@@ -4,7 +4,7 @@ namespace Bennewitz.Ninja.DiffView.Core.Tests;
 
 public sealed class WordDiffCacheTests
 {
-    private static readonly SideBySideDocument Document = DiffDocumentBuilder.Build("a\nb\nc\nd", "A\nB\nC\nD").Document;
+    private static readonly SideBySideDocument Document = DiffDocumentBuilder.Build("a\nb\nc\nd", "A\nB\nC\nD", CancellationToken.None).Document;
 
     [Fact]
     public void Pieces_mark_the_changed_words_and_cover_both_lines()
@@ -96,7 +96,7 @@ public sealed class WordDiffCacheTests
     public void A_rebuilt_document_never_serves_the_old_documents_pieces()
     {
         WordDiffCache cache = new(DiffOptions.Default);
-        SideBySideDocument rebuilt = DiffDocumentBuilder.Build("a\nb\nc\nd", "A\nB\nC\nD").Document;
+        SideBySideDocument rebuilt = DiffDocumentBuilder.Build("a\nb\nc\nd", "A\nB\nC\nD", CancellationToken.None).Document;
         Assert.NotEqual(Document.Version, rebuilt.Version);
 
         WordDiffPieces old = cache.GetPieces(Document, 0, "a b", "a c");

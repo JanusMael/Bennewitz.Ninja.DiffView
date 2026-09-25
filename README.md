@@ -3,9 +3,13 @@
 Text diff controls for Avalonia 12 — row-aligned panes on AvaloniaEdit, line and word-level
 highlighting, change navigation, minimap, connectors, find across either or both panes, syntax
 highlighting, and a unified (inline) view over the same model — built read-only first and
-designed so in-pane editing is a flip, not a rewrite. A second, standalone deliverable is `theme-audit`, a dotnet tool that finds the
-resource keys an Avalonia theme leaves undefined (the invisible-control cases) and the tokens
-below a contrast floor, for any Avalonia project.
+designed so in-pane editing is a flip, not a rewrite.
+
+The `theme-audit` tool that began here — it finds the resource keys an Avalonia theme leaves
+undefined (the invisible-control cases) and the tokens below a contrast floor — now ships from
+[Bennewitz.Ninja.XamlQuality](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality) as
+`Bennewitz.Ninja.XamlQuality.ThemeAudit`, where it works against WPF and MAUI markup too. This
+repository is one of its consumers; see [The theme audit](#the-theme-audit).
 
 **Putting the control into your own application? Read
 [docs/hosting-diffview.md](docs/hosting-diffview.md).** It is the guide for consumers — install,
@@ -25,10 +29,10 @@ and the cross-file contracts an agent must not break in [AGENTS.md](AGENTS.md).
 | `src/DiffView.Core` | Diff model: alignment, probing, search, diagnostics. No UI dependency |
 | `src/DiffView.Avalonia` | The controls and their themes |
 | `src/DiffView.Demo` | Desktop demo — Semi.Avalonia by default, Fluent or Simple by flag |
-| `src/ThemeAudit` | The `theme-audit` dotnet tool |
 | `tests/` | Unit, headless UI and rendered-snapshot tiers |
 | `reference/` | Read-only upstream checkouts, fetched on demand — see [reference/README.md](reference/README.md) |
 | `fixtures/` | Test inputs, including the bundled monospace font |
+| `mappings/` | The reviewed key tables the compat dictionaries are generated from — see [The theme audit](#the-theme-audit) |
 
 ## Building
 
@@ -118,22 +122,40 @@ naming the owner, repository and **workflow filename**, and a `NUGET_USER` repos
 not rename `release.yml`** — the policy is bound to its filename and renaming it fails
 authentication without ever mentioning filenames.
 
-The push names its two packages and must never glob. `dotnet pack` over this solution also produces
-`Bennewitz.Ninja.ThemeAudit`, which belongs in the local feed rather than on nuget.org, and a
-published package id cannot be withdrawn — only unlisted. `PackagingTests` fails if the glob ever
-returns.
+The push names its two packages and must never glob. A published package id cannot be withdrawn —
+only unlisted — so a `*.nupkg` glob is one irreversible mistake away at all times.
+`PackagingTests` fails if the glob ever returns.
 
 ## The theme audit
+
+The audit itself lives in [Bennewitz.Ninja.XamlQuality](https://www.nuget.org/packages/Bennewitz.Ninja.XamlQuality),
+not in this repository. It used to be `src/ThemeAudit` here; the analysis is not about DiffView, so
+it moved somewhere it can be used against any Avalonia, WPF or MAUI project and be developed and
+tested on its own. What stays here is this repository's *use* of it: `theme-audit.json`, the
+committed report, the generated compat dictionaries, and the Reference-trait tests that hold all
+three to a fresh run.
+
+`mappings/` holds the reviewed key tables those dictionaries are generated from — which Fluent or
+Simple key maps onto which Semi token, and why. The tool ships its own copies and would resolve
+`"mapping": "FluentToSemi"` against them, but this repository names the files instead: the
+committed dictionaries under `src/DiffView.Avalonia/Themes/Compat` are generated from *these*
+tables, so a change upstream cannot silently change what DiffView ships.
+
+Install the tool once:
+
+```bash
+dotnet tool install --global Bennewitz.Ninja.XamlQuality.ThemeAudit
+```
 
 `theme-audit.json` at the root names the themes (from the reference checkouts), the consumers
 and the compat dictionaries. Regenerate the dictionaries, then the report:
 
 ```bash
-dotnet run --project src/ThemeAudit -- compat
+theme-audit compat
 ```
 
 ```bash
-dotnet run --project src/ThemeAudit -- report
+theme-audit report
 ```
 
 `--check` on either writes nothing and exits 1 when the committed output differs from a fresh
@@ -144,11 +166,5 @@ the generated `Themes/Compat/*.Semi.axaml` dictionaries. The quick per-directory
 still there:
 
 ```bash
-dotnet run --project src/ThemeAudit -- inventory reference/Semi.Avalonia/src/Semi.Avalonia/Themes/Light
-```
-
-Pack the tool into the local feed for another repository to adopt (`dotnet tool install Bennewitz.Ninja.ThemeAudit`):
-
-```bash
-scripts/pack-theme-audit.sh
+theme-audit inventory reference/Semi.Avalonia/src/Semi.Avalonia/Themes/Light
 ```

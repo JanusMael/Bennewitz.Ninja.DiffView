@@ -28,7 +28,7 @@ no dates, no counts.
 | Syntax highlighting is a foreground: TextMate colours the tokens and nothing else, so the row fills, the word pieces, the match highlights and the selection all compose over it | Colours fight, or a grammar hides the diff | `SyntaxHighlighting` installs `AvaloniaEdit.TextMate` and sets a grammar and a theme only; test `SyntaxSnapshotTests.Syntax_colour_and_the_inserted_fill_compose_on_the_same_row` |
 | A grammar is chosen from `DiffPanePresenter.SyntaxFileName`'s extension; no extension, or one no grammar claims, is plain text and **not** a fault | A `.txt` pair puts the control in `Degraded`, or an unknown file throws | `SyntaxHighlighting.GrammarFor`; tests `SyntaxTests.An_extension_no_grammar_claims_leaves_plain_text_and_the_state_stays_ready`, `SyntaxTests.A_source_with_no_name_at_all_stays_plain_text` |
 | No namespace this repository authors carries a segment matching the root namespace of an assembly it references | C# walks enclosing namespaces before global, so `Avalonia.Media.Color` resolves to *our* `…DiffView.Avalonia.Media.Color` and fails with CS0234; every use needs `global::` until the segment is renamed | `NamespaceConventionTests.No_namespace_carries_a_segment_that_shadows_a_referenced_root`, and `DiffCommand`'s cref, which stops compiling — the compiler holds half of this |
-| The release pushes the packages it names, never a `*.nupkg` glob | `dotnet pack` over this solution produces three packages — `Bennewitz.Ninja.ThemeAudit` is packable and local-feed-only by design — so a glob publishes it to nuget.org irreversibly on the first release | `.github/workflows/release.yml`; test `PackagingTests.The_release_workflow_names_the_packages_it_pushes` |
+| The release pushes the packages it names, never a `*.nupkg` glob | A glob publishes whatever the solution happens to produce, irreversibly, on the first release that adds a packable project — `src/ThemeAudit` was that project until the analysis moved to `Bennewitz.Ninja.XamlQuality` | `.github/workflows/release.yml`; test `PackagingTests.The_release_workflow_names_the_packages_it_pushes` |
 | The package version is the git tag, carried by `/p:Version=` into **both** build and pack | `dotnet pack --no-build` reuses the build's output, so a version given to one and not the other packs the wrong thing silently; with neither, a release publishes `1.0.0` at a version that can never be reused | `.github/workflows/release.yml`; test `PackagingTests.The_release_workflow_carries_the_tag_version_into_build_and_pack` |
 | Every packable project carries a licence, an author, both URLs and tags | Each defaults to something wrong rather than failing: `Authors` and `PackageId` fall back to the assembly name, and a package with no licence expression passes nobody's compliance review | `Directory.Build.props` and each `.csproj`; test `PackagingTests.Every_packable_project_carries_the_metadata_a_consumer_needs` |
 
@@ -147,6 +147,64 @@ no dates, no counts.
   `TestLogSink.AssertNoWarnings` afterwards; a new headless test is proven able to fail before
   it is committed; `Perf` tests are excluded by default and `Reference` tests need the checkouts
   the `EnsureReferenceSources` target fetches.
+- **The static-analysis gates' mutations are committed, not scratch: `scripts/mutate-gates.sh`.**
+  Each mutation declares what must happen to it — a **named test** must fail, the **build** must
+  reject it with a **named diagnostic**, or it must stay **green** because it encodes a gate's blind
+  spot — and the harness compares its verdict against that declaration. `--list` names them,
+  `--guards` lists the guards they must cover, `--only <text>` runs a subset. A gate whose mutation
+  merely survives reports clean over a codebase that is not, which reads as coverage.
+- **Three verdicts look like success and are not**, which is why `Expect` is compared rather than
+  printed: a kill by a *different* test in the filtered class (`wrong-killer`), a kill by the
+  *compiler* before the gate ran — or, for a mutation that exists to be a build kill, a failure without
+  its diagnostic (`killed-by-the-build`; `AddPublicMember`'s comment records how easily an edit slips
+  into that) — and a **test-host abort**, no summary outcome or `Failed!` with no failing test, per the
+  bullet below (`aborted`). Each fails the run; an uncompared expectation would make `killed` mean only
+  "the filtered class went not-`Passed!`".
+- ⭐ **A guard is proven only when a mutation makes it the FIRST assertion to fail**, because a test
+  stops there and "killed by the test it names" says nothing about the assertions after that one. The
+  harness derives every assertion in the gate files (`GateFiles`, plus the nuspec gate's method),
+  attributes each failure to the gate-file line its trace stops on — mapped back through any edit the
+  mutation made to that file — and a full run fails every assertion no mutation reached first. A
+  `--only` run proves only what it reached and judges nothing. ⚠ **It cannot see an assertion that was
+  never written**: a gate with no floor has no floor to trip, so a new or changed guard gets its
+  blinding mutation in the same change.
+- **A guard is an assertion, so a gate file holds no `throw`.** A `?? throw` or a throwing switch arm
+  is tripped by mutations and credited to nothing, which would put a guard beyond the check above; the
+  harness refuses to start while any gate-file line throws. Setup that must fail — the runtime walk's
+  failing build — lives outside the gate files, in `CompositeHost.FailingBuilder`.
+- **An assertion that cannot fail at the current pin is marked, not claimed.** The line above it reads
+  `// inert-at-pin: <package> <version>`, which excuses that one guard only while
+  `Directory.Packages.props` pins the package at that version. A moved pin, or a mutation that trips the
+  guard anyway, fails the run. For XQ1004's marker, `scripts/xq1004-skips.sh` re-measures the claim
+  against whatever is pinned.
+- **The proof is point-in-time: a full run is owed after any change to a gate file, a gated subject or
+  a pin.** A full run takes minutes and CI does not make one. What CI runs is `--guards`, on Linux in
+  `build-and-test` — the standing half, in seconds: it lists the derived guards, judges each marker
+  against the current pin, and exits non-zero on an expired marker or a gate-file `throw`. It proves no
+  guard.
+- **Two mutations must stay green, and that is asserted**: `PrivateAssets="all"` hides a used type
+  from the nuspec gate, and Roslyn emits no reference for an unused package, so `AQ1003` and the
+  nuspec gate are each blind to exactly what the other catches. A red there is `unexpected-red` and
+  fails — the complementarity claim is the whole reason both are adopted.
+- **`scripts/mutate-gates.sh` refuses to start on a dirty `src` or `tests`** unless `--force`,
+  because it reverts both before every mutation and an earlier generation of these harnesses
+  repeatedly destroyed uncommitted work that way. It also checks the revert *worked* afterwards, and
+  reads `--untracked-files=all` so a `status.showUntrackedFiles=no` config cannot hide the file
+  `git clean` is about to delete. What a mutation may touch is **derived**, not listed: the whole
+  repository's status is compared before and after every edit, and anything written outside the
+  reverted scope is put back and stops the run — it would otherwise be reported as a no-op, survive the
+  revert, and contaminate every mutation after it. ⚠ **Edit nothing in the worktree while a run is in
+  progress**: an edit outside `src` and `tests` reads as a mutation's stray, and is put back.
+- **A `no-op` means the mutation matched nothing, and it fails the run.** It is *not* a surviving
+  mutation and not a pass: the gate was never exercised. The code moved and the mutation needs
+  re-pointing. When a construct is deliberately designed out of existence, its mutation is **deleted**
+  and the plan records why — a permanently unappliable mutation is not evidence.
+- ⛔ **Reverting a mutation does not unbuild it, so the harness rebuilds on every exit it controls**
+  once mutations have started, from a `finally`. A run killed outright cannot, and a
+  `dotnet test --no-build` straight after one is worthless: the last mutation's assemblies sit in
+  `bin/` while the source is reverted, so the run tests mutated code against clean markup — measured,
+  `GridSlotTests` reported **nothing inspected** where it inspects its whole population, and the gate
+  was briefly suspected of the harness's defect. Rebuild first.
 - `PresenterHost` under `tests/DiffView.Avalonia.Tests/Presenter` is the fixture for presenter
   tests; `ThemeSwap` and `ThemeTargets` cover the ten theme targets.
 - **A test-host abort reads as a pass to any grep, so judge the whole summary.** When the host dies
@@ -157,7 +215,11 @@ no dates, no counts.
   `scripts/catch-crash.sh` is the guard: `--check <log>` judges a captured run, and with no argument
   it re-runs the suite until it catches one and keeps that log. Its load-bearing clause is that the
   summary outcome must say `Passed!` — no arithmetic over the counts can see an abort, because
-  412 + 0 + 0 closes perfectly. Pass `--expect 679` to make a short total a failure too.
+  412 + 0 + 0 closes perfectly. Pass **`--expect auto`** to make a short total a failure too: it
+  reads the suite's size from `dotnet test --list-tests` against the current build. ⛔ **Never write the
+  number down.** `Judge` compares with `!=`, so a stale count is wrong in both directions at once —
+  every clean run reports a false abort, and the one-test-short run the flag exists to catch passes.
+  With `--check`, discovery reads the build that is here now, so judge a log from the build that made it.
 - `CompositeHost` keeps syntax highlighting **off** unless a test passes `syntax: true`, for the
   reason it keeps the caret from blinking: TextMateSharp tokenizes on its own thread, so a frame
   captured without waiting is a coin toss. A test that wants colour waits on
@@ -167,8 +229,21 @@ no dates, no counts.
   the same hand-advanced clock, the same zero-time builder, the same syntax rule. A test that
   reads what a margin or a background renderer *drew* captures a frame (`Capture()`); a layout
   pass alone does not redraw a margin.
-- Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`).
-  Static seams: `DebugFlags.ResetForTesting`, `DiffViewStrings.ResetForTesting`.
+- Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`) — no
+  build time, no machine's font. Static seams: `DebugFlags.ResetForTesting`,
+  `DiffViewStrings.ResetForTesting`.
+- ⛔ **A snapshot proves Linux's rendering and nothing else.** Every committed baseline was rendered
+  and reviewed on Linux, and rasterization is the platform's: the bundled font fixes which glyphs are
+  drawn and nothing about how, so the same frame differs by 10–13% of its pixels on Windows and
+  macOS without anything being wrong. Every test that compares a frame therefore carries
+  `[LinuxBaseline]`; away from Linux the runner filters it out (`tests/Directory.Build.props`,
+  `-p:ExcludeLinuxBaselines=false` to run it anyway), and CI prints how many it left out, because a
+  filter is silent in the summary. A new frame test takes the attribute, or it fails two CI legs.
+  What looks at rendering on Windows and macOS is a by-hand run, not this suite. A pixel assertion
+  beside a capture is a property rather than a picture, so it runs everywhere and must hold at every
+  platform's rasterization: it reads ink as coverage (`PixelProbe.Coverage`), never as a count of
+  pixels past a colour threshold, which measures one rasterizer's rounding. `MarkerChipTests` and
+  `MarkerGlyphTests` carry beside their bounds the per-platform readings those were derived from.
 - **The snapshot comparer tolerates anti-aliasing, not glyphs, and this is the trap that recurs.**
   `VerifySetup.ChannelTolerance` and `VerifySetup.MaxDifferingFraction` exist so a platform's
   anti-aliasing does not fail a frame; the cost is that a change smaller than that fraction passes
@@ -202,8 +277,11 @@ no dates, no counts.
   strays reports where it strayed to. Where position matters, assert it against something the
   decorator does not choose: `DiffLineNumberMargin.LastColumnRight` names the edge the numbers
   were aligned to, which is why a copy arrow shifted four pixels survived every other assertion.
-- `AccessibilityCoverageTests` counts `DiffPanePresenter` and `TextEditor` as interactive, so
-  every pane in a view carries `AutomationProperties.Name`.
+- `AccessibilityCoverageTests` derives its element set from the library — every public `Control` it
+  ships, less `Excluded`, plus the framework names in `LiveFrameworkElements` and `ForwardCover` — so
+  every pane in a view carries `AutomationProperties.Name` and a new public control is covered the
+  moment it exists. Each name is floored on its own: one that covers nothing fails, and so does a
+  forward-cover name that starts covering something.
 - **A test that asserts English text says so, with `[EnglishChrome]`.** `HeadlessTestApp` pins the
   UI culture to `en-US` and `DIFFVIEW_TEST_UI_CULTURE` flips it; CI's `culture-leg` job flips it to
   `de-DE` over the whole suite. A test that fails only there was asserting English without saying
@@ -374,6 +452,16 @@ wrong conclusion during the work above: an `ssh` probe that had actually failed 
 succeeded, because `head` exits 0 regardless. Capture the status without a pipe, or read
 `${PIPESTATUS[0]}`. The same trap applies to any pipeline whose last stage always succeeds.
 
+### Avalonia and drivable-UI lessons go to XamlQuality
+
+`docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` in `JanusMael/Bennewitz.Ninja.XamlQuality` are
+the one living copy of each. A new Avalonia foot-gun, a lesson about driving or verifying a desktop UI
+by agent, or a correction to either document goes to the XamlQuality session by message — `ListAgents`
+shows it as XamlQuality — with the versions and the measurement or source behind it, or as an issue in
+that repository when no session is running. Keep no copy here: once a lesson lands there, what stays in
+this file is a pointer, plus whatever is specific to DiffView or to this machine. `DECISIONS.md` records
+why.
+
 ## 9. Looking at the running app on this Linux box
 
 > Written after four plans' worth of UI work had been judged only on headless frames, because
@@ -443,16 +531,14 @@ succeeded, because `head` exits 0 regardless. Capture the status without a pipe,
   right at real size, in a real window, at the real DPI — which is what Windows and macOS runs are
   still owed for.
 
-- **An Avalonia menu popup is its own X window**, override-redirect and unnamed, so a grab of the
-  main window does not contain it. To drive a menu: click the menu button, find the new large
-  unnamed child of the root in `xwininfo -root -children`, grab *that* to read the item positions,
-  then click at the popup's screen origin plus the item's offset. Keyboard accelerators
-  (`alt+v`, then the item's letter) did **not** work through `xdotool` here; clicking did.
-- The demo's View menu is taller than its popup and scrolls, so an item below the fold cannot be
-  clicked from the first grab. `xdotool click 5` with the pointer over the popup scrolls it; grab
-  again afterwards, because every position has moved. **New demo items belong in a submenu** for
-  the same reason — a submenu is one more row here and its own popup to grab, where four more
-  rows push something else off the end.
+- **Driving a menu, a tooltip or an accelerator with `xdotool` is XamlQuality's to document**, and it
+  does: `docs/avalonia-gotchas.md` in `JanusMael/Bennewitz.Ninja.XamlQuality`, under *Linux platform
+  integration*, the entry *Driving an Avalonia app with `xdotool`: a menu is its own X window, a
+  tooltip never appears, and accelerators do not arrive* — how to find and grab a menu's popup, scroll
+  it and grab again, and why a click arrives where hover and an accelerator do not.
+- **New demo items belong in a submenu.** The demo's View menu is already taller than its popup and
+  scrolls, and a submenu is one more row here and its own popup to grab, where four more rows push
+  something else off the end.
 
 ### When the whole session is wedged rather than not presenting
 
@@ -502,13 +588,10 @@ Both cost time on **2026-09-13**, driving plan 00014 phase 4.
 
 ### Tooltips cannot be driven from here
 
-`xdotool mousemove` puts the pointer where you ask — a captured frame shows the cursor on the target
-— but **no tooltip ever appears**, because synthetic motion does not produce the dwell state
-Avalonia's tooltip service waits on. Same class as the accelerator finding above: clicks reach the
-app, hover does not.
-
-So a tooltip is judged from the headless tests that assert its text, never from a frame. Do not
-record a by-hand pass as having covered tooltip layout in a locale; nothing covers that yet.
+No tooltip appears under synthetic pointer motion — the XamlQuality entry cited above records the
+measurement. So a tooltip is judged from the headless tests that assert its text, never from a
+frame. Do not record a by-hand pass as having covered tooltip layout in a locale; nothing covers that
+yet.
 
 ### Driving a locale
 
