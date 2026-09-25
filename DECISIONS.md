@@ -3295,3 +3295,58 @@ where nothing was registered.
 Per `AGENTS.md` §8, the viewer's ledger in §6 now points at those two entries instead of restating
 the mechanism. The phase 2 entries above keep their measurements, because they are why DiffView
 decided what it did.
+
+## Plan 00021 phase 3: one compiled theme per control, and "keyed once" is about the path
+
+The plan asks for the theme split that keeps `DiffPaneHeader`, `DiffStatusStrip` and `DiffFindBar`
+from being keyed twice. Read as a statement about files it was already true: every control-theme key
+sat in exactly one compiled dictionary, `SideBySideDiffViewTheme` holding four of them. What was
+doubled was the **resource path**. Each header, the status strip and the find bar merged that whole
+dictionary for its own theme, beneath an editor that had merged it as well, so from any element
+inside a header the lookup passed the editor's, the find bar's, the header's and the strip's themes
+twice each; and the viewer, which has no find, carried the find bar's theme through both headers and
+its strip. A test over the dictionaries would have passed on the code the split replaced, so
+`ControlThemeTests` walks each element's way up in all three views and was red before the split for
+exactly those two reasons.
+
+**The shape is one dictionary per control, named after it**: `Themes/DiffFindBar.axaml`,
+`DiffPaneHeader.axaml` and `DiffStatusStrip.axaml`, compiled as `DiffFindBarTheme`,
+`DiffPaneHeaderTheme` and `DiffStatusStripTheme` and merged by their own constructors, as the
+presenter, the unified view and the viewer already did. The blocks moved verbatim — a script checked
+that every body line of the old file lands in exactly one of the four — so nothing renders
+differently: the suite's frames and pixel assertions pass untouched, and the theme audit moves only
+the DiffView consumer's file count and digest.
+
+**The three classes are public, as the four compiled themes before them are, and get no URI.**
+`DiffViewResources.CompositeThemeUri` now names the editor's theme alone; the viewer's and the
+unified view's themes never had a URI either, and a host that wants one of the chrome themes in its
+own resources merges the compiled class, which is the trim-safe handle anyway. Adding three URIs to
+restore what one URI used to reach would have been API for no known consumer, before a first publish.
+
+**The pseudo-class gate reads the compiled theme, not the markup.** Measured first
+(`~/c/cl/scratch/DiffView/round14/SelectorProbe`, Avalonia 12.1.2): a nested style's
+`Selector.ToString()` prints its source form, `^:banner-none /template/ Border#PART_Banner`, so the
+pseudo-classes a rule puts on the control are the `:`-names of the segment that starts at `^`. The
+views are derived as the exported controls with a `BannerKind` — the three that publish the same
+pseudo-classes — and the three known ones are asserted present, so the derivation cannot quietly
+lose one. As the plan worded it, the gate asks agreement and not coverage, and was green before the
+split.
+
+## The demo's three views are one choice: View ▸ Control
+
+The plan asks for "a View-menu entry and a `--viewer` flag, exactly as `--unified` already does";
+`AGENTS.md` §9 asks that new demo items go into a submenu. A second checkbox beside *Unified (inline)
+view* would have let both be ticked, so the unified entry and the viewer's became two of three radio
+entries in a *Control* submenu, the editor the third, and the View menu keeps its height. The flags
+follow the menu: `--unified` and `--viewer` set one `DebugFlags.View`, the last one
+given wins with a warning in the log, and the `[DebugFlags] active:` summary reads `view=` where it
+read `unified=`.
+
+Every option the viewer has reaches it, as each reached both views before; View ▸ Find and the copy
+entries say the viewer has none rather than acting on the hidden editor. `DebugFlags.ResetForTesting`
+now resets `Culture` as well, which it had never done.
+
+With the demo hosting it, `AccessibilityCoverageTests.Excluded[DiffViewer]` is retired: its stated
+premise was that no markup of ours instantiates the viewer, and the exclusion test fails the moment
+one does, which it did before the entry went. The viewer joins the derived element set, and the
+demo's element in `MainWindow.axaml` is what floors its name.

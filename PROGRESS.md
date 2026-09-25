@@ -64,11 +64,12 @@ DiffView's reference clones now check out LF on every platform, so Windows audit
 commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, unreleased).
 
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
-review before any code was written. **Plan 00021 phases 1 and 2 are done** — `DiffBuildController`
-and `IDiffSurface`, then `DiffViewer`, on `feat/the-viewer-beside-the-editor`, rebased onto the
-`main` that carries plans 00024 and 00025, 651 green; phases 3 and 4 remain. **Plan 00023 phase 1 is
-done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every
-CI job passes, on all three platforms.
+review before any code was written. **Plan 00021 phases 1 to 3 are done** — `DiffBuildController`
+and `IDiffSurface`, then `DiffViewer`, then one compiled theme per control and the viewer in the
+demo — on `feat/the-viewer-beside-the-editor`, rebased onto the `main` that carries plans 00024 and
+00025, 657 green; phase 4, the record, remains. **Plan 00023 phase 1 is done.** **Plan 00025 is
+complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all
+three platforms.
 
 ### What ships
 
@@ -105,7 +106,13 @@ opening event or replaces outright. No left-click behaviour changed to make room
 **one** read-only pane, over a document it composes from both sides in `diff -u` order: context rows
 once, then every removal of a change block before every addition. The gutter carries a number column
 per side, the find bar loses its scope group, and there is no minimap, no connector gutter and no
-F6. The demo hosts both, switched by View ▸ Unified (inline) view or the `--unified` flag.
+F6.
+
+`DiffViewer` is the side-by-side view without the verbs: the same controller, panes, gutters, map,
+headers, banner and strip, and no find, no menus, no copy, no save or revert and no key map — a
+control to scroll and look at, whose overview map still jumps and whose folds still fold. It is the
+editor's sibling, not its subclass, so no reference to it reaches a verb it lacks. The demo hosts all
+three, one at a time, switched by View ▸ Control or the `--unified` and `--viewer` flags.
 
 Builds and searches run latest-wins on a worker over text captured on the UI thread; the control is
 always in one `DiffViewState`; every user-visible string goes through `DiffViewStrings` and every
@@ -150,20 +157,16 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-4. **Plan 00021 phases 3–4 — the viewer's theme split, its demo entry and its record.** Phases 1 and
-   2 are done on `feat/the-viewer-beside-the-editor` — *Plan 00021 phases* below — and the viewer
-   **does not gate the release**. Phase 3 is the theme split, so `DiffPaneHeader`, `DiffStatusStrip`
-   and `DiffFindBar` are keyed once and the viewer merges no find bar's theme, and the demo's
-   `--viewer` flag and View-menu entry, which retires `AccessibilityCoverageTests.Excluded[DiffViewer]`;
-   the plan's Testing row that every pseudo-class any theme styles is styled by every theme goes with
-   it. Phase 4 is the hosting guide's viewer section — which of the three controls a host reaches
-   for; how far the read-only guarantee goes, which is the viewer type's API and not the visual tree,
-   a pane being a public type in a public template; the comma-union rule with its **owner-qualified**
-   setter; that a plain rule sets the direct `SplitRatio` and `CurrentChangeIndex` while a
-   pseudo-class rule setting one **throws when applied**; the nine pseudo-classes — and `CHANGELOG.md`.
-   The viewer still has no find — re-confirmed 2026-09-22 rather than superseded — and **phase 4's
-   hosting guide must name that gap outright**, so a host wanting read-only side-by-side with search
-   meets documentation rather than silence.
+4. **Plan 00021 phase 4 — the viewer's record.** Phases 1 to 3 are done on
+   `feat/the-viewer-beside-the-editor` — *Plan 00021 phases* below — and the viewer **does not gate
+   the release**. Phase 4 is the hosting guide's viewer section — which of the three controls a host
+   reaches for; how far the read-only guarantee goes, which is the viewer type's API and not the
+   visual tree, a pane being a public type in a public template; the comma-union rule with its
+   **owner-qualified** setter; that a plain rule sets the direct `SplitRatio` and
+   `CurrentChangeIndex` while a pseudo-class rule setting one **throws when applied**; the nine
+   pseudo-classes — and `CHANGELOG.md`. The viewer still has no find — re-confirmed 2026-09-22
+   rather than superseded — and **phase 4's hosting guide must name that gap outright**, so a host
+   wanting read-only side-by-side with search meets documentation rather than silence.
 
 5. **Plan 00023 phases 2–5 — the window harness.** Phase 1 (`catch-crash`) is merged. The rest
    follows 00021.
@@ -233,8 +236,9 @@ for twenty-three plans; two of the three are invisible from a developer checkout
 A local green is evidence about one machine — `catch-crash` judges a run, and CI judges the claim.
 
 **`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path.** `--edit left|right|both` starts
-a side editable so a run no longer opens with a menu drive, `--unified` opens the inline view, and
-`AGENTS.md` §9 is how to capture and drive the running window from a session here.
+a side editable so a run no longer opens with a menu drive, `--unified` opens the inline view and
+`--viewer` the read-only viewer, and `AGENTS.md` §9 is how to capture and drive the running window
+from a session here.
 
 **`scripts/catch-crash.sh` judges a test run.** `--check <log>` reads a captured one; with no
 argument it re-runs the suite until it catches an abort and keeps that log. It exists because a
@@ -627,8 +631,24 @@ either.
 |---|---|---|---|
 | 1 The controller | L | done | `DiffBuildController` and `IDiffSurface`, 17 members; `SideBySideDiffView` moved onto them with its public surface gated unchanged; rebased across plans 00024 and 00025, pushed, CI green on all five jobs |
 | 2 The viewer | M | done | The navigation verbs moved into the controller first; `DiffViewer` and `DiffViewerTheme`; `AddOwner` brought forward from phase 3 with its gate; no document or model property registered; `ViewerHost`; the three gates that saw it arrive; the viewer's own tests, 28 cases |
-| 3 The theme split and the demo | M | not started | `DiffPaneHeader`, `DiffStatusStrip` and `DiffFindBar` keyed once, the viewer merging no find bar's theme; the demo's `--viewer` and View-menu entry, which retires `Excluded[DiffViewer]` |
+| 3 The theme split and the demo | M | done | One compiled theme per control — `DiffFindBarTheme`, `DiffPaneHeaderTheme`, `DiffStatusStripTheme` — merged by its own control, so no theme is found twice on the way up and the viewer carries no find bar's; the pseudo-class drift gate; the demo's View ▸ Control and `--viewer`, which retired `Excluded[DiffViewer]`; three stale summaries found beside the edit |
 | 4 The record | S | not started | The hosting guide's viewer section, `DECISIONS.md`, `PROGRESS.md`, `CHANGELOG.md` |
+
+## Plan 00021 phase 3 verification
+
+| Done-when item | Result |
+|---|---|
+| No chrome theme keyed twice | **Red before the split, for the reason it names**: from inside either header of the editor, the lookup passed the editor's, the find bar's, the header's and the strip's themes twice each. Green after, in all three views with the find bar open where there is one. Every shipped theme is checked on screen in its own control, and every view's walk crosses two theme-carrying controls, so a walk that reaches nothing or never climbs cannot pass |
+| The viewer merges no find bar's theme | Red before the split — both headers and the strip carried it — and green after, read from exactly the elements that used to carry it |
+| Every pseudo-class any view theme styles is styled by every view theme | Green before and after, as the plan worded it: four of the nine are styled, by all three themes alike. The views are derived as the controls with a `BannerKind`, and the three known ones asserted present |
+| The split changes nothing drawn | The blocks moved verbatim, checked line for line by the script that moved them; every frame and pixel assertion passes untouched. `docs/theme-audit.md` moves the DiffView consumer from 7 files to 10 and its digest, and nothing else — references, distinct keys and own keys unchanged |
+| The demo hosts the viewer | View ▸ Control's three radio entries and `--viewer`, which with `--unified` is one choice. `DemoViewTests` drive the real window: each entry puts its view alone on screen holding the sources and built, and the flag starts there |
+| `Excluded[DiffViewer]` retired | **Forced, not chosen**: with the demo hosting the viewer, the exclusion test failed on the exclusion's own premise before the entry went. The viewer is floored by the demo's element now; the gate's comments carry the demo's new counts, 53 `MenuItem`s and 57 inspected, the second read off the gate's own failure message |
+| New tests proven able to fail | 13 of 13 targeted mutations of the theme tests and 6 of 6 of the demo tests killed by the test they name, none by the compiler — the blindings of each test's own guards among them: a walk that reads only the view, a walk that never climbs, a reading that finds no rule about the control, a derivation that finds no view |
+| The repository's mutation harness | A full run over the final commit: every mutation as expected — 60 killed by the test they name, 2 by the build, 2 green by design — and 44 of the gate files' 45 assertions tripped first by a mutation, the 45th the `inert-at-pin` marker; `--guards` clean. Phase 2's verdict, over a gate file, a demo and a set of themes that all moved |
+| A look at the running demo | Launched detached with `--viewer` on this box's XWayland display and grabbed by window id, per `AGENTS.md` §9: the viewer at real size — both panes coloured, both headers, the connector, the two-lane map, the strip at `Ready`, no find bar and no arrows — and the log's summary line reading `view="Viewer"`. View ▸ Control opened as a popup of its own with the viewer's entry ticked, and choosing the editor from it put the side-by-side view on screen, the log showing the viewer go back to `Empty` as the editor built. The View popup sizes to its content, 957 px on a 1296 px screen: taller than the 858 px its fix measured by the three entries plan 00022 added, not by this plan's |
+| Found beside the work | `DiffPaneHeader.IsDirty`'s doc opened with `IsPaneFocused`'s summary, so a consumer's tooltip for the dirty flag spoke about focus. A search for stacked summaries found two more — `InlineDiffView.ApplyFolds`, `DiffMargin.Format` — and those three are all of them |
+| The suite | 657 = 651 + 3 + 3, green in `en-US` and `de-DE` under `catch-crash --expect auto`; the build clean under `-warnaserror` |
 
 ## Plan 00021 phase 2 verification
 
