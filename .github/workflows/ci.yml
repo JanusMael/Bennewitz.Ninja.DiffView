@@ -55,6 +55,19 @@ jobs:
           --report-trx
           --results-directory ./test-results
 
+      # ⚠ Away from Linux the image baselines are filtered out (LinuxBaselineAttribute,
+      # tests/Directory.Build.props): they were rendered and reviewed on Linux, and another platform's
+      # rasterization differs without anything being wrong. A filter is silent in the test summary —
+      # tests that quietly vanish read as tests that passed — so this says how many were left out,
+      # and which.
+      - name: Linux-only baselines left out here
+        if: ${{ !cancelled() && runner.os != 'Linux' }}
+        run: >
+          dotnet test --solution DiffView.slnx
+          --no-build -c Debug --list-tests
+          -p:ExcludeLinuxBaselines=false
+          --filter-trait Baseline=Linux
+
       # ⛔ The mutation harness's standing half. A guard marked inert-at-pin is excused only at the
       # version it was measured against, so a pin bump is exactly the change that lands green while
       # that guard stops being excused; this fails on that, and on a `throw` in a gate file, which the

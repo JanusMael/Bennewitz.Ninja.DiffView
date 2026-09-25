@@ -16,6 +16,17 @@
     <TestingPlatformCommandLineArguments>--filter-not-trait Category=Perf</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
+  <!-- Image baselines are Linux's (LinuxBaselineAttribute): rasterization is the platform's, so a
+       frame rendered anywhere else differs without anything being wrong. Away from Linux the runner
+       filters Baseline=Linux out — a filter, never a skip inside the test — and CI prints how many.
+       -p:ExcludeLinuxBaselines=false runs them anyway; =true filters them on Linux, to see the gate. -->
+  <PropertyGroup Condition="'$(ExcludeLinuxBaselines)' == ''">
+    <ExcludeLinuxBaselines Condition="!$([MSBuild]::IsOSPlatform('Linux'))">true</ExcludeLinuxBaselines>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ExcludeLinuxBaselines)' == 'true'">
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --filter-not-trait Baseline=Linux</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- xunit v3 runs on Microsoft.Testing.Platform (see dotnet.config at the root); the VSTest
          bridge packages are deliberately absent. TrxReport gives CI its .trx files. -->

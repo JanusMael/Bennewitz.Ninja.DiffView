@@ -229,8 +229,19 @@ no dates, no counts.
   the same hand-advanced clock, the same zero-time builder, the same syntax rule. A test that
   reads what a margin or a background renderer *drew* captures a frame (`Capture()`); a layout
   pass alone does not redraw a margin.
-- Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`).
-  Static seams: `DebugFlags.ResetForTesting`, `DiffViewStrings.ResetForTesting`.
+- Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`) — no
+  build time, no machine's font. Static seams: `DebugFlags.ResetForTesting`,
+  `DiffViewStrings.ResetForTesting`.
+- ⛔ **A snapshot proves Linux's rendering and nothing else.** Every committed baseline was rendered
+  and reviewed on Linux, and rasterization is the platform's: the bundled font fixes which glyphs are
+  drawn and nothing about how, so the same frame differs by 10–13% of its pixels on Windows and
+  macOS without anything being wrong. Every test that compares a frame therefore carries
+  `[LinuxBaseline]`; away from Linux the runner filters it out (`tests/Directory.Build.props`,
+  `-p:ExcludeLinuxBaselines=false` to run it anyway), and CI prints how many it left out, because a
+  filter is silent in the summary. A new frame test takes the attribute, or it fails two CI legs.
+  What looks at rendering on Windows and macOS is a by-hand run, not this suite. A pixel assertion
+  beside a capture is a property rather than a picture, so it runs everywhere and must hold at every
+  platform's rasterization.
 - **The snapshot comparer tolerates anti-aliasing, not glyphs, and this is the trap that recurs.**
   `VerifySetup.ChannelTolerance` and `VerifySetup.MaxDifferingFraction` exist so a platform's
   anti-aliasing does not fail a frame; the cost is that a change smaller than that fraction passes
