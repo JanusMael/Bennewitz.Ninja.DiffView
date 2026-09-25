@@ -14,14 +14,14 @@ plan 00025 removed `tests/ThemeAudit.Tests` along with the tool.
 
 | Defect | Where | State |
 |---|---|---|
-| **A** — `docs/theme-audit.md` stale on CI | was all four test jobs; **now Windows only** | ✅ **Retired on Linux and macOS 2026-09-24** by `XamlQuality 2026.3.924`'s rooting fix: PR #1's ubuntu, culture and macOS jobs agree with the committed report. ⛔ **Windows still fails it** — the digest hashes raw bytes and the runner checks the reference clones out CRLF; open item 1 |
+| **A** — `docs/theme-audit.md` stale on CI | was all four test jobs | ✅ **Retired 2026-09-24**: `XamlQuality 2026.3.924`'s rooting fix on Linux and macOS, and on Windows reference clones checked out LF |
 | **B** — `PackagingTests` packed a configuration the suite never built | all four test jobs | **Fixed**, plan 00024 phase 1 |
-| **C** — **66** rendering tests fail | Windows and macOS only | Plan 00024 phase 3. A decision, not a bug |
+| **C** — 66 rendering tests failed | Windows and macOS only | ✅ **Retired 2026-09-24** by plan 00024 phase 3: the 64 frame cases are Linux's baselines, filtered elsewhere and counted, and the two pixel measurements read coverage |
 
-⚠ **Defect C is 66, not the 32 recorded until 2026-09-24.** PR #1's run measures it again: macOS fails
-**66 of 621** and Windows **67**, the 67th being defect A's Windows remainder. The 32 came from run
-`35780424399`, before plans 00022–00024 added baselines, and was stale by roughly double. The
-XamlQuality session reached the same 66 independently.
+✅ **All five CI jobs pass on plan 00024 phase 3's branch** (run `36089558680`) — the first time that has
+been true anywhere. Windows and macOS run 557 tests, the suite less the 64 frame cases that are
+Linux's baselines, and list the 64 they left out. Defect C had counted 66 cases there: those 64 and
+the two pixel measurements that read one rasterizer's rounding.
 
 ⚠ **The red `Culture Leg (de-DE)` was never a localization defect.** It failed **1 of 613** — the same
 defect-A test as `ubuntu-latest` — and passes on PR #1, 621 of 621. The leg's name invites the wrong
@@ -59,13 +59,15 @@ rows, pinned LF by `.gitattributes`, match. The digest hashes raw bytes, and a W
 text out CRLF. Proven by arithmetic on the one-file row: *AvaloniaEdit Fluent theme* hashes to
 `60346377b215` as LF — the committed value — and to `63465b5f74f7` as CRLF, exactly Windows'. The
 rooting fix was right and incomplete: a digest that describes *what* was audited must not see line
-endings either. Reported to XamlQuality on 2026-09-24 with that evidence.
+endings either. Reported to XamlQuality on 2026-09-24 with that evidence. **Fixed twice over**:
+DiffView's reference clones now check out LF on every platform, so Windows audits the pinned
+commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, unreleased).
 
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 phase 1 is done** — `DiffBuildController` and
 `IDiffSurface`, on `feat/the-viewer-beside-the-editor`, pushed, 681 green. **Plan 00023 phase 1 is
-done.** **Plan 00024 is approved and phase 1 has landed on `main`.** **Plan 00025 is complete and
-merged** (PR #1, 2026-09-24).
+done.** **Plan 00025 is complete and merged** (PR #1, 2026-09-24). **Plan 00024 is complete** on
+`fix/the-suite-that-only-passes-here` and waits to merge.
 
 ### What ships
 
@@ -130,31 +132,9 @@ wording.
    a harness**, not screen-reader quality — the latter is why the criteria exist, not the gate.
    Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`.
 
-1. **Defect A is retired on Linux and macOS and open on Windows.** Plan 00024 phase 2 folded into
-   plan 00025 phase 0: `XamlQuality 2026.3.924`'s rooting fix (`4f7bd62`) made the ClaudeForge row
-   read the predicted `b7ea0ec438c5`, and PR #1's ubuntu, culture and macOS jobs agree with the
-   committed report. `windows-latest` does not: the digest hashes raw bytes and its runner checks
-   the reference clones out CRLF — measured, and reported to XamlQuality on 2026-09-24 with the
-   arithmetic in *Resume*. **What closes it is upstream**: a release whose digest normalises line
-   endings, then a pin bump and one more regeneration, which moves every digest once more.
-
-2. **Plan 00024 phase 3 — defect C — is the only one that is a decision rather than a bug.** ⚠ **66**
-   rendering tests fail on Windows and macOS at 10–13% of pixels differing: glyph rasterization, not
-   antialiasing. **This said 32 until 2026-09-24**, a figure from run `35780424399` that plans
-   00022–00024 had since roughly doubled; PR #1's run measures macOS at 66 of 621 and Windows at 67,
-   the 67th being defect A's Windows remainder (item 1). The bundled `DejaVuSansMono` fixes *which*
-   glyphs are drawn and nothing about *how*
-   they are rasterized; macOS is arm64 besides. Linux is green only because every verified PNG was
-   generated on Linux. **Two of the 66 are not baselines at all** —
-   `MarkerChipTests.The_glyph_is_centred_in_its_chip` and
-   `MarkerGlyphTests.Every_marker_is_heavy_enough_to_scan` measure the frame, so no baseline strategy
-   touches them: two pixel measurements are simply tighter than the platform spread. The plan's
-   decision is Linux-only baselines plus the owed by-hand runs; the artifacts from run `35780424399`
-   hold the evidence.
-
-   **It is next after plan 00025**, decided 2026-09-24. `main`'s ruleset requires all five checks,
-   `Build & Test` on Windows and macOS among them, so until this lands every pull request merges only
-   by the admin bypass.
+1. **Plan 00024 is complete on `fix/the-suite-that-only-passes-here` and waits to merge** — Brian's
+   call. All five CI jobs pass there (run `36089558680`); *Plan 00024 phases* below has the phases, and
+   `DECISIONS.md` how the rendering split was measured.
 
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
@@ -199,13 +179,17 @@ wording.
 8. **At the next XamlQuality release, re-measure `XQ1004`'s `Skipped` guard.** Its `inert-at-pin`
    marker in `GridSlotTests` expires the moment the pin moves, and `--guards` fails CI until it is
    answered: `scripts/xq1004-skips.sh` exits 0 to re-mark it at the new version and 1 when the guard
-   is owed a mutation. XamlQuality accepted DiffView's report on 2026-09-24 and designed the fix — a
-   placement stopped by a bound or resource value goes to `Skipped`, so `Inspected` drops — without
-   building it yet.
+   is owed a mutation. XamlQuality built the fix on 2026-09-24 (its #20, unreleased): a placement a
+   markup value cannot decide goes to `Skipped`, and `Inspected` counts only placements measured
+   against a fixed slot. ⚠ **On DiffView that reads 0 inspected** — 23 of its 24 grid children
+   declare no size — **so `GridSlotTests`' floor of 12 fails at that bump, and truthfully.** By plan
+   00025's own standard a rule that inspects nothing here is not adopted, so that bump is where
+   `XQ1004` is re-decided, not re-floored. The same release carries the digest fix (#22), which
+   XamlQuality expects to move no committed digest.
 
-9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. Reframed by 00024: the
-   *suite* does not pass on those platforms, so a by-hand run was never the first obstacle. Plan
-   00023's harness is what would make them repeatable.
+9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. The suite passes on those
+   platforms now, without its Linux-only baselines, which makes these runs the only look anything
+   takes at rendering there. Plan 00023's harness is what would make them repeatable.
 
 10. **`LayeredEditors.Avalonia.Diagnostics` → `Bennewitz.Ninja.AppServices.Avalonia`: deferred
     2026-09-23, deliberately.** The demo keeps its hand-packed `1.0.1` from `../nuget-local`, and
@@ -564,9 +548,18 @@ either.
 | Phase | Size | Status | Notes |
 |---|---|---|---|
 | 1 Two fixes and one question | S | done | `PackagingTests` names the configuration it packs; both test jobs keep what the gates rejected. Ended with defect A **diagnosed**, which is what it was for |
-| 2 Defect A | S | **done except on Windows** | Folded into plan 00025 phase 0: `XamlQuality 2026.3.924`'s rooting fix holds on Linux and macOS. Windows still differs, because the digest hashes raw bytes and its runner checks the reference clones out CRLF — reported upstream 2026-09-24; open item 1 |
-| 3 The rendering split | M | not started | Independent of A and B. The `received-*` artifacts from run `35780424399` carry the raw material: 3.1 MB of macOS PNGs, 1.9 MB of Windows |
-| 4 The record | S | not started | |
+| 2 Defect A | S | done | Folded into plan 00025 phase 0 for Linux and macOS; on Windows by reference clones checked out LF, on phase 3's branch |
+| 3 The rendering split | M | done | `[LinuxBaseline]` filtered away from Linux and counted by CI; the two pixel measurements re-derived as coverage against every platform's readings |
+| 4 The record | S | done | `DECISIONS.md`, this file and the resume anchor. All five jobs green on run `36089558680` |
+
+## Plan 00024 phase 3 verification
+
+| Done-when item | Result |
+|---|---|
+| A skipped snapshot is visibly skipped | Windows and macOS list, in a step of their own, the 64 frame cases they filtered out, by name; the runner's summary alone would say nothing |
+| The two measured assertions hold at their new bound | On all three platforms, from readings each platform measured itself; and each fails below its bound — a glyph shifted a pixel either way (0.78 and −1.22 px against 0.5), and a middle dot (4.79 against 6.0) |
+| The existing tests | Green on all five CI jobs for the first time, run `36089558680`: ubuntu and the culture leg run 621, Windows and macOS 557 plus the 64 they list |
+| Defect A on Windows | The drift test passes there; simulated here first, under a global `core.autocrlf=true`: the old clone carried 385 CR bytes in one file and failed, the new one carries none |
 
 ## Plan 00024 phase 1 verification
 

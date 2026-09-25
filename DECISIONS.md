@@ -2946,3 +2946,49 @@ fixed, is what was approved on 2026-09-24.
   status table marked findings fixed that were half fixed, and carried a reviewer's figures without
   re-measuring them. A harness comment said a full run takes forty minutes, and it was repeated for a
   whole session; it takes about five.
+
+## Plan 00024 phase 3 — the rendering split
+
+Plan 00024 decided the shape: image baselines are Linux's, the two measured pixel assertions are
+re-derived rather than skipped, and CI keeps all three platforms. What the work found, and chose
+where the plan left it open:
+
+**The gate is a trait the runner filters, and CI prints what it filtered.** `[LinuxBaseline]` puts
+`Baseline=Linux` on the thirty frame tests — fifteen snapshot classes whole, and the one frame test in
+`SyntaxSnapshotTests`, whose other test is a pixel property — and `tests/Directory.Build.props`
+filters the trait out away from Linux, beside the `Category=Perf` filter that was already there. A
+filter is silent in the runner's summary: a run with `Perf` filtered prints its total and nothing
+about what it left out. So the Windows and macOS legs list the filtered tests in a step of their own,
+which is the plan's "reports as filtered-out, with a count" — ignoring exit code 8, because a listing
+that finds nothing in an assembly exits 8 and the model's test assembly holds no frame test; that
+failed the step on both legs once, while their suites passed. `ExcludeLinuxBaselines` overrides the
+default either way. The count is exact: 64 cases carry the trait, and 64 is precisely the number of
+frame cases CI failed on each platform before this.
+
+**Both pixel assertions measured the wrong thing, as the plan's risk row allowed.** They counted
+pixels past a colour threshold, which is how one rasterizer rounds a thin stroke rather than the ink
+laid down. A temporary diagnostic commit, failing on purpose on every leg so each printed its
+readings, measured the same fixtures everywhere; it was dropped before the branch landed.
+
+| Reading | Linux | Windows | macOS |
+|---|---|---|---|
+| A centred '−': exact-colour pixels either side of its chip's centre | 15 / 15 | 0 / 0 | 0 / 0 |
+| The same glyph's ink centroid against its chip's centre | −0.22 px | −0.22 px | −0.09 px |
+| '−' pixel count, against the old floor of 20 | 25 | 18 | 16 |
+| '−' / '+' / '≠' coverage | 9.96 / 18.72 / 28.49 | 10.71 / 20.08 / 29.38 | 7.38 / 17.97 / 26.71 |
+
+No bound could save the centring test, which read nothing either side of a glyph that was centred, so
+its property was re-derived: the ink's centroid, read as coverage, within 0.5 px of the chip's centre.
+The weight test could have taken a lower count; it reads coverage too, because the count measured
+macOS's '+' at 28 where Linux measures 45, and a bound over a quantity that loose would be a widened
+constant with a number beside it. Its floor, 6.0, sits midway between the lightest real marker and a
+middle dot's 4.79. Each bound was proven to fail below itself before it was committed.
+
+**Defect A's Windows remainder is fixed here, not left to upstream.** The theme audit's digest hashed
+raw bytes, and a Windows runner checks the reference clones out CRLF, so only the rows read from those
+clones moved there. `fetch-reference` now runs every git command with `core.autocrlf=false` and
+`core.eol=lf`, and each platform audits the pinned commits' own bytes; the old script, run here under
+a simulated Windows configuration, reproduced the failure, and the new one did not. Decided with Brian
+on 2026-09-24 over waiting for XamlQuality, whose own fix — a CRLF pair read as LF, and files ordered
+by their relative path — merged the same day as its #22, unreleased. That fix also covers a
+developer's own sibling checkouts, which this does not.
