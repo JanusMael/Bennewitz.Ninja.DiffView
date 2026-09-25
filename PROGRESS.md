@@ -138,7 +138,10 @@ wording.
    `Edit`+`Value` in the same run. No `AutomationId` anywhere; `OverlayPopups` unset, so the five
    context-menu surfaces are their own top-level windows. ⚠ The acceptance test is **drivability by
    a harness**, not screen-reader quality — the latter is why the criteria exist, not the gate.
-   Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`.
+   Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`. **Placed 2026-09-25**: after
+   plan 00023's phases 2–3 and before its phase 4, drafted alongside the first two for approval —
+   `DECISIONS.md` has why. `XQ1006` (XamlQuality PR #27, unreleased) reports the same controls and is
+   adopted with this plan, not before it.
 
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
@@ -166,17 +169,21 @@ wording.
    `CurrentChangeIndex` while a pseudo-class rule setting one **throws when applied**; the nine
    pseudo-classes — and `CHANGELOG.md`. The viewer still has no find — re-confirmed 2026-09-22
    rather than superseded — and **phase 4's hosting guide must name that gap outright**, so a host
-   wanting read-only side-by-side with search meets documentation rather than silence.
+   wanting read-only side-by-side with search meets documentation rather than silence. **Landing,
+   decided 2026-09-25**: once phase 4 is pushed, the pull request is opened with its description
+   written, and Brian merges it.
 
 5. **Plan 00023 phases 2–5 — the window harness.** Phase 1 (`catch-crash`) is merged. The rest
-   follows 00021.
+   follows 00021, split around plan 00026 (decided 2026-09-25): phases 2–3 — the X11 driver and
+   `run-demo --detach` — next; phases 4–5, the Windows back end and the record, after 00026.
 
 6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
    `DiffViewStrings.Localization` lets a host outrank the library with its own resolver. What is
    owed is the caveat where a consumer reads it — the README and the package description, not the
-   `.resx` headers alone. **Unstarted, and it has no plan**; whether it needs a number was asked and
-   never answered.
+   `.resx` headers alone. **Unstarted. It gets a plan of its own, 00027** — decided 2026-09-25 — on
+   its own branch and pull request, so plan 00021's stays about the viewer. The README is public now,
+   so the caveat is owed to its readers already, not only to the package's.
 
 7. **Re-evaluate `AQ1004` and `AQ1002`'s configuration at the next AssemblyQuality release.**
    `05a6060` and `044e71a`, unreleased on 2026-09-24, retire two of the three reasons plan 00025

@@ -3350,3 +3350,21 @@ With the demo hosting it, `AccessibilityCoverageTests.Excluded[DiffViewer]` is r
 premise was that no markup of ours instantiates the viewer, and the exclusion test fails the moment
 one does, which it did before the entry went. The viewer joins the derived element set, and the
 demo's element in `MainWindow.axaml` is what floors its name.
+
+## Plan 00026 goes before plan 00023's Windows back end
+
+Plan 00023's Windows back end finds elements by automation name through `System.Windows.Automation`,
+and plan 00026's own measurement is that every control this library ships returns a
+`NoneAutomationPeer`, which a control-view traversal skips. Searching the control view, the back end
+would find none of DiffView's panes, gutter, map or strip by name, and fall back to coordinates for
+exactly the controls the harness exists to drive. So the order
+after plan 00021 is decided (Brian, 2026-09-25): plan 00023's phases 2–3, which drive X11 by
+coordinate and need no peer; then plan 00026, drafted alongside them for approval; then plan 00023's
+phases 4–5. `XQ1006`, XamlQuality's check for a themed control still on the root
+`OnCreateAutomationPeer` (its PR #27, unreleased), is adopted with plan 00026 rather than at the pin
+bump that first carries it — adopted earlier, it would report every themed control here and hold the
+bump hostage to work that has its own plan.
+
+The locale caveat — machine-generated translations, unread by a native speaker, stated where a
+consumer reads it — is plan 00027, on its own branch, rather than a commit riding plan 00021's pull
+request (Brian, 2026-09-25).
