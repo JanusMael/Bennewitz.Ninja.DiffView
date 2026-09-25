@@ -322,7 +322,7 @@ List<Mutation> mutations =
         "Every_exclusion_either_names_itself_or_has_no_element_of_ours_to_check"),
 
     // Per-name coverage: a name in the set that guards nothing. This is the shape plan 00021's
-    // DiffViewer will arrive in — public, and not yet instantiated by any markup of ours.
+    // DiffViewer arrived in — public, and instantiated by no markup of ours until the demo hosted it.
     new("a public control no markup of ours instantiates", A11yClass,
         () => Write(ProbeControl,
             "namespace Bennewitz.Ninja.DiffView;\n\n"
@@ -484,8 +484,8 @@ List<Mutation> mutations =
             "/* the build succeeds */", 3),
         "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
 
-    // The viewer's parts are declared by a theme no markup of ours instantiates, so only the walk sees
-    // them — and only the viewer's own states reach them, which is what dropping both shows.
+    // The viewer's parts are declared by its own theme, and only the viewer's own states put them on
+    // screen — which is what dropping both shows.
     new("the walk never shows a viewer", A11yClass,
         () => Sub(A11yGate, @"Collect\(viewer\.View, interactive, visited, unnamed\);",
             "/* the viewer is left out */", 2),

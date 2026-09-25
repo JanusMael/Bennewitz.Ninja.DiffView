@@ -76,11 +76,6 @@ public sealed class AccessibilityCoverageTests
             "names itself in its own constructor, from DiffViewStrings.FindBarName, alongside the "
             + "eleven child names it sets there. XQ1002 reads markup declarations and cannot see a "
             + "runtime one, so requiring an attribute here would mean two sources for one string.",
-        [nameof(DiffViewer)] =
-            "is instantiated by no markup of ours until the demo hosts it, in plan 00021 phase 3: its "
-            + "own theme declares a ControlTheme for it, never an element, so per-name coverage would "
-            + "find it covering nothing. Its template's parts are not excluded — they are library "
-            + "markup like any other, and the runtime walk puts each one on screen.",
     };
 
     /// <summary>
@@ -89,10 +84,10 @@ public sealed class AccessibilityCoverageTests
     /// </summary>
     /// <remarks>
     /// ⛔ <b><c>Menu</c> is here because the demo's menu bar is interactive and nothing else covers it.</b>
-    /// Its fifty <c>MenuItem</c>s are covered, because <c>MenuItem</c> <em>is</em> one of the stock
+    /// Its fifty-three <c>MenuItem</c>s are covered, because <c>MenuItem</c> <em>is</em> one of the stock
     /// seventeen — which is exactly how an unnamed bar can hide among them. Proven by arithmetic rather
-    /// than assumed: the demo holds exactly fifty <c>MenuItem</c>s and the stock set inspects exactly
-    /// fifty of its elements, so it would be fifty-one if <c>Menu</c> were among them.
+    /// than assumed: the demo holds exactly fifty-three <c>MenuItem</c>s and the stock set inspects
+    /// exactly fifty-three of its elements, so it would be fifty-four if <c>Menu</c> were among them.
     /// </remarks>
     private static readonly string[] LiveFrameworkElements = [nameof(Menu)];
 
@@ -139,8 +134,8 @@ public sealed class AccessibilityCoverageTests
     private const int StockInspectedFloor = 8;
 
     /// <summary>
-    /// A floor on the demo's share of the findings scan, well under the 53 it carries so that ordinary
-    /// menu edits do not churn it — 50 of those 53 are <c>MenuItem</c>s in one file.
+    /// A floor on the demo's share of the findings scan, well under the 57 it carries so that ordinary
+    /// menu edits do not churn it — 53 of those 57 are <c>MenuItem</c>s in one file.
     /// </summary>
     /// <remarks>
     /// ⛔ <b>Asserted against the demo's own subject, not folded into a total.</b> As an addend in a
