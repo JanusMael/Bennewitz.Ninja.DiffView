@@ -8,6 +8,21 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00021 — `DiffViewer`, the side-by-side view without the verbs: the editor's panes, gutters,
+  overview map, headers, banner and status strip over the same model, and no find, no context menus,
+  no copy arrows, no save or revert and no key bindings. Navigation stays — `CurrentChangeIndex`,
+  the four walks and their commands — and so do folding, the map's jump and all four chrome
+  toggles. It is `SideBySideDiffView`'s sibling rather than a subclass, sharing an internal
+  controller, so no reference to it reaches a verb it lacks; every property the two have in common
+  is the editor's own registration, so one owner-qualified setter in a comma-union selector styles
+  both. The hosting guide says which of the three controls to reach for, how far the viewer's
+  read-only guarantee goes, and the nine pseudo-classes a host can style on.
+- `DiffFindBarTheme`, `DiffPaneHeaderTheme` and `DiffStatusStripTheme`: the find bar's, the pane
+  header's and the status strip's control themes, each a compiled dictionary merged by its own
+  control.
+- In the demo, View ▸ Control, which puts the editor, the unified view or the viewer on screen, and
+  a `--viewer` flag beside `--unified`.
+
 - Plan 00025 — static-analysis gates, each proven able to fail: `XQ1002` interactive automation names
   over an element set derived from the assembly, with a runtime walk that checks every declared
   interactive part on screen; `XQ1003` template parts; `XQ1004` fixed grid slots; `AQ1002` and
@@ -523,6 +538,14 @@ All notable changes to DiffView are recorded here. The format follows
   column layout, and a test asserts each header's **x** as well as its width.
 
 ### Changed
+
+- `SideBySideDiffViewTheme` holds the editor's control theme alone. The find bar's, the pane
+  header's and the status strip's moved into dictionaries of their own, which their controls merge,
+  so no theme is found twice on the way up from any element and the viewer carries no theme for a
+  find bar it does not have. `DiffViewResources.CompositeThemeUri` names the editor's theme alone
+  for the same reason. Nothing renders differently: the themes moved byte for byte.
+- The demo's *Unified (inline) view* checkbox is now an entry of View ▸ Control, and the log's
+  `[DebugFlags]` summary reads `view=` where it read `unified=`.
 
 - **Breaking:** `DiffDocumentBuilder.Build` and `DiffSearch.Find` take their `CancellationToken`
   ahead of the optional options, and neither defaults it — `Build(left, right, cancellationToken,
