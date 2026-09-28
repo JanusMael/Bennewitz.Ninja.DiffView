@@ -539,6 +539,23 @@ either.
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
 
+## Padding lost behind AvaloniaEdit's glyph generator
+
+Found by hand on 2026-09-28: in the demo with *Show whitespace* on, the copy arrow for a one-sided
+block sat on top of the next line's number, and every row below it had slipped against the other
+pane. The arrow was drawn where the padding should have been; the padding was never built. The text
+view's constructor creates AvaloniaEdit's single-character generator before a pane adds any of its
+own, and where two generators want one offset the first to build an element with a length takes it.
+A padded line that began with a character that generator draws — a space or a tab while whitespace
+shows, a control character always — therefore lost its padding to the glyph. The padding generator
+is now inserted first; having no length, it displaces nothing there. `AGENTS.md` §1 carries the rule.
+
+| Done-when item | Result |
+|---|---|
+| The demo shows it, and shows it gone | By hand on this box's XWayland display, per `AGENTS.md` §9, on the default pair with `--edit both`: turning *Show whitespace* on lost left line 12's padding row and right line 20's five, while the rows on empty lines stayed. With the fix, the same steps keep all of them, and both panes end on the same row |
+| The tests fail without the fix | 4 of 4 new cases red on the unfixed code, each on the padding it names: left line 12 of the demo's pair with whitespace shown before the load and after it, and line 2 of a pair led by a tab and of one led by a form feed — the last with whitespace hidden, which is how the control-character half had been latent all along |
+| Nothing else moves | The suite, 626 = 622 + 4, passes in `en-US` and `de-DE` under `catch-crash --expect auto`; the build is clean under `-warnaserror` |
+
 ## Plan 00025 phases
 
 | Phase | Size | Status | Notes |
