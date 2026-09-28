@@ -154,7 +154,6 @@ internal static class DiffViewLog
             fault.Source, Pane(side), fault.LineNumber?.ToString(CultureInfo.InvariantCulture) ?? "-", fault.Subject ?? "-");
     }
 
-    /// <summary>What a pane is called in a log line: its side, or "unified" for the inline view's one pane, which is neither.</summary>
     /// <summary>
     /// A click in a pane, logged at release: which surface it landed on, and the position it left the
     /// caret at — or, in a margin or on padding, the line it was beside. Positions only, never text.
@@ -168,7 +167,7 @@ internal static class DiffViewLog
             _ when onPadding => "on the padding above",
             _ => "in the text at",
         };
-        logger?.LogDebug("{Side} pane: click {Where} {At}", Pane(side), where, Format(at));
+        logger?.LogDebug("{Side:l} pane: click {Where:l} {At:l}", PaneName(side), where, Format(at));
     }
 
     /// <summary>
@@ -177,7 +176,7 @@ internal static class DiffViewLog
     /// </summary>
     public static void PaneSelection(ILogger? logger, DiffSide? side, LogPosition from, LogPosition to, int characters)
     {
-        logger?.LogDebug("{Side} pane: selected {From}–{To} ({Characters} chars)", Pane(side), Format(from), Format(to), characters);
+        logger?.LogDebug("{Side:l} pane: selected {From:l}–{To:l} ({Characters} chars)", PaneName(side), Format(from), Format(to), characters);
     }
 
     /// <summary>A fold gave its run back: the rows it restored, 1-based as a reader counts them.</summary>
@@ -201,5 +200,15 @@ internal static class DiffViewLog
             : string.Create(CultureInfo.InvariantCulture, $"{file}line {position.Line}");
     }
 
+    /// <summary>What a pane is called in a log line: its side, or "unified" for the inline view's one pane, which is neither.</summary>
     private static object Pane(DiffSide? side) => side is { } known ? known : "unified";
+
+    /// <summary>
+    /// <see cref="Pane"/> as a string, for the interaction lines, whose every string hole is <c>:l</c>.
+    /// Serilog quotes a string value unless its hole says <c>:l</c> — the demo's log is Serilog, and an
+    /// interaction line with a quoted phrase in it reads as though the phrase were a value — while
+    /// Microsoft.Extensions.Logging ignores a format on a string. Never <c>:l</c> on a hole given an
+    /// enum: <see cref="Enum"/> formats it, and throws on a format it does not know.
+    /// </summary>
+    private static string PaneName(DiffSide? side) => side?.ToString() ?? "unified";
 }
