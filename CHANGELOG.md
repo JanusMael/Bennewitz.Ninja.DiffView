@@ -8,6 +8,15 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00029 — `DiffViewLogCategories.Interaction`: where a click in a pane landed (the text, the
+  number margin, the change markers or the padding above a line), the selection a pointer finished,
+  and each fold that opened, written once per gesture at `Debug` — positions and counts, never text.
+  A host at `Information` is told none of it; enabling the one category is the whole switch.
+- In the demo, a log that says what was done: the machine by host name, the window's size and
+  scaling, each menu choice with the state it left, each command by name and where it came from,
+  each copy a pane asked for and each edit once it rests, with the library's interaction lines
+  raised to the demo's `Information`.
+
 - Plan 00021 — `DiffViewer`, the side-by-side view without the verbs: the editor's panes, gutters,
   overview map, headers, banner and status strip over the same model, and no find, no context menus,
   no copy arrows, no save or revert and no key bindings. Navigation stays — `CurrentChangeIndex`,
