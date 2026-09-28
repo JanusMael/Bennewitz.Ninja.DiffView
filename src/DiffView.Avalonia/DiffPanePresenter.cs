@@ -376,7 +376,7 @@ public class DiffPanePresenter : TextEditor
     };
 
     /// <summary>
-    /// A pointer was released over the pane: log what it did, once — the selection it finished, or
+    /// A pointer was released over the pane: log what it did, once — the selection it made, or
     /// where the click landed — and nothing while a drag is under way. Positions and lengths only.
     /// Computes nothing unless the interaction category is enabled.
     /// </summary>
@@ -390,8 +390,11 @@ public class DiffPanePresenter : TextEditor
             return;
         }
 
+        // A selection this gesture made or changed. One it found and left as it was — under a click on
+        // a copy arrow or a fold's placeholder, each of which takes the press, or under a right-click —
+        // is not what the gesture did, and is not written again.
         Selection selection = TextArea.Selection;
-        if (!selection.IsEmpty)
+        if (!selection.IsEmpty && SpanOf(selection) != _pressedSelection)
         {
             (TextViewPosition from, TextViewPosition to) = Ordered(selection.StartPosition, selection.EndPosition);
             DiffViewLog.PaneSelection(
@@ -399,23 +402,34 @@ public class DiffPanePresenter : TextEditor
             return;
         }
 
+        MouseButton button = e.InitialPressMouseButton;
         Point point = e.GetPosition(this);
         if (region != DiffPaneRegion.Text)
         {
             // A margin has no column; the line beside the pointer is the whole of its answer.
             if (LineAt(point) is { } line)
             {
-                DiffViewLog.PaneClick(logger, LogSide, region, onPadding: false, LogPositionOf(line, column: null));
+                DiffViewLog.PaneClick(logger, LogSide, button, region, onPadding: false, LogPositionOf(line, column: null));
             }
 
             return;
         }
 
-        // On padding the caret lands on the line the padding belongs to, and a column would claim a
-        // character the pointer never touched.
+        // Where the press moved the caret, the caret is where the click landed. Where it did not — a
+        // right-click, or a placeholder, which takes the press — the caret is wherever it was before,
+        // and the line under the pointer is the answer. On padding the caret lands on the line the
+        // padding belongs to, and in either case a column would claim a character the pointer never
+        // touched.
         bool onPadding = IsOnPadding(point);
-        TextViewPosition caret = TextArea.Caret.Position;
-        DiffViewLog.PaneClick(logger, LogSide, region, onPadding, LogPositionOf(caret.Line, onPadding ? null : caret.Column));
+        if (TextArea.Caret.Offset != _pressedCaret)
+        {
+            TextViewPosition caret = TextArea.Caret.Position;
+            DiffViewLog.PaneClick(logger, LogSide, button, region, onPadding, LogPositionOf(caret.Line, onPadding ? null : caret.Column));
+        }
+        else if (LineAt(point) is { } line)
+        {
+            DiffViewLog.PaneClick(logger, LogSide, button, region, onPadding, LogPositionOf(line, column: null));
+        }
     }
 
     /// <summary>
@@ -424,10 +438,29 @@ public class DiffPanePresenter : TextEditor
     /// </summary>
     private DiffPaneRegion? _pressedRegion;
 
+    /// <summary>The selection as the press found it, so the release can tell one the gesture made from one it left alone.</summary>
+    private (int Start, int End)? _pressedSelection;
+
+    /// <summary>The caret as the press found it, so the release can tell whether the press moved it.</summary>
+    private int _pressedCaret;
+
     private void OnPointerPressedForLog(object? sender, PointerPressedEventArgs e)
     {
-        _pressedRegion = InteractionLogger is { } logger && logger.IsEnabled(LogLevel.Debug) ? RegionOf(e.Source) : null;
+        if (InteractionLogger is not { } logger || !logger.IsEnabled(LogLevel.Debug))
+        {
+            _pressedRegion = null;
+            return;
+        }
+
+        // Tunnelling, so this runs before the text area takes the press and moves anything.
+        _pressedRegion = RegionOf(e.Source);
+        _pressedSelection = SpanOf(TextArea.Selection);
+        _pressedCaret = TextArea.Caret.Offset;
     }
+
+    /// <summary>Where a selection starts and ends in the document, or <c>null</c> when it is empty.</summary>
+    private static (int Start, int End)? SpanOf(Selection selection) =>
+        selection.IsEmpty ? null : (selection.SurroundingSegment.Offset, selection.SurroundingSegment.EndOffset);
 
     /// <summary>A pane position as the log writes it: the unified view's lines named by their own file and line.</summary>
     private DiffViewLog.LogPosition LogPositionOf(int line, int? column)
