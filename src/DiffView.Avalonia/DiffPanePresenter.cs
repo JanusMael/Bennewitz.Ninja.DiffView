@@ -138,7 +138,14 @@ public class DiffPanePresenter : TextEditor
 
         Palette = new DiffBrushes();
         _generator = new PaddingElementGenerator(PaddingForLine, (line, ex) => ReportFault(nameof(PaddingElementGenerator), line, ex));
-        TextArea.TextView.ElementGenerators.Add(_generator);
+
+        // First, not appended. The text view's constructor has already created AvaloniaEdit's
+        // single-character generator, and where two generators want one offset, the first to build
+        // an element with a length takes it and the rest are not asked. Padding has no length, so
+        // first it displaces nothing; behind that generator it is lost from every padded line that
+        // begins with a character it draws — a space or tab while whitespace shows, a control
+        // character always.
+        TextArea.TextView.ElementGenerators.Insert(0, _generator);
         _foldGenerator = new FoldPlaceholderGenerator(
             (line, ex) => ReportFault(nameof(FoldPlaceholderGenerator), line, ex),
             line => FoldExpandRequested?.Invoke(this, line));

@@ -498,6 +498,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Fixed
 
+- A padded line that began with a space or a tab lost its padding while whitespace was shown, and
+  one that began with a control character lost it whatever the setting: every row below it slipped
+  against the other pane, and a copy arrow drawn in the missing padding sat on the next line's
+  number. AvaloniaEdit's own single-character generator, which the text view creates before a pane
+  adds any of its own, took the line's first character before the padding was asked for it. The
+  padding is asked first now.
 - The quickstart gate installs a hand-advanced clock before showing its window. A status auto-clear
   left on the real clock outlived the test and aborted the test host — exit 134, about one full-suite
   run in ten, reported by the runner as `Failed!` with `failed: 0`. `DECISIONS.md` records the

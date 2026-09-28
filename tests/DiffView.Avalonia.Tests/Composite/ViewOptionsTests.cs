@@ -162,6 +162,104 @@ public sealed class ViewOptionsTests
         Assert.Contains("mixed", host.View.LeftHeader!.Detail!, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// A padded line keeps its padding whatever its first character is. AvaloniaEdit creates its own
+    /// single-character generator in the text view's constructor, ahead of every generator a pane
+    /// adds, and where two generators want the same offset the first to build an element with a
+    /// length wins it. The padding has no length, so it must be asked first: behind that generator, a
+    /// padded line beginning with a character it draws — a space or a tab while whitespace is shown,
+    /// a control character always — lost its rows, and every row below it lost its alignment. Found
+    /// by hand in the demo, where the copy arrow drawn in the missing padding landed on the next
+    /// line's number.
+    /// </summary>
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Showing_whitespace_keeps_the_padding_of_a_line_that_begins_with_it(bool beforeTheLoad)
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 300);
+        host.Show();
+
+        // Before the load is how a host that remembers the setting starts; after it is the View menu.
+        if (beforeTheLoad)
+        {
+            host.View.ShowWhitespace = true;
+        }
+
+        await host.LoadAsync(left, right);
+        if (!beforeTheLoad)
+        {
+            host.View.ShowWhitespace = true;
+            CompositeHost.Layout();
+        }
+
+        foreach (DiffPanePresenter pane in new[] { host.Left, host.Right })
+        {
+            Assert.True(pane.Options.ShowSpaces);
+
+            // The fixture must hold the case, or the assertion after it passes over nothing.
+            Assert.Contains(' ', LeadingCharactersOfPaddedLines(pane));
+            Assert.Empty(PaddingThatDidNotRender(pane));
+        }
+
+        AssertExtentsEqual(host);
+    }
+
+    /// <summary>
+    /// The same rule for the other two characters that generator draws: a tab, while whitespace is
+    /// shown, and a control character, which it boxes by default with whitespace hidden.
+    /// </summary>
+    [AvaloniaTheory]
+    [InlineData("one\n\ttwo\n", "one\ninserted\n\ttwo\n", true, '\t')]
+    [InlineData("one\n\ftwo\n", "one\ninserted\n\ftwo\n", false, '\f')]
+    public async Task A_padded_line_keeps_its_padding_whatever_character_it_begins_with(
+        string left, string right, bool showWhitespace, char leading)
+    {
+        using CompositeHost host = new(width: 600, height: 200);
+        host.Show();
+        host.View.ShowWhitespace = showWhitespace;
+        await host.LoadAsync(left, right);
+
+        char first = Assert.Single(LeadingCharactersOfPaddedLines(host.Left));
+        Assert.Equal(leading, first);
+        Assert.Empty(PaddingThatDidNotRender(host.Left));
+        AssertExtentsEqual(host);
+    }
+
+    /// <summary>The first character of every line the model pads; an empty line contributes none.</summary>
+    private static char[] LeadingCharactersOfPaddedLines(DiffPanePresenter pane)
+    {
+        int count = pane.Document.LineCount;
+        return
+        [
+            .. pane.Metadata.PaddedLineNumbers(count)
+                .Select(number => pane.Document.GetLineByNumber(number))
+                .Where(line => line.Length > 0)
+                .Select(line => pane.Document.GetCharAt(line.Offset)),
+        ];
+    }
+
+    /// <summary>
+    /// Every padded line whose visual line carries other padding than the model gives it — read from
+    /// the element the line was built with, as the background renderer reads it.
+    /// </summary>
+    private static string[] PaddingThatDidNotRender(DiffPanePresenter pane)
+    {
+        TextView view = pane.TextArea.TextView;
+        int count = pane.Document.LineCount;
+        return
+        [
+            .. pane.Metadata.PaddedLineNumbers(count)
+                .Select(number => (
+                    Number: number,
+                    Expected: pane.Metadata.PaddingFor(number, count),
+                    Actual: DiffLineBackgroundRenderer.PaddingOf(view.GetOrConstructVisualLine(pane.Document.GetLineByNumber(number)))))
+                .Where(line => line.Actual != line.Expected)
+                .Select(line => $"line {line.Number}: the model pads it {line.Expected}, its visual line carries {line.Actual}"),
+        ];
+    }
+
     /// <summary>The panes agree on how tall the document is; the padding is what makes that true.</summary>
     private static void AssertExtentsEqual(CompositeHost host)
     {
