@@ -524,6 +524,14 @@ List<Mutation> mutations =
             @"<Border Grid.Column=""2"" MinWidth=""40"" Background=""{DynamicResource DiffView.HeaderBackgroundBrush}"" />"),
         "No_control_declares_a_size_larger_than_its_fixed_grid_slot"),
 
+    // The Skipped guard, live from 925: a size the markup cannot evaluate is named rather than counted
+    // as checked. Before that it could not fail, and carried an inert-at-pin marker instead of this.
+    new("a child of the fixed slot declares a size markup cannot evaluate", GridClass,
+        () => Sub(SbsTheme,
+            @"<Border Grid\.Column=""2"" Background=""\{DynamicResource DiffView\.HeaderBackgroundBrush\}"" />",
+            @"<Border Grid.Column=""2"" MinWidth=""{DynamicResource DiffView.SpacerWidth}"" Background=""{DynamicResource DiffView.HeaderBackgroundBrush}"" />"),
+        "No_control_declares_a_size_larger_than_its_fixed_grid_slot"),
+
     new("the grid scan is pointed at markup-free ground", GridClass,
         () => Sub(GridGate,
             @"XamlScanContext\.Load\(RepoPaths\.Source\(""src""\)\)",
@@ -775,8 +783,8 @@ if (guardsOnly)
 
     if (expired > 0)
     {
-        Console.Error.WriteLine($"mutate-gates: {expired} inert-at-pin marker(s) no longer match the pin. Re-measure —");
-        Console.Error.WriteLine("scripts/xq1004-skips.sh for BNXQ1004 — then re-mark the guard or give it a mutation.");
+        Console.Error.WriteLine($"mutate-gates: {expired} inert-at-pin marker(s) no longer match the pin. Re-measure each");
+        Console.Error.WriteLine("guard against the new pin, then re-mark it or give it a mutation.");
         return 1;
     }
 

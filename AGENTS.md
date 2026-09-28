@@ -191,8 +191,8 @@ no dates, no counts.
 - **An assertion that cannot fail at the current pin is marked, not claimed.** The line above it reads
   `// inert-at-pin: <package> <version>`, which excuses that one guard only while
   `Directory.Packages.props` pins the package at that version. A moved pin, or a mutation that trips the
-  guard anyway, fails the run. For BNXQ1004's marker, `scripts/xq1004-skips.sh` re-measures the claim
-  against whatever is pinned.
+  guard anyway, fails the run. No marker stands at the current pins: the last one, on `BNXQ1004`'s
+  `Skipped` guard, came off when `2026.3.925` made that guard able to fail and a mutation proved it.
 - **The proof is point-in-time: a full run is owed after any change to a gate file, a gated subject or
   a pin.** A full run takes minutes and CI does not make one. What CI runs is `--guards`, on Linux in
   `build-and-test` — the standing half, in seconds: it lists the derived guards, judges each marker
