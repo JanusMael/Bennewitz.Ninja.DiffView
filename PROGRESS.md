@@ -199,18 +199,13 @@ wording.
    adds: `BNXQ1005`, `KeyBindingFocusRule`, which nothing here has measured yet, and `BNXQ1006`, which
    waits for plan 00026 (item 0b).
 
-8. **At the XamlQuality bump, re-measure `XQ1004`'s `Skipped` guard** — `BNXQ1004` from
-   `2026.3.925`. Its `inert-at-pin` marker in `GridSlotTests` expires the moment the pin moves, and
-   `--guards` fails CI until it is answered: `scripts/xq1004-skips.sh` exits 0 to re-mark it at the
-   new version and 1 when the guard is owed a mutation. XamlQuality's fix, its #20, is in
-   `2026.3.925`: a placement a markup value cannot decide goes to `Skipped`, and `Inspected` counts
-   only placements measured against a fixed slot. ⚠ **On DiffView that reads 0 inspected** — 23 of
-   its 24 grid children declare no size — **so `GridSlotTests`' floor of 12 fails at that bump, and
-   truthfully.** By plan 00025's own standard a rule that inspects nothing here is not adopted, so
-   that bump is where `XQ1004` is re-decided, not re-floored. The same release carries the digest fix
-   (#22), which leaves a digest generated on Linux where it was, and `BNXQ1003`'s credit to the
-   control whose template a lookup is made on (#30, this repository's proposal), which XamlQuality
-   measured at plan 00021's tip: `DiffBuildController`'s skip goes, 47 inspected, 0 findings.
+8. ~~At the XamlQuality bump, re-measure `XQ1004`'s `Skipped` guard~~ — **closed by plan 00028's
+   phase 2.** The bump went to `2026.3.928`, and there the guard is live: a child of the fixed slot
+   whose size markup cannot evaluate is named in `Skipped`, so the `inert-at-pin` marker came off, a
+   mutation proves the guard, and the scripts that re-measured the marker went with it. The rule was
+   re-decided rather than re-floored, as this item said it would be, and kept: it reads 0 inspected on
+   today's markup and still catches a child that asks the spacer for more room, so its blinding floor
+   moved from the rule's count to the grid children the scan holds.
 
 9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. The suite passes on those
    platforms now, without its Linux-only baselines, which makes these runs the only look anything
@@ -549,8 +544,8 @@ either.
 | Phase | Size | Status | Notes |
 |---|---|---|---|
 | 0 The pins and the renames | S | done | Both pins at `2026.3.928`, not the plan's 925 — `DECISIONS.md` has why. Every rule id renamed in current text, 49 of them across the tests, `scripts/mutate-gates.cs`, `scripts/xq1004-skips.*` and `AGENTS.md`; plan 00025's records keep theirs. Re-read over `main` with plan 00029 on it, as the plan's risks ask, and it reads as the plan measured: the build clean under `-warnaserror`, AssemblyQuality's `[RequiresUnreferencedCode]` raising nothing in the test build; the suite red on exactly `TemplatePartTests` — its expected skips no longer hold `DiffBuildController` — and `GridSlotTests` — `BNXQ1004` inspects 0 against a floor of 12 — in `en-US` and `de-DE`; `docs/theme-audit.md` unmoved |
-| 1 `BNXQ1003` | XS | done | The expected skips narrow to `DiffPaneHeader` and `DiffStatusStrip`; the controller-part assertion retires with `PartsNamedIn`, `HostsOfTheController` and `PartConstantsOf`, the rule doing that work itself from 925. The viewer-constant mutation deleted and its theme-side twin added, the controller's mutation now killed by the findings assertion — `DECISIONS.md` has why. Re-read at 928: 47 inspected, no findings, the two expected skips. `TemplatePartTests` green |
-| 2 `BNXQ1004` on its new guard; `BNXQ1005` declined | S | not started | |
+| 1 `BNXQ1003` | XS | done | The expected skips narrow to `DiffPaneHeader` and `DiffStatusStrip`; the controller-part assertion retires with `PartsNamedIn`, `HostsOfTheController` and `PartConstantsOf`, the rule doing that work itself from 925. The viewer-constant mutation deleted and its theme-side twin added, the controller's mutation now killed by the findings assertion — `DECISIONS.md` has why. Re-read at 928: 47 inspected, no findings, the two expected skips. `TemplatePartTests` green, and the harness's template-part mutations each killed by the guard they name, the twin among them |
+| 2 `BNXQ1004` on its new guard; `BNXQ1005` declined | S | done | `GridSlotTests` floors the grid children the scan holds — 37, counted in the test beside the floor as direct element children of a `Grid` that are not property elements — instead of `Inspected`, which reads 0 from 925 on a clean repository. The `Skipped` guard is live at 928 and loses its `inert-at-pin` marker; a mutation of its own proves it. `scripts/xq1004-skips.*` are removed, with the harness hint that named them and `AGENTS.md` §5's sentence, and open item 8 closes. `BNXQ1005` stays unadopted: it inspects nothing here. `GridSlotTests` green |
 | 3 AssemblyQuality | S | not started | |
 | 4 The record | S | not started | |
 

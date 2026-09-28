@@ -22,11 +22,16 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// library's own grids is the 16-pixel spacer column between the two panes.
 /// </para>
 /// <para>
-/// ⭐ <b>Adopted at <c>2026.3.924</c>, the first published release carrying it</b>, where it measures
-/// <b>22 inspected, 0 findings, 0 skipped</b>, all 22 in this library's own themes and none in the demo.
-/// Declining an <em>inert</em> rule and declining a <em>live</em> one are different acts: <c>BNXQ1001</c>
-/// inspects nothing here and could only report what a broken codebase also reports, where this one
-/// inspects 22 real placements and can be made to fail.
+/// ⭐ <b>Adopted at <c>2026.3.924</c>, the first published release carrying it</b>, where it measured
+/// 22 inspected, 0 findings, 0 skipped. From <c>2026.3.925</c> it counts a placement only when it
+/// measured it against a fixed slot, and none here is — the spacer's children declare no size — so it
+/// reads <b>0 inspected</b> on today's markup, which is also what a scan that reached no markup reads.
+/// ⛔ <b>Reading 0 is not being unable to fail.</b> A child that asks the spacer for more room is still
+/// caught — 1 inspected, 1 finding — and one whose size markup cannot evaluate is named in
+/// <see cref="XamlRuleResult.Skipped"/>; both are measured by mutations. What 925 took away is only the
+/// footing of the blinding floor, so the floor moved from the rule's count to the markup the scan holds.
+/// Declining an <em>inert</em> rule and declining a <em>live</em> one are different acts:
+/// <c>BNXQ1001</c> has nothing here to read at all, where this one has a fixed slot and its children.
 /// </para>
 /// <para>
 /// ⛔ <b>The rule asks about SIZE, not about indices</b> — a child placed in a column its grid does not
@@ -38,44 +43,41 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 public sealed class GridSlotTests
 {
     /// <summary>
-    /// Well under the 22 the rule inspects, because what this number guards is a <b>zero</b>.
+    /// Well under the 37 grid children the scan holds, because what this number guards is a <b>zero</b>:
+    /// a scan that reached no markup.
     /// </summary>
     /// <remarks>
-    /// ⛔ <b>A blinding floor, like <see cref="TemplatePartTests"/>'s — not a population count.</b> This
-    /// rule reads markup and no assemblies, so the way to blind it is to move the scan root somewhere
-    /// with no markup, and then it reports 0 inspected and 0 findings, which is what a clean repository
-    /// reports. Set at its exact population it would instead demand a visible edit every time a grid
-    /// child is legitimately added or removed, and buy no detection for it: a partial loss of placements
-    /// is caught by nothing either way.
+    /// A grid child is a direct element child of a <c>Grid</c> that is not a property element —
+    /// <c>Grid.ColumnDefinitions</c> and its like are not children — counted in every file the scan parsed,
+    /// which is the markup the rule reads. ⛔ <b>A blinding floor, like <see cref="TemplatePartTests"/>'s —
+    /// not a population count.</b> From 925 the rule's own count reads 0 on a clean repository, so what
+    /// shows it had something to read is the scan's markup. Set at its exact population it would demand
+    /// a visible edit every time a grid child is legitimately added or removed, and buy no detection for
+    /// it.
     /// </remarks>
-    private const int InspectedFloor = 12;
+    private const int GridChildrenFloor = 20;
 
     [Fact]
     public void No_control_declares_a_size_larger_than_its_fixed_grid_slot()
     {
-        XamlRuleResult result = new GridSlotOverflowRule().Analyze(XamlScanContext.Load(RepoPaths.Source("src")));
+        XamlScanContext context = XamlScanContext.Load(RepoPaths.Source("src"));
+        int gridChildren = GridChildren(context);
 
         Assert.True(
-            result.Inspected >= InspectedFloor,
-            $"BNXQ1004 inspected {result.Inspected} grid placements, below the floor of {InspectedFloor}. "
-            + "This floor sits well under the population, so it has not been tripped by a child being "
-            + "added or removed: the rule has largely stopped seeing placements. Zero means the scan "
-            + "reached no markup at all, which is indistinguishable from a repository whose grids agree.");
+            gridChildren >= GridChildrenFloor,
+            $"The scan holds {gridChildren} grid children, below the floor of {GridChildrenFloor}. This floor "
+            + "sits well under the population, so it has not been tripped by a child being added or removed: "
+            + "the scan has largely stopped reaching the markup. Zero means it reached none, where BNXQ1004 "
+            + "reports 0 inspected and 0 findings — which is what a repository whose grids agree reports too.");
 
-        // ⚠ FORWARD COVER, and it cannot fail at this pin. Measured over bindings, resources, unparseable
-        // and bound definitions, a bound index, a bound size and a span: the pinned rule never populates
-        // Skipped — an undecidable placement is counted as inspected and reported clean instead. So this
-        // guards the release that starts reporting grids it could not read, when the count above would
-        // stop meaning what this test says it means. The marker below is what the mutation harness reads:
-        // it excuses this one guard for as long as the pin is the one it was measured against, and not
-        // a version longer. When the pin moves, scripts/xq1004-skips.sh re-measures the claim against
-        // whatever is pinned: exit 0 means re-mark it with the new version, exit 1 means it is owed a
-        // mutation instead.
-        // inert-at-pin: Bennewitz.Ninja.XamlQuality 2026.3.924
+        XamlRuleResult result = new GridSlotOverflowRule().Analyze(context);
+
+        // Live from 2026.3.925: a child of a fixed slot whose size markup cannot evaluate is named here
+        // rather than counted as checked.
         Assert.True(
             result.Skipped.Count == 0,
-            "BNXQ1004 could not read some grids, so the placements inside them went unchecked:"
-            + Environment.NewLine
+            "BNXQ1004 could not evaluate the size some children of a fixed slot declare, so it could not "
+            + "check them:" + Environment.NewLine
             + string.Join(Environment.NewLine, result.Skipped.Select(s => "  " + s)));
 
         Assert.True(
@@ -85,4 +87,12 @@ public sealed class GridSlotTests
             + "sees a region the user cannot:" + Environment.NewLine
             + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
     }
+
+    /// <summary>The grid children in the markup the scan parsed: every direct element child of a <c>Grid</c> that is not a property element.</summary>
+    private static int GridChildren(XamlScanContext context) =>
+        context.ParsedFiles
+            .Select(f => f.Document)
+            .Where(d => d is not null)
+            .SelectMany(d => d!.Descendants())
+            .Count(e => e.Parent is { } parent && parent.Name.LocalName == "Grid" && !e.Name.LocalName.Contains('.'));
 }

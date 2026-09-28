@@ -39,8 +39,7 @@ All notable changes to DiffView are recorded here. The format follows
   references; `AQ1001` defaulted cancellation tokens; and a gate on the dependencies
   `DiffView.Core`'s package declares.
 - `scripts/mutate-gates.{cs,sh,ps1}`, the committed mutation harness that proves every assertion in
-  those gates able to fail first, and `scripts/xq1004-skips.{cs,sh,ps1}`, which re-measures the one
-  guard excused at the current pin. CI runs the harness's `--guards` check on Linux.
+  those gates able to fail first. CI runs the harness's `--guards` check on Linux.
 - `catch-crash --expect auto`, which takes the suite's size from `dotnet test --list-tests` instead
   of a number someone wrote down.
 - `LeftHeaderName` and `RightHeaderName` on both views, so each pane header carries an automation
