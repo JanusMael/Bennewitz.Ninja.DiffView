@@ -146,6 +146,78 @@ public sealed class InteractionLogTests
         Assert.DoesNotContain(host.Logs.Records, r => r.Everything.Contains(sentinel, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Found by the by-hand pass: a click that finds a selection and leaves it — on a copy arrow, which
+    /// takes the press — was written as the selection all over again, and the click not at all.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task A_click_that_leaves_a_selection_as_it_was_is_written_as_the_click()
+    {
+        using CompositeHost host = await Loaded();
+        host.View.RightReadOnly = false;
+        CompositeHost.Layout();
+        Drag(host, TextPoint(host, host.Left, line: 3, column: 1), TextPoint(host, host.Left, line: 5, column: 5));
+        host.Capture().Dispose();
+
+        // The first block is the right side's inserted line, so the left pane's arrow for it sits in
+        // the padding above left line 2.
+        (Rect zone, _, _) = Assert.Single(host.Left.LineNumberMargin.LastCopyArrows, a => a.BlockIndex == 0);
+        Click(host, host.Left.LineNumberMargin.TranslatePoint(zone.Center, host.Window)
+                    ?? throw new InvalidOperationException("The margin is not in the window."));
+
+        Assert.False(host.Left.TextArea.Selection.IsEmpty, "the arrow cleared the selection, so the click proves nothing");
+        Assert.Equal(
+            ["Left pane: selected 3:1–5:5 (23 chars)", "Left pane: click in the number margin at line 2"],
+            Interactions(host.Logs).Select(r => r.Message));
+    }
+
+    /// <summary>A right-click leaves the caret where it was, so the caret cannot say where the click landed.</summary>
+    [AvaloniaFact]
+    public async Task A_right_click_is_written_where_the_pointer_was_because_it_leaves_the_caret()
+    {
+        using CompositeHost host = await Loaded();
+        Assert.Equal(1, host.Left.TextArea.Caret.Line);
+
+        Point at = TextPoint(host, host.Left, line: 9, column: 5);
+        host.Window.MouseDown(at, MouseButton.Right);
+        host.Window.MouseUp(at, MouseButton.Right);
+        CompositeHost.Layout();
+
+        Assert.Equal(1, host.Left.TextArea.Caret.Line);
+        Assert.Equal(["Left pane: right-click in the text at line 9"], Interactions(host.Logs).Select(r => r.Message));
+    }
+
+    /// <summary>
+    /// Found by the by-hand pass: a fold's placeholder takes the press, so the caret stays where it was
+    /// and was written as though the click had landed there. The press opens the fold, so its line
+    /// comes first.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task A_click_on_a_fold_placeholder_is_written_at_its_line_after_the_fold_it_opened()
+    {
+        using CompositeHost host = new();
+        host.Show();
+        (string left, string right) = FoldingFixture.Pair();
+        await host.LoadAsync(new PaneSource(left), new PaneSource(right));
+        SideBySideDocument document = host.View.Document ?? throw new InvalidOperationException("No model.");
+        FoldedRun run = host.View.ApplyFolds(contextRows: 0).FoldAt(0);
+        CompositeHost.Layout();
+        (int First, int Last) lines = FoldPlan.LinesOf(document, run, DiffSide.Left)
+                                      ?? throw new InvalidOperationException("A taken fold hides nothing.");
+        int header = lines.First - 1;
+
+        // Below the fold, so a caret left where it was cannot pass for the click.
+        host.Left.TextArea.Caret.Line = lines.Last + 1;
+        CompositeHost.Layout();
+        Assert.NotEqual(header, host.Left.TextArea.Caret.Line);
+
+        Click(host, PlaceholderPoint(host, header));
+
+        Assert.Equal(
+            [$"Fold opened: rows {run.FirstRow + 1}–{run.FirstRow + run.RowCount}", $"Left pane: click in the text at line {header}"],
+            Interactions(host.Logs).Select(r => r.Message));
+    }
+
     private static async Task<CompositeHost> Loaded(CapturingLoggerFactory? logs = null)
     {
         (string left, string right) = CompositeHost.SmallFixture();
@@ -211,6 +283,17 @@ public sealed class InteractionLogTests
         double textTop = visual.GetTextLineVisualYPosition(visual.TextLines[0], VisualYPosition.TextTop);
         double y = ((visual.VisualTop + textTop) / 2) - view.VerticalOffset;
         return view.TranslatePoint(new Point(20, y), host.Window) ?? throw new InvalidOperationException("The text view is not in the window.");
+    }
+
+    /// <summary>A little way into the fold placeholder at the end of <paramref name="headerLine"/>, in window coordinates.</summary>
+    private static Point PlaceholderPoint(CompositeHost host, int headerLine)
+    {
+        TextView view = host.Left.TextArea.TextView;
+        VisualLine visual = view.GetOrConstructVisualLine(host.Left.Document.GetLineByNumber(headerLine));
+        FoldPlaceholderElement element = visual.Elements.OfType<FoldPlaceholderElement>().Single();
+        Point inText = visual.GetVisualPosition(element.VisualColumn, VisualYPosition.TextMiddle) - view.ScrollOffset;
+        return view.TranslatePoint(inText + new Vector(4, 0), host.Window)
+               ?? throw new InvalidOperationException("The text view is not in the window.");
     }
 
     /// <summary>The unified document's line that shows <paramref name="sourceLine"/> of one side's file.</summary>

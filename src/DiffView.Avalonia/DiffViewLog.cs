@@ -1,4 +1,5 @@
 using System.Globalization;
+using Avalonia.Input;
 using Bennewitz.Ninja.DiffView.Core;
 using Microsoft.Extensions.Logging;
 using TextInfo = Bennewitz.Ninja.DiffView.Core.TextInfo;
@@ -155,11 +156,18 @@ internal static class DiffViewLog
     }
 
     /// <summary>
-    /// A click in a pane, logged at release: which surface it landed on, and the position it left the
-    /// caret at — or, in a margin or on padding, the line it was beside. Positions only, never text.
+    /// A click in a pane, logged at release: which button, which surface it landed on, and the position
+    /// it left the caret at — or, in a margin, on padding, or where it moved no caret, the line it was
+    /// beside. Positions only, never text.
     /// </summary>
-    public static void PaneClick(ILogger? logger, DiffSide? side, DiffPaneRegion region, bool onPadding, LogPosition at)
+    public static void PaneClick(ILogger? logger, DiffSide? side, MouseButton button, DiffPaneRegion region, bool onPadding, LogPosition at)
     {
+        string gesture = button switch
+        {
+            MouseButton.Right => "right-click",
+            MouseButton.Middle => "middle-click",
+            _ => "click",
+        };
         string where = region switch
         {
             DiffPaneRegion.LineNumberMargin => "in the number margin at",
@@ -167,9 +175,8 @@ internal static class DiffViewLog
             _ when onPadding => "on the padding above",
             _ => "in the text at",
         };
-        logger?.LogDebug("{Side:l} pane: click {Where:l} {At:l}", PaneName(side), where, Format(at));
+        logger?.LogDebug("{Side:l} pane: {Gesture:l} {Where:l} {At:l}", PaneName(side), gesture, where, Format(at));
     }
-
     /// <summary>
     /// A selection, once, when the pointer that made it is released: its two ends and its length in
     /// characters — never its text, which may be a secret under comparison.
