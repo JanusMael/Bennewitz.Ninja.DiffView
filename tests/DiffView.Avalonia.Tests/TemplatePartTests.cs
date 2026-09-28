@@ -1,5 +1,3 @@
-using System.Reflection;
-using System.Text.RegularExpressions;
 using Bennewitz.Ninja.DiffView.Core;
 using Bennewitz.Ninja.XamlQuality;
 using Bennewitz.Ninja.XamlQuality.Rules;
@@ -43,12 +41,18 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// <para>
 /// ⚠ <b>But "<c>Skipped</c> is empty" is the wrong assertion.</b> A themed
 /// control that declares no template parts is skipped legitimately, and two of this library's do. What
-/// separates the blinding is <em>which</em> controls: eight skipped with no assemblies, only those two
-/// in the real configuration — beside <see cref="DiffBuildController"/>, skipped for the opposite
-/// reason: parts, and no theme of its own. So the assertion names all three, keyed on
-/// <see cref="XamlSkip.Subject"/> rather than the prose in <see cref="XamlSkip.Reason"/>; the
-/// controller's parts are then read out of that prose, the only place the rule reports them.
+/// separates the blinding is <em>which</em> controls: every themed control is skipped with no
+/// assemblies, only those two in the real configuration. So the assertion names both, keyed on
+/// <see cref="XamlSkip.Subject"/> rather than the prose in <see cref="XamlSkip.Reason"/>.
 /// </para>
+/// </para>
+/// <para>
+/// ⭐ <b>From <c>2026.3.925</c> the rule credits a lookup to the control whose template it is made
+/// on</b> (XamlQuality #30, proposed from here). <see cref="DiffBuildController"/> looks its parts up on
+/// its host's template, so each of those lookups is now checked against each host's own theme, and a
+/// part the viewer's theme or the editor's lacks is a finding like any other. At <c>924</c> the rule
+/// credited the lookup to the controller, which has no theme, skipped it, and this test held every
+/// host's constants against the controller's parts by hand; that assertion retired with the pin.
 /// </para>
 /// </remarks>
 public sealed class TemplatePartTests
@@ -107,7 +111,7 @@ public sealed class TemplatePartTests
         // ⛔ The precise form of the same guard, available since 2026.3.924 — and ⚠ NOT "Skipped is
         // empty", which is wrong. Measured: a themed control with no template parts
         // at all is skipped legitimately, and two of ours are. What distinguishes the blinding is WHICH
-        // controls: handed no assemblies the rule skips all eight themed controls, where the real
+        // controls: handed no assemblies the rule skips every themed control, where the real
         // configuration skips only those two. Keyed on Subject rather than on Reason, which is prose.
         //
         // These are a written expectation like a floor, but a far narrower one. DiffPaneHeader and
@@ -115,63 +119,15 @@ public sealed class TemplatePartTests
         // declares no parts". A new name appearing means a control lost its parts, the scan lost an
         // assembly, or the model gained a control with no theme — measured; a name disappearing means one
         // gained parts, which is a real change and should need a visible edit.
-        //
-        // DiffBuildController is a skip of the other kind: parts and no theme. It looks parts up on its
-        // HOST's template, and the rule takes every lookup to be on the looking type's own, so it finds
-        // parts, looks for a ControlTheme targeting the controller, finds none, and names the parts it
-        // therefore did not check.
         Assert.Equal(
-            [nameof(DiffBuildController), nameof(DiffPaneHeader), nameof(DiffStatusStrip)],
+            [nameof(DiffPaneHeader), nameof(DiffStatusStrip)],
             result.Skipped.Select(s => s.Subject).OrderBy(s => s, StringComparer.Ordinal));
 
-        // ⛔ What makes that skip harmless, held rather than assumed: every part the controller looks up
-        // is a constant of EVERY control that hosts it, and the rule checks each host's constants against
-        // that host's own theme. The controller's lookups run on whichever template it was handed, so a
-        // part one host declares and another does not is looked up in a theme nobody checked. The parts
-        // are read from the skip itself — the rule's reading of the compiled lookups, not a list of ours —
-        // and the hosts from the assembly, as whatever implements the seam. The two counts are the
-        // anti-vacuity half: should a later rule stop naming the parts in its reason, or the derivation
-        // find no host, an empty set would satisfy the rest.
-        string[] controllerParts = PartsNamedIn(result.Skipped.Single(s => s.Subject == nameof(DiffBuildController)));
-        Type[] hosts = HostsOfTheController();
-        string[] gaps =
-        [
-            .. hosts.SelectMany(host => controllerParts
-                .Except(PartConstantsOf(host), StringComparer.Ordinal)
-                .Select(part => $"{host.Name} does not declare {part}")),
-        ];
-        Assert.True(
-            controllerParts.Length > 0 && hosts.Length > 0 && gaps.Length == 0,
-            $"DiffBuildController looks up [{string.Join(", ", controllerParts)}] on the template of each of "
-            + $"[{string.Join(", ", hosts.Select(h => h.Name))}]. A part it looks up that a host does not "
-            + "declare as a constant is checked against no theme: the rule credits it to the controller, "
-            + "which has none. Declare it on the host:" + Environment.NewLine
-            + string.Join(Environment.NewLine, gaps.Select(g => "  " + g)));
-
+        // The controller's lookups are findings here too: from 2026.3.925 the rule checks each one
+        // against the theme of every control whose template it runs on.
         Assert.True(
             result.Findings.Count == 0,
             "A control looks up a template part its own theme does not declare:" + Environment.NewLine
             + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
     }
-
-    /// <summary>Every control the library builds on <see cref="DiffBuildController"/>: whatever implements its seam.</summary>
-    private static Type[] HostsOfTheController() =>
-        [.. typeof(SideBySideDiffView).Assembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IDiffSurface).IsAssignableFrom(t))
-            .OrderBy(t => t.Name, StringComparer.Ordinal)];
-
-    /// <summary>The part names a skip's reason carries — the only place the rule reports them.</summary>
-    private static string[] PartsNamedIn(XamlSkip skip) =>
-        [.. Regex.Matches(skip.Reason, @"\bPART_\w+").Select(m => m.Value).Distinct(StringComparer.Ordinal)];
-
-    /// <summary>
-    /// The part-name constants a type declares, public or not — the source the rule credits to that
-    /// type, and so checks against that type's theme, wherever the lookups themselves are made.
-    /// </summary>
-    private static string[] PartConstantsOf(Type type) =>
-        [.. type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)
-            .Where(f => f.IsLiteral && f.FieldType == typeof(string))
-            .Select(f => (string)f.GetRawConstantValue()!)
-            .Where(v => v.Length > TemplatePartRule.PartPrefix.Length
-                && v.StartsWith(TemplatePartRule.PartPrefix, StringComparison.Ordinal))];
 }

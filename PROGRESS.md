@@ -549,7 +549,7 @@ either.
 | Phase | Size | Status | Notes |
 |---|---|---|---|
 | 0 The pins and the renames | S | done | Both pins at `2026.3.928`, not the plan's 925 — `DECISIONS.md` has why. Every rule id renamed in current text, 49 of them across the tests, `scripts/mutate-gates.cs`, `scripts/xq1004-skips.*` and `AGENTS.md`; plan 00025's records keep theirs. Re-read over `main` with plan 00029 on it, as the plan's risks ask, and it reads as the plan measured: the build clean under `-warnaserror`, AssemblyQuality's `[RequiresUnreferencedCode]` raising nothing in the test build; the suite red on exactly `TemplatePartTests` — its expected skips no longer hold `DiffBuildController` — and `GridSlotTests` — `BNXQ1004` inspects 0 against a floor of 12 — in `en-US` and `de-DE`; `docs/theme-audit.md` unmoved |
-| 1 `BNXQ1003` | XS | not started | |
+| 1 `BNXQ1003` | XS | done | The expected skips narrow to `DiffPaneHeader` and `DiffStatusStrip`; the controller-part assertion retires with `PartsNamedIn`, `HostsOfTheController` and `PartConstantsOf`, the rule doing that work itself from 925. The viewer-constant mutation deleted and its theme-side twin added, the controller's mutation now killed by the findings assertion — `DECISIONS.md` has why. Re-read at 928: 47 inspected, no findings, the two expected skips. `TemplatePartTests` green |
 | 2 `BNXQ1004` on its new guard; `BNXQ1005` declined | S | not started | |
 | 3 AssemblyQuality | S | not started | |
 | 4 The record | S | not started | |
