@@ -54,7 +54,7 @@ const string SbsTheme = "src/DiffView.Avalonia/Themes/SideBySideDiffView.axaml";
 const string DemoView = "src/DiffView.Demo/MainWindow.axaml";
 const string SbsSource = "src/DiffView.Avalonia/SideBySideDiffView.cs";
 const string SbsController = "src/DiffView.Avalonia/DiffBuildController.cs";
-const string ViewerSource = "src/DiffView.Avalonia/DiffViewer.cs";
+const string ViewerTheme = "src/DiffView.Avalonia/Themes/DiffViewer.axaml";
 const string InlineSource = "src/DiffView.Avalonia/InlineDiffView.cs";
 
 const string ProbeControl = "src/DiffView.Avalonia/MutationProbeControl.cs";
@@ -392,20 +392,21 @@ List<Mutation> mutations =
         () => Sub(SbsSource, @"MinimapPart = ""PART_Minimap""", @"MinimapPart = ""PART_NoSuchPartInAnyTheme"""),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
-    // The controller looks parts up on its host's template, so the rule credits them to the controller
-    // and checks them against no theme; they are covered only while each is a name the view declares.
+    // The controller looks parts up on its host's template. From 2026.3.925 the rule credits each such
+    // lookup to the control whose template it is made on and checks it against that control's theme,
+    // so a part no host declares is a finding, in the same test as every other control's.
     // ⚠ The name must differ from every constant: a literal equal to one compiles to the same IL.
     new("the controller looks up a part the view does not declare", PartsClass,
         () => Sub(SbsController, @"e\.NameScope\.Find<DiffMinimap>\(SideBySideDiffView\.MinimapPart\)",
             @"e.NameScope.Find<DiffMinimap>(""PART_Map"")"),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
-    // The same lookups run on every host's template, and the rule checks a host's theme only against
-    // what that host declares: the viewer dropping one leaves its theme's copy of the part unchecked
-    // while the editor's still is.
-    new("the viewer stops declaring a part the controller looks up", PartsClass,
-        () => Sub(ViewerSource, @"public const string MinimapPart = SideBySideDiffView\.MinimapPart;",
-            @"public const string MinimapPart = ""Minimap"";"),
+    // The same lookups run on every host's template, and each host's theme is checked on its own: the
+    // viewer's losing a part the controller looks up is reported against the viewer, while the editor's
+    // still declares it. The theme-side twin of a mutation that dropped the viewer's constant instead,
+    // which the rule stopped reading at 925, so that one survived by design and went (DECISIONS.md).
+    new("the viewer's theme stops declaring a part the controller looks up", PartsClass,
+        () => Sub(ViewerTheme, @"<dv:DiffMinimap Name=""PART_Minimap""", @"<dv:DiffMinimap Name=""PART_Map"""),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
     // Which controls are skipped is the precise form of the blinding guard, so it needs a mutation of

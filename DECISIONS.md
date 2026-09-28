@@ -3493,3 +3493,18 @@ controls carry an `AutomationId` is a decision of its own, not a pin's.
 The plan's readings were taken at 925 over `c465c65`. Phase 0 re-read the suite at 928 over `main`,
 with plan 00029 on it, and it was red on exactly the two tests the plan predicts, for the reasons it
 gives.
+
+## The viewer-constant mutation went with 925, and its theme-side twin replaces it
+
+At `2026.3.924` `BNXQ1003` credited a `PART_` lookup to the type whose code made it, so the lookups
+`DiffBuildController` makes on its host's template were checked against no theme, and
+`TemplatePartTests` held every host's constants against the controller's parts by hand. The mutation
+*the viewer stops declaring a part the controller looks up* — the viewer's `MinimapPart` constant
+changed — proved that assertion. From 925 the rule credits each lookup to the control whose template
+it is made on and checks it against that control's own theme, so the assertion retired, and the
+constant is no longer what anything reads: that mutation survives by design, and a mutation that
+cannot be killed is not evidence (`AGENTS.md` §5), so it is deleted. Its twin keeps what it proved
+proven — *the viewer's theme stops declaring a part the controller looks up*, `PART_Minimap` renamed
+in `DiffViewer.axaml`, is reported against `DiffViewer` by the findings assertion — and the controller's
+own mutation, *the controller looks up a part the view does not declare*, is killed by that same
+assertion now.
