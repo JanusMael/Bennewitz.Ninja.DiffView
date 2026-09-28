@@ -21,11 +21,18 @@ internal sealed record LogRecord(string Category, LogLevel Level, string Message
     }
 }
 
-/// <summary>A logger factory whose loggers keep every line, so a test can search the log.</summary>
-internal sealed class CapturingLoggerFactory : ILoggerFactory
+/// <summary>
+/// A logger factory whose loggers keep every line at or above <c>minimum</c>, so a test can search
+/// the log — every line by default, and a host's usual <c>Information</c> when a test needs to see
+/// what such a host is told.
+/// </summary>
+internal sealed class CapturingLoggerFactory(LogLevel minimum = LogLevel.Trace) : ILoggerFactory
 {
     private readonly Lock _gate = new();
     private readonly List<LogRecord> _records = [];
+
+    /// <summary>The level below which a line is neither enabled nor kept.</summary>
+    public LogLevel Minimum { get; } = minimum;
 
     public IReadOnlyList<LogRecord> Records
     {
@@ -69,12 +76,15 @@ internal sealed class CapturingLoggerFactory : ILoggerFactory
 
         public bool IsEnabled(LogLevel logLevel)
         {
-            return true;
+            return logLevel >= owner.Minimum;
         }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            owner.Add(new LogRecord(category, logLevel, formatter(state, exception), exception));
+            if (IsEnabled(logLevel))
+            {
+                owner.Add(new LogRecord(category, logLevel, formatter(state, exception), exception));
+            }
         }
     }
 }

@@ -138,6 +138,8 @@ internal sealed class DiffBuildController
 
     private ILogger? _renderLogger;
 
+    private ILogger? _interactionLogger;
+
     private int _generation;
 
     private CancellationTokenSource? _buildCts;
@@ -803,6 +805,7 @@ internal sealed class DiffBuildController
         pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
         // The logger first: assigning the file name may install a grammar, which logs.
         pane.Logger = _renderLogger;
+        pane.InteractionLogger = _interactionLogger;
         pane.UseSyntaxHighlighting = UseSyntaxHighlighting;
         pane.SyntaxFileName = SyntaxFileNameOf(side == DiffSide.Left ? LeftSource : RightSource);
         ApplyDisplayOptions(pane);
@@ -1095,17 +1098,23 @@ internal sealed class DiffBuildController
             return;
         }
 
-        _expandedFolds.Add(_projection.FoldAt(fold).FirstRow);
-        RefreshFolds();
+        OpenFold(_projection.FoldAt(fold));
     }
 
     internal void ExpandFoldAtCaret()
     {
         if (FoldAtCaret() is { } run)
         {
-            _expandedFolds.Add(run.FirstRow);
-            RefreshFolds();
+            OpenFold(run);
         }
+    }
+
+    /// <summary>Gives a folded run back — every way one opens comes here — and says so under the interaction category.</summary>
+    private void OpenFold(FoldedRun run)
+    {
+        _expandedFolds.Add(run.FirstRow);
+        DiffViewLog.FoldOpened(_interactionLogger, run.FirstRow, run.RowCount);
+        RefreshFolds();
     }
 
     /// <summary>
@@ -1124,8 +1133,7 @@ internal sealed class DiffBuildController
             FoldedRun run = _projection.FoldAt(fold);
             if (FoldPlan.LinesOf(document, run, pane.Side) is { } lines && lines.First == firstCollapsedLine)
             {
-                _expandedFolds.Add(run.FirstRow);
-                RefreshFolds();
+                OpenFold(run);
                 return;
             }
         }
@@ -1584,7 +1592,7 @@ internal sealed class DiffBuildController
     // whether the field was released would create what it was asked about.
     internal StatusController? StatusOrNull => _status;
 
-    /// <summary>The four category loggers, rebuilt when the factory is set.</summary>
+    /// <summary>The category loggers, rebuilt when the factory is set.</summary>
     internal ILoggerFactory? LoggerFactory
     {
         get => _loggerFactory;
@@ -1593,14 +1601,17 @@ internal sealed class DiffBuildController
             _loggerFactory = value;
             _buildLogger = value?.CreateLogger(DiffViewLogCategories.Build);
             _renderLogger = value?.CreateLogger(DiffViewLogCategories.Render);
+            _interactionLogger = value?.CreateLogger(DiffViewLogCategories.Interaction);
             if (_leftPane is not null)
             {
                 _leftPane.Logger = _renderLogger;
+                _leftPane.InteractionLogger = _interactionLogger;
             }
 
             if (_rightPane is not null)
             {
                 _rightPane.Logger = _renderLogger;
+                _rightPane.InteractionLogger = _interactionLogger;
             }
         }
     }
