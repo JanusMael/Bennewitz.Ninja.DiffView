@@ -292,6 +292,7 @@ public class InlineDiffView : TemplatedControl
     private ILogger? _buildLogger;
     private ILogger? _renderLogger;
     private ILogger? _findLogger;
+    private ILogger? _interactionLogger;
     private int _generation;
     private CancellationTokenSource? _buildCts;
     private ITimer? _slowTimer;
@@ -743,9 +744,11 @@ public class InlineDiffView : TemplatedControl
             _buildLogger = value?.CreateLogger(DiffViewLogCategories.Build);
             _renderLogger = value?.CreateLogger(DiffViewLogCategories.Render);
             _findLogger = value?.CreateLogger(DiffViewLogCategories.Find);
+            _interactionLogger = value?.CreateLogger(DiffViewLogCategories.Interaction);
             if (_pane is not null)
             {
                 _pane.Logger = _renderLogger;
+                _pane.InteractionLogger = _interactionLogger;
             }
         }
     }
@@ -1859,6 +1862,7 @@ public class InlineDiffView : TemplatedControl
         pane.IsCaretBlinkEnabled = IsCaretBlinkEnabled;
         // The logger first: assigning the file name may install a grammar, which logs.
         pane.Logger = _renderLogger;
+        pane.InteractionLogger = _interactionLogger;
         pane.UseSyntaxHighlighting = UseSyntaxHighlighting;
         pane.SyntaxFileName = SyntaxFileName();
         ApplyDisplayOptions(pane);
@@ -2051,8 +2055,7 @@ public class InlineDiffView : TemplatedControl
             return;
         }
 
-        _expandedFolds.Add(_projection.FoldAt(fold).FirstRow);
-        RefreshFolds();
+        OpenFold(_projection.FoldAt(fold));
     }
 
     /// <summary>The menu's own expand verb: the run under the pointer rather than at the caret.</summary>
@@ -2067,9 +2070,16 @@ public class InlineDiffView : TemplatedControl
     {
         if (FoldAtCaret() is { } run)
         {
-            _expandedFolds.Add(run.FirstRow);
-            RefreshFolds();
+            OpenFold(run);
         }
+    }
+
+    /// <summary>Gives a folded run back — every way one opens comes here — and says so under the interaction category.</summary>
+    private void OpenFold(FoldedRun run)
+    {
+        _expandedFolds.Add(run.FirstRow);
+        DiffViewLog.FoldOpened(_interactionLogger, run.FirstRow, run.RowCount);
+        RefreshFolds();
     }
 
     private void OnFoldExpandRequested(object? sender, int firstCollapsedLine)
@@ -2084,8 +2094,7 @@ public class InlineDiffView : TemplatedControl
             FoldedRun run = _projection.FoldAt(fold);
             if (FoldPlan.LinesOf(inline, run) is { } lines && lines.First == firstCollapsedLine)
             {
-                _expandedFolds.Add(run.FirstRow);
-                RefreshFolds();
+                OpenFold(run);
                 return;
             }
         }

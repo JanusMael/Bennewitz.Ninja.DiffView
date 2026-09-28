@@ -155,5 +155,51 @@ internal static class DiffViewLog
     }
 
     /// <summary>What a pane is called in a log line: its side, or "unified" for the inline view's one pane, which is neither.</summary>
+    /// <summary>
+    /// A click in a pane, logged at release: which surface it landed on, and the position it left the
+    /// caret at — or, in a margin or on padding, the line it was beside. Positions only, never text.
+    /// </summary>
+    public static void PaneClick(ILogger? logger, DiffSide? side, DiffPaneRegion region, bool onPadding, LogPosition at)
+    {
+        string where = region switch
+        {
+            DiffPaneRegion.LineNumberMargin => "in the number margin at",
+            DiffPaneRegion.ChangeMarkerMargin => "in the change markers at",
+            _ when onPadding => "on the padding above",
+            _ => "in the text at",
+        };
+        logger?.LogDebug("{Side} pane: click {Where} {At}", Pane(side), where, Format(at));
+    }
+
+    /// <summary>
+    /// A selection, once, when the pointer that made it is released: its two ends and its length in
+    /// characters — never its text, which may be a secret under comparison.
+    /// </summary>
+    public static void PaneSelection(ILogger? logger, DiffSide? side, LogPosition from, LogPosition to, int characters)
+    {
+        logger?.LogDebug("{Side} pane: selected {From}–{To} ({Characters} chars)", Pane(side), Format(from), Format(to), characters);
+    }
+
+    /// <summary>A fold gave its run back: the rows it restored, 1-based as a reader counts them.</summary>
+    public static void FoldOpened(ILogger? logger, int firstRow, int rowCount)
+    {
+        logger?.LogDebug("Fold opened: rows {First}–{Last}", firstRow + 1, firstRow + rowCount);
+    }
+
+    /// <summary>
+    /// A position in a pane as the interaction lines write it: <c>12:9</c>, or <c>line 12</c> with no
+    /// column. <paramref name="File"/> is set only in the unified view, whose lines each belong to one
+    /// of the two files, and is written first: <c>left 12:9</c>.
+    /// </summary>
+    internal readonly record struct LogPosition(DiffSide? File, int Line, int? Column);
+
+    private static string Format(LogPosition position)
+    {
+        string file = position.File is { } side ? side.ToString().ToLowerInvariant() + " " : string.Empty;
+        return position.Column is { } column
+            ? string.Create(CultureInfo.InvariantCulture, $"{file}{position.Line}:{column}")
+            : string.Create(CultureInfo.InvariantCulture, $"{file}line {position.Line}");
+    }
+
     private static object Pane(DiffSide? side) => side is { } known ? known : "unified";
 }

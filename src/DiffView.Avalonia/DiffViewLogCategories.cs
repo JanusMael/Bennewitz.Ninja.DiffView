@@ -19,4 +19,12 @@ public static class DiffViewLogCategories
 
     /// <summary>Theming: unresolved tokens, grammar installs.</summary>
     public const string Theme = "DiffView.Theme";
+
+    /// <summary>
+    /// What the control's user did that nothing public reports: where a click in a pane landed, the
+    /// selection a pointer finished, a fold that opened. Written at <c>Debug</c>, so a host logging at
+    /// <c>Information</c> sees none of it, and one diagnosing a report enables this category — the
+    /// category's level is the whole switch. Positions and lengths only, never document text.
+    /// </summary>
+    public const string Interaction = "DiffView.Interaction";
 }

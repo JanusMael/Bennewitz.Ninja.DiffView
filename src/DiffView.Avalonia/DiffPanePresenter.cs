@@ -179,6 +179,15 @@ public class DiffPanePresenter : TextEditor
         // rather than off a ContextMenu assigned in a template: the keyboard's request carries no
         // position, and a templated menu would answer it with one built for the wrong place.
         ContextRequested += OnContextRequested;
+
+        // Where a click landed is read at the press, on the way down, before anything captures the
+        // pointer: the text area's selection handler captures it on a press it takes — a click in the
+        // change-marker column among them — and every event after that reports the text area as its
+        // source, so a release cannot say which surface it began on. What the gesture did is read at
+        // the release, on the way back up, once the text area has finished the selection. Handled
+        // events too, both ways: the text area and the margins mark their pointer events handled.
+        AddHandler(PointerPressedEvent, OnPointerPressedForLog, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerReleasedEvent, OnPointerReleasedForLog, RoutingStrategies.Bubble, handledEventsToo: true);
     }
 
     /// <summary>A decorator threw and disabled itself; the text is still rendered.</summary>
@@ -330,14 +339,7 @@ public class DiffPanePresenter : TextEditor
         // Matched by identity against this pane's own two margins rather than by type: it says
         // "our line-number gutter" instead of "any margin of that class", which is the question
         // actually being asked, and it does not depend on the pane hosting exactly one of each.
-        DiffPaneRegion? resolved = e.Source switch
-        {
-            _ when ReferenceEquals(e.Source, _lineNumberMargin) => DiffPaneRegion.LineNumberMargin,
-            _ when ReferenceEquals(e.Source, _changeMarkerMargin) => DiffPaneRegion.ChangeMarkerMargin,
-            AbstractMargin => null,
-            _ => DiffPaneRegion.Text,
-        };
-        if (resolved is not { } region)
+        if (RegionOf(e.Source) is not { } region)
         {
             return;
         }
@@ -358,6 +360,104 @@ public class DiffPanePresenter : TextEditor
         PaneContextRequest request = new(ContextAt(line, region), pointer);
         ContextMenuRequested?.Invoke(this, request);
         e.Handled = request.Opened;
+    }
+
+    /// <summary>
+    /// Which of this pane's surfaces an event's source is, or <c>null</c> for a margin the library
+    /// did not draw — by identity against the pane's own two margins, for the reasons given where the
+    /// context menu asks the same question.
+    /// </summary>
+    private DiffPaneRegion? RegionOf(object? source) => source switch
+    {
+        _ when ReferenceEquals(source, _lineNumberMargin) => DiffPaneRegion.LineNumberMargin,
+        _ when ReferenceEquals(source, _changeMarkerMargin) => DiffPaneRegion.ChangeMarkerMargin,
+        AbstractMargin => null,
+        _ => DiffPaneRegion.Text,
+    };
+
+    /// <summary>
+    /// A pointer was released over the pane: log what it did, once — the selection it finished, or
+    /// where the click landed — and nothing while a drag is under way. Positions and lengths only.
+    /// Computes nothing unless the interaction category is enabled.
+    /// </summary>
+    private void OnPointerReleasedForLog(object? sender, PointerReleasedEventArgs e)
+    {
+        DiffPaneRegion? pressed = _pressedRegion;
+        _pressedRegion = null;
+        if (InteractionLogger is not { } logger || !logger.IsEnabled(LogLevel.Debug) || Document is null
+            || pressed is not { } region)
+        {
+            return;
+        }
+
+        Selection selection = TextArea.Selection;
+        if (!selection.IsEmpty)
+        {
+            (TextViewPosition from, TextViewPosition to) = Ordered(selection.StartPosition, selection.EndPosition);
+            DiffViewLog.PaneSelection(
+                logger, LogSide, LogPositionOf(from.Line, from.Column), LogPositionOf(to.Line, to.Column), selection.Length);
+            return;
+        }
+
+        Point point = e.GetPosition(this);
+        if (region != DiffPaneRegion.Text)
+        {
+            // A margin has no column; the line beside the pointer is the whole of its answer.
+            if (LineAt(point) is { } line)
+            {
+                DiffViewLog.PaneClick(logger, LogSide, region, onPadding: false, LogPositionOf(line, column: null));
+            }
+
+            return;
+        }
+
+        // On padding the caret lands on the line the padding belongs to, and a column would claim a
+        // character the pointer never touched.
+        bool onPadding = IsOnPadding(point);
+        TextViewPosition caret = TextArea.Caret.Position;
+        DiffViewLog.PaneClick(logger, LogSide, region, onPadding, LogPositionOf(caret.Line, onPadding ? null : caret.Column));
+    }
+
+    /// <summary>
+    /// The surface a press landed on, kept for the release that finishes the gesture; <c>null</c>
+    /// when the interaction category is off, so nothing is computed for a host that does not want it.
+    /// </summary>
+    private DiffPaneRegion? _pressedRegion;
+
+    private void OnPointerPressedForLog(object? sender, PointerPressedEventArgs e)
+    {
+        _pressedRegion = InteractionLogger is { } logger && logger.IsEnabled(LogLevel.Debug) ? RegionOf(e.Source) : null;
+    }
+
+    /// <summary>A pane position as the log writes it: the unified view's lines named by their own file and line.</summary>
+    private DiffViewLog.LogPosition LogPositionOf(int line, int? column)
+    {
+        if (!IsUnified)
+        {
+            return new(null, line, column);
+        }
+
+        DiffPaneContext context = ContextAt(line);
+        return context.SourceLine is { } source ? new(context.SourceSide, source, column) : new(null, line, column);
+    }
+
+    private static (TextViewPosition From, TextViewPosition To) Ordered(TextViewPosition a, TextViewPosition b) =>
+        a.Line < b.Line || (a.Line == b.Line && a.Column <= b.Column) ? (a, b) : (b, a);
+
+    /// <summary>Whether <paramref name="point"/> is on the padding rows above a line's text rather than on its text.</summary>
+    private bool IsOnPadding(Point point)
+    {
+        TextView view = TextArea.TextView;
+        if (!view.VisualLinesValid)
+        {
+            return false;
+        }
+
+        Point inView = this.TranslatePoint(point, view) ?? point;
+        double y = inView.Y + view.VerticalOffset;
+        VisualLine? line = view.GetVisualLineFromVisualTop(y);
+        return line is { TextLines.Count: > 0 }
+            && y < line.GetTextLineVisualYPosition(line.TextLines[0], VisualYPosition.TextTop);
     }
 
     /// <summary>The line under <paramref name="pointer"/>, or <c>null</c> for none and for no pointer.</summary>
@@ -463,6 +563,14 @@ public class DiffPanePresenter : TextEditor
 
     /// <summary>Receives faults at <c>Error</c> with the exception attached; never document text.</summary>
     public ILogger? Logger { get; set; }
+
+    /// <summary>
+    /// Receives what the pane's user did — where a click landed, the selection a pointer finished — at
+    /// <c>Debug</c>, under <see cref="DiffViewLogCategories.Interaction"/>. Set by the view that hosts
+    /// the pane, from its logger factory; internal, because the category's level is the only switch a
+    /// host needs.
+    /// </summary>
+    internal ILogger? InteractionLogger { get; set; }
 
     /// <summary>The current change block, which the background renderer outlines; <c>null</c> for none.</summary>
     public ChangeBlock? CurrentBlock

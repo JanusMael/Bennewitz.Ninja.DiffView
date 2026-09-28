@@ -76,7 +76,9 @@ then the hosting guide's account of the three controls — rebased onto `main` a
 and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed publish without an
 `IL` warning. The viewer **does not gate the release**, and it has no find, which the hosting guide
 names outright. **Plan 00023 phase 1 is done.** **Plan 00025 is complete and merged** (PR #1,
-2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms.
+2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
+is under way** — the demo logs what its user did, and the library the two facts nothing public
+reports — on `feat/the-demo-says-what-you-did`; *Plan 00029 phases* below has where it stands.
 
 ### What ships
 
@@ -538,6 +540,14 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00029 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The library's two seams | S | done | `DiffViewLogCategories.Interaction`, and `DiffViewLog.PaneClick`, `PaneSelection` and `FoldOpened`, at `Debug`. The presenter reads which surface a click landed on at the **press** and writes the gesture at the release: the text area captures the pointer on a press it takes, a click in the change-marker column among them, and every event after that names the text area as its source — found by the test that asserts the markers' line, not by reading. Every fold opening, placeholder, find or command, goes through one `OpenFold` in the controller and in the unified view. `InteractionLogTests`, six cases, each red first; ten mutations, each killed by the test that names it — among them the selected text leaking, a line written during the drag, and each line at the wrong level |
+| 2 The demo | S | not started | |
+| 3 The record | S | not started | |
 
 ## Padding lost behind AvaloniaEdit's glyph generator
 
