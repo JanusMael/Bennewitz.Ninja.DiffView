@@ -77,9 +77,9 @@ and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed 
 `IL` warning. The viewer **does not gate the release**, and it has no find, which the hosting guide
 names outright. **Plan 00023 phase 1 is done.** **Plan 00025 is complete and merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
-is complete** on `feat/the-demo-says-what-you-did`, committed locally and not pushed: the demo logs
-what its user did, and the library the two facts nothing public reports. It sits on `main` since PR
-#6 merged, re-parented with no change to its tree; *Plan 00029 phases* below has the record.
+is complete**: the demo logs what its user did, and the library the two facts nothing public
+reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
+00029 phases* below has the record.
 
 ### What ships
 
