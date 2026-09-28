@@ -22,7 +22,7 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// <para>
 /// The walker this replaced was adapted from ClaudeForge's <c>AxamlAccessibilityCoverageTests</c>
 /// (MIT) and carried a per-file ratchet baseline that was empty here — every file at zero. The
-/// analysis now comes from <c>Bennewitz.Ninja.XamlQuality</c>, whose <c>XQ1002</c> holds seventeen
+/// analysis now comes from <c>Bennewitz.Ninja.XamlQuality</c>, whose <c>BNXQ1002</c> holds seventeen
 /// framework element names and takes more in its constructor.
 /// </para>
 /// <para>
@@ -74,7 +74,7 @@ public sealed class AccessibilityCoverageTests
     {
         [nameof(DiffFindBar)] =
             "names itself in its own constructor, from DiffViewStrings.FindBarName, alongside the "
-            + "eleven child names it sets there. XQ1002 reads markup declarations and cannot see a "
+            + "eleven child names it sets there. BNXQ1002 reads markup declarations and cannot see a "
             + "runtime one, so requiring an attribute here would mean two sources for one string.",
     };
 
@@ -97,9 +97,9 @@ public sealed class AccessibilityCoverageTests
     /// </summary>
     /// <remarks>
     /// ⭐ <b>A name is not a gate.</b> An inert <em>rule</em> reports zero and reads as coverage; an
-    /// inert <em>name</em> costs nothing and catches the first use. <c>XQ1001</c> is declined for the
+    /// inert <em>name</em> costs nothing and catches the first use. <c>BNXQ1001</c> is declined for the
     /// former reason, which is also what makes <c>Expander</c> safe to carry here — the two would
-    /// otherwise report one defect twice, which is why <c>XQ1002</c>'s stock set omits it.
+    /// otherwise report one defect twice, which is why <c>BNXQ1002</c>'s stock set omits it.
     /// <c>TextEditor</c> is AvaloniaEdit's, and is here because the walker this gate replaced carried
     /// it; dropping it would be a behaviour change wearing the clothes of a refactor.
     /// <para>
@@ -212,7 +212,7 @@ public sealed class AccessibilityCoverageTests
         int stock = stockRule.Analyze(librarySubject).Inspected;
         Assert.True(
             stock >= StockInspectedFloor,
-            $"XQ1002's stock element names inspected {stock} elements in the library's own markup, below "
+            $"BNXQ1002's stock element names inspected {stock} elements in the library's own markup, below "
             + $"the floor of {StockInspectedFloor}. Either the library subject has narrowed onto ground "
             + "with less markup, or the stock names have stopped matching it — and a clean result would "
             + "no longer mean the markup is clean.");
@@ -357,7 +357,7 @@ public sealed class AccessibilityCoverageTests
         int inspected = new InteractiveAutomationNameRule(ElementNames()).Analyze(library).Inspected;
         Assert.True(
             declared.Count == inspected,
-            $"This test reads {declared.Count} interactive elements in the library's markup and XQ1002 "
+            $"This test reads {declared.Count} interactive elements in the library's markup and BNXQ1002 "
             + $"inspects {inspected}. They must agree, or this gate requires less than the markup gate reads.");
 
         List<string> anonymous = [.. declared.Where(d => d.Part is null).Select(d => d.Owner)];

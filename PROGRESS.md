@@ -79,7 +79,9 @@ names outright. **Plan 00023 phase 1 is done.** **Plan 00025 is complete and mer
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
 reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
-00029 phases* below has the record.
+00029 phases* below has the record. **Plan 00028 is under way** — both quality packages at
+`2026.3.928`, every rule re-read at the new pins — on `build/every-rule-re-read-here`; *Plan 00028
+phases* below has where it stands.
 
 ### What ships
 
@@ -541,6 +543,16 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00028 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 0 The pins and the renames | S | done | Both pins at `2026.3.928`, not the plan's 925 — `DECISIONS.md` has why. Every rule id renamed in current text, 49 of them across the tests, `scripts/mutate-gates.cs`, `scripts/xq1004-skips.*` and `AGENTS.md`; plan 00025's records keep theirs. Re-read over `main` with plan 00029 on it, as the plan's risks ask, and it reads as the plan measured: the build clean under `-warnaserror`, AssemblyQuality's `[RequiresUnreferencedCode]` raising nothing in the test build; the suite red on exactly `TemplatePartTests` — its expected skips no longer hold `DiffBuildController` — and `GridSlotTests` — `BNXQ1004` inspects 0 against a floor of 12 — in `en-US` and `de-DE`; `docs/theme-audit.md` unmoved |
+| 1 `BNXQ1003` | XS | not started | |
+| 2 `BNXQ1004` on its new guard; `BNXQ1005` declined | S | not started | |
+| 3 AssemblyQuality | S | not started | |
+| 4 The record | S | not started | |
 
 ## Plan 00029 phases
 

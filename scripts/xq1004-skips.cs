@@ -8,7 +8,7 @@
 // purpose — a file-based app takes it from Directory.Packages.props, so this measures whatever the
 // repository pins today, which is the version the marker must be re-measured against when it moves.
 //
-// Each shape below is markup XQ1004 cannot decide from literals alone. It is scanned, never compiled,
+// Each shape below is markup BNXQ1004 cannot decide from literals alone. It is scanned, never compiled,
 // so it can say things the XAML compiler would reject.
 //
 //   exit 0  no shape was skipped: the marker's claim holds at this pin — re-mark it with this version
