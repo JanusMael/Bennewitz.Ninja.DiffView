@@ -3475,3 +3475,21 @@ the fold it opened comes first — `Fold opened: rows 40–57` — because the p
 press, through the one `OpenFold` every opening goes through, placeholder, command or find alike. The
 rows given back are what a folding bug turns on, and a `DiffPaneRegion` member for one element of the
 text would have been a region the pane menu's context could never report.
+
+## Plan 00028 takes both packages at 928, not 925
+
+Plan 00028 was written against `2026.3.925` and approved that way; by the time its branch was cut,
+both packages had released `2026.3.928`, and the pins move there instead. AssemblyQuality 928 fixes a
+`FileNotFoundException` that 925 threw when a scanned public type's base class or interface lives in
+an assembly that will not load — such a type now goes to `Skipped` — and changes no rule and no id
+(its session, 2026-09-28). `BNAQ1003` loads nothing and never skips, so no assertion that its
+`Skipped` is empty is written: it could not fail. XamlQuality 928 is 925 plus three opt-in rules —
+`BNXQ1007`, an explicit `AutomationId` on every interactive control; `BNXQ1008`, a control in a
+zero-size grid slot hidden by `IsVisible`; `BNXQ1009`, item containers named by what they show — and
+nothing in the audit or the theme audit changed from 925 (its session, 2026-09-28). None of the three
+is adopted here: `BNXQ1007` would report every interactive control this library ships, and whether
+controls carry an `AutomationId` is a decision of its own, not a pin's.
+
+The plan's readings were taken at 925 over `c465c65`. Phase 0 re-read the suite at 928 over `main`,
+with plan 00029 on it, and it was red on exactly the two tests the plan predicts, for the reasons it
+gives.

@@ -17,7 +17,7 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// positive control that must produce a finding, using the **same rule instance** — a control built
 /// from a different prefix proves only that the library works.
 /// <para>
-/// ⚠ <b>That holds of <c>AQ1001</c> as much as of the other two.</b> Measured reporting
+/// ⚠ <b>That holds of <c>BNAQ1001</c> as much as of the other two.</b> Measured reporting
 /// <c>inspected=2 findings=1</c> over a fixture, its <c>Inspected</c> is a candidate count like the
 /// others', so a dead predicate over <c>DiffView.Core</c> would report today's <c>2 / 0</c> exactly.
 /// <see cref="TokenDefaultControl"/> is its control.
@@ -76,7 +76,7 @@ public sealed class AssemblyQualityTests
     }
 
     /// <summary>
-    /// A public method defaulting its <see cref="CancellationToken"/>, so <c>AQ1001</c>'s gate has
+    /// A public method defaulting its <see cref="CancellationToken"/>, so <c>BNAQ1001</c>'s gate has
     /// something its own rule instance must find. Removing the default turns that control red.
     /// </summary>
     public static class TokenDefaultControl
@@ -103,14 +103,14 @@ public sealed class AssemblyQualityTests
         // reference DiffPlex *today*; DiffPlex is already a declared dependency of its package, so one
         // `using DiffPlex.Model;` there emits the reference with no csproj change, and the line above
         // stops telling the two subjects apart while this gate stays green. What cannot drift that way
-        // is the negative, because AQ1003 in this same file is what holds it: the model references no
+        // is the negative, because BNAQ1003 in this same file is what holds it: the model references no
         // UI framework, and the assembly a swap would reach references three.
         Assert.DoesNotContain(
             model.Assemblies[0].GetReferencedAssemblies(),
             a => a.Name?.StartsWith(UiFramework, StringComparison.Ordinal) == true);
 
         AssemblyRuleResult result = rule.Analyze(model);
-        Assert.True(result.Inspected > 0, "AQ1002 examined no signatures at all.");
+        Assert.True(result.Inspected > 0, "BNAQ1002 examined no signatures at all.");
         Assert.True(
             result.Findings.Count == 0,
             "The model's public surface names a DiffPlex type:" + Environment.NewLine
@@ -138,7 +138,7 @@ public sealed class AssemblyQualityTests
         Assert.Contains(ui.Assemblies[0].GetReferencedAssemblies(), a => a.Name?.StartsWith(UiFramework, StringComparison.Ordinal) == true);
 
         AssemblyRuleResult result = rule.Analyze(model);
-        Assert.True(result.Inspected > 0, "AQ1003 examined no references at all.");
+        Assert.True(result.Inspected > 0, "BNAQ1003 examined no references at all.");
         Assert.True(
             result.Findings.Count == 0,
             "The model layer references the UI framework:" + Environment.NewLine
@@ -152,7 +152,7 @@ public sealed class AssemblyQualityTests
     }
 
     /// <summary>
-    /// ⚠ <b>Reports today, and that is the point of the gate.</b> Adopting <c>AQ1001</c> means the
+    /// ⚠ <b>Reports today, and that is the point of the gate.</b> Adopting <c>BNAQ1001</c> means the
     /// two public entry points take a <see cref="CancellationToken"/> the caller had to write.
     /// </summary>
     [Fact]
@@ -170,13 +170,13 @@ public sealed class AssemblyQualityTests
         CancellationTokenRule rule = new();
         AssemblyRuleResult result = rule.Analyze(model);
 
-        Assert.True(result.Inspected > 0, "AQ1001 examined no tokens at all — it has stopped looking.");
+        Assert.True(result.Inspected > 0, "BNAQ1001 examined no tokens at all — it has stopped looking.");
         Assert.True(
             result.Findings.Count == 0,
             "A public method defaults its CancellationToken:" + Environment.NewLine
             + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
 
-        // ⛔ The standing control. AQ1001's Inspected is a candidate count like the other two rules', so
+        // ⛔ The standing control. BNAQ1001's Inspected is a candidate count like the other two rules', so
         // a predicate that has stopped firing reports today's 2 / 0 exactly — and the risk is a pin bump,
         // which a one-time mutation such as "a new method with a defaulted token" never sees again.
         AssemblyRuleResult control = rule.Analyze(AssemblyScanContext.Of(typeof(TokenDefaultControl).Assembly));

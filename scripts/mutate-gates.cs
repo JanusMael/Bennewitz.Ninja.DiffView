@@ -381,7 +381,7 @@ List<Mutation> mutations =
             @"AutomationProperties.Name="""""),
         "Every_interactive_control_has_an_automation_name"),
 
-    // XQ1003. Its floor sits well under its population deliberately, because what it guards is the
+    // BNXQ1003. Its floor sits well under its population deliberately, because what it guards is the
     // silent Clean(0) the rule returns when it is handed no assemblies.
     new("the template-part scan is handed no assemblies", PartsClass,
         () => Sub(PartsGate,
@@ -513,7 +513,7 @@ List<Mutation> mutations =
             @"XamlScanContext library = XamlScanContext.Load(RepoPaths.Source(""src/DiffView.Core""));"),
         "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
 
-    // ---- XQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
+    // ---- BNXQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
     // about an out-of-range index: a column index past a five-column grid SURVIVES this gate, measured.
     // The 16-pixel spacer between the panes is the one fixed slot in the library's grids, so it is the
     // only place this can be shown.
@@ -543,12 +543,12 @@ List<Mutation> mutations =
             @"</ResourceDictionary>(\s*)$", "</ResourceDictionar>$1"),
         "AVLN1001", Expect.Build),
 
-    // ---- AQ1002: the diff engine must not reach the model's public surface.
+    // ---- BNAQ1002: the diff engine must not reach the model's public surface.
     new("a DiffPlex type appears on the model's public surface", AssemblyClass,
         () => AddPublicMember("    /// <summary>Planted.</summary>\n    public static DiffPlex.Model.DiffResult? Leak() => null;"),
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
-    new("AQ1002's namespace prefix is misspelled", AssemblyClass,
+    new("BNAQ1002's namespace prefix is misspelled", AssemblyClass,
         () => Sub(AssemblyGate, @"DiffEngine = ""DiffPlex""", @"DiffEngine = ""DifPlex"""),
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
@@ -567,7 +567,7 @@ List<Mutation> mutations =
     // ⛔ The negative subject guard exists because the positive one is a coincidence: the UI assembly
     // does not reference DiffPlex TODAY. A plain swap stops on the coincidence first, so this makes the
     // coincidence false before swapping — which is the only state the negative guard exists for.
-    new("the UI assembly uses DiffPlex, and AQ1002's subject is swapped to it", AssemblyClass,
+    new("the UI assembly uses DiffPlex, and BNAQ1002's subject is swapped to it", AssemblyClass,
         () => Write(UiProbe,
                 "namespace Bennewitz.Ninja.DiffView;\n\n"
                 + "/// <summary>Planted by scripts/mutate-gates.cs.</summary>\n"
@@ -577,37 +577,37 @@ List<Mutation> mutations =
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
     // Each rule's Inspected > 0 guard, reached by handing that rule an empty context — the analogue of
-    // XQ1003 handed no assemblies. The nth, because each test phrases its call identically.
-    new("AQ1002 is handed nothing to read", AssemblyClass,
+    // BNXQ1003 handed no assemblies. The nth, because each test phrases its call identically.
+    new("BNAQ1002 is handed nothing to read", AssemblyClass,
         () => SubNth(AssemblyGate, AnalyzeModel, AnalyzeNothing, 1),
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
     // The positive control reads the ADOPTED instance, so an instance configured apart from the constant
     // its subject guard reads is what it exists to catch.
-    new("AQ1002's adopted instance names a prefix nothing uses", AssemblyClass,
+    new("BNAQ1002's adopted instance names a prefix nothing uses", AssemblyClass,
         () => Sub(AssemblyGate, @"SurfaceLeakRule rule = new\(\[DiffEngine\]\);",
             @"SurfaceLeakRule rule = new([""DiffPlex.NoSuchNamespace""]);"),
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
-    // ---- AQ1003: the model must bind against no UI framework.
+    // ---- BNAQ1003: the model must bind against no UI framework.
     new("the model uses an Avalonia type", AssemblyClass,
         () => AddAvaloniaReference() && AddPublicMember(AvaloniaPointMember),
         "The_model_layer_binds_against_no_ui_framework"),
 
-    new("AQ1003's namespace prefix is misspelled", AssemblyClass,
+    new("BNAQ1003's namespace prefix is misspelled", AssemblyClass,
         () => Sub(AssemblyGate, @"UiFramework = ""Avalonia""", @"UiFramework = ""Avalonai"""),
         "The_model_layer_binds_against_no_ui_framework"),
 
-    new("AQ1003 is handed nothing to read", AssemblyClass,
+    new("BNAQ1003 is handed nothing to read", AssemblyClass,
         () => SubNth(AssemblyGate, AnalyzeModel, AnalyzeNothing, 2),
         "The_model_layer_binds_against_no_ui_framework"),
 
-    new("AQ1003's adopted instance forbids a prefix nothing references", AssemblyClass,
+    new("BNAQ1003's adopted instance forbids a prefix nothing references", AssemblyClass,
         () => Sub(AssemblyGate, @"ForbiddenReferenceRule rule = new\(\[UiFramework\]\);",
             @"ForbiddenReferenceRule rule = new([""Avalonia.NoSuchAssembly""]);"),
         "The_model_layer_binds_against_no_ui_framework"),
 
-    // ---- The nuspec gate, and the pair that is the whole evidence for adopting both it and AQ1003:
+    // ---- The nuspec gate, and the pair that is the whole evidence for adopting both it and BNAQ1003:
     // one violation, two mechanisms, each blind to what the other sees.
     new("the model package gains a dependency nothing uses", PackagingClass,
         () => AddAvaloniaReference(),
@@ -641,31 +641,31 @@ List<Mutation> mutations =
 
     new("GREEN BY DESIGN: PrivateAssets hides a used type from the nuspec", PackagingClass,
         () => AddAvaloniaReference(@"PrivateAssets=""all"" ") && AddPublicMember(AvaloniaPointMember),
-        "nothing — the nuspec cannot see it, which is why AQ1003 is adopted too", Expect.Green),
+        "nothing — the nuspec cannot see it, which is why BNAQ1003 is adopted too", Expect.Green),
 
-    new("the same violation, caught by AQ1003 instead", AssemblyClass,
+    new("the same violation, caught by BNAQ1003 instead", AssemblyClass,
         () => AddAvaloniaReference(@"PrivateAssets=""all"" ") && AddPublicMember(AvaloniaPointMember),
         "The_model_layer_binds_against_no_ui_framework"),
 
-    new("GREEN BY DESIGN: an unused reference is invisible to AQ1003", AssemblyClass,
+    new("GREEN BY DESIGN: an unused reference is invisible to BNAQ1003", AssemblyClass,
         () => AddAvaloniaReference(),
         "nothing — Roslyn emits no reference for an unused package, which is why the nuspec gate is adopted too",
         Expect.Green),
 
     // ---- Every gate's subject, one at a time. Not the first three times over.
-    new("AQ1002's subject is swapped for the UI assembly", AssemblyClass,
+    new("BNAQ1002's subject is swapped for the UI assembly", AssemblyClass,
         () => SwapSubject(1),
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
-    new("AQ1003's subject is swapped for the UI assembly", AssemblyClass,
+    new("BNAQ1003's subject is swapped for the UI assembly", AssemblyClass,
         () => SwapSubject(2),
         "The_model_layer_binds_against_no_ui_framework"),
 
-    new("AQ1001's subject is swapped for the UI assembly", AssemblyClass,
+    new("BNAQ1001's subject is swapped for the UI assembly", AssemblyClass,
         () => SwapSubject(3),
         "No_public_entry_point_defaults_its_cancellation_token"),
 
-    // ---- AQ1001. A NEW method, because re-ordering the existing signature back would break 71 call
+    // ---- BNAQ1001. A NEW method, because re-ordering the existing signature back would break 71 call
     // sites and be killed by the build, testing nothing.
     new("a public method defaults its cancellation token", AssemblyClass,
         () => AddPublicMember(
@@ -673,11 +673,11 @@ List<Mutation> mutations =
             + "    public static void Probe(CancellationToken cancellationToken = default)\n    {\n    }"),
         "No_public_entry_point_defaults_its_cancellation_token"),
 
-    new("AQ1001 is handed nothing to read", AssemblyClass,
+    new("BNAQ1001 is handed nothing to read", AssemblyClass,
         () => SubNth(AssemblyGate, AnalyzeModel, AnalyzeNothing, 3),
         "No_public_entry_point_defaults_its_cancellation_token"),
 
-    new("AQ1001's control fixture stops defaulting its token", AssemblyClass,
+    new("BNAQ1001's control fixture stops defaulting its token", AssemblyClass,
         () => Sub(AssemblyGate, @"public static void Defaults\(CancellationToken cancellationToken = default\)",
             "public static void Defaults(CancellationToken cancellationToken)"),
         "No_public_entry_point_defaults_its_cancellation_token"),
@@ -775,7 +775,7 @@ if (guardsOnly)
     if (expired > 0)
     {
         Console.Error.WriteLine($"mutate-gates: {expired} inert-at-pin marker(s) no longer match the pin. Re-measure —");
-        Console.Error.WriteLine("scripts/xq1004-skips.sh for XQ1004 — then re-mark the guard or give it a mutation.");
+        Console.Error.WriteLine("scripts/xq1004-skips.sh for BNXQ1004 — then re-mark the guard or give it a mutation.");
         return 1;
     }
 
@@ -1352,7 +1352,7 @@ enum Expect
 
     /// <summary>
     /// ⚠ It must stay <b>green</b>, and that is the result. Two of them exist, and together they are the
-    /// whole evidence for adopting both <c>AQ1003</c> and the nuspec gate rather than treating either as a
+    /// whole evidence for adopting both <c>BNAQ1003</c> and the nuspec gate rather than treating either as a
     /// superset of the other: <c>PrivateAssets="all"</c> hides a used type from the nuspec, and Roslyn
     /// emits no reference for an unused package, so each gate is blind to exactly what the other catches.
     /// A green here is asserted, not tolerated — if one starts failing, the claim has moved.

@@ -191,7 +191,7 @@ no dates, no counts.
 - **An assertion that cannot fail at the current pin is marked, not claimed.** The line above it reads
   `// inert-at-pin: <package> <version>`, which excuses that one guard only while
   `Directory.Packages.props` pins the package at that version. A moved pin, or a mutation that trips the
-  guard anyway, fails the run. For XQ1004's marker, `scripts/xq1004-skips.sh` re-measures the claim
+  guard anyway, fails the run. For BNXQ1004's marker, `scripts/xq1004-skips.sh` re-measures the claim
   against whatever is pinned.
 - **The proof is point-in-time: a full run is owed after any change to a gate file, a gated subject or
   a pin.** A full run takes minutes and CI does not make one. What CI runs is `--guards`, on Linux in
@@ -199,7 +199,7 @@ no dates, no counts.
   against the current pin, and exits non-zero on an expired marker or a gate-file `throw`. It proves no
   guard.
 - **Two mutations must stay green, and that is asserted**: `PrivateAssets="all"` hides a used type
-  from the nuspec gate, and Roslyn emits no reference for an unused package, so `AQ1003` and the
+  from the nuspec gate, and Roslyn emits no reference for an unused package, so `BNAQ1003` and the
   nuspec gate are each blind to exactly what the other catches. A red there is `unexpected-red` and
   fails — the complementarity claim is the whole reason both are adopted.
 - **`scripts/mutate-gates.sh` refuses to start on a dirty `src` or `tests`** unless `--force`,

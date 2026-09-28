@@ -367,7 +367,7 @@ public sealed class PackagingTests
     /// means every addition is a decision someone had to write down here.
     /// </para>
     /// <para>
-    /// ⚠ <b>This is not what <c>AQ1003</c> covers, and neither contains the other.</b> That rule
+    /// ⚠ <b>This is not what <c>BNAQ1003</c> covers, and neither contains the other.</b> That rule
     /// reads the compiled assembly's references, so it sees a type actually *used* — including one
     /// reached through <c>PrivateAssets="all"</c>, which never reaches a nuspec at all and hands a
     /// consumer a <c>FileNotFoundException</c>. This sees what a consumer restores, including a

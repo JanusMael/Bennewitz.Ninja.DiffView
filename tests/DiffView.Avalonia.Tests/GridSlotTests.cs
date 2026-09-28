@@ -8,7 +8,7 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <c>XQ1004</c>, from <c>Bennewitz.Ninja.XamlQuality</c>. ⭐ <b>The defect is in the automation tree,
+/// <c>BNXQ1004</c>, from <c>Bennewitz.Ninja.XamlQuality</c>. ⭐ <b>The defect is in the automation tree,
 /// not on screen.</b> A child whose own <c>MinHeight</c> exceeds its row's fixed height is arranged at
 /// the size it asked for and keeps that size in the automation tree, so a UI harness or a screen reader
 /// sees a pane the user cannot. Whether it is also <em>drawn</em> depends on the container —
@@ -24,7 +24,7 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// <para>
 /// ⭐ <b>Adopted at <c>2026.3.924</c>, the first published release carrying it</b>, where it measures
 /// <b>22 inspected, 0 findings, 0 skipped</b>, all 22 in this library's own themes and none in the demo.
-/// Declining an <em>inert</em> rule and declining a <em>live</em> one are different acts: <c>XQ1001</c>
+/// Declining an <em>inert</em> rule and declining a <em>live</em> one are different acts: <c>BNXQ1001</c>
 /// inspects nothing here and could only report what a broken codebase also reports, where this one
 /// inspects 22 real placements and can be made to fail.
 /// </para>
@@ -57,7 +57,7 @@ public sealed class GridSlotTests
 
         Assert.True(
             result.Inspected >= InspectedFloor,
-            $"XQ1004 inspected {result.Inspected} grid placements, below the floor of {InspectedFloor}. "
+            $"BNXQ1004 inspected {result.Inspected} grid placements, below the floor of {InspectedFloor}. "
             + "This floor sits well under the population, so it has not been tripped by a child being "
             + "added or removed: the rule has largely stopped seeing placements. Zero means the scan "
             + "reached no markup at all, which is indistinguishable from a repository whose grids agree.");
@@ -74,7 +74,7 @@ public sealed class GridSlotTests
         // inert-at-pin: Bennewitz.Ninja.XamlQuality 2026.3.924
         Assert.True(
             result.Skipped.Count == 0,
-            "XQ1004 could not read some grids, so the placements inside them went unchecked:"
+            "BNXQ1004 could not read some grids, so the placements inside them went unchecked:"
             + Environment.NewLine
             + string.Join(Environment.NewLine, result.Skipped.Select(s => "  " + s)));
 

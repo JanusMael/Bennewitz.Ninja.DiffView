@@ -98,7 +98,7 @@ public sealed class TemplatePartTests
 
         Assert.True(
             result.Inspected >= InspectedFloor,
-            $"XQ1003 inspected {result.Inspected} template parts, below the floor of {InspectedFloor}. "
+            $"BNXQ1003 inspected {result.Inspected} template parts, below the floor of {InspectedFloor}. "
             + "This floor sits well under the population, so it has not been tripped by a part being "
             + "added or removed: the rule has largely stopped seeing parts. Zero in particular means "
             + "the scan carries no assemblies — TemplatePartRule reports Clean(0) in that case, which "
