@@ -78,8 +78,8 @@ and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed 
 names outright. **Plan 00023 phase 1 is done.** **Plan 00025 is complete and merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete** on `feat/the-demo-says-what-you-did`, committed locally and not pushed: the demo logs
-what its user did, and the library the two facts nothing public reports. It sits on plan 00021's
-branch, so it re-parents onto `main` once PR #6 merges; *Plan 00029 phases* below has the record.
+what its user did, and the library the two facts nothing public reports. It sits on `main` since PR
+#6 merged, re-parented with no change to its tree; *Plan 00029 phases* below has the record.
 
 ### What ships
 
