@@ -182,7 +182,11 @@ viewer opens no menu of its own, so a `ContextMenu` you set on it is the one a r
 **Text.** See below — it is not opt-in.
 
 **Logging.** Set `SideBySideDiffView.LoggerFactory` and the control logs builds, faults and grammar
-resolution through it.
+resolution through it. What a user does in a pane — where a click landed, the selection a pointer
+finished, a fold that opened — goes under `DiffViewLogCategories.Interaction` at `Debug`, so a host
+logging at `Information` is told none of it; enable that one category to see it
+(`builder.AddFilter(DiffViewLogCategories.Interaction, LogLevel.Debug)`). Those lines carry positions
+and counts, never document text.
 
 ## Styling the viewer and the editor together
 

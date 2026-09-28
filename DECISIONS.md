@@ -3382,3 +3382,96 @@ moves. The order is therefore (Brian, 2026-09-25): plan 00021; then both bumps, 
 branch; then plan 00023's phases 2–3, plan 00026 and plan 00023's phases 4–5, as decided above. The
 bumps' own plan decides `BNXQ1004`, `BNXQ1005` and `AQ1004` on measurements; this entry decides only
 where it goes.
+
+## Plan 00029 goes first, and the padding fix rides its branch
+
+Brian found a bug by hand in the demo on 2026-09-28 — padding lost on lines that begin with
+whitespace once *Show whitespace* is on — and reproducing it took a launch, a menu drive and three
+captures, because the demo's log said what the control did and nothing of what its user did. Plan
+00029 is the answer to that, so it goes first (Brian, 2026-09-28): plan 00029, then plan 00028's two
+pin bumps, then plan 00023's phases 2–3 with plan 00026 drafted alongside, then plan 00026, then plan
+00023's phases 4–5 — one branch at a time from `main`. The padding fix was committed on its own
+branch the same day and then carried onto plan 00029's as a commit of its own, ahead of the plan's
+phases (Brian: "Fold it into plan 00029's branch").
+
+## The demo raises one category rather than lowering its log
+
+The library writes its interaction lines under `DiffView.Interaction` at `Debug`, and the demo keeps
+`Information`. `LayeredEditors.Avalonia.Diagnostics` owns the demo's Serilog configuration and offers
+no per-source minimum, so the demo cannot lower the one category the way a host with its own
+pipeline would. `DemoLogging` therefore hands the library a factory that writes that one category's
+`Debug` at `Information` and passes every other category through as it comes — asserted over every
+constant in `DiffViewLogCategories` by
+`DemoActionLogTests.Only_the_interaction_category_is_raised_to_the_level_the_demo_keeps`. Lowering
+the whole log to `Debug` was the alternative, and it would have buried the lines this plan adds under
+every build's.
+
+## The interaction lines mark their string values literal
+
+Serilog renders a string property quoted unless its hole says `:l`, so the demo's log first read
+`Left pane: click "in the text at" "3:4"` — a phrase of the sentence written as though it were a
+value. The library's own tests format through `Microsoft.Extensions.Logging`, which writes a string as
+it is, and could not see it; the demo's test, which reads the demo's real Serilog pipeline, could.
+Every string hole of the three interaction templates is now `:l`, which
+`Microsoft.Extensions.Logging` ignores on a string, and `DiffViewLog.PaneName` feeds the side to them
+as a string, because `:l` on a hole given an enum makes `Enum` throw a `FormatException`. The older
+lines keep their look — `State "Building" → "Ready"` quotes values that are values.
+
+## The demo logs a command by name and by where it came from
+
+The plan's decision stands: a command is written by its `DiffCommand` name, never by the chord that
+ran it, because the name survives a rebind and a German keyboard and a key is how typing would leak.
+Each line also says where the command came from — `from the keyboard`, or a menu named by the surface
+it opened on, `from the left pane menu`, `from the connector menu`, `from the left header menu` —
+because a chord and a menu entry fail differently, and one `PaneContextMenuOpening` serves the text,
+both gutters, the connector and the map. An entry with no verb — a host's own, or a save or a revert
+— is written by its header in quotes: `Command "What did I click?" from the left pane menu`.
+
+## A chord is written when a binding ran it
+
+The second pass by hand found Escape, pressed to dismiss a context menu with no find bar open,
+written as `Command CloseFind`: the action log wrote any key that matched one of the view's gestures.
+Avalonia's `KeyboardDevice` tries the key bindings of the focused element and its ancestors before it
+raises the key event, and `KeyBinding.TryHandle` marks the key handled only when its command could
+run and did — both read from Avalonia 12.1.2 — so a handler first on the key event's route sees the
+key handled exactly when a command ran, and the demo writes a chord only then. Asking the command's
+`CanExecute` instead was tried first and comes too late: the binding has already run it, and
+`CloseFind`, having closed the bar, answers no. The handled key made the earlier check that a view
+holds the keyboard redundant — a chord pressed anywhere else is one whose bindings were never tried —
+so that check went, with its mutation.
+
+The demo's own menu entries are wrapped for logging in the same `PaneContextMenuOpening` the demo
+adds them in, so `ActionLog` is constructed after the demo subscribes: subscribed first, it wrapped
+the control's entries and missed the demo's — the order a test now holds.
+
+## An edit is any change to a side's document
+
+The demo writes an edit once the side's changes have rested for half a second: the lines touched and
+the line breaks added and removed. Every change to a side's document counts, whatever made it — a
+keystroke, a paste, a copy from the other side, a revert. A draft skipped read-only panes and so
+dropped the one case that is both: a revert after the side was made read-only again. The unified
+pane is not watched at all, because its document is the control's composition of both sides and is
+rewritten whenever the model changes; nor is the viewer, which binds no key, opens no menu, copies
+nothing and is never edited. The clicks and selections in both are the library's to log.
+
+## A click is written as the click, not as what it found
+
+The pass by hand read the demo's log back and two of its five steps did not read as what was done. A
+click on a copy arrow, made over a selection, was written as that selection all over again, and the
+click not at all; and a click on a fold's placeholder was written at the caret, which the placeholder
+had left where it was. Phase 1's release handler wrote the selection whenever there was one, and a
+click at the caret wherever the caret happened to be, and its tests had only ever clicked where the
+caret went and dragged where there was no selection before. The press now takes the selection and the
+caret as it finds them: a release writes a selection only when the gesture made or changed it, and a
+click that moved no caret — a right-click, or an arrow or a placeholder, each of which takes the press
+— is written at the line under the pointer, with no column to claim a character the pointer never
+touched. A right-click says so.
+
+## A click on a fold's placeholder is a click in the text, after the fold it opened
+
+The plan's table names a fold's placeholder among the regions a click can land in. A placeholder is
+an element in the text, so a click on it is written as a click in the text at the placeholder's line;
+the fold it opened comes first — `Fold opened: rows 40–57` — because the placeholder opens it on the
+press, through the one `OpenFold` every opening goes through, placeholder, command or find alike. The
+rows given back are what a folding bug turns on, and a `DiffPaneRegion` member for one element of the
+text would have been a region the pane menu's context could never report.

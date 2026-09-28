@@ -25,6 +25,8 @@ no dates, no counts.
 | No renderer or margin reads `TextView.VisualLines` while `TextView.VisualLinesValid` is false | `VisualLinesInvalidException` during layout | `GuardedBackgroundRenderer.Draw`, `DiffMargin.Render` |
 | Line splitting agrees three ways: `LineSplitter`, DiffPlex `LineChunker`, AvaloniaEdit `NewLineFinder` | Kinds and padding land on the wrong lines for CR or mixed input | `DiffPane.Lines` count equals `TextDocument.LineCount`; test `DiffPanePresenterTests.The_model_and_the_editor_count_the_same_lines_on_mixed_line_endings` |
 | Document text is never logged | A secret under comparison lands in a log file | `DiffPanePresenter.ReportFault` goes through `DiffViewLog.RenderFault`, which logs decorator, side, line number and — for a grammar — its language, never text |
+| The interaction lines are `DiffViewLogCategories.Interaction` at `Debug`, and that category's level is the whole switch — there is no property beside it | A host at the usual `Information` is shown every click; or a second switch disagrees with the first | `DiffViewLog.PaneClick`, `DiffViewLog.PaneSelection`, `DiffViewLog.FoldOpened`; test `InteractionLogTests.A_host_logging_at_Information_is_told_nothing` |
+| Every string hole of an interaction template is `:l`, and no hole given an enum is | Under Serilog a phrase of the sentence is quoted as though it were a value — `click "in the text at" "3:4"`; and `:l` on an enum makes `Enum` throw a `FormatException` from inside a log call | `DiffViewLog.PaneName`; test `DemoActionLogTests.The_library_s_interaction_lines_reach_the_demo_s_log_at_the_level_it_keeps`, the one test that reads a Serilog pipeline — the library's own tests format through `Microsoft.Extensions.Logging`, which writes a string as it is and cannot see the difference |
 | The unified view's pane document is the exception to the rule above, and the only one: `InlineDiffView` composes it from both sides and rewrites it when the model changes, which is why that pane is read-only and why its sides' documents stay off screen | An edit lands in a document that is half one file and half the other, or the composed text stops matching the unified table | `InlineDiffView.ComposeUnifiedText`; §7 |
 | Syntax highlighting is a foreground: TextMate colours the tokens and nothing else, so the row fills, the word pieces, the match highlights and the selection all compose over it | Colours fight, or a grammar hides the diff | `SyntaxHighlighting` installs `AvaloniaEdit.TextMate` and sets a grammar and a theme only; test `SyntaxSnapshotTests.Syntax_colour_and_the_inserted_fill_compose_on_the_same_row` |
 | A grammar is chosen from `DiffPanePresenter.SyntaxFileName`'s extension; no extension, or one no grammar claims, is plain text and **not** a fault | A `.txt` pair puts the control in `Degraded`, or an unknown file throws | `SyntaxHighlighting.GrammarFor`; tests `SyntaxTests.An_extension_no_grammar_claims_leaves_plain_text_and_the_state_stays_ready`, `SyntaxTests.A_source_with_no_name_at_all_stays_plain_text` |
@@ -250,7 +252,7 @@ no dates, no counts.
   keyboard focus belongs to one device, and focusing the second window's pane takes it from the first.
 - Rendered text must be machine-independent (`SmokeSnapshotTests`, `PresenterSnapshotTests`) — no
   build time, no machine's font. Static seams: `DebugFlags.ResetForTesting`,
-  `DiffViewStrings.ResetForTesting`.
+  `DiffViewStrings.ResetForTesting`, `DemoLogging.ResetForTesting`.
 - ⛔ **A snapshot proves Linux's rendering and nothing else.** Every committed baseline was rendered
   and reviewed on Linux, and rasterization is the platform's: the bundled font fixes which glyphs are
   drawn and nothing about how, so the same frame differs by 10–13% of its pixels on Windows and
@@ -410,6 +412,8 @@ does.
 | A grammar that will not install turns the pane back to plain text, reports one fault naming the language, and is retried only when `SyntaxFileName` or `UseSyntaxHighlighting` changes — never by a rebuild, which would repeat the same failure | The control flickers between `Ready` and `Degraded` on every option change, or a broken grammar is never retried after the file changes | `DiffPanePresenter.DisableSyntax`, `UpdateSyntax`; test `SyntaxTests.A_grammar_that_will_not_install_degrades_the_control_names_it_and_leaves_the_diff_highlighting` |
 | `DiffPanePresenter.SyntaxFault` outlives `ResetFaults`, and `DiffBuildController.ApplyResult` reads `PaneFault()` **before** applying the model, so a fault raised while a build ran lands as `Degraded` when the build does | A grammar failure during `Building` is swallowed by the `Ready` that follows | `DiffBuildController.ApplyResult`, `PaneFault`; the test above |
 | The find query is never logged — only its length — because Ctrl+F pre-fills it from the pane's selection, so it may be document text | A secret under comparison reaches a log file through the find bar | `DiffViewLog.FindStarted`, `DiffViewLog.FindFailed`; the sentinel test above |
+| A pane gesture is read at the **press** and written at the release. The press takes the surface it landed on, and the selection and the caret as it finds them: the text area captures the pointer on a press it takes — a click in the change-marker column among them — and every event after that names the text area as its source. The release writes a selection only when the gesture made or changed it, and a click that moved no caret at the line under the pointer | A click in a margin written as a click in the text; a click on a copy arrow or a fold's placeholder — each takes the press — written as the selection it found, or at a caret it never moved | `DiffPanePresenter.OnPointerPressedForLog`, `DiffPanePresenter.OnPointerReleasedForLog`, `DiffPanePresenter.RegionOf`, `DiffPanePresenter.SpanOf`; tests `InteractionLogTests.A_click_says_which_surface_of_the_pane_it_landed_on`, `InteractionLogTests.A_click_that_leaves_a_selection_as_it_was_is_written_as_the_click`, `InteractionLogTests.A_right_click_is_written_where_the_pointer_was_because_it_leaves_the_caret`, `InteractionLogTests.A_click_on_a_fold_placeholder_is_written_at_its_line_after_the_fold_it_opened` |
+| Every fold opening — a placeholder, a command or a find — goes through the one `OpenFold` its view has, which writes the line | A way to open a fold that the log never mentions | `DiffBuildController.OpenFold`, `InlineDiffView.OpenFold`; test `InteractionLogTests.Opening_a_fold_is_logged_with_the_rows_it_gives_back` |
 | **Which surface a menu is about comes from the event's source, not from the pointer's x** — and by identity against the pane's own two margins, not by type. A margin the library did not draw is left alone rather than answered with the text's menu | A menu for the wrong gutter at a boundary pixel, which is plan 00008's 8-px header again; or a host's own margin answered with verbs that are not its | `DiffPanePresenter.OnContextRequested`; tests `PaneContextMenuTests.Each_gutter_reports_its_own_region_and_the_text_still_reports_text`, `A_margin_the_library_did_not_draw_is_left_alone`. Matching by type does not compile here: `DiffPanePresenter` exposes a property named `ChangeMarkerMargin`, which shadows the type of the same name in a pattern and fails as **CS0150, "a constant value is expected"** — which names neither the property nor the shadowing |
 | **A right-click navigates nothing.** The connector and the map act on the left button only, and their context handlers *offer* the verb rather than performing it. Off every polygon the connector opens no menu at all: its every entry is about a block, and the empty column is the splitter, whose verb is a drag | A right-click jumps the panes or scrolls them before the menu opens; or a menu of four greyed rows over the splitter, each promising a state in which it would work | `ChangeConnectorGutter.OnPointerPressed`, `DiffMinimap.OnPointerPressed`, `SideBySideDiffView.OnConnectorContextRequested`, `OnMinimapContextRequested`; tests `ConnectorAndMapMenuTests.A_right_click_on_the_connector_names_the_polygons_own_block_and_jumps_nowhere`, `A_right_click_on_the_map_names_the_row_it_reports_and_scrolls_nothing`, `A_right_click_off_every_polygon_is_the_splitter_and_opens_nothing` |
 | **A row-shaped context names the line the row has, and the surface says whose.** The connector and the map are not panes, and `AlignedRow` carries a nullable line per side, so a row has up to two lines and at least one. `Side` is the map's lane under the pointer and `null` on the connector; `LineNumber` is the row's line on that side, or the left's then the right's where the surface names none; `SourceSide` says which, and `IsReadOnly` follows it. The connector reports no selection, naming no pane | A synthetic line number a consumer reads as truth; or `Side` read as "the unified view", which it meant until this plan | `SideBySideDiffView.RowContext`; test `ConnectorAndMapMenuTests.The_maps_context_names_the_lane_under_the_pointer_and_the_line_that_row_has`. The map's row is `RowForClick`, the row a *click* goes to, not `RowAtPixel` — and the two agree on any fixture with fewer rows than the map has pixels, so an assertion between them needs a document taller than the map: `The_maps_row_is_the_one_a_click_goes_to_not_the_one_the_pixel_starts_at` |
@@ -535,6 +539,18 @@ why.
 > `AGENTS.md` and the handoff notes both carried "this box cannot screenshot a window". **That is
 > false**, and the rest of this section is the recipe that works.
 
+- **Read the demo's log before reproducing anything.** Since plan 00029 it says what was done, not
+  only what the control did: the machine (`Host:`), the window's size and scaling, each choice from
+  the demo's menu with the state it left, each command by name and where it came from, each copy a
+  pane asked for, and each edit once it rests; and, from the library, raised to the demo's
+  `Information`, where each click in a pane landed, each selection a pointer made and each fold that
+  opened. Positions and counts, never text. The file is under `LogPaths.LogsDirectory` —
+  `$XDG_STATE_HOME/DiffView/logs`, or `~/.local/state/DiffView/logs` without it — and *Debug ▸ Open
+  logs folder* opens it. The log is also what says whether a driven step took: plan 00029's pass
+  grabbed frames a second or two stale while the log already had the action.
+- **`ActionLog` is built after the window's own `PaneContextMenuOpening` subscriptions**, because it
+  wraps the menu's entries for logging in that same event: built first, it misses the demo's own
+  entries (`DemoActionLogTests.A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header`).
 - **The session is Wayland (`XDG_SESSION_TYPE=wayland`) with XWayland at `DISPLAY=:0`, and the
   demo is an XWayland client** — Avalonia's X11 backend — so it has a real X window that can be
   grabbed. So does Beyond Compare (`/usr/bin/bcompare`).
@@ -653,6 +669,16 @@ Both cost time on **2026-09-13**, driving plan 00014 phase 4.
   same exit code §9 attributes to the harness reaping a background child, which sends you looking in
   entirely the wrong place. Close the window instead (`xdotool windowkill <id>`), or kill a PID you
   recorded at launch.
+
+### Mutter keeps override windows that are not menus
+
+A menu's popup is found as a viewable override-redirect window, and mutter keeps two of its own: a
+screen-sized *mutter guard window* and a 1×1 at (−100, −100). On **2026-09-28** a finder that took the
+tallest such window picked each in turn, and the 1×1, polled before the real popup had mapped, sent a
+menu click to (5, 729) on the screen. Filter both out by size, and refuse a click outside the popup's
+own bounds. After a synthetic right-click opens a context menu, X keyboard focus can also land on
+that 1×1 window, and every key after it reaches nothing until `xdotool windowactivate --sync <id>`
+gives the demo its focus back. The general lessons are XamlQuality's (§8).
 
 ### Tooltips cannot be driven from here
 
