@@ -157,17 +157,26 @@ internal sealed class ActionLog
     private static string? Unmarked(string? header) => header?.Replace("_", string.Empty, StringComparison.Ordinal);
 
     /// <summary>
-    /// A chord, as the command it runs and never as its keys: the name survives a rebind and a German
-    /// keyboard, and a key is how typing would leak. A view's key bindings fire only while the keyboard
-    /// is inside it, so a chord pressed anywhere else ran nothing.
+    /// A chord, as the command it ran and never as its keys: the name survives a rebind and a German
+    /// keyboard, and a key is how typing would leak. Avalonia tries the key bindings of the focused
+    /// element and its ancestors before it raises the key event, and a binding marks the key handled
+    /// only when its command could run and did — so this handler, first on the key event's route, sees
+    /// the key handled exactly when a command ran. One it sees unhandled ran nothing: Escape with no find
+    /// bar open, or a chord pressed where no view holds the keyboard, whose bindings were never tried.
     /// </summary>
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (_diff.IsVisible && _diff.IsKeyboardFocusWithin)
+        if (!e.Handled)
+        {
+            return;
+        }
+
+        // The one view on screen is the one whose bindings could have run it.
+        if (_diff.IsVisible)
         {
             LogChord(e, _diff.GestureFor);
         }
-        else if (_unified.IsVisible && _unified.IsKeyboardFocusWithin)
+        else if (_unified.IsVisible)
         {
             LogChord(e, _unified.GestureFor);
         }

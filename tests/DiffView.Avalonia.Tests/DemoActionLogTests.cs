@@ -160,6 +160,17 @@ public sealed class DemoActionLogTests
             Press(window, Key.F7, PhysicalKey.F7);
             Assert.Equal(0, window.Diff.CurrentChangeIndex);
 
+            // Found by the pass by hand: Escape with no find bar open closes nothing, so it is not
+            // written — it was, as CloseFind, while it dismissed a context menu. With the bar open it runs.
+            Assert.False(window.Diff.IsFindBarOpen);
+            Press(window, Key.Escape, PhysicalKey.Escape);
+            Press(window, Key.F, PhysicalKey.F, RawInputModifiers.Control);
+            Assert.True(window.Diff.IsFindBarOpen, "Ctrl+F opened no find bar, so the Escape after it proves nothing");
+            Press(window, Key.Escape, PhysicalKey.Escape);
+            Assert.False(window.Diff.IsFindBarOpen);
+            left.TextArea.Focus();
+            Layout();
+
             // Typing reaches the document and nothing at all reaches the log.
             int before = log.Lines().Count;
             left.TextArea.Caret.Offset = 0;
@@ -184,6 +195,8 @@ public sealed class DemoActionLogTests
             Assert.Equal(
                 [
                     "Command NextChange from the keyboard",
+                    "Command OpenFind from the keyboard",
+                    "Command CloseFind from the keyboard",
                     "Command CopyToRight from the keyboard on left lines 9–11",
                     "Command NextChange from the keyboard",
                 ],
