@@ -44,6 +44,9 @@ internal static class Program
         // 4. Deferred flag warnings and the active-flags summary.
         DebugFlags.LogSummary();
 
+        // 4a. The machine, beside the flags: a report says where it ran without anyone asking.
+        ActionLog.LogMachine();
+
         // 4b. --culture drives the library's own text, not the operating system's. It is set here
         //     rather than wired per control because DiffViewStrings resolves at the moment a string
         //     is used, so one assignment before the first window covers everything the library

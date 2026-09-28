@@ -59,6 +59,11 @@ public sealed partial class MainWindow : Window
         Unified.PaneContextMenuOpening += OnPaneContextMenuOpening;
         Diff.HeaderContextMenuOpening += OnHeaderContextMenuOpening;
 
+        // After the demo's own menu entries are added, so that choosing one of those is logged too,
+        // and before the window opens or any template applies, so that it sees the panes and the
+        // first size. Kept alive by the handlers it registers on this window and its views.
+        _ = new ActionLog(this, MainMenu, Diff, Unified);
+
         // The sides load when the window opens, so a host of the window — the smoke snapshot
         // test — can configure the control between construction and the first build.
         Opened += OnOpened;
