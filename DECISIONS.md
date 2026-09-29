@@ -3548,3 +3548,41 @@ above and this one hold what it asks this file to hold, and where the work parte
 - **`BNAQ1004` reads 266 types in `DiffView.Avalonia`, not 264.** The plan measured over `c465c65`;
   the branch was cut from `main` with plan 00029 on it, whose two internal types are the difference.
   `DiffView.Core` reads 140, as measured. The floor is 50 on each, well under either.
+
+## Plan 00023 phase 2: `xwininfo` is read by its labels, because they are not localized
+
+The plan chose parsing by position over parsing by label, because the scratch scripts read
+`xwininfo` by its English labels in a repository that tests under `de-DE`. Measured on 2026-09-28,
+that premise does not hold: `xwininfo` imports `setlocale` and `nl_langinfo`, which serve window
+names, and no gettext or catalogue function at all, and its reports under `LC_ALL=de_DE.UTF-8` and
+`LC_ALL=C` are byte-identical, for the root and for its children listing alike. The labels are fixed
+strings, so the driver reads a window's report by them, and the fixtures were captured under
+`de_DE.UTF-8` all the same. What position does guard against is the free text in the root's child
+listing: a title can carry a geometry, a position, a colon and quotes, so a child line is read by its
+two ends — the id first, the two geometry tokens last. `DriveDemoTests` holds that against a hostile
+title captured from the real tool, and a parser that takes the first geometry-shaped token fails it.
+
+## Plan 00023 phase 2: tooltips can be driven here, so `hover` is an ordinary verb
+
+Plan 00023 made `hover` a verb "expected to fail on X11", on the finding recorded above under *What a
+by-hand pass in a locale can and cannot reach*: on 2026-09-13 `xdotool mousemove` placed the pointer
+on a line number and no tooltip appeared. Phase 2 measured it again on 2026-09-28 — Avalonia 12.1.2,
+as on the first date; xdotool 3.20160805.1; Xwayland 24.1.6; GNOME Shell 48.7 — and the tooltip
+appeared on ten trials of ten: the change marker's *Change 3 of 5 · +0 −0 ~1* and the line number's
+*Line 9 · right line 11*, jumping in from outside the window, from its far corner and from another
+line of the same margin, with the demo in `pt-BR` (*Linha 9 · linha 11 à direita*), and from the
+screen point (5, 5) where the old script parks — whose capture and the driver's are identical pixel
+for pixel. The library did not change between the two dates, and what made the first measurement
+fail was not established. So `hover` reports a missing tooltip as a failure to look into, the driver
+says why in its header, `AGENTS.md` §9 says tooltips can be driven, and the measurement went to
+XamlQuality, whose entry records the opposite.
+
+## Plan 00023 phase 2: two refusals the plan's verbs did not list
+
+The plan drew its verbs from the five scratch scripts. Two traps `AGENTS.md` §9 recorded after those
+scripts were written are carried as refusals inside the verbs rather than as verbs of their own: a
+click or a hover outside the window it is relative to is refused — mutter's 1×1 override window once
+sent a menu click to the desktop — and `capture` refuses a frame with no pixel brighter than black,
+which a session that is not presenting hands x11grab while the capture succeeds. The second has not
+met a black frame yet: the session presented throughout phase 2. `drag` and `close`, which plan
+00029's throwaway driver had, are not added: nothing this plan replaces needs them.

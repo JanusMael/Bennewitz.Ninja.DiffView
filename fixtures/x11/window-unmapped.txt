@@ -1,0 +1,24 @@
+
+xwininfo: Window id: 16777235 "Live Debug Logs — F12 to hide"
+
+  Absolute upper-left X:  10
+  Absolute upper-left Y:  10
+  Relative upper-left X:  10
+  Relative upper-left Y:  10
+  Width: 1728
+  Height: 873
+  Depth: 32
+  Visual: 0x51
+  Visual Class: TrueColor
+  Border width: 0
+  Class: InputOutput
+  Colormap: 0x1000012 (not installed)
+  Bit Gravity State: NorthWestGravity
+  Window Gravity State: NorthWestGravity
+  Backing Store State: WhenMapped
+  Save Under State: no
+  Map State: IsUnMapped
+  Override Redirect State: no
+  Corners:  +10+10  -566+10  -566-413  +10-413
+  -geometry 1328x673+10+10
+

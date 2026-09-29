@@ -1,0 +1,24 @@
+
+xwininfo: Window id: 16777239 "DiffView Demo"
+
+  Absolute upper-left X:  602
+  Absolute upper-left Y:  283
+  Relative upper-left X:  61
+  Relative upper-left Y:  92
+  Width: 1100
+  Height: 720
+  Depth: 32
+  Visual: 0x51
+  Visual Class: TrueColor
+  Border width: 0
+  Class: InputOutput
+  Colormap: 0x1000016 (not installed)
+  Bit Gravity State: NorthWestGravity
+  Window Gravity State: NorthWestGravity
+  Backing Store State: WhenMapped
+  Save Under State: no
+  Map State: IsViewable
+  Override Redirect State: no
+  Corners:  +602+283  -602+283  -602-293  +602-293
+  -geometry 460x320+541+191
+

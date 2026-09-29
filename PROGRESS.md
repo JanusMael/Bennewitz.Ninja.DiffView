@@ -75,7 +75,7 @@ review before any code was written. **Plan 00021 is complete** (PR #6) — `Diff
 then the hosting guide's account of the three controls — rebased onto `main` a second time once #3
 and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed publish without an
 `IL` warning. The viewer **does not gate the release**, and it has no find, which the hosting guide
-names outright. **Plan 00023 phase 1 is done.** **Plan 00025 is complete and merged** (PR #1,
+names outright. **Plan 00023 phase 1 is done, and phase 2 is done on its branch.** **Plan 00025 is complete and merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
 reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
@@ -176,10 +176,10 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-5. **Plan 00023 phases 2–5 — the window harness.** Phase 1 (`catch-crash`) is merged. The rest
-   follows plan 00028's pin bumps and is split around plan 00026 (both decided 2026-09-25):
-   phases 2–3 — the X11 driver and `run-demo --detach` — once plan 00028 has merged; phases 4–5,
-   the Windows back end and the record, after 00026.
+5. **Plan 00023 phases 3–5 — the window harness.** Phase 1 (`catch-crash`) is merged, and phase 2,
+   the X11 driver, is done on `feat/the-harness-the-prose-describes`. Phase 3 — `run-demo --detach`
+   and the locale tool — is next; phases 4–5, the Windows back end and the record, follow plan 00026
+   (decided 2026-09-25).
 
 6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
@@ -631,7 +631,7 @@ is now inserted first; having no length, it displaces nothing there. `AGENTS.md`
 | Phase | Size | Status | Notes |
 |---|---|---|---|
 | 1 `catch-crash` | S | done | `scripts/catch-crash.cs` plus `.sh` and `.ps1` wrappers, following the `gen-locale-review` convention. Re-runs the suite until it catches an abort and keeps that log; `--check <log>` judges a captured one and runs nothing, which is what makes it testable through its real command line. Two fixtures under `fixtures/test-runs/`. 3 tests, 2 of 2 mutations killed |
-| 2 The driver, X11 only | M | not started | The seven verbs and the X11 back end; the three capture scripts reduced to calls into it |
+| 2 The driver, X11 only | M | done | `scripts/drive-demo.cs` plus `.sh` and `.ps1` wrappers: `launch`, `window`, `key`, `click`, `mark`, `popup`, `geometry`, `capture` and `hover`, chained with `then`, over an X11 back end that discovers its display, its cookie and the checkout. `--parse`, `--parse-children` and `--parse-info` run nothing, which is what makes it testable through its real command line; three fixtures under `fixtures/x11/`, captured under `de_DE.UTF-8`. It reproduces the three scratch capture scripts pixel for pixel on one running demo, and found on the way that tooltips can be driven here after all (`DECISIONS.md`). 10 tests, 12 of 12 mutations killed |
 | 3 `run-demo --detach` and the locale tool | S | not started | |
 | 4 The Windows back end | M | not started | Cannot be verified here |
 | 5 The record | S | not started | |
@@ -649,6 +649,20 @@ is now inserted first; having no length, it displaces nothing there. `AGENTS.md`
 | New tests proven able to fail | 2 of 2 mutations killed. **The harness itself had to be fixed first**: it judged a mutation by `failed: 0` being absent from the output, which a failing run contains for other reasons, so it reported a killed mutation as survived. The exit code is the oracle now — the spike's lesson that a tool filtering its own input can under-report, relearned |
 | The suite | 679 = 676 + 3, no existing test edited; build clean under `-warnaserror` |
 
+## Plan 00023 phase 2 verification
+
+| Done-when item | Result |
+|---|---|
+| It reproduces what the scratch scripts captured | On one running demo, each scratch script and then the driver's verbs: the View menu, 413×957 at the same origin, and the pane's context menu, 393×434, **identical pixel for pixel**; so are the change marker's and the line number's tooltips. The plan named the scratch PNGs as the oracle; two captures of the same demo moments apart are the stronger form of it |
+| `hover` fails on X11, as the old script did | **It does not, and neither does the old script.** Ten trials of ten raised the tooltip, the old script's among them — the recorded finding did not reproduce, at the same Avalonia version (`DECISIONS.md`) |
+| It survives a non-English desktop | `xwininfo` is not localized — measured: no gettext import, and its `de_DE.UTF-8` and `C` reports byte-identical — so its labels are read, and the fixtures are `de_DE.UTF-8` captures |
+| The root's children are read by shape, not by title | Against a captured listing one of whose lines carries a hostile title — a geometry, a position, a colon and quotes — that line's window is the one its end gives, and every child the listing declares is read |
+| Nothing assumes a uid, a display or a repository path | The driver discovers all three, and a gate over `scripts/` fails on each of seven planted assumptions |
+| The verb parser round-trips | Every verb and both target forms print canonically and read back to the same lines; six malformed chains are refused as usage, each naming what is wrong |
+| New tests proven able to fail | 12 of 12 mutations killed, each by the test it names and by no other |
+| Driven for real | `launch` survives the turn in a session of its own; `key F7` reached the demo, whose log wrote `Command NextChange from the keyboard`; a click outside the window and a click by name are refused; the demo closed by the pid `launch` recorded |
+| The suite | 692 = 682 + 10 in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`, no existing test edited; the build clean under `-warnaserror` |
+| Scratch cleared | `capture-menu.sh`, `capture-topmenu.sh` and `capture-tooltip.sh` deleted |
 ## Plan 00022 phases
 
 | Phase | Size | Status | Notes |

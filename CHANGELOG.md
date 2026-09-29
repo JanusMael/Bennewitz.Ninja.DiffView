@@ -8,6 +8,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00023 phase 2 — `scripts/drive-demo.{cs,sh,ps1}`, a driver for the running demo under X11:
+  `launch` starts it detached, and `window`, `geometry`, `key`, `click`, `mark` / `popup`, `capture`
+  and `hover` drive it and look at it, chained with `then`. It finds its windows by what they are
+  rather than where they are, reads `xwininfo` the same under any locale, and refuses a click outside
+  its window and a black frame. The Windows back end is plan 00023's phase 4.
+
 - Plan 00028 — `BNAQ1004` over both shipped assemblies, internal types included: no namespace
   carries a segment that shadows the root namespace of an assembly it references. It replaces the
   hand-rolled test plan 00017 wrote, and also sees a shadow of a root reached only through a
