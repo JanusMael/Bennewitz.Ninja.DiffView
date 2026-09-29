@@ -256,7 +256,7 @@ wording.
     an edit that moves a fold's lines puts the two out of step and the next layout pass throws the
     same *Line N was skipped by a VisualLineElementGenerator, but it is not collapsed*. Measured with
     a throwaway probe on `main` at `c187541`, the folding pair folded with no context and its right
-    side editable: a line typed at the top, block 0 copied to the right, and a `Revert` after a
+    side editable: a line inserted at the top, block 0 copied to the right, and a `Revert` after a
     same-line edit each threw from the first layout pass after the change — the first two before
     `ReDiffDelay` had run, the third before the build `ReDiffNow` starts had landed. Only the editor
     edits, so the viewer and the unified view are not exposed. It needs a failing test and a choice
@@ -584,14 +584,14 @@ and the pane stopped measuring. The side-by-side view has refolded on every mode
 phase 3; the unified view gained folding a phase later, refolding for a new document only in
 `AttachPane`. `ApplyModel` now forgets the opened runs and resets the projection where the
 controller does, and calls `RefreshFolds` last, after the text is composed — an order the
-controller has no need of, its documents staying put across a rebuild. `AGENTS.md` §7 has the
+controller has no need of, since a build never touches its documents. `AGENTS.md` §7 has the
 invariant.
 
 | Done-when item | Result |
 |---|---|
 | The test fails without the fix | `FoldingOptionTests.A_unified_rebuild_keeps_the_option_and_forgets_the_runs_the_reader_opened`, over new sources and over `IgnoreCase`, red in both cases on the code as it stood — `c187541` with the fix for the current block's border on it — and first at its collector: *the dispatcher threw after the rebuild: Line 25 was skipped by a VisualLineElementGenerator, but it is not collapsed*, line 25 rather than 2 because the reader had opened the first run. The throw comes from a dispatcher job while the test awaits the build, and the runner reports that apart from the test, as a cleanup failure, so the test collects `Dispatcher.UIThread.UnhandledException` itself and asserts on it |
 | Each part of the fix is load-bearing | 7 more mutations, restored by content, each case named with the assertion it tripped first: no refold, the forgetting and the reset kept (both cases at the collector); the opened runs carried over (both at the section count); the refold moved ahead of the composition (the option case at the collector, the sources case at the count); the pane never handed the projection (both at the border, and the border's own unified test); and the collector blinded with no refold, so the state alone must catch it (the option case at a hidden run's height, the sources case at the count). Two survive. Not resetting the projection first, as predicted: `RefreshFolds` recomputes it before anything reads it. And, not predicted, skipping the refold while there is no model: the unified view shows that state as an empty document, the collector saw nothing thrown across it, and the refold when the build lands restores the pane. Both stay, for parity with the controller |
-| Found beside it | An edit under the editor's folds throws the same way before its re-diff lands — typing, a copy or a revert — on `main` as much as here: open item 12, measured and kept out of this fix |
+| Found beside it | An edit under the editor's folds throws the same way before its re-diff lands — an inserted line, a copy or a revert — on `main` as much as here: open item 12, measured and kept out of this fix |
 | Nothing else moves | The suite, 687 = 685 + 2, passes in `en-US` and `de-DE` under `catch-crash --expect auto`; the build is clean under `-warnaserror` |
 
 ## The current block's border under a fold
