@@ -3508,3 +3508,23 @@ proven — *the viewer's theme stops declaring a part the controller looks up*, 
 in `DiffViewer.axaml`, is reported against `DiffViewer` by the findings assertion — and the controller's
 own mutation, *the controller looks up a part the view does not declare*, is killed by that same
 assertion now.
+
+## The DiffPlex control is anchored by its qualified name
+
+At `2026.3.922` one mutation reached `BNAQ1002`'s DiffPlex control first: *BNAQ1002's adopted
+instance names a prefix nothing uses*, which passed the `Inspected` guard, because the rule counted
+every candidate, and failed at `LeakControl`'s assertion. From 925 the rule counts only candidates
+that could produce a finding, so that prefix reads 0 and the same mutation fails at the floor — still
+killed by the test it names, and leaving the control with nothing to show it can fail. The mutation
+that reaches the control first is the control going quiet on its own, *BNAQ1002's DiffPlex control
+stops leaking*, and against phase 3's tip it **survived**. The control was anchored by
+`nameof(LeakControl)`, and a finding's `Subject` is text, so the anchor was a substring; phase 3's
+stock control is `StockLeakControl`, read by the same scan, and its finding —
+`…AssemblyQualityTests+StockLeakControl.Leaks` — contains it. The plan asked for exactly that
+anchoring: the stock control "anchored by name, the way `LeakControl` anchors the `DiffPlex` half".
+
+Both controls are anchored by `typeof(…).FullName` now, which `…+StockLeakControl` does not contain,
+and the mutation is killed at `LeakControl`'s assertion. A rename would have mended this pair and
+left the next control whose name ends in another's to repeat it; the qualified name ties the anchor
+to the subject's format instead, and a format that moves fails the control loudly rather than
+passing it.

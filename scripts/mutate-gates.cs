@@ -594,10 +594,18 @@ List<Mutation> mutations =
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
     // The positive control reads the ADOPTED instance, so an instance configured apart from the constant
-    // its subject guard reads is what it exists to catch.
+    // its subject guard reads is what it exists to catch. From 925 the Inspected guard trips first: the
+    // rule counts only candidates that could produce a finding, and a prefix nothing uses leaves none.
     new("BNAQ1002's adopted instance names a prefix nothing uses", AssemblyClass,
         () => Sub(AssemblyGate, @"SurfaceLeakRule rule = new\(\[DiffEngine\]\);",
             @"SurfaceLeakRule rule = new([""DiffPlex.NoSuchNamespace""]);"),
+        "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
+
+    // So the DiffPlex control is reached first only when it alone goes quiet: the adopted instance
+    // intact, the model read and clean, and the one finding the control owes gone.
+    new("BNAQ1002's DiffPlex control stops leaking", AssemblyClass,
+        () => Sub(AssemblyGate, @"public static DiffPlex\.Model\.DiffResult\? Leaks\(\) => null;",
+            "public static object? Leaks() => null;"),
         "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
 
     // ---- BNAQ1003: the model must bind against no UI framework.
