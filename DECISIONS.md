@@ -3677,3 +3677,40 @@ is declared — the templates' markup, the margins a new pane builds, and the en
 menu shows, with both panes asked, since only the right one offers `CopyToLeft` — so the fixture is the
 one place a value is written twice. This goes beyond the plan, which pins no values, and the plan is not
 edited.
+
+## The current block's border was a fourth site, and plan 00013 had called it fold-safe
+
+Found by hand on 2026-09-28 in the demo, with *Show differences only* on: F7 selected the first
+change, which a fold at the top had moved up to just under its placeholder, and the border was drawn
+around two unchanged `}` lines further down — where the block would sit with nothing folded.
+
+**Plan 00013 counted three sites that turn a row into a pixel, and there were four.** It routed the
+connector, the map and both views' scroll-to through `RowProjection`, and took in-pane drawing to be
+fold-safe already, because the margins, the row fills and the search highlights walk
+`TextView.VisualLines` and read `VisualTop`, which the height tree answers under a fold. The current
+block's border is drawn by the same background renderer and walks nothing: it spans a block's rows
+whether or not they are on screen, so it was placed at `row × lineHeight`. `AGENTS.md` §6 carried
+both readings at once — the older row naming the border among the users of that product, the newer
+one saying in-pane drawing needed nothing. The plan is frozen; this is its drift.
+
+**The border now goes through the projection, as the other four do.** The presenter carries the
+view's projection as `DiffPanePresenter.Projection`, assigned in the loop that hands the pane its
+collapsed lines — `DiffBuildController.RefreshFolds`, which serves the editor and the viewer, and
+`InlineDiffView.RefreshFolds` — so the two cannot come from different lists. A host of bare
+presenters cannot fold, leaves it `null`, and sees no change. Two alternatives lost:
+
+| Alternative | Why not |
+|---|---|
+| Read the border's top off the height tree, as the row fills do | A block's first row on a side can be padding — height on the line after it, or trailing padding on the side's last line — and can be above the viewport, where there is no visual line to read. Reading it back means re-deriving the padding model beside `Padding`, for a number the projection already gives |
+| Let the pane derive its own projection from the line ranges it collapsed | A second construction of the one projection, and a fold read back off line ranges — the direction §6 says a fold is never computed in |
+
+**The earlier decision stands with one word added.** *Row geometry is uniform once primed* is true
+of **visible** rows, and it is still what the border, the centring scroll, the connector and the map
+compute from; none of them multiplies a model row any more. The two scroll-tos compute the rectangle
+the border now computes and are left as they are: they were right, and sharing the arithmetic is a
+refactor this fix does not need.
+
+**Found beside it and kept out of it**: with folding on, the unified view keeps the previous model's
+folds across any rebuild, and AvaloniaEdit then throws from the layout pass. It is a different
+defect with its own test to write, so it is recorded under *Open* in `PROGRESS.md` rather than
+folded into this fix.
