@@ -10,17 +10,26 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// compiled output rather than the source — which is the thing a consumer actually binds to.
 /// </summary>
 /// <remarks>
-/// ⛔ <b>No rule's <c>Inspected</c> here can tell a live configuration from a dead one.</b>
-/// <c>SurfaceLeakRule</c>, <c>ForbiddenReferenceRule</c> and <c>CancellationTokenRule</c> all
-/// increment it *before* testing their predicate, so a misspelled prefix — or a predicate that has
-/// stopped firing — reports the same numbers as a clean assembly. Each gate below therefore carries a
-/// positive control that must produce a finding, using the **same rule instance** — a control built
-/// from a different prefix proves only that the library works.
+/// ⛔ <b><c>Inspected</c> alone cannot tell a live configuration from a dead one.</b> At
+/// <c>2026.3.922</c> <c>SurfaceLeakRule</c>, <c>ForbiddenReferenceRule</c> and
+/// <c>CancellationTokenRule</c> all incremented it *before* testing their predicate, so a misspelled
+/// prefix — or a predicate that has stopped firing — reported the same numbers as a clean assembly.
+/// Each gate below therefore carries a positive control that must produce a finding, using the
+/// **same rule instance** — a control built from a different prefix proves only that the library
+/// works.
 /// <para>
 /// ⚠ <b>That holds of <c>BNAQ1001</c> as much as of the other two.</b> Measured reporting
 /// <c>inspected=2 findings=1</c> over a fixture, its <c>Inspected</c> is a candidate count like the
 /// others', so a dead predicate over <c>DiffView.Core</c> would report today's <c>2 / 0</c> exactly.
 /// <see cref="TokenDefaultControl"/> is its control.
+/// </para>
+/// <para>
+/// ⭐ <b>From <c>2026.3.925</c> <c>SurfaceLeakRule</c> and <c>NamespaceShadowRule</c> count only
+/// candidates that could produce a finding</b> — the stock leak-prone set reads 0 over
+/// <c>DiffView.Core</c>, measured, because nothing it covers is in reach there — so a configuration
+/// naming nothing in reach reads 0 where it used to read like a clean assembly. A predicate that has
+/// stopped firing still reports today's numbers exactly, which is what the controls are for, and why
+/// every gate keeps one.
 /// </para>
 /// </remarks>
 public sealed class AssemblyQualityTests
@@ -30,6 +39,19 @@ public sealed class AssemblyQualityTests
 
     /// <summary>The UI framework. <c>DiffView.Core</c> is the half that must not know about it.</summary>
     private const string UiFramework = "Avalonia";
+
+    /// <summary>
+    /// Well under the types <c>BNAQ1004</c> reads in each shipped assembly — 140 and 266 with internal
+    /// types, 116 and 86 without — because what it guards is a zero: a scan with nothing to read.
+    /// </summary>
+    private const int ShadowFloor = 50;
+
+    /// <summary>
+    /// <c>BNAQ1004</c>'s standing control, in <c>ShadowControl.cs</c> — named here rather than referenced,
+    /// so that a control moved out of its shadowing namespace still compiles and fails this gate, not the
+    /// build.
+    /// </summary>
+    private const string ShadowControlName = "ShadowControl";
 
     /// <summary>A scan of the one assembly with this simple name.</summary>
     /// <remarks>
@@ -73,6 +95,17 @@ public sealed class AssemblyQualityTests
     {
         /// <summary>Never called; its signature is the whole point.</summary>
         public static DiffPlex.Model.DiffResult? Leaks() => null;
+    }
+
+    /// <summary>
+    /// A public member naming a type from the rule's own stock leak-prone set, so the half of the
+    /// adopted instance that reads 0 over <c>DiffView.Core</c> — nothing it covers is in reach there —
+    /// is proven alive rather than assumed. Needs no package: the type ships with the runtime.
+    /// </summary>
+    public static class StockLeakControl
+    {
+        /// <summary>Never called; its signature is the whole point.</summary>
+        public static System.Text.Json.Nodes.JsonNode? Leaks() => null;
     }
 
     /// <summary>
@@ -124,6 +157,14 @@ public sealed class AssemblyQualityTests
         Assert.Contains(
             control.Findings,
             f => f.Subject.Contains(nameof(LeakControl), StringComparison.Ordinal));
+
+        // The stock half's control, from the same scan. The stock set reads 0 over the model because
+        // nothing it covers is in reach there, not because it is dead; kept rather than narrowed to
+        // DiffPlex alone, it is forward cover for the day the model takes one of those dependencies,
+        // and this is what shows it can still fire.
+        Assert.Contains(
+            control.Findings,
+            f => f.Subject.Contains(nameof(StockLeakControl), StringComparison.Ordinal));
     }
 
     [Fact]
@@ -183,5 +224,48 @@ public sealed class AssemblyQualityTests
         Assert.Contains(
             control.Findings,
             f => f.Subject.Contains(nameof(TokenDefaultControl), StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// No namespace in either shipped assembly carries a segment that shadows the root namespace of
+    /// something it references. C# resolves a qualified name's first identifier by walking outward
+    /// through the enclosing namespaces before it reaches global, so a segment named for a referenced
+    /// root turns every qualified use of that root into CS0234 inside it — plan 00017's
+    /// <c>Bennewitz.Ninja.DiffView.Avalonia</c> was exactly that.
+    /// </summary>
+    /// <remarks>
+    /// <c>BNAQ1004</c> with <c>IncludingInternalTypes()</c>, over both assemblies: internal code is
+    /// shadowed as thoroughly as public code. Measured before adoption, it sees every referenced root the
+    /// hand-rolled test it replaced derived, and a shadow reached only through a forwarding facade, which
+    /// that test's <c>GetExportedTypes()</c> missed.
+    /// </remarks>
+    [Fact]
+    public void No_shipped_namespace_shadows_a_referenced_root()
+    {
+        NamespaceShadowRule rule = NamespaceShadowRule.IncludingInternalTypes();
+
+        AssemblyScanContext model = Scan("DiffView.Core");
+        AssemblyRuleResult result = rule.Analyze(model);
+        Assert.True(result.Inspected >= ShadowFloor, $"BNAQ1004 read {result.Inspected} types in DiffView.Core, below the floor of {ShadowFloor}: it has largely stopped reading.");
+        Assert.True(
+            result.Findings.Count == 0,
+            "A namespace in DiffView.Core shadows a referenced root:" + Environment.NewLine
+            + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
+
+        AssemblyScanContext ui = Scan("DiffView.Avalonia");
+        AssemblyRuleResult uiResult = rule.Analyze(ui);
+        Assert.True(uiResult.Inspected >= ShadowFloor, $"BNAQ1004 read {uiResult.Inspected} types in DiffView.Avalonia, below the floor of {ShadowFloor}: it has largely stopped reading.");
+        Assert.True(
+            uiResult.Findings.Count == 0,
+            "A namespace in DiffView.Avalonia shadows a referenced root:" + Environment.NewLine
+            + string.Join(Environment.NewLine, uiResult.Findings.Select(f => "  " + f)));
+
+        // ⛔ The standing control: an internal type of this assembly under a shadowing segment, nested
+        // where nothing resolves through it. The same instance must report it — which a rule reading
+        // public types only would not.
+        AssemblyRuleResult control = rule.Analyze(AssemblyScanContext.Of(typeof(AssemblyQualityTests).Assembly));
+        Assert.Contains(
+            control.Findings,
+            f => f.Subject.Contains(ShadowControlName, StringComparison.Ordinal));
     }
 }
