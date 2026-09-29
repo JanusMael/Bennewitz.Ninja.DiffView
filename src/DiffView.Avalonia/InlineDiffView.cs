@@ -1494,6 +1494,11 @@ public class InlineDiffView : TemplatedControl
             _pane.WordDiffLookup = WordDiffLookup;
         }
 
+        // A new model is a new row space. The option carries over, the runs the reader opened do
+        // not: a line of the old unified table names a different run in this one.
+        _expandedFolds.Clear();
+        _projection = RowProjection.Identity(Inline?.Lines.Count ?? 0);
+
         // The matches were found over lines the old model laid out; the search runs again against
         // the new one while the bar is open.
         ApplyFindResult(null);
@@ -1501,13 +1506,20 @@ public class InlineDiffView : TemplatedControl
 
         // The blocks are new: no current change until the user picks one.
         SetCurrentChange(-1, scroll: false);
+
+        // And the runs are new, so they are computed again for this model rather than carried.
+        // Here that is more than naming the right runs: the text was just rewritten, and until
+        // this call the pane's collapsed lines and its placeholders describe the text it replaced.
+        RefreshFolds();
     }
 
     /// <summary>
     /// Rewrites the pane's document from the unified table: each line's text comes from the side
     /// it names, joined with a single newline. The document instance is kept, so the caret and
     /// the scroll offset survive a rebuild that leaves the text where it was; the undo stack is
-    /// dropped, because a composed document has no edit history worth keeping.
+    /// dropped, because a composed document has no edit history worth keeping. The folds are not
+    /// kept either, in effect: they describe lines of the text this replaces, so whoever calls it
+    /// refolds after it, as <see cref="ApplyModel"/> does.
     /// </summary>
     private void ComposeUnifiedText()
     {

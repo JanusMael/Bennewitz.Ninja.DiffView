@@ -530,6 +530,11 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Fixed
 
+- With unchanged rows folded, the unified view kept the previous model's folds across a rebuild —
+  new sources, or an option such as ignoring case that rebuilds over the same text — and the next
+  layout pass threw: the pane stopped measuring, and no current change's border could be drawn. The
+  unified view now computes its folds again for every new model, after composing that model's text,
+  as the side-by-side views always have, and a run the reader had opened folds again with the rest.
 - With unchanged rows folded, the current change's border was drawn where its block would sit with
   nothing folded — around unchanged lines, as many rows below the block as the folds above it hid,
   or off screen altogether — in every view. The border is now placed through the same row
