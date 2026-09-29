@@ -8,6 +8,11 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00028 — `BNAQ1004` over both shipped assemblies, internal types included: no namespace
+  carries a segment that shadows the root namespace of an assembly it references. It replaces the
+  hand-rolled test plan 00017 wrote, and also sees a shadow of a root reached only through a
+  forwarding facade, which that test missed.
+
 - Plan 00029 — `DiffViewLogCategories.Interaction`: where a click in a pane landed (the text, the
   number margin, the change markers or the padding above a line), the selection a pointer finished,
   and each fold that opened, written once per gesture at `Debug` — positions and counts, never text.
@@ -552,6 +557,14 @@ All notable changes to DiffView are recorded here. The format follows
   column layout, and a test asserts each header's **x** as well as its width.
 
 ### Changed
+
+- Plan 00028 — `Bennewitz.Ninja.XamlQuality` and `Bennewitz.Ninja.AssemblyQuality` move to
+  `2026.3.928`, where every rule id carries the family prefix — `XQ100n` is `BNXQ100n` and `AQ100n`
+  is `BNAQ100n` — and each gate is re-read there. `BNXQ1003` checks the template parts
+  `DiffBuildController` looks up against each host's own theme, which a test did by hand;
+  `BNXQ1004` counts only placements it measured against a fixed slot, so the guard against a
+  blinded scan floors the grid children the scan holds instead; and `BNAQ1002` keeps its stock set
+  beside `DiffPlex`, with a control that proves the stock half can still fire.
 
 - `SideBySideDiffViewTheme` holds the editor's control theme alone. The find bar's, the pane
   header's and the status strip's moved into dictionaries of their own, which their controls merge,

@@ -3528,3 +3528,23 @@ and the mutation is killed at `LeakControl`'s assertion. A rename would have men
 left the next control whose name ends in another's to repeat it; the qualified name ties the anchor
 to the subject's format instead, and a format that moves fails the control loudly rather than
 passing it.
+
+## Plan 00028 — both quality packages at 928, every rule re-read here
+
+[Plan 00028](plans/00028-both-quality-packages-at-925.md) takes `Bennewitz.Ninja.XamlQuality` and
+`Bennewitz.Ninja.AssemblyQuality` to `2026.3.928` together and re-decides every rule on its reading
+there, to plan 00025's standard. It keeps `BNXQ1002`, `BNXQ1003`, `BNAQ1001` and `BNAQ1003` under
+their new ids; keeps `BNXQ1004`, whose blinding floor moves from the rule's count to the grid
+children the scan holds; keeps `BNAQ1002` as its stock set plus `DiffPlex`, with a control for the
+stock half; adopts `BNAQ1004` over internal types as well as public ones, retiring the hand-rolled
+test plan 00017 wrote; and declines `BNXQ1001` and `BNXQ1005`, which have nothing here to read:
+there is no `Expander` in the markup, and the views build their key bindings in code. `BNXQ1006`
+waits for plan 00026. Its decisions table is the record of *why* and is frozen; the three entries
+above and this one hold what it asks this file to hold, and where the work parted from it.
+
+- **928 rather than 925, the viewer-constant mutation's twin, and the DiffPlex control's anchor** —
+  the three entries above. The last is the one the plan did not foresee: its own wording asked for
+  the anchoring that proved blind.
+- **`BNAQ1004` reads 266 types in `DiffView.Avalonia`, not 264.** The plan measured over `c465c65`;
+  the branch was cut from `main` with plan 00029 on it, whose two internal types are the difference.
+  `DiffView.Core` reads 140, as measured. The floor is 50 on each, well under either.
