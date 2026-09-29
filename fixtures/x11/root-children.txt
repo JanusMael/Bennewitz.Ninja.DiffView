@@ -1,0 +1,29 @@
+
+xwininfo: Window id: 817 (the root window) (has no name)
+
+  Root window id: 817 (the root window) (has no name)
+  Parent window id: 0 (none)
+     22 children:
+     16777307 (has no name): ()  153x35+617+543  +617+543
+     8388968 (has no name): ("mutter-x11-frames" "mutter-x11-frames")  1222x879+541+191  +541+191
+     16777235 "Pane 999x99+7+7 +7+7: ("fake" "Fake")": ("dotnet" "DiffView.Demo")  1728x873+10+10  +10+10
+     16777229 (has no name): ()  1x1+0+0  +0+0
+     16777225 (has no name): ()  1x1+0+0  +0+0
+     16777217 (has no name): ()  1x1+0+0  +0+0
+     4194776 (has no name): ()  1x1+0+0  +0+0
+     8388617 (has no name): ()  1x1+-1+-1  +-1+-1
+     12582920 "kotlinx-coroutines-scheduling-CoroutineScheduler$Worker": ("kotlinx-coroutines-scheduling-CoroutineScheduler$Worker" "kotlinx-coroutines-scheduling-CoroutineScheduler$Worker")  1x1+1+1  +1+1
+     14680065 "jetbrains-toolbox": ("jetbrains-toolbox" "Jetbrains-toolbox")  10x10+10+10  +10+10
+     8388610 "mutter-x11-frames": ("mutter-x11-frames" "mutter-x11-frames")  1x1+0+0  +0+0
+     4194312 (has no name): ()  1x1+-1+-1  +-1+-1
+     4194311 (has no name): ()  1x1+-1+-1  +-1+-1
+     4194310 (has no name): ()  1x1+-100+-100  +-100+-100
+     4194309 (has no name): ()  1x1+-100+-100  +-100+-100
+     4194308 (has no name): ()  1x1+-1+-1  +-1+-1
+     4194307 (has no name): ()  1x1+-100+-100  +-100+-100
+     4194306 (has no name): ()  1x1+-100+-100  +-100+-100
+     4194305 "GNOME Shell": ()  1x1+-100+-100  +-100+-100
+     2097154 (has no name): ()  10x10+0+0  +0+0
+     2097153 "gsd-xsettings": ("gsd-xsettings" "Gsd-xsettings")  10x10+10+10  +10+10
+     4194314 "mutter guard window": ()  2304x1296+0+0  +0+0
+

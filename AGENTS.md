@@ -555,6 +555,13 @@ why.
   `$XDG_STATE_HOME/DiffView/logs`, or `~/.local/state/DiffView/logs` without it — and *Debug ▸ Open
   logs folder* opens it. The log is also what says whether a driven step took: plan 00029's pass
   grabbed frames a second or two stale while the log already had the action.
+- **`scripts/drive-demo.sh` drives the demo on this box** (plan 00023). `launch` starts it detached
+  and waits for its window; `window`, `geometry`, `key`, `click`, `mark` / `popup`, `capture` and
+  `hover` do the rest, chained with `then`, at coordinates relative to the demo's window or to the
+  popup found last. It carries the traps this section records — the window manager's frame, the
+  unmapped window with the demo's class, a popup's second layout pass, mutter's own override windows,
+  a black frame, a turn that reaps its children — so reach for it before rebuilding a driver from this
+  prose. `DriveDemoTests` holds how it reads its command line and `xwininfo`'s reports.
 - **`ActionLog` is built after the window's own `PaneContextMenuOpening` subscriptions**, because it
   wraps the menu's entries for logging in that same event: built first, it misses the demo's own
   entries (`DemoActionLogTests.A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header`).
@@ -626,7 +633,9 @@ why.
   does: `docs/avalonia-gotchas.md` in `JanusMael/Bennewitz.Ninja.XamlQuality`, under *Linux platform
   integration*, the entry *Driving an Avalonia app with `xdotool`: a menu is its own X window, a
   tooltip never appears, and accelerators do not arrive* — how to find and grab a menu's popup, scroll
-  it and grab again, and why a click arrives where hover and an accelerator do not.
+  it and grab again, and why an accelerator does not arrive where a click does. ⚠ **Its tooltip half
+  did not reproduce here on 2026-09-28** — *Tooltips can be driven here*, below — and the measurement
+  went to XamlQuality the same day.
 - **New demo items belong in a submenu.** The demo's View menu is already taller than its popup and
   scrolls, and a submenu is one more row here and its own popup to grab, where four more rows push
   something else off the end.
@@ -687,12 +696,17 @@ own bounds. After a synthetic right-click opens a context menu, X keyboard focus
 that 1×1 window, and every key after it reaches nothing until `xdotool windowactivate --sync <id>`
 gives the demo its focus back. The general lessons are XamlQuality's (§8).
 
-### Tooltips cannot be driven from here
+### Tooltips can be driven here
 
-No tooltip appears under synthetic pointer motion — the XamlQuality entry cited above records the
-measurement. So a tooltip is judged from the headless tests that assert its text, never from a
-frame. Do not record a by-hand pass as having covered tooltip layout in a locale; nothing covers that
-yet.
+This said the opposite from 2026-09-13 until **2026-09-28**, when plan 00023's driver measured it
+again: `scripts/drive-demo.sh hover` raised the tooltip on every trial — the change-marker margin's and
+the line-number margin's, jumping in from outside the window, from its far corner, from another line
+of the same margin, and with the demo in `pt-BR` — and the scratch script behind the old finding,
+parking where it always had, raised the same tooltip pixel for pixel. The demo's Avalonia was 12.1.2
+on both dates; what made the first measurement fail was never established. A tooltip is its own
+override-redirect window, found by the same root-child diff as a menu, so a tooltip's layout at real
+size and in a locale can be judged from a driven frame now. The headless tests that assert its text
+stay the evidence for the text. `DECISIONS.md` has the trials.
 
 ### Driving a locale
 
