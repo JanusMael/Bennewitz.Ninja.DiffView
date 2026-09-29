@@ -1022,6 +1022,9 @@ internal sealed class DiffBuildController
                 }
             }
 
+            // The projection goes with the lines: the pane places the current block's border
+            // through it.
+            pane.Projection = _projection;
             pane.SetCollapsedLines(ranges);
         }
 

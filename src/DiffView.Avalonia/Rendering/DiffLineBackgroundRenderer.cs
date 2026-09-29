@@ -107,14 +107,17 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
             _lastDrawn.Add(new DrawnLine(lineNumber, kind, padding));
         }
 
-        // The current block's border: rows are uniform once primed, so a row's top is its index
-        // times the line height, and the border spans the block's rows across the viewport. The
-        // rows are the display's — the model's for a side, the block's own unified lines for the
-        // inline view, where a modified pair takes two of them.
+        // The current block's border. Rows are uniform once primed, so a visible row's top is its
+        // index times the line height — but only a visible row's: a fold above the block hides
+        // rows, so the block's rows are projected before they are multiplied, as the connector,
+        // the map and the scroll-to project theirs. The rows are the display's — the model's for a
+        // side, the block's own unified lines for the inline view, where a modified pair takes two.
         if (Owner.CurrentBlock is { } block)
         {
             LineRange rows = metadata.DisplayRowsOf(block);
-            Rect border = new(0, rows.Start * lineHeight - scroll.Y, width, rows.Count * lineHeight);
+            int first = VisibleRowOf(rows.Start);
+            int end = VisibleRowOf(rows.End - 1) + 1;
+            Rect border = new(0, first * lineHeight - scroll.Y, width, (end - first) * lineHeight);
             if (border.Bottom > 0 && border.Top < textView.Bounds.Height)
             {
                 Pen pen = new(palette[DiffBrush.CurrentBlockBorder], CurrentBlockBorderThickness);
@@ -123,6 +126,9 @@ internal sealed class DiffLineBackgroundRenderer : GuardedBackgroundRenderer
             }
         }
     }
+
+    /// <summary>The visible row <paramref name="row"/> is drawn at, through the folds in force.</summary>
+    private int VisibleRowOf(int row) => Owner.Projection?.VisibleRowOf(row) ?? row;
 
     /// <summary>
     /// One rectangle per changed piece of the line's own side, over the row, from the piece's

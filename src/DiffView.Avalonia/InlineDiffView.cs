@@ -2001,6 +2001,9 @@ public class InlineDiffView : TemplatedControl
                 }
             }
 
+            // The projection goes with the lines: the pane places the current block's border
+            // through it.
+            _pane.Projection = _projection;
             _pane.SetCollapsedLines(ranges);
         }
 

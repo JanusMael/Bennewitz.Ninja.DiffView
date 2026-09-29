@@ -95,6 +95,7 @@ public class DiffPanePresenter : TextEditor
     private bool _syntaxDisabled;
     private WordDiffLookup? _wordDiffLookup;
     private ChangeBlock? _currentBlock;
+    private RowProjection? _projection;
     private IReadOnlyList<FindMatch> _searchMatches = [];
     private FindMatch? _currentSearchMatch;
     private bool _primePending;
@@ -618,6 +619,27 @@ public class DiffPanePresenter : TextEditor
             }
 
             _currentBlock = value;
+            TextArea.TextView.InvalidateLayer(KnownLayer.Background);
+        }
+    }
+
+    /// <summary>
+    /// The folds in force, which the background renderer places the current block's border
+    /// through; <c>null</c> when nothing is folded. A row is a pixel only once it is a visible row,
+    /// and which rows are hidden is the hosting view's to say: it assigns this with the pane's
+    /// share of the same folds, <see cref="SetCollapsedLines"/>.
+    /// </summary>
+    internal RowProjection? Projection
+    {
+        get => _projection;
+        set
+        {
+            if (ReferenceEquals(_projection, value))
+            {
+                return;
+            }
+
+            _projection = value;
             TextArea.TextView.InvalidateLayer(KnownLayer.Background);
         }
     }

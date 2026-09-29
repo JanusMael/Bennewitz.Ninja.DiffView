@@ -530,6 +530,10 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Fixed
 
+- With unchanged rows folded, the current change's border was drawn where its block would sit with
+  nothing folded — around unchanged lines, as many rows below the block as the folds above it hid,
+  or off screen altogether — in every view. The border is now placed through the same row
+  projection the connector gutter, the overview map and the scroll-to already use.
 - A padded line that began with a space or a tab lost its padding while whitespace was shown, and
   one that began with a control character lost it whatever the setting: every row below it slipped
   against the other pane, and a copy arrow drawn in the missing padding sat on the next line's

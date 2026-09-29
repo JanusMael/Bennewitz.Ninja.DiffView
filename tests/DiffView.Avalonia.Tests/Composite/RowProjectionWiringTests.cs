@@ -1,8 +1,12 @@
 using System.Text;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView.Core;
+using Bennewitz.Ninja.DiffView.Tests.Inline;
+using Bennewitz.Ninja.DiffView.Tests.Viewer;
 
 namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 
@@ -11,6 +15,8 @@ namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 /// which is only accidentally true — it holds because every row is one line height, and a fold is
 /// the first thing that makes a row not be one. These assert that each reads the projection rather
 /// than the row index, and that with nothing folded each answers exactly what it answered before.
+/// The current block's border multiplied too, from inside a pane, where the phase took drawing to
+/// be fold-safe already; its tests drive the real views, folded, and read the height tree.
 /// </summary>
 public sealed class RowProjectionWiringTests
 {
@@ -188,6 +194,132 @@ public sealed class RowProjectionWiringTests
         {
             window.Close();
         }
+    }
+
+    /// <summary>
+    /// A fold above the current block moves the block up, and the border has to move with it:
+    /// placed at the block's model row, it lands as many rows down as the fold hides, around
+    /// unchanged lines. Every block of the folding pair sits under a fold with no context kept,
+    /// and between them they start on text and on padding in each pane — a deletion, an insertion,
+    /// a modification and a one-sided block at the very end. The expected top is read off the
+    /// height tree, which is where the block's line is actually drawn, never off a row index.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task The_current_blocks_border_is_drawn_at_its_visible_rows_not_its_model_rows()
+    {
+        using CompositeHost host = new();
+        host.Show();
+        (string left, string right) = FoldingFixture.Pair();
+        await host.LoadAsync(new PaneSource(left), new PaneSource(right));
+        host.View.UnchangedContextRows = 0;
+        CompositeHost.Layout();
+
+        SideBySideDocument document = host.View.Document ?? throw new InvalidOperationException("No model.");
+        AssertEveryBorderIsOnItsVisibleRows(document, host.Left, host.Right, index => host.View.CurrentChangeIndex = index, () => host.Capture().Dispose());
+    }
+
+    /// <summary>
+    /// The viewer folds and walks through the same controller as the editor, so the projection
+    /// reaches its panes by the same line of code; this is what says it does.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task The_viewers_border_is_drawn_at_its_visible_rows_not_its_model_rows()
+    {
+        using ViewerHost host = new();
+        host.Show();
+        (string left, string right) = FoldingFixture.Pair();
+        await host.LoadAsync(new PaneSource(left), new PaneSource(right));
+        host.View.UnchangedContextRows = 0;
+        ViewerHost.Layout();
+
+        SideBySideDocument document = host.View.Document ?? throw new InvalidOperationException("No model.");
+        AssertEveryBorderIsOnItsVisibleRows(document, host.Left, host.Right, index => host.View.CurrentChangeIndex = index, () => host.Capture().Dispose());
+    }
+
+    /// <summary>
+    /// The same border in the unified view, whose rows are its own lines — a modified pair takes
+    /// two of them — so what is projected there is the block's unified lines.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task The_unified_views_border_is_drawn_at_its_visible_lines_not_its_unfolded_ones()
+    {
+        using InlineHost host = new();
+        host.Show();
+        (string left, string right) = FoldingFixture.Pair();
+        await host.LoadAsync(new PaneSource(left), new PaneSource(right));
+        host.View.UnchangedContextRows = 0;
+        InlineHost.Layout();
+
+        SideBySideDocument document = host.View.Document ?? throw new InvalidOperationException("No model.");
+        InlineDocument inline = host.View.Inline ?? throw new InvalidOperationException("No unified table.");
+        TextView view = host.Pane.TextArea.TextView;
+        double lineHeight = view.DefaultLineHeight;
+        Assert.Equal(4, document.Blocks.Count);
+        foreach (ChangeBlock block in document.Blocks)
+        {
+            host.View.CurrentChangeIndex = block.Index;
+            host.Capture().Dispose();
+
+            LineRange lines = inline.LinesOfBlock(block.Index);
+            double top = view.GetVisualTopByDocumentLine(lines.Start + 1);
+            Assert.True(top < (lines.Start * lineHeight) - Tolerance, $"block {block.Index} should sit under a fold");
+            double expected = top - view.ScrollOffset.Y;
+            Rect border = host.Pane.BackgroundRenderer.LastCurrentBlockBorder
+                          ?? throw new InvalidOperationException($"block {block.Index}: no border drawn, where one belongs at {expected}");
+            Assert.True(
+                Math.Abs(border.Top - expected) < Tolerance,
+                $"block {block.Index}: the border's top is at {border.Top}, the block's first line at {expected}");
+            Assert.Equal(lines.Count * lineHeight, border.Height, Tolerance);
+        }
+    }
+
+    /// <summary>
+    /// Makes each block of a two-pane surface current in turn, draws a frame so the renderer
+    /// records the border it drew, and holds both panes' borders to the block's first row where
+    /// the height tree puts it. The fixture's four blocks each sit under a fold, which is asserted
+    /// rather than assumed, so the walk cannot pass by having nothing to move.
+    /// </summary>
+    private static void AssertEveryBorderIsOnItsVisibleRows(
+        SideBySideDocument document,
+        DiffPanePresenter left,
+        DiffPanePresenter right,
+        Action<int> makeCurrent,
+        Action draw)
+    {
+        double lineHeight = left.TextArea.TextView.DefaultLineHeight;
+        Assert.Equal(4, document.Blocks.Count);
+        foreach (ChangeBlock block in document.Blocks)
+        {
+            makeCurrent(block.Index);
+            draw();
+
+            double top = BlockTop(left, right, document, block, lineHeight);
+            Assert.True(top < (block.FirstRow * lineHeight) - Tolerance, $"block {block.Index} should sit under a fold");
+            foreach (DiffPanePresenter pane in new[] { left, right })
+            {
+                double expected = top - pane.TextArea.TextView.ScrollOffset.Y;
+                Rect border = pane.BackgroundRenderer.LastCurrentBlockBorder
+                              ?? throw new InvalidOperationException($"{pane.Side} pane, block {block.Index}: no border drawn, where one belongs at {expected}");
+                Assert.True(
+                    Math.Abs(border.Top - expected) < Tolerance,
+                    $"{pane.Side} pane, block {block.Index}: the border's top is at {border.Top}, the block's first row at {expected}");
+                Assert.Equal(block.RowCount * lineHeight, border.Height, Tolerance);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The document top of <paramref name="block"/>'s first row, from the height tree of a pane
+    /// that has a line in that row. Every row has one on at least one side, and the panes share
+    /// row tops. A padded line's height-tree position is the top of its padding, so its row top is
+    /// that position plus the rows of padding above it.
+    /// </summary>
+    private static double BlockTop(DiffPanePresenter left, DiffPanePresenter right, SideBySideDocument document, ChangeBlock block, double lineHeight)
+    {
+        AlignedRow row = document.Rows[block.FirstRow];
+        (DiffPanePresenter pane, DiffSide side) = row.LeftLine is not null ? (left, DiffSide.Left) : (right, DiffSide.Right);
+        int line = row.LineOf(side) ?? throw new InvalidOperationException($"Row {block.FirstRow} has a line on neither side.");
+        return pane.TextArea.TextView.GetVisualTopByDocumentLine(line + 1) + (Padding.Before(document, side, line) * lineHeight);
     }
 
     /// <summary>
