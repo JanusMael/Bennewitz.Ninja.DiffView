@@ -153,10 +153,13 @@ public sealed class AssemblyQualityTests
         // ⚠ Anchored to the fixture, not merely non-empty. The rule concatenates its stock
         // namespaces, so some future public test helper naming System.Text.Json.Nodes would satisfy
         // a count-only control with LeakControl deleted, and the fixture would rot unnoticed.
+        // ⛔ And by the fixture's qualified name, not its simple one. StockLeakControl below is that
+        // helper, and its name contains this one's: anchored by nameof, its finding stood in for this
+        // control's, and a LeakControl that had stopped leaking passed — measured.
         AssemblyRuleResult control = rule.Analyze(AssemblyScanContext.Of(typeof(LeakControl).Assembly));
         Assert.Contains(
             control.Findings,
-            f => f.Subject.Contains(nameof(LeakControl), StringComparison.Ordinal));
+            f => f.Subject.Contains(typeof(LeakControl).FullName!, StringComparison.Ordinal));
 
         // The stock half's control, from the same scan. The stock set reads 0 over the model because
         // nothing it covers is in reach there, not because it is dead; kept rather than narrowed to
@@ -164,7 +167,7 @@ public sealed class AssemblyQualityTests
         // and this is what shows it can still fire.
         Assert.Contains(
             control.Findings,
-            f => f.Subject.Contains(nameof(StockLeakControl), StringComparison.Ordinal));
+            f => f.Subject.Contains(typeof(StockLeakControl).FullName!, StringComparison.Ordinal));
     }
 
     [Fact]
