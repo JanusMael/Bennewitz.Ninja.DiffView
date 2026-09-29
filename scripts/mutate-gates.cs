@@ -60,6 +60,8 @@ const string InlineSource = "src/DiffView.Avalonia/InlineDiffView.cs";
 const string ProbeControl = "src/DiffView.Avalonia/MutationProbeControl.cs";
 const string HeaderSource = "src/DiffView.Avalonia/DiffPaneHeader.cs";
 const string UiProbe = "src/DiffView.Avalonia/MutationProbe.cs";
+const string CoreProbe = "src/DiffView.Core/MutationProbe.cs";
+const string ShadowControlFile = "tests/DiffView.Avalonia.Tests/ShadowControl.cs";
 const string CompatDictionary = "src/DiffView.Avalonia/Themes/Compat/FluentKeys.Semi.axaml";
 const string PackagingGate = "tests/DiffView.Avalonia.Tests/PackagingTests.cs";
 
@@ -690,6 +692,51 @@ List<Mutation> mutations =
         () => Sub(AssemblyGate, @"public static void Defaults\(CancellationToken cancellationToken = default\)",
             "public static void Defaults(CancellationToken cancellationToken)"),
         "No_public_entry_point_defaults_its_cancellation_token"),
+
+    // ---- BNAQ1002's stock half. It reads 0 over the model because nothing it covers is in reach there,
+    // so only its control shows that it can still fire.
+    new("BNAQ1002's stock control stops leaking", AssemblyClass,
+        () => Sub(AssemblyGate, @"public static System\.Text\.Json\.Nodes\.JsonNode\? Leaks\(\) => null;",
+            "public static object? Leaks() => null;"),
+        "The_model_does_not_expose_the_diff_engine_on_its_public_surface"),
+
+    // ---- BNAQ1004. ⚠ A planted shadow must still compile, or the build kills it before the gate runs:
+    // the shadowing segment sits under a namespace nothing else is inside, so nothing resolves a
+    // qualified name through it. Public in the model; internal in the UI assembly, because a rule that
+    // reads public types only would miss it there.
+    new("a model namespace shadows a referenced root", AssemblyClass,
+        () => Write(CoreProbe,
+            "namespace Bennewitz.Ninja.DiffView.MutationProbeScope.DiffPlex\n{\n"
+            + "    /// <summary>Planted by scripts/mutate-gates.cs.</summary>\n"
+            + "    public static class PlantedShadow\n    {\n    }\n}\n"),
+        "No_shipped_namespace_shadows_a_referenced_root"),
+
+    new("an internal UI namespace shadows a referenced root", AssemblyClass,
+        () => Write(UiProbe,
+            "namespace Bennewitz.Ninja.DiffView.MutationProbeScope.Avalonia\n{\n"
+            + "    /// <summary>Planted by scripts/mutate-gates.cs.</summary>\n"
+            + "    internal static class PlantedShadow\n    {\n    }\n}\n"),
+        "No_shipped_namespace_shadows_a_referenced_root"),
+
+    new("BNAQ1004 is handed nothing to read", AssemblyClass,
+        () => SubNth(AssemblyGate, AnalyzeModel, AnalyzeNothing, 4),
+        "No_shipped_namespace_shadows_a_referenced_root"),
+
+    new("BNAQ1004 is handed nothing to read in the UI assembly", AssemblyClass,
+        () => Sub(AssemblyGate, @"AssemblyRuleResult uiResult = rule\.Analyze\(ui\);",
+            "AssemblyRuleResult uiResult = rule.Analyze(AssemblyScanContext.Of());"),
+        "No_shipped_namespace_shadows_a_referenced_root"),
+
+    // The adoption's configuration: without IncludingInternalTypes() the control, internal, goes unseen.
+    new("BNAQ1004 reads public types only", AssemblyClass,
+        () => Sub(AssemblyGate, @"NamespaceShadowRule rule = NamespaceShadowRule\.IncludingInternalTypes\(\);",
+            "NamespaceShadowRule rule = new();"),
+        "No_shipped_namespace_shadows_a_referenced_root"),
+
+    new("BNAQ1004's control stops shadowing", AssemblyClass,
+        () => Sub(ShadowControlFile, @"namespace Bennewitz\.Ninja\.DiffView\.Tests\.ShadowControlScope\.System;",
+            "namespace Bennewitz.Ninja.DiffView.Tests.ShadowControlScope.Systemic;"),
+        "No_shipped_namespace_shadows_a_referenced_root"),
 ];
 
 if (only is not null)
