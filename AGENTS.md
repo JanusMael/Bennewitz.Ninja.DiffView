@@ -184,6 +184,13 @@ no dates, no counts.
   `--only` run proves only what it reached and judges nothing. ⚠ **It cannot see an assertion that was
   never written**: a gate with no floor has no floor to trip, so a new or changed guard gets its
   blinding mutation in the same change.
+- **Two controls read by one scan are anchored by their qualified names.** A finding's `Subject` is
+  text and an anchor is a substring of it, so a control whose name contains another's stands in for
+  it: `LeakControl` and `StockLeakControl` share `BNAQ1002`'s control scan, and while the first was
+  anchored by `nameof`, a `LeakControl` that had stopped leaking passed on the stock one's finding —
+  the mutation *BNAQ1002's DiffPlex control stops leaking* survived until both were anchored by
+  `typeof(…).FullName`, in
+  `AssemblyQualityTests.The_model_does_not_expose_the_diff_engine_on_its_public_surface`.
 - **A guard is an assertion, so a gate file holds no `throw`.** A `?? throw` or a throwing switch arm
   is tripped by mutations and credited to nothing, which would put a guard beyond the check above; the
   harness refuses to start while any gate-file line throws. Setup that must fail — the runtime walk's

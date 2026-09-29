@@ -67,7 +67,7 @@ rooting fix was right and incomplete: a digest that describes *what* was audited
 endings either. Reported to XamlQuality on 2026-09-24 with that evidence. **Fixed twice over**:
 DiffView's reference clones now check out LF on every platform, so Windows audits the pinned
 commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, in `2026.3.925`,
-which this repository does not pin yet).
+which this repository pins from plan 00028 on).
 
 Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
 review before any code was written. **Plan 00021 is complete** (PR #6) — `DiffBuildController` and
@@ -79,9 +79,12 @@ names outright. **Plan 00023 phase 1 is done.** **Plan 00025 is complete and mer
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
 reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
-00029 phases* below has the record. **Plan 00028 is under way** — both quality packages at
-`2026.3.928`, every rule re-read at the new pins — on `build/every-rule-re-read-here`; *Plan 00028
-phases* below has where it stands.
+00029 phases* below has the record. **Plan 00028 is done on `build/every-rule-re-read-here` and owes
+CI at the push**: both quality packages at `2026.3.928`, and every rule re-read there — `BNAQ1004`
+adopted over internal types in place of a hand-rolled test, `BNAQ1002`'s stock half given a control,
+`BNXQ1003` checking the controller's lookups itself, `BNXQ1004` on a floor the new pin did not take
+away, `BNXQ1005` declined — with one full harness run proving every guard at the new pins. *Plan
+00028 phases* below has the record.
 
 ### What ships
 
@@ -154,7 +157,7 @@ wording.
    plan 00023's phases 2–3 and before its phase 4, drafted alongside the first two for approval —
    `DECISIONS.md` has why. `BNXQ1006`, XamlQuality's `CustomControlPeerRule` — `XQ1006` while it was
    that repository's PR #27, and released in `2026.3.925` — reports the same controls and is adopted
-   with this plan, not at the pin bump that first carries it (item 7).
+   with this plan, not at the pin bump that first carried it, plan 00028.
 
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
@@ -174,9 +177,9 @@ wording.
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
 5. **Plan 00023 phases 2–5 — the window harness.** Phase 1 (`catch-crash`) is merged. The rest
-   follows the `925` pin bumps of item 7 and is split around plan 00026 (both decided 2026-09-25):
-   phases 2–3 — the X11 driver and `run-demo --detach` — after the bumps; phases 4–5, the Windows
-   back end and the record, after 00026.
+   follows plan 00028's pin bumps and is split around plan 00026 (both decided 2026-09-25):
+   phases 2–3 — the X11 driver and `run-demo --detach` — once plan 00028 has merged; phases 4–5,
+   the Windows back end and the record, after 00026.
 
 6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
@@ -186,18 +189,13 @@ wording.
    its own branch and pull request, so plan 00021's stays about the viewer. The README is public now,
    so the caveat is owed to its readers already, not only to the package's.
 
-7. **The `925` pin bumps — next, both together (decided 2026-09-25).** XamlQuality `2026.3.925` and
-   AssemblyQuality `2026.3.925` are both released, and one plan and one branch take them, after plan
-   00021 and before plan 00023's phases 2–3. Each renames every rule id — `XQ100n` → `BNXQ100n`,
-   `AQ100n` → `BNAQ100n` — in the gate files one harness proves, so one full `scripts/mutate-gates.sh`
-   run proves both; plan 00025 is frozen and keeps the old ids. `DECISIONS.md` has why they go first.
-   The AssemblyQuality half is the re-evaluation of `AQ1004` and `AQ1002`'s configuration: `05a6060`
-   and `044e71a`, both in `2026.3.925`, retire two of the three reasons plan 00025 declined `AQ1004` —
-   it cannot detect its own inertness, and it reads exported types only — and give `AQ1002`
-   `Only(namespaces)`, under which its stock set reads 0. That half is a pin bump and a re-measurement
-   against the decline plan 00025 records. The XamlQuality half is item 8, and two rules that release
-   adds: `BNXQ1005`, `KeyBindingFocusRule`, which nothing here has measured yet, and `BNXQ1006`, which
-   waits for plan 00026 (item 0b).
+7. ~~The `925` pin bumps~~ — **closed by plan 00028.** Both packages went to `2026.3.928` rather
+   than 925, in one plan and one branch (`DECISIONS.md`), and every rule was re-read there to plan
+   00025's standard: `BNAQ1004` adopted over internal types in place of the hand-rolled shadow test;
+   `BNAQ1002` kept as its stock set plus `DiffPlex`, with a control for the stock half; `BNXQ1003`
+   checking the controller's lookups against each host's theme itself; `BNXQ1004` kept on a floor
+   the new pin did not take away (item 8); `BNXQ1005` declined, as `XQ1001` was; `BNXQ1006` left for
+   plan 00026 (item 0b). One full `scripts/mutate-gates.sh` run proves every guard there.
 
 8. ~~At the XamlQuality bump, re-measure `XQ1004`'s `Skipped` guard~~ — **closed by plan 00028's
    phase 2.** The bump went to `2026.3.928`, and there the guard is live: a child of the fixed slot
@@ -547,7 +545,7 @@ either.
 | 1 `BNXQ1003` | XS | done | The expected skips narrow to `DiffPaneHeader` and `DiffStatusStrip`; the controller-part assertion retires with `PartsNamedIn`, `HostsOfTheController` and `PartConstantsOf`, the rule doing that work itself from 925. The viewer-constant mutation deleted and its theme-side twin added, the controller's mutation now killed by the findings assertion — `DECISIONS.md` has why. Re-read at 928: 47 inspected, no findings, the two expected skips. `TemplatePartTests` green, and the harness's template-part mutations each killed by the guard they name, the twin among them |
 | 2 `BNXQ1004` on its new guard; `BNXQ1005` declined | S | done | `GridSlotTests` floors the grid children the scan holds — 37, counted in the test beside the floor as direct element children of a `Grid` that are not property elements — instead of `Inspected`, which reads 0 from 925 on a clean repository. The `Skipped` guard is live at 928 and loses its `inert-at-pin` marker; a mutation of its own proves it. `scripts/xq1004-skips.*` are removed, with the harness hint that named them and `AGENTS.md` §5's sentence, and open item 8 closes. `BNXQ1005` stays unadopted: it inspects nothing here. `GridSlotTests` green; in the harness the overflow, the unevaluable size and the markup-free ground each trip their own guard first — findings, `Skipped`, the new floor — and `--guards` reports no marker |
 | 3 AssemblyQuality | S | done | `BNAQ1002`'s stock control, `StockLeakControl`, a public `JsonNode` member the adopted instance reports; `BNAQ1004` adopted with `IncludingInternalTypes()` over both shipped assemblies — a floor of 50 on each, a findings assertion on each, and an internal standing control, `ShadowControl`, under a `System` segment nested where nothing resolves through it, named rather than referenced so a mutation that moves it still compiles; `NamespaceConventionTests`' shadowing test retired, its prefix test kept. Re-read at 928: `BNAQ1004` reads 140 types in `DiffView.Core` and 266 in `DiffView.Avalonia` — 264 at `c465c65`, the two more being plan 00029's internal types — with no findings. In the harness each of the seven new mutations trips the guard it names first: the two planted shadows each assembly's findings assertion, the two blinded scans each assembly's floor, the rule reading public types only and the control moved out of its segment the control's assertion, the silenced stock control its own; every other `BNAQ` mutation is killed by the test it names. They also found `LeakControl`'s assertion unguarded. From 925 a prefix nothing uses fails at the `Inspected` floor rather than there, and the mutation that reaches it instead — the DiffPlex control silenced — **survived**: the anchor was `nameof(LeakControl)`, and `StockLeakControl` contains that name. Both controls are anchored by their qualified names now, and that mutation is killed at `LeakControl`'s assertion (`DECISIONS.md`) |
-| 4 The record | S | not started | |
+| 4 The record | S | done — CI owed at the push | `AGENTS.md` §5: two controls read by one scan are anchored by their qualified names. `DECISIONS.md`: what the plan kept, adopted and declined, and the one figure that moved — `BNAQ1004` reads 266 types in `DiffView.Avalonia` over `main`, not the plan's 264. `CHANGELOG.md`: the plan's two entries. This file: open item 7 closes, as item 8 did in phase 2. The full `scripts/mutate-gates.sh` run on `d087122`: 73 mutations as declared — 69 killed by a test, 2 by the build, 2 green by design, nothing unexpected — and all 50 assertions in the gate files tripped first, with no `inert-at-pin` marker standing. The suite, 682, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`; `--guards` clean; the trimmed publish without an `IL` warning. What is still owed is CI's five jobs, at the push |
 
 ## Plan 00029 phases
 
