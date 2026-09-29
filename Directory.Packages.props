@@ -48,6 +48,9 @@
          here adopts. -->
     <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.928" />
     <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.928" />
+    <!-- Unicode's East Asian Width, for scripts/measure-menu-width.cs: a CJK glyph takes two columns,
+         and .NET carries no such table. Script-only: nothing the solution builds references it. -->
+    <PackageVersion Include="Wcwidth" Version="4.0.1" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
