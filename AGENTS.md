@@ -602,8 +602,9 @@ why.
   rather than concluding from pixels.
 - **Launch the demo detached or it will not survive.** A background command started through the
   agent harness is reaped at the turn boundary — the first two attempts died with exit 144 before
-  anything could be captured. `nohup dotnet run --project src/DiffView.Demo -- <left> <right> &`
-  followed by `disown`, from a script file, outlives the turn.
+  anything could be captured. `scripts/run-demo.sh --detach` is the way now: the driver's `launch`
+  starts the demo in a session of its own with its output in a log file, and returns once the window
+  is up, printing the pid and the log's path.
 - **Of the screenshot tools, only `import` is installed and it does not work** — there is no
   `grim`, `spectacle`, `gnome-screenshot`, `flameshot`, `maim` or `xwd`. `ffmpeg` is present and
   is the one that does, per the recipe above.
@@ -715,6 +716,6 @@ library's text without touching the operating system. The demo's own chrome stay
 purpose, so a frame shows exactly the surface under judgement — and the status strip names the
 culture, which is how you confirm the flag took rather than assuming it.
 
-Measure before you look. `east_asian_width` counts a CJK glyph as two columns, and the widest
-locale is not the one you expect: on 2026-09-13 German measured 100% of English's widest menu entry
-and Portuguese 117%.
+Measure before you look: `scripts/measure-menu-width.sh` reports each locale's widest menu entry
+against English's in display columns, a CJK glyph taking two, and the widest locale is not the one
+you expect: on 2026-09-13 German measured 100% of English's widest menu entry and Portuguese 117%.

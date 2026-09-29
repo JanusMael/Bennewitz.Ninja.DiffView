@@ -8,6 +8,10 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00023 phase 3 — `--detach` on `scripts/run-demo.sh` (`-Detach` on `run-demo.ps1`), which
+  starts the demo in a session of its own through the driver's `launch` and returns once its window
+  is up; and `scripts/measure-menu-width.{cs,sh,ps1}`, which reports each shipped locale's widest menu
+  entry against English's in display columns, a CJK glyph taking two.
 - Plan 00023 phase 2 — `scripts/drive-demo.{cs,sh,ps1}`, a driver for the running demo under X11:
   `launch` starts it detached, and `window`, `geometry`, `key`, `click`, `mark` / `popup`, `capture`
   and `hover` drive it and look at it, chained with `then`. It finds its windows by what they are

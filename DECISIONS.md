@@ -3586,3 +3586,23 @@ sent a menu click to the desktop — and `capture` refuses a frame with no pixel
 which a session that is not presenting hands x11grab while the capture succeeds. The second has not
 met a black frame yet: the session presented throughout phase 2. `drag` and `close`, which plan
 00029's throwaway driver had, are not added: nothing this plan replaces needs them.
+
+## Plan 00023 phase 3: one launcher, and it is the driver's
+
+The plan folds the scratch `launch-demo.sh` into `run-demo --detach` — one launcher, not a second
+script that drifts from the first — and gives the driver a `launch` verb as well. Phase 2 wrote
+`launch` first: it builds the demo, starts it in a session of its own with its output in a log file,
+waits for its window, and records the pid for the next verb. So `--detach` on `run-demo.sh`, and
+`-Detach` on `run-demo.ps1`, hand the pair and the flags to it, and the detaching lives in one place.
+On Windows that place says its back end is plan 00023's phase 4 until the phase is written.
+
+## Plan 00023 phase 3: the locale tool takes its widths from Wcwidth
+
+`measure-menu-width` measures in display columns because a CJK glyph takes two, and the Python it
+ports read that from `unicodedata`. .NET carries no East Asian Width table. Adding `Wcwidth` —
+Spectre's, MIT — writing the Wide and Fullwidth ranges into the script, and leaving the tool in
+scratch were the three ways; the choice was Brian's, on 2026-09-29: `Wcwidth` 4.0.1, a
+`PackageVersion` beside the other tooling that nothing the solution builds references. It measures
+the Python's own example, `前後を含めて差分表示`, at 20 and the ellipsis at 1, as the Python did,
+and the two reports agree line for line but for one space: the Python padded its ratio column to one
+column fewer than its own header, and the port aligns them.
