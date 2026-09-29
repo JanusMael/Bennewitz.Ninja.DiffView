@@ -75,7 +75,7 @@ review before any code was written. **Plan 00021 is complete** (PR #6) — `Diff
 then the hosting guide's account of the three controls — rebased onto `main` a second time once #3
 and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed publish without an
 `IL` warning. The viewer **does not gate the release**, and it has no find, which the hosting guide
-names outright. **Plan 00023 phase 1 is done, and phases 2–3 are done on its branch.** **Plan 00025 is complete and merged** (PR #1,
+names outright. **Plan 00023 phases 1–3 are done** — phases 2–3 in PR #9. **Plan 00025 is complete and merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
 reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
@@ -176,10 +176,9 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-5. **Plan 00023 phases 4–5 — the window harness.** Phase 1 (`catch-crash`) is merged, and phases 2–3
-   — the X11 driver, `run-demo --detach` and the locale tool — are done on
-   `feat/the-harness-the-prose-describes`. Phases 4–5, the Windows back end and the record, follow
-   plan 00026 (decided 2026-09-25).
+5. **Plan 00023 phases 4–5 — the window harness.** Phases 1–3 are done: `catch-crash`, then the X11
+   driver, `run-demo --detach` and the locale tool in PR #9. Phases 4–5, the Windows back end and the
+   record, follow plan 00026 (decided 2026-09-25).
 
 6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
@@ -675,6 +674,7 @@ is now inserted first; having no length, it displaces nothing there. `AGENTS.md`
 | New tests proven able to fail | 3 of 3 mutations killed: every character one column, a locale left out of the report, and a report counting characters while `--columns` does not |
 | The suite | 697 = 692 + 5 in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`, no existing test edited; the build clean under `-warnaserror` |
 | Scratch cleared | `launch-demo.sh` and `measure-menu-width.py` deleted |
+| CI, for phases 2–3 together | All five jobs green on PR #9's run `36572803768`. Windows and macOS run 633 — the suite less the 64 frame cases that are Linux's baselines — so the fifteen new tests pass there on their first run, each script compiled by `dotnet run` and `Wcwidth` restored on the runner |
 ## Plan 00022 phases
 
 | Phase | Size | Status | Notes |
