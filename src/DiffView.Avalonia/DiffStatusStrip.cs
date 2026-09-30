@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls.Primitives;
 
 namespace Bennewitz.Ninja.DiffView;
@@ -219,6 +220,9 @@ public class DiffStatusStrip : TemplatedControl
 
     /// <summary>Raises <see cref="DismissRequested"/>.</summary>
     public ICommand DismissCommand => _dismiss;
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new DiffStatusStripAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

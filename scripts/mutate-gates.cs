@@ -59,6 +59,9 @@ const string InlineSource = "src/DiffView.Avalonia/InlineDiffView.cs";
 
 const string ProbeControl = "src/DiffView.Avalonia/MutationProbeControl.cs";
 const string HeaderSource = "src/DiffView.Avalonia/DiffPaneHeader.cs";
+const string ViewPeer = "src/DiffView.Avalonia/DiffViewAutomationPeer.cs";
+const string HeaderPeer = "src/DiffView.Avalonia/DiffPaneHeaderAutomationPeer.cs";
+const string StripPeer = "src/DiffView.Avalonia/DiffStatusStripAutomationPeer.cs";
 const string UiProbe = "src/DiffView.Avalonia/MutationProbe.cs";
 const string CoreProbe = "src/DiffView.Core/MutationProbe.cs";
 const string ShadowControlFile = "tests/DiffView.Avalonia.Tests/ShadowControl.cs";
@@ -490,7 +493,7 @@ List<Mutation> mutations =
     // The viewer's parts are declared by its own theme, and only the viewer's own states put them on
     // screen — which is what dropping both shows.
     new("the walk never shows a viewer", A11yClass,
-        () => Sub(A11yGate, @"Collect\(viewer\.View, interactive, visited, unnamed\);",
+        () => Sub(A11yGate, @"visit\(viewer\.View\);",
             "/* the viewer is left out */", 2),
         "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
 
@@ -515,6 +518,61 @@ List<Mutation> mutations =
         () => Sub(A11yGate, @"XamlScanContext library = LibraryWithin\(ScanAll\(\)\);",
             @"XamlScanContext library = XamlScanContext.Load(RepoPaths.Source(""src/DiffView.Core""));"),
         "A_name_declared_by_a_template_binding_is_not_empty_at_runtime"),
+
+    // ---- BNXQ1006, plan 00026. Skipped is asserted before the floor, so the blinding it exists for — a
+    // scan handed no assembly, which skips every themed control — trips Skipped, and the floor needs a
+    // mutation of its own: ground with no markup, where nothing is themed and so nothing is skipped either.
+    new("the peer scan is handed no assembly", A11yClass,
+        () => Sub(A11yGate, @"\.WithAssemblies\(typeof\(SideBySideDiffView\)\.Assembly\)", ""),
+        "Every_themed_control_has_a_peer_of_its_own"),
+
+    new("the peer scan points at markup-free ground", A11yClass,
+        () => Sub(A11yGate, @"LibraryWithin\(ScanAll\(\)\)\.WithAssemblies",
+            @"XamlScanContext.Load(RepoPaths.Source(""src/DiffView.Core"")).WithAssemblies"),
+        "Every_themed_control_has_a_peer_of_its_own"),
+
+    // The override is removed, not made to return the base peer: BNXQ1006 counts any override, including
+    // one that returns the empty peer on purpose — that is the rule's opt-out, and it is not a finding.
+    new("a themed control loses its peer", A11yClass,
+        () => Sub(HeaderSource,
+            @"\n\s*/// <inheritdoc/>\n\s*protected override AutomationPeer OnCreateAutomationPeer\(\) => new DiffPaneHeaderAutomationPeer\(this\);\n",
+            "\n"),
+        "Every_themed_control_has_a_peer_of_its_own"),
+
+    // ---- The peer walk, plan 00026. Its requirement is derived from the markup's themes and anchored to
+    // BNXQ1006's count; each thing it asks of a peer has a mutation that makes it the first to fail.
+    new("the peer walk's requirement loses a themed control", A11yClass,
+        () => Sub(A11yGate, @"\.Where\(ours\.Contains\)", ".Where(n => ours.Contains(n) && n != nameof(DiffPaneHeader))"),
+        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+
+    new("a themed control has no control type written down", A11yClass,
+        () => Sub(A11yGate, @"\n\s*\[nameof\(DiffStatusStrip\)\] = AutomationControlType\.StatusBar,", ""),
+        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+
+    new("a peer stops being a control element", A11yClass,
+        () => Sub(StripPeer, @"(=> AutomationControlType\.StatusBar;)",
+            "$1\n\n    protected override bool IsControlElementCore() => false;"),
+        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+
+    new("a view's peer claims another control type", A11yClass,
+        () => Sub(ViewPeer, @"AutomationControlType\.Group;", "AutomationControlType.Custom;"),
+        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+
+    new("a peer advertises a pattern", A11yClass,
+        () => Sub(HeaderPeer, @": ControlAutomationPeer\(owner\)\r?\n\{",
+            ": ControlAutomationPeer(owner), global::Avalonia.Automation.Provider.IInvokeProvider\n{\n"
+            + "    public void Invoke()\n    {\n    }\n"),
+        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+
+    new("a peer reports bounds its control is not at", A11yClass,
+        () => Sub(StripPeer, @"(=> AutomationControlType\.StatusBar;)",
+            "$1\n\n    protected override global::Avalonia.Rect GetBoundingRectangleCore() =>\n"
+            + "        base.GetBoundingRectangleCore().Translate(new global::Avalonia.Vector(0, -100000));"),
+        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+
+    new("the peer walk records nothing it reaches", A11yClass,
+        () => Sub(A11yGate, @"\n\s*reached\.Add\(type\);", ""),
+        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
 
     // ---- BNXQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
     // about an out-of-range index: a column index past a five-column grid SURVIVES this gate, measured.

@@ -75,7 +75,9 @@ review before any code was written. **Plan 00021 is complete** (PR #6) — `Diff
 then the hosting guide's account of the three controls — rebased onto `main` a second time once #3
 and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed publish without an
 `IL` warning. The viewer **does not gate the release**, and it has no find, which the hosting guide
-names outright. **Plan 00023 phases 1–3 are done** — phases 2–3 in PR #9. **Plan 00025 is complete and merged** (PR #1,
+names outright. **Plan 00023 phases 1–3 are done** — phases 2–3 in PR #9. **Plan 00026 is approved and under
+way** on `feat/every-control-has-a-peer`: phase 1 gives each of the seven controls the library themes an
+automation peer and gates `BNXQ1006`; *Plan 00026 phases* below has the record. **Plan 00025 is complete and merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
 reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
@@ -147,17 +149,16 @@ wording.
 
 ### Open
 
-0b. **Plan 00026 — an agent cannot drive this library — is opened by measurement and unwritten.**
-   All eight controls this repository ships return `NoneAutomationPeer` with `ControlType` `None`
-   and honour no automation pattern, against `Button`/`TextBox` answering `Button`+`Invoke` and
-   `Edit`+`Value` in the same run. No `AutomationId` anywhere; `OverlayPopups` unset, so the five
-   context-menu surfaces are their own top-level windows. ⚠ The acceptance test is **drivability by
-   a harness**, not screen-reader quality — the latter is why the criteria exist, not the gate.
-   Probe: `~/c/cl/scratch/DiffView/plan-00026/DrivabilityProbeTests.cs`. **Placed 2026-09-25**: after
-   plan 00023's phases 2–3 and before its phase 4, drafted alongside the first two for approval —
-   `DECISIONS.md` has why. `BNXQ1006`, XamlQuality's `CustomControlPeerRule` — `XQ1006` while it was
-   that repository's PR #27, and released in `2026.3.925` — reports the same controls and is adopted
-   with this plan, not at the pin bump that first carried it, plan 00028.
+0b. **Plan 00026 — an agent cannot drive this library — is approved (2026-09-30) and under way; phase
+   1 is done.** Measured before it: every control this repository ships returned `NoneAutomationPeer`
+   with `ControlType` `None` and honoured no automation pattern, against `Button`/`TextBox` answering
+   `Button`+`Invoke` and `Edit`+`Value` in the same run, and no part carried an `AutomationId`. The
+   seven controls the library themes now carry peers of their own and `BNXQ1006` holds them to it; the
+   overview map, the connector gutter and the two margins follow in phase 2, and the ids with
+   `BNXQ1007` and `BNXQ1008` in phase 3. `OverlayPopups` stays unset, so the five context-menu surfaces
+   remain top-level windows, as the plan decides. ⚠ The acceptance test is **drivability by a
+   harness**, not screen-reader quality — the latter is why the criteria exist, not the gate. **Placed
+   2026-09-25**: after plan 00023's phases 2–3 and before its phase 4 — `DECISIONS.md` has why.
 
 3. **The first publish — on hold, decided 2026-09-23.** DiffView does not publish yet. The packages
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
@@ -535,6 +536,15 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00026 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The themed controls, and `BNXQ1006` | S | done; the mutation verdicts follow | An internal peer beside each of the seven controls the library themes, reached through an `OnCreateAutomationPeer` override: the three views a `Group`, the pane an `Edit`, the header a `Header`, the find bar a `ToolBar`, the strip a `StatusBar` — none advertising a pattern, each named by the `AutomationProperties.Name` it already carried. The pane's peer answers `HasKeyboardFocus`, `IsKeyboardFocusable` and `SetFocus` for its text area, because AvaloniaEdit 12.0.0's `TextEditor` is not focusable and the stock peer reads its owner: `SetFocus_on_a_panes_peer_puts_the_keyboard_in_its_text_area_and_the_peer_says_so`. `BNXQ1006` gated in `AccessibilityCoverageTests` with its scan handed the library's assembly — `Skipped` asserted empty first, since a scan with none skips all eight themes and reads clean, then a floor of 3 under the 7 it inspects, then no findings: `Every_themed_control_has_a_peer_of_its_own`. The six-state runtime walk is shared rather than copied, and a second reading of it asks every themed control on screen for a control element of the type written down for it, no pattern, and bounds whose centre hit-tests into the control, its requirement derived from the markup's themes and anchored to `BNXQ1006`'s count: `Every_themed_control_on_screen_is_a_control_element_of_its_type`. Found by that test, not by reading: a hit-test reads the scene the renderer last composed rather than the layout, so with the find bar just opened its centre hit the pane that had been there until a frame was drawn; the walk draws one first. Ten mutations in `scripts/mutate-gates.cs` target the new guards, and the viewer mutation is re-pointed at the shared walk |
+| 2 The drawn surfaces | S | to do | |
+| 3 Identities, `BNXQ1007` and `BNXQ1008` | M | to do | |
+| 4 The record | S | to do | |
 
 ## Plan 00028 phases
 

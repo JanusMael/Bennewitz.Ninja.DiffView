@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -1039,6 +1040,9 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
     {
         return _controller.ApplyFolds(contextRows, minimumFoldedRows);
     }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new DiffViewAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
