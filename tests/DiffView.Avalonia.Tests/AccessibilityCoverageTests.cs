@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Logging;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
 using Bennewitz.Ninja.DiffView.Tests.Composite;
@@ -627,6 +628,7 @@ public sealed class AccessibilityCoverageTests
         // the library's markup themes are anchored to what BNXQ1006 inspects, so a derivation that drifts
         // from the rule's own reading fails here before it can quietly shrink what the rest of this test
         // asks.
+        TestLogSink.Instance.Clear();
         string[] controls = ConcreteControls();
         string[] themed = ThemedControls();
         int inspected = new CustomControlPeerRule().Analyze(PeerScan()).Inspected;
@@ -682,6 +684,9 @@ public sealed class AccessibilityCoverageTests
             unreached.Count == 0,
             "The walk never had these controls of ours on screen, so nothing above was asked of them: "
             + string.Join(", ", unreached) + ". Bring each on screen in one of the walk's states.");
+
+        // The walk draws a frame in every state, and a test that renders asserts a clean log (AGENTS.md §5).
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
     }
 
     /// <summary>
@@ -931,10 +936,22 @@ public sealed class AccessibilityCoverageTests
             + "view: " + string.Join(", ", unfound) + ". Bring each part on screen in one of the walk's states.");
 
         // What is not on screen is not in the tree: a part switched off, closed or with nothing to say is not
-        // found at all, where one merely shrunk or clipped would be. ⛔ The parts left on come first, because
-        // a reading that reached nothing finds none of the hidden ones either.
-        List<string> offState = await IdsFoundWithTheOptionalPartsOff();
-        List<string> leftOnYetMissing = [.. new[] { "LeftPane", "RightPane", "Gutter" }.Where(id => !offState.Contains(id))];
+        // found at all, where one merely shrunk or clipped would be. All three views, because the unified
+        // view hides its chrome through code of its own. ⛔ The parts left on come first, because a reading
+        // that reached nothing finds none of the hidden ones either.
+        Dictionary<string, List<string>> offState = await IdsFoundWithTheOptionalPartsOff();
+        Dictionary<string, string[]> leftOn = new(StringComparer.Ordinal)
+        {
+            [nameof(SideBySideDiffView)] = ["LeftPane", "RightPane", "Gutter"],
+            [nameof(InlineDiffView)] = ["Pane"],
+            [nameof(DiffViewer)] = ["LeftPane", "RightPane", "Gutter"],
+        };
+        List<string> leftOnYetMissing =
+        [
+            .. leftOn.SelectMany(v => v.Value
+                .Where(id => !offState.GetValueOrDefault(v.Key, []).Contains(id))
+                .Select(id => $"{id} in {v.Key}")),
+        ];
         Assert.True(
             leftOnYetMissing.Count == 0,
             "With the optional parts switched off, the control view did not show these parts, which stay on: "
@@ -942,7 +959,10 @@ public sealed class AccessibilityCoverageTests
             + "ones would mean nothing.");
 
         string[] switchedOff = ["Minimap", "LeftHeader", "RightHeader", "StatusStrip", "FindBar", "BannerAction"];
-        List<string> hiddenYetFound = [.. switchedOff.Where(offState.Contains)];
+        List<string> hiddenYetFound =
+        [
+            .. offState.SelectMany(v => switchedOff.Where(v.Value.Contains).Select(id => $"{id} in {v.Key}")),
+        ];
         Assert.True(
             hiddenYetFound.Count == 0,
             "These parts are switched off, closed or empty, and a harness still finds them: "
@@ -1038,33 +1058,59 @@ public sealed class AccessibilityCoverageTests
     }
 
     /// <summary>
-    /// Every id a side-by-side view's control view shows with the map, the headers and the strip switched
-    /// off, the find bar closed and a build with nothing to say.
+    /// Every id each view's control view shows, by view, with its optional parts off: the map where it has
+    /// one, the headers and the strip switched off, the find bar closed and a build with nothing to say.
     /// </summary>
-    private static async Task<List<string>> IdsFoundWithTheOptionalPartsOff()
+    private static async Task<Dictionary<string, List<string>>> IdsFoundWithTheOptionalPartsOff()
     {
         (string left, string right) = CompositeHost.SmallFixture();
-        using CompositeHost host = new();
-        host.View.ShowMinimap = false;
-        host.View.ShowHeaders = false;
-        host.View.ShowStatusStrip = false;
-        host.Show();
-        await host.LoadAsync(left, right);
-        CompositeHost.Layout();
+        Dictionary<string, List<string>> found = new(StringComparer.Ordinal);
 
-        return
-        [
-            .. ControlView(ControlAutomationPeer.CreatePeerForElement(host.View))
-                .Select(p => p.GetAutomationId())
-                .OfType<string>(),
-        ];
+        using (CompositeHost host = new())
+        {
+            host.View.ShowMinimap = false;
+            host.View.ShowHeaders = false;
+            host.View.ShowStatusStrip = false;
+            host.Show();
+            await host.LoadAsync(left, right);
+            CompositeHost.Layout();
+            found[nameof(SideBySideDiffView)] = IdsShownUnder(host.View);
+        }
+
+        using (InlineHost unified = new())
+        {
+            unified.View.ShowHeaders = false;
+            unified.View.ShowStatusStrip = false;
+            unified.Show();
+            await unified.LoadAsync(left, right);
+            InlineHost.Layout();
+            found[nameof(InlineDiffView)] = IdsShownUnder(unified.View);
+        }
+
+        using (ViewerHost viewer = new())
+        {
+            viewer.View.ShowMinimap = false;
+            viewer.View.ShowHeaders = false;
+            viewer.View.ShowStatusStrip = false;
+            viewer.Show();
+            await viewer.LoadAsync(left, right);
+            ViewerHost.Layout();
+            found[nameof(DiffViewer)] = IdsShownUnder(viewer.View);
+        }
+
+        return found;
     }
+
+    /// <summary>Every id UI Automation's control view shows under <paramref name="view"/>.</summary>
+    private static List<string> IdsShownUnder(Control view) =>
+        [.. ControlView(ControlAutomationPeer.CreatePeerForElement(view)).Select(p => p.GetAutomationId()).OfType<string>()];
 
     [AvaloniaFact]
     public async Task Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it()
     {
         // ⭐ The surfaces are derived — every DiffPaneRegion, and the header — and the entries are whatever
         // each surface's builder produced, read back through UI Automation the way a harness reads them.
+        TestLogSink.Instance.Clear();
         (string left, string right) = CompositeHost.SmallFixture();
         Dictionary<string, string?[]> menus = new(StringComparer.Ordinal);
         List<string> silent = [];
@@ -1105,12 +1151,17 @@ public sealed class AccessibilityCoverageTests
             await unified.LoadAsync(left, right);
             unified.Window.CaptureRenderedFrame()?.Dispose();
 
-            // The unified view has no connector and no map, so a region whose surface it lacks is not asked.
+            // The unified view has no connector and no map, so those two are not asked; any other surface it
+            // has nowhere to click on is a miss, as on the side-by-side view.
             foreach (DiffPaneRegion region in Enum.GetValues<DiffPaneRegion>())
             {
                 if (PointOn(region, unified.Pane, unified.View, unified.Window) is { } at)
                 {
                     ReadMenu($"unified {region}", at, unified.Window, () => unified.View.LastMenu, menus, silent);
+                }
+                else if (region is not (DiffPaneRegion.ConnectorGutter or DiffPaneRegion.OverviewMap))
+                {
+                    silent.Add($"unified {region}");
                 }
             }
         }
@@ -1150,6 +1201,8 @@ public sealed class AccessibilityCoverageTests
             twice.Count == 0,
             "A harness finds a menu entry with one search within the menu, and these ids are there more than "
             + "once:" + Environment.NewLine + string.Join(Environment.NewLine, twice.Select(t => "  " + t)));
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
     }
 
     /// <summary>

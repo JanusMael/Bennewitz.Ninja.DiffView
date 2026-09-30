@@ -647,7 +647,7 @@ List<Mutation> mutations =
         "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
 
     new("the id walk's off-state reading reads nothing", A11yClass,
-        () => Sub(A11yGate, @"ControlAutomationPeer\.CreatePeerForElement\(host\.View\)",
+        () => Sub(A11yGate, @"ControlAutomationPeer\.CreatePeerForElement\(view\)",
             "ControlAutomationPeer.CreatePeerForElement(new Border())"),
         "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
 
@@ -656,6 +656,13 @@ List<Mutation> mutations =
     new("a switched-off map is shrunk rather than hidden", A11yClass,
         () => Sub(SbsController, @"_minimap\.IsVisible = ShowMinimap;",
             "_minimap.Width = ShowMinimap ? DiffMinimap.MapWidth : 0;", 2),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    // The unified view applies its chrome toggles in code of its own, which the side-by-side reading
+    // never runs — so the off state is read on every view, and this is what that reading exists for.
+    new("the unified view's switched-off strip is shrunk rather than hidden", A11yClass,
+        () => Sub(InlineSource, @"_statusStrip\.IsVisible = ShowStatusStrip;",
+            "_statusStrip.Height = ShowStatusStrip ? double.NaN : 0;"),
         "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
 
     // ---- The menus. Every surface is asked, the entries are read through UI Automation, and each guard is
@@ -688,8 +695,9 @@ List<Mutation> mutations =
 
     // ---- BNXQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
     // about an out-of-range index: a column index past a five-column grid SURVIVES this gate, measured.
-    // The 16-pixel spacer between the panes is the one fixed slot in the library's grids, so it is the
-    // only place this can be shown.
+    // The library's fixed slots are the 16-pixel spacers of the two-sided views' header and pane grids and
+    // the unified view's 1-pixel header divider, and none of their children declares a size — so the
+    // side-by-side view's header spacer is given one, the only way this can be shown.
     new("a control asks for more room than its fixed grid slot", GridClass,
         () => Sub(SbsTheme,
             @"<Border Grid\.Column=""2"" Background=""\{DynamicResource DiffView\.HeaderBackgroundBrush\}"" />",
