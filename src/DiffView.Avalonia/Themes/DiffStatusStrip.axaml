@@ -91,7 +91,7 @@
                       AutomationProperties.Name="{TemplateBinding TransientText}">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <TextBlock Name="PART_TransientText" Text="{TemplateBinding TransientText}" FontSize="11" VerticalAlignment="Center" />
-                  <Button Name="PART_Dismiss"
+                  <Button Name="PART_Dismiss" AutomationProperties.AutomationId="StatusDismiss"
                           Content="×"
                           Padding="4,0"
                           MinHeight="0"

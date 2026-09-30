@@ -1,3 +1,5 @@
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
@@ -70,6 +72,89 @@ public sealed class DemoViewTests
         }
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task Each_view_is_found_by_its_own_explicit_id_while_it_is_the_one_on_screen()
+    {
+        TestLogSink.Instance.Clear();
+        MainWindow window = Open();
+        try
+        {
+            await SettleAsync(window);
+            (DemoView View, Control Control, string Id)[] views =
+            [
+                (DemoView.SideBySide, window.Diff, "SideBySide"),
+                (DemoView.Unified, window.Unified, "Unified"),
+                (DemoView.Viewer, window.Viewer, "Viewer"),
+            ];
+
+            // ⛔ The attached property first. Two of the three ids equal the x:Name Avalonia derives an id
+            // from when none is set, so a search of the control view would find those two with their ids
+            // deleted — and plan 00023's back end is to find them by an id that no rename moves.
+            foreach ((DemoView each, Control control, string id) in views)
+            {
+                Assert.True(
+                    AutomationProperties.GetAutomationId(control) == id,
+                    $"The demo's {each} view declares the id '{AutomationProperties.GetAutomationId(control)}', "
+                    + $"where a harness searches for '{id}'.");
+            }
+
+            AssertFoundAlone(window, views, DemoView.SideBySide);
+            foreach (DemoView view in new[] { DemoView.Viewer, DemoView.Unified, DemoView.SideBySide })
+            {
+                EntryFor(window, view).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                await SettleAsync(window);
+                AssertFoundAlone(window, views, view);
+            }
+        }
+        finally
+        {
+            window.Close();
+        }
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    /// <summary>
+    /// A search of the window's control view finds <paramref name="shown"/>'s id exactly once and the other
+    /// two views' ids not at all, since a view that is not on screen is not in the tree.
+    /// </summary>
+    private static void AssertFoundAlone(MainWindow window, (DemoView View, Control Control, string Id)[] views, DemoView shown)
+    {
+        string[] found =
+        [
+            .. ControlView(ControlAutomationPeer.CreatePeerForElement(window))
+                .Select(p => p.GetAutomationId())
+                .OfType<string>(),
+        ];
+
+        foreach ((DemoView each, Control _, string id) in views)
+        {
+            int expected = each == shown ? 1 : 0;
+            int count = found.Count(f => f == id);
+            Assert.True(
+                count == expected,
+                $"With {shown} on screen, a search of the window's control view finds '{id}' {count} time(s), "
+                + $"where it should find it {expected}.");
+        }
+    }
+
+    /// <summary>Every peer UI Automation's control view shows under <paramref name="peer"/>, the peer itself included.</summary>
+    private static IEnumerable<AutomationPeer> ControlView(AutomationPeer peer)
+    {
+        if (peer.IsControlElement())
+        {
+            yield return peer;
+        }
+
+        foreach (AutomationPeer child in peer.GetChildren())
+        {
+            foreach (AutomationPeer below in ControlView(child))
+            {
+                yield return below;
+            }
+        }
     }
 
     [Fact]

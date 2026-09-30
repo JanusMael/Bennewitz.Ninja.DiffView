@@ -19,13 +19,17 @@ namespace Bennewitz.Ninja.DiffView;
 /// </summary>
 internal abstract class DiffMargin : AbstractMargin
 {
-    protected DiffMargin(DiffPanePresenter owner, string decoratorName, string automationNameKey)
+    protected DiffMargin(DiffPanePresenter owner, string decoratorName, string automationNameKey, string automationId)
     {
         ArgumentNullException.ThrowIfNull(owner);
         Owner = owner;
         DecoratorName = decoratorName;
         Focusable = false;
         AutomationProperties.SetName(this, DiffViewStrings.Get(automationNameKey));
+
+        // Unique within the pane, not the view: a harness finds the pane first and then its margin,
+        // which is what lets both panes' margins carry the same two ids.
+        AutomationProperties.SetAutomationId(this, automationId);
     }
 
     /// <summary>The presenter this margin belongs to.</summary>

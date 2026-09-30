@@ -4,7 +4,8 @@ using Bennewitz.Ninja.XamlQuality.Rules;
 namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
-/// No control declares a size larger than the <b>fixed</b> grid slot it sits in.
+/// No control declares a size larger than the <b>fixed</b> grid slot it sits in, and none is hidden by a
+/// slot of no size alone.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,8 +19,9 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// <para>
 /// ⚠ <b>Only fixed slot sizes are decidable</b>, which is most of what this repository's grids use
 /// <c>*</c> and <c>Auto</c> for. A <c>*</c> row resolves against its siblings and the available space,
-/// and <c>Auto</c> against its content, so neither can be judged from markup. The one fixed slot in the
-/// library's own grids is the 16-pixel spacer column between the two panes.
+/// and <c>Auto</c> against its content, so neither can be judged from markup. The fixed slots in the
+/// library's own grids are the 16-pixel spacer columns between the two panes and between their headers,
+/// in both two-sided views, and the unified view's 1-pixel divider between its headers.
 /// </para>
 /// <para>
 /// ⭐ <b>Adopted at <c>2026.3.924</c>, the first published release carrying it</b>, where it measured
@@ -38,6 +40,16 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// define is not its concern. Measured: <c>Grid.Column="9"</c> on a five-column grid survives this gate.
 /// A gate adopted on a description of a defect it cannot see is precisely what plan 00025 exists to
 /// refuse, and only a mutation separates the two.
+/// </para>
+/// <para>
+/// <c>BNXQ1008</c>, adopted in plan 00026, is <c>BNXQ1004</c>'s other half by XamlQuality's account: a
+/// control that asks for <em>no</em> size, in a slot that has none. ⭐ <b>A slot of no size hides a control
+/// from people, not from a harness.</b> The control is arranged empty, stays effectively visible, and its
+/// peer stays in the automation tree, so a harness finds a part nobody can see. What leaves the tree is a
+/// control hidden through <c>IsVisible</c>, which is how every part this library shows only on request is
+/// hidden. It reads the library's markup: 5 controls sized at <c>2026.3.928</c> — the ones in the fixed
+/// slots above, <c>Auto</c> and <c>*</c> stating no size — and 0 findings. Unlike <c>BNXQ1004</c> it
+/// counts a control in a slot with room, so its own count is what shows it read the markup.
 /// </para>
 /// </remarks>
 public sealed class GridSlotTests
@@ -85,6 +97,48 @@ public sealed class GridSlotTests
             "A control asks for more room than its fixed grid slot gives it. It is arranged at the size "
             + "it asked for and keeps that size in the automation tree, so a harness or a screen reader "
             + "sees a region the user cannot:" + Environment.NewLine
+            + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
+    }
+
+    /// <summary>
+    /// Well under the 5 controls whose slot <c>BNXQ1008</c> sizes in the library's markup, because what this
+    /// number guards is a <b>zero</b>: a scan that reached no markup.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>A blinding floor, like <see cref="GridChildrenFloor"/> — not a population count.</b> The five are
+    /// the controls in the library's fixed slots, so a spacer added or taken away moves the count as an
+    /// ordinary product change, and a floor at the population would fire on it naming a cause it does not
+    /// establish.
+    /// </remarks>
+    private const int SizedSlotsFloor = 2;
+
+    [Fact]
+    public void No_control_is_hidden_by_a_slot_of_no_size_alone()
+    {
+        // ⚠ The library's markup, as plan 00026 adopts the rule, and spelled apart from the scan above: that
+        // one's markup-free-ground mutation matches its path exactly once.
+        XamlScanContext library = XamlScanContext.Load(RepoPaths.Source(Path.Combine("src", "DiffView.Avalonia")));
+        XamlRuleResult result = new ZeroSizeSlotRule().Analyze(library);
+
+        // ⛔ Skipped FIRST. A slot whose size markup cannot evaluate is named there rather than checked, and a
+        // control the rule could not size is not a control it found hidden properly.
+        Assert.True(
+            result.Skipped.Count == 0,
+            "BNXQ1008 could not evaluate the size of the slots some controls sit in, so it could not check "
+            + "them:" + Environment.NewLine
+            + string.Join(Environment.NewLine, result.Skipped.Select(s => "  " + s)));
+
+        Assert.True(
+            result.Inspected >= SizedSlotsFloor,
+            $"BNXQ1008 sized the slots of {result.Inspected} controls in the library's markup, below the floor "
+            + $"of {SizedSlotsFloor}. The floor sits well under the population, so no spacer was merely added or "
+            + "removed: the scan has lost the markup it reads, and a clean result would mean nothing.");
+
+        Assert.True(
+            result.Findings.Count == 0,
+            "A control sits in a grid slot of no size and is not hidden. Nobody can see it, but its peer stays "
+            + "in the automation tree, so a harness finds a part that is not there — hide it with IsVisible:"
+            + Environment.NewLine
             + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
     }
 

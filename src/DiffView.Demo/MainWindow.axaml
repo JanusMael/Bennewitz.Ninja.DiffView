@@ -134,9 +134,9 @@
     <!-- All three views, one showing: only the one on screen carries the sources, so the others
          neither build nor hold a model. -->
     <Panel>
-      <dv:SideBySideDiffView x:Name="Diff" AutomationProperties.Name="Side-by-side diff" />
-      <dv:InlineDiffView x:Name="Unified" IsVisible="False" AutomationProperties.Name="Unified diff" />
-      <dv:DiffViewer x:Name="Viewer" IsVisible="False" AutomationProperties.Name="Read-only diff viewer" />
+      <dv:SideBySideDiffView x:Name="Diff" AutomationProperties.AutomationId="SideBySide" AutomationProperties.Name="Side-by-side diff" />
+      <dv:InlineDiffView x:Name="Unified" AutomationProperties.AutomationId="Unified" IsVisible="False" AutomationProperties.Name="Unified diff" />
+      <dv:DiffViewer x:Name="Viewer" AutomationProperties.AutomationId="Viewer" IsVisible="False" AutomationProperties.Name="Read-only diff viewer" />
     </Panel>
   </DockPanel>
 </Window>

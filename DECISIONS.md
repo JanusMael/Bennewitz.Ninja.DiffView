@@ -3606,3 +3606,45 @@ scratch were the three ways; the choice was Brian's, on 2026-09-29: `Wcwidth` 4.
 the Python's own example, `前後を含めて差分表示`, at 20 and the ellipsis at 1, as the Python did,
 and the two reports agree line for line but for one space: the Python padded its ratio column to one
 column fewer than its own header, and the port aligns them.
+
+## Plan 00023's Windows back end finds DiffView's parts by `AutomationId`
+
+Plan 00023 finds elements by automation name, on the premise that the demo sets the names. It sets
+none of the library's: `DiffBuildController.RefreshStrings` fills the panes', the headers', the
+gutter's, the map's and the strip's from `DiffViewStrings`, which is translated into eight locales, so
+a back end that finds *Left pane* in `en-US` finds nothing in `de-DE`. Plan 00023 is approved and is
+not edited, so the change is recorded here, as plan 00026 decides: its Windows back end finds
+DiffView's parts by the `AutomationId`s plan 00026 phase 3 declares, scoped first by the process and
+then by the part that owns them. A view's parts — the panes, the headers, the gutter, the map, the
+strip, the find bar and its eleven controls, the banner's action and the strip's dismiss button — are
+unique within their view; a pane's two margins within the pane; a menu entry within its menu, which
+is a top-level window of its own, found from the desktop root together with the process id. The
+demo's three views are `SideBySide`, `Unified` and `Viewer`, unique within its window. A name stays
+what a person hears, and no harness searches by one.
+
+## Plan 00026 phase 3: no API fixture reaches `DiffMenuItem`
+
+Plan 00026's phase 3 names *the API fixtures carry `DiffMenuItem.AutomationId`* among what verifies
+it, and its decisions table says a new public member regenerates the fixtures it reaches. None
+reaches this one. `SurfaceGateTests` compares each view's own members, flattened —
+`GetMembers` on `SideBySideDiffView` and on `DiffViewer` — against `fixtures/api/sidebyside.txt` and
+`fixtures/api/viewer.txt`, and `DiffMenuItem` is a type of its own, which a host meets in the `Items`
+of `PaneContextMenuOpening`'s arguments rather than as a member of either view. So adding the property
+moves no fixture, and neither file changes. What holds its behaviour instead is the menu test: an
+entry that has a verb takes its id from the verb's name through this property, so a getter that
+stopped falling back would leave most entries without one — a mutation of the harness proves it — and
+`CHANGELOG.md` names the member in phase 4. Gating every public type the library ships, not only the
+two views, is a wider gate than this plan's, and is not taken here.
+
+## Plan 00026 phase 3: the id walk requires the markup's ids, and holds the code's another way
+
+The walk's requirement is every `AutomationId` the library's markup declares, anchored to what
+`BNXQ1007` inspects, and it is found once within the part that owns it. The ids code declares are not
+in that requirement, because no reading of the markup can derive them. The margins' are held by the
+walk's other two questions: every control of this library on screen but the view carries an explicit
+id, so a margin without one fails, and each id is counted within its owner — a margin's pane — so a
+margin that repeated one would fail too; that a margin is on screen at all, in the control view under
+its pane, is phase 2's peer walk. The menu entries' are held by the menu test, which opens every
+surface's menu and reads what its builder produced. So each id the code declares is asked whether it
+is there and unique, and none is asked for its value: the values are plan 00026's table, and a rename
+is a change a harness's author reads in review.

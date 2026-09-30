@@ -64,6 +64,9 @@ const string HeaderPeer = "src/DiffView.Avalonia/DiffPaneHeaderAutomationPeer.cs
 const string StripPeer = "src/DiffView.Avalonia/DiffStatusStripAutomationPeer.cs";
 const string MarginSource = "src/DiffView.Avalonia/Margins/DiffMargin.cs";
 const string PresenterTheme = "src/DiffView.Avalonia/Themes/DiffPanePresenter.axaml";
+const string MenuSource = "src/DiffView.Avalonia/DiffPaneMenu.cs";
+const string MenuItemSource = "src/DiffView.Avalonia/DiffMenuItem.cs";
+const string FindBarTheme = "src/DiffView.Avalonia/Themes/DiffFindBar.axaml";
 const string UiProbe = "src/DiffView.Avalonia/MutationProbe.cs";
 const string CoreProbe = "src/DiffView.Core/MutationProbe.cs";
 const string ShadowControlFile = "tests/DiffView.Avalonia.Tests/ShadowControl.cs";
@@ -594,6 +597,95 @@ List<Mutation> mutations =
         () => Sub(PresenterTheme, @"\s*AutomationProperties\.AccessibilityView=""Raw""", ""),
         "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
+    // ---- BNXQ1007, plan 00026 phase 3, over the library's markup with a derivation of its own. No Expander
+    // forward cover and no Skipped guard: the rule adds Expander itself and has no skip path at 928, so
+    // neither could fail. Each guard it does carry is tripped first by one of these.
+    new("BNXQ1007's stock reading points at markup-free ground", A11yClass,
+        () => Sub(A11yGate, @"int stock = new InteractiveAutomationIdRule\(\)\.Analyze\(markup\)\.Inspected;",
+            @"int stock = new InteractiveAutomationIdRule().Analyze(XamlScanContext.Load(RepoPaths.Source(""src/DiffView.Core""))).Inspected;"),
+        "Every_part_the_library_places_carries_an_explicit_automation_id"),
+
+    new("BNXQ1007's instance is built without the map", A11yClass,
+        () => Sub(A11yGate, @"InteractiveAutomationIdRule rule = new\(names\);",
+            "InteractiveAutomationIdRule rule = new([.. names.Where(n => n != nameof(DiffMinimap))]);"),
+        "Every_part_the_library_places_carries_an_explicit_automation_id"),
+
+    // The placed set read from another namespace is empty, so every control lands among the ones the markup
+    // must NOT instantiate — and the ones it does instantiate are what trips.
+    new("BNXQ1007's placed set reads another namespace", A11yClass,
+        () => Sub(A11yGate, @"string markupNamespace = ""using:"" \+ typeof\(DiffViewer\)\.Namespace;",
+            @"string markupNamespace = ""using:Bennewitz.Ninja.DiffView.Tests"";"),
+        "Every_part_the_library_places_carries_an_explicit_automation_id"),
+
+    new("a part the library places loses its automation id", A11yClass,
+        () => Sub(SbsTheme, @" AutomationProperties\.AutomationId=""Gutter""", ""),
+        "Every_part_the_library_places_carries_an_explicit_automation_id"),
+
+    // ---- The id walk. Its requirement is derived from the markup and anchored to BNXQ1007's count; each
+    // thing it asks of the control view has a mutation that makes it the first to fail.
+    new("the id walk's requirement is derived from markup-free ground", A11yClass,
+        () => Sub(A11yGate, @"XamlScanContext declaring = LibraryWithin\(ScanAll\(\)\);",
+            @"XamlScanContext declaring = XamlScanContext.Load(RepoPaths.Source(""src/DiffView.Core""));"),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    new("the id walk's requirement loses the find bar's ids", A11yClass,
+        () => Sub(A11yGate, @"if \(id is not null && owner is not null\)",
+            @"if (id is not null && owner is not null && !owner.EndsWith(""DiffFindBar"", StringComparison.Ordinal))"),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    // Code declares the margins' ids, which no markup reading sees — the control view is what does.
+    new("a margin loses its automation id", A11yClass,
+        () => Sub(MarginSource, @"\n\s*AutomationProperties\.SetAutomationId\(this, automationId\);", ""),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    new("two parts of one view share an automation id", A11yClass,
+        () => Sub(SbsTheme, @"AutomationId=""RightPane""", @"AutomationId=""LeftPane"""),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    new("a part with an automation id is never on screen", A11yClass,
+        () => Sub(FindBarTheme, @"Name=""PART_Close""", @"Name=""PART_Close"" IsVisible=""False"""),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    new("the id walk's off-state reading reads nothing", A11yClass,
+        () => Sub(A11yGate, @"ControlAutomationPeer\.CreatePeerForElement\(host\.View\)",
+            "ControlAutomationPeer.CreatePeerForElement(new Border())"),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    // Rule 6: a control merely shrunk stays in the tree. Both paths that apply the toggle are changed, the
+    // template's and the property's, so the map is shrunk whichever runs.
+    new("a switched-off map is shrunk rather than hidden", A11yClass,
+        () => Sub(SbsController, @"_minimap\.IsVisible = ShowMinimap;",
+            "_minimap.Width = ShowMinimap ? DiffMinimap.MapWidth : 0;", 2),
+        "Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"),
+
+    // ---- The menus. Every surface is asked, the entries are read through UI Automation, and each guard is
+    // tripped first: a surface that opens nothing, a reading that sees no entry, an entry with no id, and
+    // two entries with one.
+    new("the map's menu opens nothing", A11yClass,
+        () => Sub(SbsSource, @"if \(!e\.TryGetPosition\(_controller\.Minimap, out Point point\)\)",
+            "if (e.TryGetPosition(_controller.Minimap, out Point point))"),
+        "Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"),
+
+    new("the menu reading finds no entry", A11yClass,
+        () => Sub(A11yGate, @"== AutomationControlType\.MenuItem\)", "== AutomationControlType.Calendar)"),
+        "Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"),
+
+    new("the menus stop carrying automation ids", A11yClass,
+        () => Sub(MenuSource,
+            @"\n\s*if \(item\.AutomationId is \{ Length: > 0 \} automationId\)\s*\{\s*AutomationProperties\.SetAutomationId\(menuItem, automationId\);\s*\}",
+            ""),
+        "Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"),
+
+    new("two entries of one menu share an automation id", A11yClass,
+        () => Sub(SbsSource, @"AutomationId = ""GoToRow"",", @"AutomationId = ""HideMinimap"","),
+        "Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"),
+
+    // No API fixture reaches DiffMenuItem, so its default is held here: an entry with a verb takes its id
+    // from the verb's name, and a getter that stops falling back leaves most entries without one.
+    new("a menu entry stops taking its verb's name as its id", A11yClass,
+        () => Sub(MenuItemSource, @"get => _automationId \?\? Verb\?\.ToString\(\);", "get => _automationId;"),
+        "Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"),
+
     // ---- BNXQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
     // about an out-of-range index: a column index past a five-column grid SURVIVES this gate, measured.
     // The 16-pixel spacer between the panes is the one fixed slot in the library's grids, so it is the
@@ -617,6 +709,26 @@ List<Mutation> mutations =
             @"XamlScanContext\.Load\(RepoPaths\.Source\(""src""\)\)",
             @"XamlScanContext.Load(RepoPaths.Source(""src/DiffView.Core""))"),
         "No_control_declares_a_size_larger_than_its_fixed_grid_slot"),
+
+    // ---- BNXQ1008, plan 00026 phase 3, beside BNXQ1004. Skipped is asserted first, then the floor, then the
+    // findings. ⚠ A bound index among slots that all have room or state none is not undecided — it lands in
+    // one of them whatever it is — but the header grid mixes the fixed spacer with Auto and *, which the
+    // rule leaves undecided at 928: read from its source, and proven by this mutation.
+    new("BNXQ1008 meets a slot index markup cannot evaluate", GridClass,
+        () => Sub(SbsTheme,
+            @"<Border Grid\.Column=""2"" Background=""\{DynamicResource DiffView\.HeaderBackgroundBrush\}"" />",
+            @"<Border Grid.Column=""{DynamicResource DiffView.SpacerColumn}"" Background=""{DynamicResource DiffView.HeaderBackgroundBrush}"" />"),
+        "No_control_is_hidden_by_a_slot_of_no_size_alone"),
+
+    new("BNXQ1008's scan is pointed at markup-free ground", GridClass,
+        () => Sub(GridGate, @"Path\.Combine\(""src"", ""DiffView\.Avalonia""\)", @"Path.Combine(""src"", ""DiffView.Core"")"),
+        "No_control_is_hidden_by_a_slot_of_no_size_alone"),
+
+    // The strip's visibility is the view's to set in code, so in markup it is not hidden — and a row of no
+    // size would hide it from people alone.
+    new("BNXQ1008 meets the status strip in a row of no size", GridClass,
+        () => Sub(SbsTheme, @"RowDefinitions=""Auto,Auto,Auto,\*,Auto""", @"RowDefinitions=""Auto,Auto,Auto,*,0"""),
+        "No_control_is_hidden_by_a_slot_of_no_size_alone"),
 
     // ---- The parse-error claim. The a11y gate deliberately has NO assertion that markup parsed,
     // because every rule iterates ParsedFiles and silently drops a file that did not — so such an

@@ -21,7 +21,7 @@
         <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
           <StackPanel Orientation="Vertical" Spacing="4">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBox Name="PART_Query"
+              <TextBox Name="PART_Query" AutomationProperties.AutomationId="FindQuery"
                        Width="220"
                        MinHeight="0"
                        Padding="6,2"
@@ -29,7 +29,7 @@
                        PlaceholderText="{TemplateBinding QueryPlaceholder}"
                        ToolTip.Tip="{TemplateBinding QueryName}"
                        AutomationProperties.Name="{TemplateBinding QueryName}" />
-              <ToggleButton Name="PART_MatchCase"
+              <ToggleButton Name="PART_MatchCase" AutomationProperties.AutomationId="FindMatchCase"
                             Content="{TemplateBinding MatchCaseText}"
                             Padding="6,2"
                             MinHeight="0"
@@ -37,7 +37,7 @@
                             VerticalAlignment="Center"
                             ToolTip.Tip="{TemplateBinding MatchCaseName}"
                             AutomationProperties.Name="{TemplateBinding MatchCaseName}" />
-              <ToggleButton Name="PART_WholeWord"
+              <ToggleButton Name="PART_WholeWord" AutomationProperties.AutomationId="FindWholeWord"
                             Content="{TemplateBinding WholeWordText}"
                             Padding="6,2"
                             MinHeight="0"
@@ -45,7 +45,7 @@
                             VerticalAlignment="Center"
                             ToolTip.Tip="{TemplateBinding WholeWordName}"
                             AutomationProperties.Name="{TemplateBinding WholeWordName}" />
-              <ToggleButton Name="PART_Regex"
+              <ToggleButton Name="PART_Regex" AutomationProperties.AutomationId="FindRegex"
                             Content="{TemplateBinding RegexText}"
                             Padding="6,2"
                             MinHeight="0"
@@ -53,7 +53,7 @@
                             VerticalAlignment="Center"
                             ToolTip.Tip="{TemplateBinding RegexName}"
                             AutomationProperties.Name="{TemplateBinding RegexName}" />
-              <ToggleButton Name="PART_ChangedRowsOnly"
+              <ToggleButton Name="PART_ChangedRowsOnly" AutomationProperties.AutomationId="FindChangedRowsOnly"
                             Content="{TemplateBinding ChangedRowsOnlyText}"
                             Padding="6,2"
                             MinHeight="0"
@@ -66,7 +66,7 @@
                    one pane hides the whole group, separator included. -->
               <Border Width="1" Margin="2,3" Background="{DynamicResource DiffView.ConnectorBrush}"
                       IsVisible="{TemplateBinding ShowScope}" />
-              <ToggleButton Name="PART_ScopeLeft"
+              <ToggleButton Name="PART_ScopeLeft" AutomationProperties.AutomationId="FindScopeLeft"
                             IsVisible="{TemplateBinding ShowScope}"
                             Content="{TemplateBinding ScopeLeftText}"
                             Padding="6,2"
@@ -75,7 +75,7 @@
                             VerticalAlignment="Center"
                             ToolTip.Tip="{TemplateBinding ScopeLeftName}"
                             AutomationProperties.Name="{TemplateBinding ScopeLeftName}" />
-              <ToggleButton Name="PART_ScopeRight"
+              <ToggleButton Name="PART_ScopeRight" AutomationProperties.AutomationId="FindScopeRight"
                             IsVisible="{TemplateBinding ShowScope}"
                             Content="{TemplateBinding ScopeRightText}"
                             Padding="6,2"
@@ -84,7 +84,7 @@
                             VerticalAlignment="Center"
                             ToolTip.Tip="{TemplateBinding ScopeRightName}"
                             AutomationProperties.Name="{TemplateBinding ScopeRightName}" />
-              <ToggleButton Name="PART_ScopeBoth"
+              <ToggleButton Name="PART_ScopeBoth" AutomationProperties.AutomationId="FindScopeBoth"
                             IsVisible="{TemplateBinding ShowScope}"
                             Content="{TemplateBinding ScopeBothText}"
                             Padding="6,2"
@@ -100,7 +100,7 @@
                          IsVisible="{TemplateBinding CountText, Converter={x:Static ObjectConverters.IsNotNull}}"
                          VerticalAlignment="Center" />
 
-              <Button Name="PART_Previous"
+              <Button Name="PART_Previous" AutomationProperties.AutomationId="FindPrevious"
                       Content="{TemplateBinding PreviousText}"
                       Padding="6,2"
                       MinHeight="0"
@@ -108,7 +108,7 @@
                       VerticalAlignment="Center"
                       ToolTip.Tip="{TemplateBinding PreviousName}"
                       AutomationProperties.Name="{TemplateBinding PreviousName}" />
-              <Button Name="PART_Next"
+              <Button Name="PART_Next" AutomationProperties.AutomationId="FindNext"
                       Content="{TemplateBinding NextText}"
                       Padding="6,2"
                       MinHeight="0"
@@ -116,7 +116,7 @@
                       VerticalAlignment="Center"
                       ToolTip.Tip="{TemplateBinding NextName}"
                       AutomationProperties.Name="{TemplateBinding NextName}" />
-              <Button Name="PART_Close"
+              <Button Name="PART_Close" AutomationProperties.AutomationId="FindClose"
                       Content="{TemplateBinding CloseText}"
                       Padding="6,2"
                       MinHeight="0"

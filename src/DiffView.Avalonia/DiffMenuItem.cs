@@ -11,6 +11,8 @@ namespace Bennewitz.Ninja.DiffView;
 /// </summary>
 public sealed class DiffMenuItem
 {
+    private string? _automationId;
+
     /// <summary>A separator, which carries nothing else.</summary>
     public static DiffMenuItem Separator() => new() { IsSeparator = true };
 
@@ -46,6 +48,17 @@ public sealed class DiffMenuItem
 
     /// <summary>What a screen reader announces; falls back to <see cref="Header"/>.</summary>
     public string? AutomationName { get; set; }
+
+    /// <summary>
+    /// The id a UI Automation harness finds the entry by, in any culture: the name of its
+    /// <see cref="Verb"/> unless one is set here. An entry with neither — a separator, or a host's own
+    /// entry left without one — carries none, and is found only by its text.
+    /// </summary>
+    public string? AutomationId
+    {
+        get => _automationId ?? Verb?.ToString();
+        set => _automationId = value;
+    }
 
     /// <summary>
     /// The verb this item is, for a host that wants to find one without matching on its text.
