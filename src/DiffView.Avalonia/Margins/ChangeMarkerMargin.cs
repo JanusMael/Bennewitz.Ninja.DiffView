@@ -38,7 +38,7 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     private readonly List<(Rect Bounds, DiffLineKind Kind)> _lastChips = [];
 
     public ChangeMarkerMargin(DiffPanePresenter owner)
-        : base(owner, nameof(ChangeMarkerMargin), DiffViewStrings.ChangeMarkersMarginName)
+        : base(owner, nameof(ChangeMarkerMargin), DiffViewStrings.ChangeMarkersMarginName, "ChangeMarkers")
     {
     }
 

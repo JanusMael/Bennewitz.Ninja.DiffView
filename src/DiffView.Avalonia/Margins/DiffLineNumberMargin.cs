@@ -40,7 +40,7 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     private int _rightDigits;
 
     public DiffLineNumberMargin(DiffPanePresenter owner)
-        : base(owner, nameof(DiffLineNumberMargin), DiffViewStrings.LineNumbersMarginName)
+        : base(owner, nameof(DiffLineNumberMargin), DiffViewStrings.LineNumbersMarginName, "LineNumbers")
     {
     }
 

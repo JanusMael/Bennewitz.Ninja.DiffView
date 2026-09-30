@@ -49,6 +49,10 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// declared <em>in markup</em>. Whether a harness or a screen reader can reach the control is a question
 /// for its automation peer, which <see cref="Every_themed_control_has_a_peer_of_its_own"/> and
 /// <see cref="Every_control_of_ours_on_screen_is_a_control_element_of_its_type"/> ask, since plan 00026.
+/// A name is translated, too, so what a harness finds a part by is its <c>AutomationId</c>, which
+/// <see cref="Every_part_the_library_places_carries_an_explicit_automation_id"/>,
+/// <see cref="Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"/> and
+/// <see cref="Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"/> ask.
 /// And it cannot see a control that names itself in code, which is why <see cref="Excluded"/> exists and
 /// why the claim each exclusion makes is asserted separately below.
 /// </para>
@@ -159,6 +163,12 @@ public sealed class AccessibilityCoverageTests
     /// <see cref="XamlRuleResult.Skipped"/> list's to show, and is asserted before this.
     /// </remarks>
     private const int PeerInspectedFloor = 3;
+
+    /// <summary>
+    /// A floor on what <c>BNXQ1007</c>'s stock names inspect over the library's markup: 8, against the 15
+    /// elements they match — the same fifteen, and the same zero guarded, as <see cref="StockInspectedFloor"/>.
+    /// </summary>
+    private const int IdStockInspectedFloor = 8;
 
     /// <summary>
     /// The control type each control of ours is to a person — plan 00026's table, and the one written
@@ -815,6 +825,403 @@ public sealed class AccessibilityCoverageTests
 
         return null;
     }
+
+    [Fact]
+    public void Every_part_the_library_places_carries_an_explicit_automation_id()
+    {
+        // ⭐ A derivation of its own, not BNXQ1002's. That gate reads the library and the demo together, and
+        // over the library alone four of its names would cover nothing — the three views and Menu are placed
+        // only by the demo, whose chrome keeps its names and carries no ids. So this one is given every
+        // concrete control type the library defines: each the library's markup places must cover an element
+        // there, and the rest — the views, which only a host places, and the margins, which code builds —
+        // must cover none, so that a type the markup starts to place moves from one side to the other.
+        //
+        // ⛔ No Expander forward cover and no Skipped guard, and that is measured rather than overlooked:
+        // InteractiveAutomationIdRule adds Expander itself and has no skip path at 928, so neither could fail.
+        //
+        // ⚠ The scan is `markup`, not `library`: the name gate's walk declares `library` the same way, and a
+        // second declaration would give its markup-free-ground mutation a second match.
+        XamlScanContext markup = LibraryWithin(ScanAll());
+        string[] names = ConcreteControls();
+        InteractiveAutomationIdRule rule = new(names);
+
+        int stock = new InteractiveAutomationIdRule().Analyze(markup).Inspected;
+        Assert.True(
+            stock >= IdStockInspectedFloor,
+            $"BNXQ1007's stock names inspected {stock} elements in the library's markup, below the floor of "
+            + $"{IdStockInspectedFloor}. The scan has lost the markup it checks, and a clean result would no "
+            + "longer mean every part carries an id.");
+
+        XamlRuleResult result = rule.Analyze(markup);
+        string markupNamespace = "using:" + typeof(DiffViewer).Namespace;
+        HashSet<string> placed = [.. OurControlsInMarkup(markup, markupNamespace)];
+
+        foreach (string name in names.Where(placed.Contains))
+        {
+            int without = WithoutId(names, name, markup);
+            Assert.True(
+                result.Inspected - without >= 1,
+                $"'{name}' is placed by the library's markup and covers nothing in BNXQ1007's reading: dropping "
+                + $"it leaves the count at {result.Inspected}. The adopted instance is built from another list, "
+                + "or the rule has stopped matching the element.");
+        }
+
+        foreach (string name in names.Where(n => !placed.Contains(n)))
+        {
+            int without = WithoutId(names, name, markup);
+            Assert.True(
+                result.Inspected - without == 0,
+                $"'{name}' is not placed by the library's markup by this test's reading, yet BNXQ1007 inspects "
+                + $"{result.Inspected - without} element(s) of it there. The two readings of the markup disagree "
+                + "about what the library places.");
+        }
+
+        Assert.True(
+            result.Findings.Count == 0,
+            "A part the library's markup places carries no explicit AutomationId, so a harness can find it only "
+            + "by an id a framework derives from its Name, which a rename moves, or by its translated name:"
+            + Environment.NewLine + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
+    }
+
+    /// <summary>The count BNXQ1007, given <paramref name="names"/> less <paramref name="drop"/>, inspects over <paramref name="scan"/>.</summary>
+    private static int WithoutId(string[] names, string drop, XamlScanContext scan) =>
+        new InteractiveAutomationIdRule([.. names.Where(n => n != drop)]).Analyze(scan).Inspected;
+
+    [AvaloniaFact]
+    public async Task Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it()
+    {
+        // ⭐ The requirement is derived: every AutomationId the library's markup declares, with the control
+        // theme that declares it. Every element BNXQ1007 inspects carries exactly one id, so the count is
+        // anchored to the rule's, and a derivation that drifts fails here first.
+        //
+        // ⛔ One subject for both, and an empty one refused before they are compared: over ground with no
+        // markup the two agree at zero, and a requirement of nothing is met by a walk that finds nothing.
+        XamlScanContext declaring = LibraryWithin(ScanAll());
+        List<(string Owner, string Id)> declared = DeclaredIds(declaring);
+        Assert.True(
+            declared.Count > 0,
+            "The library's markup declares no AutomationId by this test's reading, so the walk below would be "
+            + "required to find nothing. The requirement's subject has lost the markup.");
+
+        int inspected = new InteractiveAutomationIdRule(ConcreteControls()).Analyze(declaring).Inspected;
+        Assert.True(
+            declared.Count == inspected,
+            $"This test reads {declared.Count} ids in the library's markup and BNXQ1007 inspects {inspected} "
+            + "elements. They must agree, or the walk requires fewer ids than the markup places.");
+
+        HashSet<(string Owner, string Id)> found = [];
+        List<string> withoutId = [];
+        List<string> twice = [];
+        await WalkEveryState(root => CollectIds(root, found, withoutId, twice));
+
+        Assert.True(
+            withoutId.Count == 0,
+            "These controls of ours are on screen with no explicit AutomationId, so a harness finds them only "
+            + "by a derived id or a translated name: " + string.Join(", ", withoutId.Distinct(StringComparer.Ordinal)));
+
+        Assert.True(
+            twice.Count == 0,
+            "A harness finds a part with one search within the part that owns it, and these ids are found more "
+            + "than once there:" + Environment.NewLine + string.Join(Environment.NewLine, twice.Select(t => "  " + t)));
+
+        List<string> unfound = [.. declared.Where(d => !found.Contains(d)).Select(d => $"{d.Id} in {d.Owner}")];
+        Assert.True(
+            unfound.Count == 0,
+            "The library's markup declares these ids and the walk never found them in UI Automation's control "
+            + "view: " + string.Join(", ", unfound) + ". Bring each part on screen in one of the walk's states.");
+
+        // What is not on screen is not in the tree: a part switched off, closed or with nothing to say is not
+        // found at all, where one merely shrunk or clipped would be. ⛔ The parts left on come first, because
+        // a reading that reached nothing finds none of the hidden ones either.
+        List<string> offState = await IdsFoundWithTheOptionalPartsOff();
+        List<string> leftOnYetMissing = [.. new[] { "LeftPane", "RightPane", "Gutter" }.Where(id => !offState.Contains(id))];
+        Assert.True(
+            leftOnYetMissing.Count == 0,
+            "With the optional parts switched off, the control view did not show these parts, which stay on: "
+            + string.Join(", ", leftOnYetMissing) + ". The reading reached nothing, so the absence of the hidden "
+            + "ones would mean nothing.");
+
+        string[] switchedOff = ["Minimap", "LeftHeader", "RightHeader", "StatusStrip", "FindBar", "BannerAction"];
+        List<string> hiddenYetFound = [.. switchedOff.Where(offState.Contains)];
+        Assert.True(
+            hiddenYetFound.Count == 0,
+            "These parts are switched off, closed or empty, and a harness still finds them: "
+            + string.Join(", ", hiddenYetFound));
+    }
+
+    /// <summary>
+    /// Every AutomationId <paramref name="scan"/>'s markup declares, with the local name of the control theme
+    /// that declares it — which is the control a part's template owner is.
+    /// </summary>
+    private static List<(string Owner, string Id)> DeclaredIds(XamlScanContext scan)
+    {
+        List<(string Owner, string Id)> ids = [];
+        foreach (XamlFile file in scan.ParsedFiles)
+        {
+            foreach (XElement element in file.Document!.Descendants())
+            {
+                string? id = element.Attributes().FirstOrDefault(a => a.Name.LocalName == "AutomationProperties.AutomationId")?.Value;
+                string? owner = element.Ancestors().FirstOrDefault(a => a.Name.LocalName == "ControlTheme")?.Attribute("TargetType")?.Value;
+                if (id is not null && owner is not null)
+                {
+                    ids.Add((owner[(owner.IndexOf(':') + 1)..], id));
+                }
+            }
+        }
+
+        return ids;
+    }
+
+    /// <summary>
+    /// Reads UI Automation's control view under <paramref name="root"/>. Every control of ours in it but the
+    /// view itself must carry an explicit id, and each explicit id is counted within the part that owns it:
+    /// the control whose template placed it, or a margin's pane.
+    /// </summary>
+    private static void CollectIds(
+        Visual root,
+        HashSet<(string Owner, string Id)> found,
+        List<string> withoutId,
+        List<string> twice)
+    {
+        Assembly library = typeof(DiffViewer).Assembly;
+        Dictionary<(Control Owner, string Id), int> counts = [];
+
+        foreach (AutomationPeer peer in ControlView(ControlAutomationPeer.CreatePeerForElement((Control)root)))
+        {
+            if (peer is not ControlAutomationPeer { Owner: var control })
+            {
+                continue;
+            }
+
+            string? id = AutomationProperties.GetAutomationId(control);
+            if (string.IsNullOrEmpty(id))
+            {
+                if (control != root && control.GetType().Assembly == library)
+                {
+                    withoutId.Add(control.Name is { Length: > 0 } name ? $"{control.GetType().Name} '{name}'" : control.GetType().Name);
+                }
+
+                continue;
+            }
+
+            if (((control as DiffMargin)?.Owner ?? control.TemplatedParent) is not Control owner
+                || owner.GetType().Assembly != library)
+            {
+                continue;
+            }
+
+            found.Add((owner.GetType().Name, id));
+            counts[(owner, id)] = counts.GetValueOrDefault((owner, id)) + 1;
+        }
+
+        twice.AddRange(counts.Where(c => c.Value > 1).Select(c => $"{c.Key.Id} ×{c.Value} in {c.Key.Owner.GetType().Name}"));
+    }
+
+    /// <summary>
+    /// Every peer UI Automation's control view shows under <paramref name="peer"/>, the peer itself included —
+    /// what a harness searching that view can find. The peer tree already leaves out what is not visible.
+    /// </summary>
+    private static IEnumerable<AutomationPeer> ControlView(AutomationPeer peer)
+    {
+        if (peer.IsControlElement())
+        {
+            yield return peer;
+        }
+
+        foreach (AutomationPeer child in peer.GetChildren())
+        {
+            foreach (AutomationPeer below in ControlView(child))
+            {
+                yield return below;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Every id a side-by-side view's control view shows with the map, the headers and the strip switched
+    /// off, the find bar closed and a build with nothing to say.
+    /// </summary>
+    private static async Task<List<string>> IdsFoundWithTheOptionalPartsOff()
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new();
+        host.View.ShowMinimap = false;
+        host.View.ShowHeaders = false;
+        host.View.ShowStatusStrip = false;
+        host.Show();
+        await host.LoadAsync(left, right);
+        CompositeHost.Layout();
+
+        return
+        [
+            .. ControlView(ControlAutomationPeer.CreatePeerForElement(host.View))
+                .Select(p => p.GetAutomationId())
+                .OfType<string>(),
+        ];
+    }
+
+    [AvaloniaFact]
+    public async Task Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it()
+    {
+        // ⭐ The surfaces are derived — every DiffPaneRegion, and the header — and the entries are whatever
+        // each surface's builder produced, read back through UI Automation the way a harness reads them.
+        (string left, string right) = CompositeHost.SmallFixture();
+        Dictionary<string, string?[]> menus = new(StringComparer.Ordinal);
+        List<string> silent = [];
+
+        using (CompositeHost host = new())
+        {
+            host.Show();
+            await host.LoadAsync(left, right);
+            host.Window.CaptureRenderedFrame()?.Dispose();
+
+            // Every surface exists on the side-by-side view, so a region with nowhere to click is a miss too.
+            foreach (DiffPaneRegion region in Enum.GetValues<DiffPaneRegion>())
+            {
+                if (PointOn(region, host.Left, host.View, host.Window) is { } at)
+                {
+                    ReadMenu($"side-by-side {region}", at, host.Window, () => host.View.LastMenu, menus, silent);
+                }
+                else
+                {
+                    silent.Add($"side-by-side {region}");
+                }
+            }
+
+            DiffPaneHeader header = host.View.GetVisualDescendants().OfType<DiffPaneHeader>().First();
+            if (Centre(header, host.Window) is { } onHeader)
+            {
+                ReadMenu("side-by-side header", onHeader, host.Window, () => host.View.LastMenu, menus, silent);
+            }
+            else
+            {
+                silent.Add("side-by-side header");
+            }
+        }
+
+        using (InlineHost unified = new())
+        {
+            unified.Show();
+            await unified.LoadAsync(left, right);
+            unified.Window.CaptureRenderedFrame()?.Dispose();
+
+            // The unified view has no connector and no map, so a region whose surface it lacks is not asked.
+            foreach (DiffPaneRegion region in Enum.GetValues<DiffPaneRegion>())
+            {
+                if (PointOn(region, unified.Pane, unified.View, unified.Window) is { } at)
+                {
+                    ReadMenu($"unified {region}", at, unified.Window, () => unified.View.LastMenu, menus, silent);
+                }
+            }
+        }
+
+        Assert.True(
+            silent.Count == 0,
+            "These surfaces opened no menu, so nothing was asked of their entries: " + string.Join(", ", silent));
+
+        // ⛔ A menu read as no entries passes both checks below, so a reading that sees none has gone blind:
+        // every menu the library opens has entries.
+        List<string> empty = [.. menus.Where(m => m.Value.Length == 0).Select(m => m.Key)];
+        Assert.True(
+            empty.Count == 0,
+            "These menus opened and UI Automation's control view showed none of their entries, so nothing was "
+            + "asked of them: " + string.Join(", ", empty));
+
+        List<string> missing =
+        [
+            .. menus
+                .Where(m => m.Value.Any(string.IsNullOrEmpty))
+                .Select(m => $"{m.Key}: {m.Value.Count(string.IsNullOrEmpty)} of {m.Value.Length} entries"),
+        ];
+        Assert.True(
+            missing.Count == 0,
+            "These menus hold entries a harness can find only by their translated text:" + Environment.NewLine
+            + string.Join(Environment.NewLine, missing.Select(m => "  " + m)));
+
+        List<string> twice =
+        [
+            .. menus.SelectMany(m => m.Value
+                .OfType<string>()
+                .GroupBy(id => id, StringComparer.Ordinal)
+                .Where(g => g.Count() > 1)
+                .Select(g => $"{m.Key}: {g.Key} ×{g.Count()}")),
+        ];
+        Assert.True(
+            twice.Count == 0,
+            "A harness finds a menu entry with one search within the menu, and these ids are there more than "
+            + "once:" + Environment.NewLine + string.Join(Environment.NewLine, twice.Select(t => "  " + t)));
+    }
+
+    /// <summary>
+    /// Right-clicks <paramref name="at"/> and, if a menu opened, records the ids of its entries as UI Automation
+    /// reports them; otherwise records the surface as silent.
+    /// </summary>
+    private static void ReadMenu(
+        string surface,
+        Point at,
+        Window window,
+        Func<ContextMenu?> lastMenu,
+        Dictionary<string, string?[]> menus,
+        List<string> silent)
+    {
+        lastMenu()?.Close();
+        window.MouseDown(at, MouseButton.Right);
+        window.MouseUp(at, MouseButton.Right);
+        CompositeHost.Layout();
+
+        if (lastMenu() is { IsOpen: true } menu)
+        {
+            menus[surface] =
+            [
+                .. ControlView(ControlAutomationPeer.CreatePeerForElement(menu))
+                    .Where(p => p.GetAutomationControlType() == AutomationControlType.MenuItem)
+                    .Select(p => p.GetAutomationId()),
+            ];
+            menu.Close();
+        }
+        else
+        {
+            silent.Add(surface);
+        }
+    }
+
+    /// <summary>
+    /// Where in <paramref name="window"/> a right-click reaches <paramref name="region"/>: the middle of the
+    /// surface, or of a block's polygon on the connector, the only part of that column with a menu. Null when
+    /// the view has no such surface.
+    /// </summary>
+    private static Point? PointOn(DiffPaneRegion region, DiffPanePresenter pane, Control view, Window window)
+    {
+        Control? surface = region switch
+        {
+            DiffPaneRegion.Text => pane.TextArea.TextView,
+            DiffPaneRegion.LineNumberMargin => pane.TextArea.LeftMargins.OfType<DiffLineNumberMargin>().FirstOrDefault(),
+            DiffPaneRegion.ChangeMarkerMargin => pane.TextArea.LeftMargins.OfType<ChangeMarkerMargin>().FirstOrDefault(),
+            DiffPaneRegion.ConnectorGutter => view.GetVisualDescendants().OfType<ChangeConnectorGutter>().FirstOrDefault(),
+            DiffPaneRegion.OverviewMap => view.GetVisualDescendants().OfType<DiffMinimap>().FirstOrDefault(),
+            _ => null,
+        };
+
+        if (surface is not ChangeConnectorGutter gutter)
+        {
+            return surface is null ? null : Centre(surface, window);
+        }
+
+        foreach (ConnectorPolygon polygon in gutter.LastPolygons)
+        {
+            Point inside = new(gutter.Bounds.Width / 2, (polygon.LeftTop.Y + Math.Max(polygon.LeftBottom.Y, polygon.RightBottom.Y)) / 2);
+            if (polygon.Contains(inside))
+            {
+                return gutter.TranslatePoint(inside, window);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The middle of <paramref name="control"/>, in <paramref name="window"/>'s coordinates.</summary>
+    private static Point? Centre(Control control, Window window) =>
+        control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window);
 
     [AvaloniaFact]
     public void Every_exclusion_either_names_itself_or_has_no_element_of_ours_to_check()

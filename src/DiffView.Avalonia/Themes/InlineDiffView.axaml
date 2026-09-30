@@ -21,16 +21,16 @@
                found. Neither carries the focus accent — with one pane, which has focus says
                nothing. -->
           <Grid Name="PART_Headers" ColumnDefinitions="*,1,*">
-            <dv:DiffPaneHeader Name="PART_LeftHeader"
+            <dv:DiffPaneHeader Name="PART_LeftHeader" AutomationProperties.AutomationId="LeftHeader"
                                AutomationProperties.Name="{TemplateBinding LeftHeaderName}" />
             <Border Grid.Column="1" Background="{DynamicResource DiffView.ConnectorBrush}" />
-            <dv:DiffPaneHeader Name="PART_RightHeader" Grid.Column="2"
+            <dv:DiffPaneHeader Name="PART_RightHeader" AutomationProperties.AutomationId="RightHeader" Grid.Column="2"
                                AutomationProperties.Name="{TemplateBinding RightHeaderName}" />
           </Grid>
 
           <Border Name="PART_Banner" Grid.Row="1" Padding="10,6">
             <DockPanel>
-              <Button Name="PART_BannerAction"
+              <Button Name="PART_BannerAction" AutomationProperties.AutomationId="BannerAction"
                       DockPanel.Dock="Right"
                       Margin="12,0,0,0"
                       VerticalAlignment="Center"
@@ -46,11 +46,11 @@
           </Border>
 
           <!-- The find bar collapses when it is closed, so its Auto row takes no height. -->
-          <dv:DiffFindBar Name="PART_FindBar" Grid.Row="2" IsVisible="False" />
+          <dv:DiffFindBar Name="PART_FindBar" AutomationProperties.AutomationId="FindBar" Grid.Row="2" IsVisible="False" />
 
-          <dv:DiffPanePresenter Name="PART_Pane" Grid.Row="3" AutomationProperties.Name="{TemplateBinding PaneName}" />
+          <dv:DiffPanePresenter Name="PART_Pane" AutomationProperties.AutomationId="Pane" Grid.Row="3" AutomationProperties.Name="{TemplateBinding PaneName}" />
 
-          <dv:DiffStatusStrip Name="PART_StatusStrip" Grid.Row="4" AutomationProperties.Name="{TemplateBinding StatusStripName}" />
+          <dv:DiffStatusStrip Name="PART_StatusStrip" AutomationProperties.AutomationId="StatusStrip" Grid.Row="4" AutomationProperties.Name="{TemplateBinding StatusStripName}" />
         </Grid>
       </ControlTemplate>
     </Setter>

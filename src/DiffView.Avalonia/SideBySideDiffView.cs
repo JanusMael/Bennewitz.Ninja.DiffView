@@ -1531,12 +1531,14 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
             Header = DiffViewStrings.MenuSave(side),
             Command = new DelegateCommand(() => Save(side), () => CanSave(side)),
             IsEnabled = CanSave(side),
+            AutomationId = "Save",
         });
         items.Add(new DiffMenuItem
         {
             Header = DiffViewStrings.MenuRevert(side),
             Command = new DelegateCommand(() => Revert(side), () => IsEdited(side)),
             IsEnabled = IsEdited(side),
+            AutomationId = "Revert",
         });
     }
 
@@ -1612,6 +1614,7 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
                 Header = DiffViewStrings.Get(DiffViewStrings.MenuGoToRow),
                 Command = new DelegateCommand(() => ScrollToRow(row ?? 0), () => row is not null),
                 IsEnabled = row is not null,
+                AutomationId = "GoToRow",
             },
         ];
 
@@ -1622,6 +1625,7 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
             Header = DiffViewStrings.Get(DiffViewStrings.MenuHideOverviewMap),
             Command = new DelegateCommand(() => ShowMinimap = false, () => ShowMinimap),
             IsEnabled = ShowMinimap,
+            AutomationId = "HideMinimap",
         });
         return items;
     }

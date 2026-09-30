@@ -283,6 +283,13 @@ internal static class DiffPaneMenu
 
         AutomationProperties.SetName(menuItem, item.AutomationName ?? item.Header ?? string.Empty);
 
+        // Set only when there is one: an empty id would replace the one a framework derives, and the
+        // entry's header is translated, so its id is the only handle a harness has in every culture.
+        if (item.AutomationId is { Length: > 0 } automationId)
+        {
+            AutomationProperties.SetAutomationId(menuItem, automationId);
+        }
+
         foreach (DiffMenuItem child in item.Items)
         {
             menuItem.Items.Add(Build(child));
