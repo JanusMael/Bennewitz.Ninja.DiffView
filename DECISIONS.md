@@ -3648,3 +3648,16 @@ its pane, is phase 2's peer walk. The menu entries' are held by the menu test, w
 surface's menu and reads what its builder produced. So each id the code declares is asked whether it
 is there and unique, and none is asked for its value: the values are plan 00026's table, and a rename
 is a change a harness's author reads in review.
+
+## Plan 00026: a hit-test after a layout change needs a frame, and the lesson is XamlQuality's
+
+Plan 00026 asks that a harness can act at the bounds a peer reports, so its walk hit-tests the centre of
+every control of ours on screen. The first run failed on the find bar, whose centre landed on the pane
+below it in both views that have one. Avalonia hit-tests the scene the compositor last rendered, not
+the layout: `CompositingRenderer.HitTest` goes through `CompositionTarget.TryHitTest`, which reads each
+composition visual's readback, and the walk had opened the bar and run layout without drawing a frame.
+One `Window.CaptureRenderedFrame` before a state's hit-tests is the whole fix, and a harness on a
+desktop never meets the stale answer, acting on a window that has drawn. The lesson is general, so it
+was sent to the XamlQuality session on 2026-09-30 for `docs/avalonia-gotchas.md`, with the versions,
+the failure and the source it was read from, and what stays here is `AGENTS.md` §5's instruction to
+draw a frame first.

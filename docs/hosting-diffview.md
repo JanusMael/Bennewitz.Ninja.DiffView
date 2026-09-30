@@ -253,6 +253,54 @@ Returning `null` from the resolver falls through to the bundled translation, the
 
 Formatting — numbers, dates — follows the current culture independently, as it should.
 
+## Finding its parts from a test or an agent
+
+Every control the library defines has an automation peer of its own, so UI Automation's control view
+shows each one as a control element: the three views as a `Group`, a pane as an `Edit`, a header as a
+`Header`, the find bar as a `ToolBar`, the status strip as a `StatusBar`, the overview map as a
+`ScrollBar`, and the connector gutter and each pane's two margins as `Custom`. None of these peers
+advertises a pattern. The controls inside the find bar, the banner and the strip are Avalonia's own
+text box, toggle buttons and buttons, which carry their usual `Value`, `Toggle` and `Invoke`.
+
+**Find a part by its `AutomationId`, never by its name.** The names are translated — the section above
+— so a search for *Left pane* finds nothing on a German machine. The ids are fixed, and each is unique
+within the part that owns it, so scope a search to your process, then to the view, then to the pane:
+
+| Part | `AutomationId` | Unique within |
+|---|---|---|
+| a view | the one you give it | your window |
+| the panes | `LeftPane`, `RightPane`; `Pane` in the unified view | the view |
+| the headers | `LeftHeader`, `RightHeader` | the view |
+| the connector gutter, the overview map, the status strip, the find bar | `Gutter`, `Minimap`, `StatusStrip`, `FindBar` | the view |
+| the banner's action, the strip's dismiss button | `BannerAction`, `StatusDismiss` | the view |
+| the find bar's controls | `FindQuery`, `FindMatchCase`, `FindWholeWord`, `FindRegex`, `FindChangedRowsOnly`, `FindScopeLeft`, `FindScopeRight`, `FindScopeBoth`, `FindPrevious`, `FindNext`, `FindClose` | the view |
+| a pane's two margins | `LineNumbers`, `ChangeMarkers` | the pane |
+| an entry the library puts in a context menu | the name of its `DiffCommand`; `Save`, `Revert`, `GoToRow` and `HideMinimap` for the four with none | the menu |
+
+The library cannot choose the view's id, because you may host more than one, so give it one where you
+place it:
+
+```xml
+<dv:SideBySideDiffView AutomationProperties.AutomationId="Comparison" />
+```
+
+**A part that is not on screen is not in the tree.** The map, the headers, the strip, the banner's
+action and the find bar are hidden through `IsVisible` when they are off or closed, so a search that
+finds none of them is reporting a part switched off, not a missing peer.
+
+**An entry you add to a menu** in `SideBySideDiffView.PaneContextMenuOpening` carries the id you set
+in `DiffMenuItem.AutomationId`. One with a `DiffMenuItem.Verb` takes the verb's name when you set
+none, and one with neither is found only by its text. **A context menu is a window of its own**, so
+find it from the desktop root together with your process id rather than under your window. Avalonia's
+`OverlayPopups` platform option draws popups inside the window instead; that choice is the host's.
+
+**Act on a part by input at the bounds its peer reports.** They are true bounds, and a click at their
+centre lands in the part. What the library draws inside a part — a copy arrow, a connector polygon, a
+lane of the map — is not an element of its own: act on it by position within the part, or through
+the key or the menu entry each one already has. A pane answers whether it has the keyboard focus for
+its text area, which is where the focus lives; that text area is AvaloniaEdit's and is not a control
+element itself, so ask the pane, not which element is focused.
+
 ## What it costs you
 
 **Syntax highlighting is unconditional.** The control references AvaloniaEdit.TextMate with no

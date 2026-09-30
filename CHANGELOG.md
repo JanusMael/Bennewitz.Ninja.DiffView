@@ -8,6 +8,15 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00026 — a UI Automation harness can find every part of the library. Each control it defines
+  has an automation peer of its own, a control element of the type it is to a person — the three
+  views `Group`, a pane `Edit`, a header `Header`, the find bar `ToolBar`, the status strip
+  `StatusBar`, the overview map `ScrollBar`, the connector gutter and a pane's two margins `Custom` —
+  advertising no pattern; a pane answers for the keyboard focus its text area holds. Every part
+  carries an explicit `AutomationId`, which no culture changes, unique within the part that owns it:
+  `LeftPane`, `Gutter`, `FindQuery` and the rest, listed in the hosting guide. `DiffMenuItem.AutomationId`
+  is new: an entry takes its verb's name unless one is set, and an entry a host adds sets its own.
+
 - Plan 00023 phase 3 — `--detach` on `scripts/run-demo.sh` (`-Detach` on `run-demo.ps1`), which
   starts the demo in a session of its own through the driver's `launch` and returns once its window
   is up; and `scripts/measure-menu-width.{cs,sh,ps1}`, which reports each shipped locale's widest menu
