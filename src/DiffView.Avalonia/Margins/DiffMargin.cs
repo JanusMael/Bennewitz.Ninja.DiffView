@@ -1,6 +1,7 @@
 using System.Globalization;
 using Avalonia;
 using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -67,6 +68,9 @@ internal abstract class DiffMargin : AbstractMargin
 
     /// <summary>Draws the content; the visual lines are valid when this runs.</summary>
     protected abstract void RenderCore(DrawingContext context, TextView textView);
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new DiffMarginAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnPointerMoved(PointerEventArgs e)

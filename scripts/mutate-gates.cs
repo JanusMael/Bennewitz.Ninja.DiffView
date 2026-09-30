@@ -62,6 +62,8 @@ const string HeaderSource = "src/DiffView.Avalonia/DiffPaneHeader.cs";
 const string ViewPeer = "src/DiffView.Avalonia/DiffViewAutomationPeer.cs";
 const string HeaderPeer = "src/DiffView.Avalonia/DiffPaneHeaderAutomationPeer.cs";
 const string StripPeer = "src/DiffView.Avalonia/DiffStatusStripAutomationPeer.cs";
+const string MarginSource = "src/DiffView.Avalonia/Margins/DiffMargin.cs";
+const string PresenterTheme = "src/DiffView.Avalonia/Themes/DiffPanePresenter.axaml";
 const string UiProbe = "src/DiffView.Avalonia/MutationProbe.cs";
 const string CoreProbe = "src/DiffView.Core/MutationProbe.cs";
 const string ShadowControlFile = "tests/DiffView.Avalonia.Tests/ShadowControl.cs";
@@ -543,36 +545,53 @@ List<Mutation> mutations =
     // BNXQ1006's count; each thing it asks of a peer has a mutation that makes it the first to fail.
     new("the peer walk's requirement loses a themed control", A11yClass,
         () => Sub(A11yGate, @"\.Where\(ours\.Contains\)", ".Where(n => ours.Contains(n) && n != nameof(DiffPaneHeader))"),
-        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
     new("a themed control has no control type written down", A11yClass,
         () => Sub(A11yGate, @"\n\s*\[nameof\(DiffStatusStrip\)\] = AutomationControlType\.StatusBar,", ""),
-        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
     new("a peer stops being a control element", A11yClass,
         () => Sub(StripPeer, @"(=> AutomationControlType\.StatusBar;)",
             "$1\n\n    protected override bool IsControlElementCore() => false;"),
-        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
     new("a view's peer claims another control type", A11yClass,
         () => Sub(ViewPeer, @"AutomationControlType\.Group;", "AutomationControlType.Custom;"),
-        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
     new("a peer advertises a pattern", A11yClass,
         () => Sub(HeaderPeer, @": ControlAutomationPeer\(owner\)\r?\n\{",
             ": ControlAutomationPeer(owner), global::Avalonia.Automation.Provider.IInvokeProvider\n{\n"
             + "    public void Invoke()\n    {\n    }\n"),
-        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
     new("a peer reports bounds its control is not at", A11yClass,
         () => Sub(StripPeer, @"(=> AutomationControlType\.StatusBar;)",
             "$1\n\n    protected override global::Avalonia.Rect GetBoundingRectangleCore() =>\n"
             + "        base.GetBoundingRectangleCore().Translate(new global::Avalonia.Vector(0, -100000));"),
-        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
     new("the peer walk records nothing it reaches", A11yClass,
         () => Sub(A11yGate, @"\n\s*reached\.Add\(type\);", ""),
-        "Every_themed_control_on_screen_is_a_control_element_of_its_type"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
+
+    // ---- Phase 2, the drawn surfaces. The requirement reads internal types, or the margins drop out of it
+    // — the table, which still names them, is what notices; a margin without its peer is not a control
+    // element; and a margin host left in the control view parents both margins under an unnamed List.
+    new("the peer walk's requirement reads exported types only", A11yClass,
+        () => Sub(A11yGate, @"\.GetTypes\(\)", ".GetExportedTypes()"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
+
+    new("the margins lose their peer", A11yClass,
+        () => Sub(MarginSource,
+            @"\n\s*/// <inheritdoc/>\n\s*protected override AutomationPeer OnCreateAutomationPeer\(\) => new DiffMarginAutomationPeer\(this\);\n",
+            "\n"),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
+
+    new("the margin host is left in the control view", A11yClass,
+        () => Sub(PresenterTheme, @"\s*AutomationProperties\.AccessibilityView=""Raw""", ""),
+        "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
 
     // ---- BNXQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
     // about an out-of-range index: a column index past a five-column grid SURVIVES this gate, measured.

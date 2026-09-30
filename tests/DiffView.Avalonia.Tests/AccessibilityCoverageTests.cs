@@ -48,7 +48,7 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// ⚠ <b>What the name gate does not establish.</b> It asserts that an interactive control's name is
 /// declared <em>in markup</em>. Whether a harness or a screen reader can reach the control is a question
 /// for its automation peer, which <see cref="Every_themed_control_has_a_peer_of_its_own"/> and
-/// <see cref="Every_themed_control_on_screen_is_a_control_element_of_its_type"/> ask, since plan 00026.
+/// <see cref="Every_control_of_ours_on_screen_is_a_control_element_of_its_type"/> ask, since plan 00026.
 /// And it cannot see a control that names itself in code, which is why <see cref="Excluded"/> exists and
 /// why the claim each exclusion makes is asserted separately below.
 /// </para>
@@ -173,6 +173,10 @@ public sealed class AccessibilityCoverageTests
         [nameof(DiffPaneHeader)] = AutomationControlType.Header,
         [nameof(DiffFindBar)] = AutomationControlType.ToolBar,
         [nameof(DiffStatusStrip)] = AutomationControlType.StatusBar,
+        [nameof(DiffMinimap)] = AutomationControlType.ScrollBar,
+        [nameof(ChangeConnectorGutter)] = AutomationControlType.Custom,
+        [nameof(DiffLineNumberMargin)] = AutomationControlType.Custom,
+        [nameof(ChangeMarkerMargin)] = AutomationControlType.Custom,
     };
 
     /// <summary>The one root every scan below is built from.</summary>
@@ -606,12 +610,14 @@ public sealed class AccessibilityCoverageTests
     }
 
     [AvaloniaFact]
-    public async Task Every_themed_control_on_screen_is_a_control_element_of_its_type()
+    public async Task Every_control_of_ours_on_screen_is_a_control_element_of_its_type()
     {
-        // ⭐ NOTHING HERE IS PICKED BY HAND BUT THE TYPES. What the walk must reach is every control type of
-        // this library that the library's markup themes, and that count is anchored to what BNXQ1006
-        // inspects, so a derivation that drifts from the rule's own reading fails here before it can
-        // quietly shrink what the rest of this test asks.
+        // ⭐ NOTHING HERE IS PICKED BY HAND BUT THE TYPES. What the walk must reach is every concrete control
+        // type this library defines, internal ones included — the two margins among them — and the ones
+        // the library's markup themes are anchored to what BNXQ1006 inspects, so a derivation that drifts
+        // from the rule's own reading fails here before it can quietly shrink what the rest of this test
+        // asks.
+        string[] controls = ConcreteControls();
         string[] themed = ThemedControls();
         int inspected = new CustomControlPeerRule().Analyze(PeerScan()).Inspected;
         Assert.True(
@@ -620,8 +626,8 @@ public sealed class AccessibilityCoverageTests
             + $"inspects {inspected}. They must agree, or the walk requires less than the rule reads.");
 
         Assert.True(
-            themed.SequenceEqual(ExpectedControlTypes.Keys.Order(StringComparer.Ordinal)),
-            $"The themed controls are {string.Join(", ", themed)}, and {nameof(ExpectedControlTypes)} names "
+            controls.SequenceEqual(ExpectedControlTypes.Keys.Order(StringComparer.Ordinal)),
+            $"The controls of ours are {string.Join(", ", controls)}, and {nameof(ExpectedControlTypes)} names "
             + $"{string.Join(", ", ExpectedControlTypes.Keys.Order(StringComparer.Ordinal))}. Every control a "
             + "harness can reach has the control type it is to a person written down, and nothing else is.");
 
@@ -630,7 +636,9 @@ public sealed class AccessibilityCoverageTests
         List<string> wrongTypes = [];
         List<string> withPatterns = [];
         List<string> missedHits = [];
-        await WalkEveryState(root => CollectPeers(root, themed, reached, notControlElements, wrongTypes, withPatterns, missedHits));
+        List<string> misparented = [];
+        await WalkEveryState(root => CollectPeers(
+            root, controls, reached, notControlElements, wrongTypes, withPatterns, missedHits, misparented));
 
         Assert.True(
             notControlElements.Count == 0,
@@ -653,12 +661,34 @@ public sealed class AccessibilityCoverageTests
             "A harness acts at the bounds a peer reports, and a hit-test at the centre of these lands outside "
             + "the control:" + Environment.NewLine + string.Join(Environment.NewLine, missedHits.Select(m => "  " + m)));
 
-        List<string> unreached = [.. themed.Where(t => !reached.Contains(t))];
+        Assert.True(
+            misparented.Count == 0,
+            "A harness finds a margin within its pane, so in the control view a margin's parent is its pane, "
+            + "and these sit under something else:" + Environment.NewLine
+            + string.Join(Environment.NewLine, misparented.Select(m => "  " + m)));
+
+        List<string> unreached = [.. controls.Where(t => !reached.Contains(t))];
         Assert.True(
             unreached.Count == 0,
-            "The walk never had these themed controls on screen, so nothing above was asked of them: "
+            "The walk never had these controls of ours on screen, so nothing above was asked of them: "
             + string.Join(", ", unreached) + ". Bring each on screen in one of the walk's states.");
     }
+
+    /// <summary>
+    /// Every concrete control type this library defines, internal ones included, by name, in ordinal order.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b><c>GetTypes</c>, not <c>GetExportedTypes</c>.</b> The pane's two margins are internal, and a
+    /// harness acts on what they draw; the exported types alone would leave them out of every requirement
+    /// this derivation feeds.
+    /// </remarks>
+    private static string[] ConcreteControls() =>
+    [
+        .. typeof(SideBySideDiffView).Assembly.GetTypes()
+            .Where(t => typeof(Control).IsAssignableFrom(t) && !t.IsAbstract)
+            .Select(t => t.Name)
+            .Order(StringComparer.Ordinal),
+    ];
 
     /// <summary>
     /// Every concrete control type of this library that the library's markup gives a
@@ -666,12 +696,7 @@ public sealed class AccessibilityCoverageTests
     /// </summary>
     private static string[] ThemedControls()
     {
-        HashSet<string> ours =
-        [
-            .. typeof(SideBySideDiffView).Assembly.GetTypes()
-                .Where(t => typeof(Control).IsAssignableFrom(t) && !t.IsAbstract)
-                .Select(t => t.Name),
-        ];
+        HashSet<string> ours = [.. ConcreteControls()];
 
         return
         [
@@ -695,7 +720,8 @@ public sealed class AccessibilityCoverageTests
     /// Asks the peer of every control under <paramref name="root"/>, the root included, whose type
     /// <paramref name="required"/> names and which is on screen: whether it is a control element, of the
     /// type <see cref="ExpectedControlTypes"/> gives it, advertising no pattern, at bounds whose centre a
-    /// hit-test finds inside the control.
+    /// hit-test finds inside the control — and, for a margin, whether its parent in the control view is its
+    /// pane.
     /// </summary>
     private static void CollectPeers(
         Visual root,
@@ -704,7 +730,8 @@ public sealed class AccessibilityCoverageTests
         List<string> notControlElements,
         List<string> wrongTypes,
         List<string> withPatterns,
-        List<string> missedHits)
+        List<string> missedHits,
+        List<string> misparented)
     {
         TopLevel? top = TopLevel.GetTopLevel(root);
 
@@ -758,7 +785,35 @@ public sealed class AccessibilityCoverageTests
             {
                 missedHits.Add($"{where}: the centre of {bounds} lands on {hit?.GetType().Name ?? "nothing"}");
             }
+
+            // A harness finds a margin within its pane — the guide's §5, step 4 — so in the control view the
+            // margin's parent must be the pane, and not whatever holds the margins in the text area's template.
+            if (control is DiffMargin margin)
+            {
+                Control? parent = ControlViewParentOf(peer);
+                if (parent != margin.Owner)
+                {
+                    misparented.Add($"{where}: under {parent?.GetType().Name ?? "nothing"}, not its pane");
+                }
+            }
         }
+    }
+
+    /// <summary>
+    /// The control whose peer is <paramref name="peer"/>'s nearest ancestor in the control view — what a
+    /// UI Automation client walking that view reports as its parent.
+    /// </summary>
+    private static Control? ControlViewParentOf(AutomationPeer peer)
+    {
+        for (AutomationPeer? parent = peer.GetParent(); parent is not null; parent = parent.GetParent())
+        {
+            if (parent.IsControlElement())
+            {
+                return (parent as ControlAutomationPeer)?.Owner;
+            }
+        }
+
+        return null;
     }
 
     [AvaloniaFact]

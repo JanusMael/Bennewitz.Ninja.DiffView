@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
@@ -429,6 +430,9 @@ public class DiffMinimap : Control
                 Math.Min(height, Bounds.Height));
         }
     }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new DiffMinimapAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
