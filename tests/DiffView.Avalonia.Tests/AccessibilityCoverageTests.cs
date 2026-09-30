@@ -53,7 +53,8 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// A name is translated, too, so what a harness finds a part by is its <c>AutomationId</c>, which
 /// <see cref="Every_part_the_library_places_carries_an_explicit_automation_id"/>,
 /// <see cref="Every_id_the_library_declares_is_found_once_within_the_part_that_owns_it"/> and
-/// <see cref="Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"/> ask.
+/// <see cref="Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"/> ask — and which id
+/// each is, <see cref="Every_id_a_harness_searches_for_is_the_one_the_fixture_pins"/>.
 /// And it cannot see a control that names itself in code, which is why <see cref="Excluded"/> exists and
 /// why the claim each exclusion makes is asserted separately below.
 /// </para>
@@ -1108,63 +1109,11 @@ public sealed class AccessibilityCoverageTests
     [AvaloniaFact]
     public async Task Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it()
     {
-        // ⭐ The surfaces are derived — every DiffPaneRegion, and the header — and the entries are whatever
-        // each surface's builder produced, read back through UI Automation the way a harness reads them.
+        // ⭐ The surfaces are derived — every DiffPaneRegion, on each pane, and the header — and the entries
+        // are whatever each surface's builder produced, read back through UI Automation the way a harness
+        // reads them.
         TestLogSink.Instance.Clear();
-        (string left, string right) = CompositeHost.SmallFixture();
-        Dictionary<string, string?[]> menus = new(StringComparer.Ordinal);
-        List<string> silent = [];
-
-        using (CompositeHost host = new())
-        {
-            host.Show();
-            await host.LoadAsync(left, right);
-            host.Window.CaptureRenderedFrame()?.Dispose();
-
-            // Every surface exists on the side-by-side view, so a region with nowhere to click is a miss too.
-            foreach (DiffPaneRegion region in Enum.GetValues<DiffPaneRegion>())
-            {
-                if (PointOn(region, host.Left, host.View, host.Window) is { } at)
-                {
-                    ReadMenu($"side-by-side {region}", at, host.Window, () => host.View.LastMenu, menus, silent);
-                }
-                else
-                {
-                    silent.Add($"side-by-side {region}");
-                }
-            }
-
-            DiffPaneHeader header = host.View.GetVisualDescendants().OfType<DiffPaneHeader>().First();
-            if (Centre(header, host.Window) is { } onHeader)
-            {
-                ReadMenu("side-by-side header", onHeader, host.Window, () => host.View.LastMenu, menus, silent);
-            }
-            else
-            {
-                silent.Add("side-by-side header");
-            }
-        }
-
-        using (InlineHost unified = new())
-        {
-            unified.Show();
-            await unified.LoadAsync(left, right);
-            unified.Window.CaptureRenderedFrame()?.Dispose();
-
-            // The unified view has no connector and no map, so those two are not asked; any other surface it
-            // has nowhere to click on is a miss, as on the side-by-side view.
-            foreach (DiffPaneRegion region in Enum.GetValues<DiffPaneRegion>())
-            {
-                if (PointOn(region, unified.Pane, unified.View, unified.Window) is { } at)
-                {
-                    ReadMenu($"unified {region}", at, unified.Window, () => unified.View.LastMenu, menus, silent);
-                }
-                else if (region is not (DiffPaneRegion.ConnectorGutter or DiffPaneRegion.OverviewMap))
-                {
-                    silent.Add($"unified {region}");
-                }
-            }
-        }
+        (Dictionary<string, string?[]> menus, List<string> silent) = await ReadEveryMenu();
 
         Assert.True(
             silent.Count == 0,
@@ -1203,6 +1152,133 @@ public sealed class AccessibilityCoverageTests
             + "once:" + Environment.NewLine + string.Join(Environment.NewLine, twice.Select(t => "  " + t)));
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task Every_id_a_harness_searches_for_is_the_one_the_fixture_pins()
+    {
+        // ⭐ The tests above ask whether each part HAS an id, found once; this one asks which id. Plan 00023's
+        // Windows harness hard-codes these strings, so a rename, an addition or a removal edits
+        // fixtures/automation-ids.txt in the same change — the bargain fixtures/api strikes for the public
+        // surface. What the code declares is read from where it is declared: the templates' markup, the
+        // margins a pane builds, and the entries every surface's menu shows.
+        TestLogSink.Instance.Clear();
+        HashSet<string> pinned = [.. PinnedIds()];
+        HashSet<string> declared =
+        [
+            .. DeclaredIds(LibraryWithin(ScanAll())).Select(d => $"{d.Owner} {d.Id}"),
+            .. new DiffPanePresenter().TextArea.LeftMargins
+                .OfType<DiffMargin>()
+                .Select(m => $"{nameof(DiffPanePresenter)} {AutomationProperties.GetAutomationId(m)}"),
+            .. (await ReadEveryMenu()).Menus.Values
+                .SelectMany(ids => ids)
+                .OfType<string>()
+                .Select(id => $"{nameof(DiffMenuItem)} {id}"),
+        ];
+
+        List<string> unpinned = [.. declared.Where(d => !pinned.Contains(d)).Order(StringComparer.Ordinal)];
+        Assert.True(
+            unpinned.Count == 0,
+            "The code declares these ids and fixtures/automation-ids.txt does not pin them — an id added, or one "
+            + "renamed, which every harness searching by the old name stops finding. Add each to the fixture in "
+            + "the same change:" + Environment.NewLine + string.Join(Environment.NewLine, unpinned.Select(u => "  " + u)));
+
+        List<string> stale = [.. pinned.Where(p => !declared.Contains(p)).Order(StringComparer.Ordinal)];
+        Assert.True(
+            stale.Count == 0,
+            "fixtures/automation-ids.txt pins these ids and nothing declares them any more — an id removed, or "
+            + "one renamed. Take each out of the fixture in the same change:" + Environment.NewLine
+            + string.Join(Environment.NewLine, stale.Select(s => "  " + s)));
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    /// <summary>
+    /// The ids <c>fixtures/automation-ids.txt</c> pins, one <c>owner id</c> per line; a blank line or a line
+    /// starting <c>#</c> pins nothing. Read by content, whatever byte-order mark or terminator the file has.
+    /// </summary>
+    private static IEnumerable<string> PinnedIds() =>
+        File.ReadAllText(RepoPaths.Source(Path.Combine("fixtures", "automation-ids.txt")))
+            .TrimStart('﻿')
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0 && !line.StartsWith('#'));
+
+    /// <summary>
+    /// Opens every menu a surface of either view opens and reads its entries' ids through UI Automation, by
+    /// surface: each pane region on both sides of the side-by-side view, its connector, its map and a
+    /// header, and every region the unified view has. A surface that opened nothing, or that a view has but
+    /// gave nowhere to click, is silent.
+    /// </summary>
+    private static async Task<(Dictionary<string, string?[]> Menus, List<string> Silent)> ReadEveryMenu()
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        Dictionary<string, string?[]> menus = new(StringComparer.Ordinal);
+        List<string> silent = [];
+
+        using (CompositeHost host = new())
+        {
+            host.Show();
+            await host.LoadAsync(left, right);
+            host.Window.CaptureRenderedFrame()?.Dispose();
+
+            // Every surface exists on the side-by-side view, so a region with nowhere to click is a miss too.
+            // Each pane is asked, because each offers to copy toward the other side; the connector and the
+            // map belong to neither pane, and are asked once.
+            foreach (DiffPaneRegion region in Enum.GetValues<DiffPaneRegion>())
+            {
+                (string Side, DiffPanePresenter Pane)[] panes =
+                    region is DiffPaneRegion.ConnectorGutter or DiffPaneRegion.OverviewMap
+                        ? [(string.Empty, host.Left)]
+                        : [("left ", host.Left), ("right ", host.Right)];
+                foreach ((string side, DiffPanePresenter pane) in panes)
+                {
+                    string surface = $"side-by-side {side}{region}";
+                    if (PointOn(region, pane, host.View, host.Window) is { } at)
+                    {
+                        ReadMenu(surface, at, host.Window, () => host.View.LastMenu, menus, silent);
+                    }
+                    else
+                    {
+                        silent.Add(surface);
+                    }
+                }
+            }
+
+            DiffPaneHeader header = host.View.GetVisualDescendants().OfType<DiffPaneHeader>().First();
+            if (Centre(header, host.Window) is { } onHeader)
+            {
+                ReadMenu("side-by-side header", onHeader, host.Window, () => host.View.LastMenu, menus, silent);
+            }
+            else
+            {
+                silent.Add("side-by-side header");
+            }
+        }
+
+        using (InlineHost unified = new())
+        {
+            unified.Show();
+            await unified.LoadAsync(left, right);
+            unified.Window.CaptureRenderedFrame()?.Dispose();
+
+            // The unified view has no connector and no map, so those two are not asked; any other surface it
+            // has nowhere to click on is a miss, as on the side-by-side view.
+            foreach (DiffPaneRegion region in Enum.GetValues<DiffPaneRegion>())
+            {
+                if (PointOn(region, unified.Pane, unified.View, unified.Window) is { } at)
+                {
+                    ReadMenu($"unified {region}", at, unified.Window, () => unified.View.LastMenu, menus, silent);
+                }
+                else if (region is not (DiffPaneRegion.ConnectorGutter or DiffPaneRegion.OverviewMap))
+                {
+                    silent.Add($"unified {region}");
+                }
+            }
+        }
+
+        return (menus, silent);
     }
 
     /// <summary>

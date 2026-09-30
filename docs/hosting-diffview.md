@@ -263,8 +263,9 @@ advertises a pattern. The controls inside the find bar, the banner and the strip
 text box, toggle buttons and buttons, which carry their usual `Value`, `Toggle` and `Invoke`.
 
 **Find a part by its `AutomationId`, never by its name.** The names are translated — the section above
-— so a search for *Left pane* finds nothing on a German machine. The ids are fixed, and each is unique
-within the part that owns it, so scope a search to your process, then to the view, then to the pane:
+— so a search for *Left pane* finds nothing on a German machine. The ids are fixed — a test pins every
+one of them, so an id changes only on purpose, in a change that says so — and each is unique within the
+part that owns it, so scope a search to your process, then to the view, then to the pane:
 
 | Part | `AutomationId` | Unique within |
 |---|---|---|

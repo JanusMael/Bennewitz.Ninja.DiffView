@@ -1,0 +1,69 @@
+# The AutomationIds a UI Automation harness searches for, one per line: the part that owns an id, then the id.
+# Each is unique within its owner, as plan 00026's Identities table has it: a view's parts within the view, a
+# pane's two margins within the pane, and a menu entry within its menu.
+#
+# A rename, an addition or a removal edits this file in the same change.
+# AccessibilityCoverageTests.Every_id_a_harness_searches_for_is_the_one_the_fixture_pins compares it, both
+# ways, with what the code declares: the templates' markup, the margins a pane builds, and the entries every
+# surface's menu shows. docs/hosting-diffview.md tells a host the same ids.
+
+SideBySideDiffView BannerAction
+SideBySideDiffView FindBar
+SideBySideDiffView Gutter
+SideBySideDiffView LeftHeader
+SideBySideDiffView LeftPane
+SideBySideDiffView Minimap
+SideBySideDiffView RightHeader
+SideBySideDiffView RightPane
+SideBySideDiffView StatusStrip
+
+DiffViewer BannerAction
+DiffViewer Gutter
+DiffViewer LeftHeader
+DiffViewer LeftPane
+DiffViewer Minimap
+DiffViewer RightHeader
+DiffViewer RightPane
+DiffViewer StatusStrip
+
+InlineDiffView BannerAction
+InlineDiffView FindBar
+InlineDiffView LeftHeader
+InlineDiffView Pane
+InlineDiffView RightHeader
+InlineDiffView StatusStrip
+
+DiffFindBar FindChangedRowsOnly
+DiffFindBar FindClose
+DiffFindBar FindMatchCase
+DiffFindBar FindNext
+DiffFindBar FindPrevious
+DiffFindBar FindQuery
+DiffFindBar FindRegex
+DiffFindBar FindScopeBoth
+DiffFindBar FindScopeLeft
+DiffFindBar FindScopeRight
+DiffFindBar FindWholeWord
+
+DiffStatusStrip StatusDismiss
+
+DiffPanePresenter ChangeMarkers
+DiffPanePresenter LineNumbers
+
+DiffMenuItem CopyBlockToLeft
+DiffMenuItem CopyBlockToRight
+DiffMenuItem CopyToLeft
+DiffMenuItem CopyToRight
+DiffMenuItem ExpandFold
+DiffMenuItem GoToChange
+DiffMenuItem GoToRow
+DiffMenuItem HideMinimap
+DiffMenuItem NextChange
+DiffMenuItem OpenFind
+DiffMenuItem PreviousChange
+DiffMenuItem Revert
+DiffMenuItem Save
+DiffMenuItem SelectBlock
+DiffMenuItem ShowAllRows
+DiffMenuItem ShowContext
+DiffMenuItem ShowDifferencesOnly
