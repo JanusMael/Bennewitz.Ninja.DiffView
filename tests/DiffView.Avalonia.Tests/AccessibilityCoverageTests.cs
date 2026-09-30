@@ -2,8 +2,12 @@ using System.Reflection;
 using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Automation;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
 using Bennewitz.Ninja.DiffView.Tests.Composite;
@@ -41,12 +45,12 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// element set that had stopped matching anything read exactly like a clean repository.
 /// </para>
 /// <para>
-/// ⚠ <b>What this gate does not establish.</b> It asserts that an interactive control's name is
-/// declared <em>in markup</em>. It does not establish that a screen reader reaches one — no control
-/// of this library overrides <c>OnCreateAutomationPeer</c>, so each returns <c>NoneAutomationPeer</c>
-/// and a control-view traversal skips it — and it cannot see a control that names itself in code,
-/// which is why <see cref="Excluded"/> exists and why the claim each exclusion makes is asserted
-/// separately below.
+/// ⚠ <b>What the name gate does not establish.</b> It asserts that an interactive control's name is
+/// declared <em>in markup</em>. Whether a harness or a screen reader can reach the control is a question
+/// for its automation peer, which <see cref="Every_themed_control_has_a_peer_of_its_own"/> and
+/// <see cref="Every_themed_control_on_screen_is_a_control_element_of_its_type"/> ask, since plan 00026.
+/// And it cannot see a control that names itself in code, which is why <see cref="Excluded"/> exists and
+/// why the claim each exclusion makes is asserted separately below.
 /// </para>
 /// <para>
 /// ⛔ <b>There is no parse-error assertion here, and that was measured rather than assumed.</b>
@@ -143,6 +147,33 @@ public sealed class AccessibilityCoverageTests
     /// with a demo at zero passed every assertion.
     /// </remarks>
     private const int DemoInspectedFloor = 41;
+
+    /// <summary>
+    /// A floor on what <c>BNXQ1006</c> inspects over the library's markup: 3, against the 7 controls the
+    /// library themes today.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>What it guards is a zero, like every floor in this file.</b> The rule checks the controls the
+    /// scanned markup themes and the scanned assembly defines, so a scan that has lost the markup inspects
+    /// nothing and reports clean. The rule's other blindness — no assembly at all — is its
+    /// <see cref="XamlRuleResult.Skipped"/> list's to show, and is asserted before this.
+    /// </remarks>
+    private const int PeerInspectedFloor = 3;
+
+    /// <summary>
+    /// The control type each control of ours is to a person — plan 00026's table, and the one written
+    /// expectation in the peer walk. UIA's control-pattern mapping requires no pattern of any of them.
+    /// </summary>
+    private static readonly Dictionary<string, AutomationControlType> ExpectedControlTypes = new(StringComparer.Ordinal)
+    {
+        [nameof(SideBySideDiffView)] = AutomationControlType.Group,
+        [nameof(DiffViewer)] = AutomationControlType.Group,
+        [nameof(InlineDiffView)] = AutomationControlType.Group,
+        [nameof(DiffPanePresenter)] = AutomationControlType.Edit,
+        [nameof(DiffPaneHeader)] = AutomationControlType.Header,
+        [nameof(DiffFindBar)] = AutomationControlType.ToolBar,
+        [nameof(DiffStatusStrip)] = AutomationControlType.StatusBar,
+    };
 
     /// <summary>The one root every scan below is built from.</summary>
     /// <remarks>
@@ -369,66 +400,7 @@ public sealed class AccessibilityCoverageTests
         HashSet<string> interactive = [.. declaredNames, .. Excluded.Keys];
         HashSet<(string Owner, string Part)> visited = [];
         List<string> unnamed = [];
-        (string left, string right) = CompositeHost.SmallFixture();
-
-        // Every declared part is on screen in at least one of these six states: each view with its find
-        // bar open — the viewer, having none, simply loaded — and each with a build that fails, which puts
-        // the Retry action on the banner and the failure, with its dismiss button, on the strip. The
-        // coverage assertion at the end is what holds the test to that, rather than this comment; an
-        // explicit failure on the strip in the first state was measured redundant, the failing build
-        // already showing one.
-        using (CompositeHost host = new())
-        {
-            host.Show();
-            await host.LoadAsync(left, right);
-            host.View.OpenFind();
-            CompositeHost.Layout();
-            Collect(host.View, interactive, visited, unnamed);
-        }
-
-        using (CompositeHost host = new())
-        {
-            host.Show();
-            host.View.Builder = CompositeHost.FailingBuilder;
-            await host.LoadAsync(left, right);
-            CompositeHost.Layout();
-            Collect(host.View, interactive, visited, unnamed);
-        }
-
-        using (InlineHost unified = new())
-        {
-            unified.Show();
-            await unified.LoadAsync(left, right);
-            unified.View.OpenFind();
-            InlineHost.Layout();
-            Collect(unified.View, interactive, visited, unnamed);
-        }
-
-        using (InlineHost unified = new())
-        {
-            unified.Show();
-            unified.View.Builder = CompositeHost.FailingBuilder;
-            await unified.LoadAsync(left, right);
-            InlineHost.Layout();
-            Collect(unified.View, interactive, visited, unnamed);
-        }
-
-        using (ViewerHost viewer = new())
-        {
-            viewer.Show();
-            await viewer.LoadAsync(left, right);
-            ViewerHost.Layout();
-            Collect(viewer.View, interactive, visited, unnamed);
-        }
-
-        using (ViewerHost viewer = new())
-        {
-            viewer.Show();
-            viewer.View.Builder = CompositeHost.FailingBuilder;
-            await viewer.LoadAsync(left, right);
-            ViewerHost.Layout();
-            Collect(viewer.View, interactive, visited, unnamed);
-        }
+        await WalkEveryState(root => Collect(root, interactive, visited, unnamed));
 
         Assert.True(
             unnamed.Count == 0,
@@ -452,7 +424,7 @@ public sealed class AccessibilityCoverageTests
             unreached.Count == 0,
             "The library's markup declares these interactive parts and the walk never checked them on "
             + "screen, so a missing name on any of them would pass. Bring each one on screen in one of the "
-            + "states above; do not take it out of the requirement:"
+            + "walk's states; do not take it out of the requirement:"
             + Environment.NewLine
             + string.Join(Environment.NewLine, unreached.Select(u => "  " + u)));
     }
@@ -529,6 +501,262 @@ public sealed class AccessibilityCoverageTests
             if (string.IsNullOrWhiteSpace(AutomationProperties.GetName(control)))
             {
                 unnamed.Add($"{control.GetType().Name} '{part}' in {ownerName}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Brings every part the library's markup declares on screen at least once, handing each view to
+    /// <paramref name="visit"/> in six states: each view with its find bar open — the viewer, having none,
+    /// simply loaded — and each with a build that fails, which puts the Retry action on the banner and the
+    /// failure, with its dismiss button, on the strip.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>One walk, whatever reads it.</b> Every reading that takes it asserts that it reached what it
+    /// requires, rather than trusting this list, so a state dropped here fails each reading that needed
+    /// it; a second walk would be a second list of states to keep complete. An explicit failure on the
+    /// strip in the first state was measured redundant, the failing build already showing one.
+    /// </remarks>
+    private static async Task WalkEveryState(Action<Visual> visit)
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+
+        using (CompositeHost host = new())
+        {
+            host.Show();
+            await host.LoadAsync(left, right);
+            host.View.OpenFind();
+            CompositeHost.Layout();
+            visit(host.View);
+        }
+
+        using (CompositeHost host = new())
+        {
+            host.Show();
+            host.View.Builder = CompositeHost.FailingBuilder;
+            await host.LoadAsync(left, right);
+            CompositeHost.Layout();
+            visit(host.View);
+        }
+
+        using (InlineHost unified = new())
+        {
+            unified.Show();
+            await unified.LoadAsync(left, right);
+            unified.View.OpenFind();
+            InlineHost.Layout();
+            visit(unified.View);
+        }
+
+        using (InlineHost unified = new())
+        {
+            unified.Show();
+            unified.View.Builder = CompositeHost.FailingBuilder;
+            await unified.LoadAsync(left, right);
+            InlineHost.Layout();
+            visit(unified.View);
+        }
+
+        using (ViewerHost viewer = new())
+        {
+            viewer.Show();
+            await viewer.LoadAsync(left, right);
+            ViewerHost.Layout();
+            visit(viewer.View);
+        }
+
+        using (ViewerHost viewer = new())
+        {
+            viewer.Show();
+            viewer.View.Builder = CompositeHost.FailingBuilder;
+            await viewer.LoadAsync(left, right);
+            ViewerHost.Layout();
+            visit(viewer.View);
+        }
+    }
+
+    [Fact]
+    public void Every_themed_control_has_a_peer_of_its_own()
+    {
+        // ⛔ Skipped FIRST, and asserted EMPTY. BNXQ1006 reads each peer from compiled code, so a scan with
+        // no assembly skips every themed control and reports clean — measured at 928: 0 inspected, 0
+        // findings, 8 skipped. Unlike BNXQ1003's, nothing here is skipped legitimately: a control that did
+        // not load, or a name two scanned types carry, is a scan that cannot answer, not a control with
+        // nothing to check.
+        XamlRuleResult result = new CustomControlPeerRule().Analyze(PeerScan());
+
+        Assert.True(
+            result.Skipped.Count == 0,
+            "BNXQ1006 read no peer for these themed controls: "
+            + string.Join(", ", result.Skipped.Select(s => s.Subject))
+            + ". Handed no assembly it skips every one; otherwise a control did not load, or two scanned "
+            + "types carry its name.");
+
+        Assert.True(
+            result.Inspected >= PeerInspectedFloor,
+            $"BNXQ1006 inspected {result.Inspected} themed controls, below the floor of {PeerInspectedFloor}. "
+            + "The floor sits well under the population, so no control was merely added or removed: the scan "
+            + "has lost the markup whose themes it checks.");
+
+        Assert.True(
+            result.Findings.Count == 0,
+            "A themed control has no automation peer of its own, so a search of the control view cannot find "
+            + "it, its name or its id:" + Environment.NewLine
+            + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
+    }
+
+    [AvaloniaFact]
+    public async Task Every_themed_control_on_screen_is_a_control_element_of_its_type()
+    {
+        // ⭐ NOTHING HERE IS PICKED BY HAND BUT THE TYPES. What the walk must reach is every control type of
+        // this library that the library's markup themes, and that count is anchored to what BNXQ1006
+        // inspects, so a derivation that drifts from the rule's own reading fails here before it can
+        // quietly shrink what the rest of this test asks.
+        string[] themed = ThemedControls();
+        int inspected = new CustomControlPeerRule().Analyze(PeerScan()).Inspected;
+        Assert.True(
+            themed.Length == inspected,
+            $"This test reads {themed.Length} themed controls of ours in the library's markup and BNXQ1006 "
+            + $"inspects {inspected}. They must agree, or the walk requires less than the rule reads.");
+
+        Assert.True(
+            themed.SequenceEqual(ExpectedControlTypes.Keys.Order(StringComparer.Ordinal)),
+            $"The themed controls are {string.Join(", ", themed)}, and {nameof(ExpectedControlTypes)} names "
+            + $"{string.Join(", ", ExpectedControlTypes.Keys.Order(StringComparer.Ordinal))}. Every control a "
+            + "harness can reach has the control type it is to a person written down, and nothing else is.");
+
+        HashSet<string> reached = [];
+        List<string> notControlElements = [];
+        List<string> wrongTypes = [];
+        List<string> withPatterns = [];
+        List<string> missedHits = [];
+        await WalkEveryState(root => CollectPeers(root, themed, reached, notControlElements, wrongTypes, withPatterns, missedHits));
+
+        Assert.True(
+            notControlElements.Count == 0,
+            "These controls are on screen and their peers are not control elements, so a search of the "
+            + "control view never finds them: " + string.Join(", ", notControlElements));
+
+        Assert.True(
+            wrongTypes.Count == 0,
+            "These peers report a control type other than the one their control is to a person:"
+            + Environment.NewLine + string.Join(Environment.NewLine, wrongTypes.Select(w => "  " + w)));
+
+        Assert.True(
+            withPatterns.Count == 0,
+            "These peers advertise a pattern, and plan 00026 advertises none — a pattern a peer does not "
+            + "honour is the defect rule 4 exists for:" + Environment.NewLine
+            + string.Join(Environment.NewLine, withPatterns.Select(w => "  " + w)));
+
+        Assert.True(
+            missedHits.Count == 0,
+            "A harness acts at the bounds a peer reports, and a hit-test at the centre of these lands outside "
+            + "the control:" + Environment.NewLine + string.Join(Environment.NewLine, missedHits.Select(m => "  " + m)));
+
+        List<string> unreached = [.. themed.Where(t => !reached.Contains(t))];
+        Assert.True(
+            unreached.Count == 0,
+            "The walk never had these themed controls on screen, so nothing above was asked of them: "
+            + string.Join(", ", unreached) + ". Bring each on screen in one of the walk's states.");
+    }
+
+    /// <summary>
+    /// Every concrete control type of this library that the library's markup gives a
+    /// <c>ControlTheme</c>, by name, in ordinal order.
+    /// </summary>
+    private static string[] ThemedControls()
+    {
+        HashSet<string> ours =
+        [
+            .. typeof(SideBySideDiffView).Assembly.GetTypes()
+                .Where(t => typeof(Control).IsAssignableFrom(t) && !t.IsAbstract)
+                .Select(t => t.Name),
+        ];
+
+        return
+        [
+            .. LibraryWithin(ScanAll()).ParsedFiles
+                .SelectMany(f => f.Document!.Descendants())
+                .Where(e => e.Name.LocalName == "ControlTheme")
+                .Select(e => e.Attribute("TargetType")?.Value)
+                .OfType<string>()
+                .Select(t => t[(t.IndexOf(':') + 1)..])
+                .Where(ours.Contains)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal),
+        ];
+    }
+
+    /// <summary>The library's markup, with the library's assembly — where BNXQ1006 reads each peer from.</summary>
+    private static XamlScanContext PeerScan() =>
+        LibraryWithin(ScanAll()).WithAssemblies(typeof(SideBySideDiffView).Assembly);
+
+    /// <summary>
+    /// Asks the peer of every control under <paramref name="root"/>, the root included, whose type
+    /// <paramref name="required"/> names and which is on screen: whether it is a control element, of the
+    /// type <see cref="ExpectedControlTypes"/> gives it, advertising no pattern, at bounds whose centre a
+    /// hit-test finds inside the control.
+    /// </summary>
+    private static void CollectPeers(
+        Visual root,
+        string[] required,
+        HashSet<string> reached,
+        List<string> notControlElements,
+        List<string> wrongTypes,
+        List<string> withPatterns,
+        List<string> missedHits)
+    {
+        TopLevel? top = TopLevel.GetTopLevel(root);
+
+        // ⛔ A hit-test reads the scene the renderer last composed, not the layout. With the find bar just
+        // opened and no frame drawn since, its centre hit-tested to the pane that had been there — measured.
+        // A harness on a desktop acts on a window that has drawn, so a frame is drawn first here too.
+        (top as Window)?.CaptureRenderedFrame()?.Dispose();
+
+        foreach (Control control in root.GetSelfAndVisualDescendants().OfType<Control>())
+        {
+            string type = control.GetType().Name;
+            if (!required.Contains(type) || control.GetType().Assembly != typeof(SideBySideDiffView).Assembly)
+            {
+                continue;
+            }
+
+            if (!control.IsEffectivelyVisible)
+            {
+                continue;
+            }
+
+            reached.Add(type);
+            string where = control.Name is { Length: > 0 } name ? $"{type} '{name}'" : type;
+            AutomationPeer peer = ControlAutomationPeer.CreatePeerForElement(control);
+
+            if (!peer.IsControlElement())
+            {
+                notControlElements.Add(where);
+                continue;
+            }
+
+            if (peer.GetAutomationControlType() != ExpectedControlTypes[type])
+            {
+                wrongTypes.Add($"{where}: {peer.GetAutomationControlType()}, where it is a {ExpectedControlTypes[type]}");
+            }
+
+            string[] patterns =
+            [
+                .. peer.GetType().GetInterfaces()
+                    .Where(i => i.Namespace == typeof(IInvokeProvider).Namespace)
+                    .Select(i => i.Name),
+            ];
+            if (patterns.Length > 0)
+            {
+                withPatterns.Add($"{where}: {string.Join(", ", patterns)}");
+            }
+
+            Rect bounds = peer.GetBoundingRectangle();
+            IInputElement? hit = top?.InputHitTest(bounds.Center);
+            if (hit is not Visual visual || (visual != control && !control.IsVisualAncestorOf(visual)))
+            {
+                missedHits.Add($"{where}: the centre of {bounds} lands on {hit?.GetType().Name ?? "nothing"}");
             }
         }
     }

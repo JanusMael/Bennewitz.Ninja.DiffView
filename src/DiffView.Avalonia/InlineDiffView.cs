@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -1130,6 +1131,9 @@ public class InlineDiffView : TemplatedControl
     {
         MoveFindMatch(-1);
     }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new DiffViewAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)

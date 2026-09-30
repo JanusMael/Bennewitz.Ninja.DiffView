@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls.Primitives;
 
 namespace Bennewitz.Ninja.DiffView;
@@ -98,6 +99,9 @@ public class DiffPaneHeader : TemplatedControl
         get => GetValue(IsPaneFocusedProperty);
         set => SetValue(IsPaneFocusedProperty, value);
     }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new DiffPaneHeaderAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

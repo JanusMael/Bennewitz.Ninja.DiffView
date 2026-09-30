@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -785,6 +786,9 @@ public class DiffPanePresenter : TextEditor
     /// AvaloniaEdit's own <c>ScrollViewer</c> property is internal.
     /// </summary>
     public ScrollViewer? PaneScrollViewer { get; private set; }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new DiffPanePresenterAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
