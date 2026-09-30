@@ -49,6 +49,7 @@
         <DockPanel Focusable="False" Background="{TemplateBinding Background}">
           <ItemsControl DockPanel.Dock="Left"
                         Focusable="False"
+                        AutomationProperties.AccessibilityView="Raw"
                         ItemsSource="{TemplateBinding LeftMargins}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>

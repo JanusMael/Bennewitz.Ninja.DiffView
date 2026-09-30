@@ -1,5 +1,6 @@
 using System.Globalization;
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
@@ -268,6 +269,9 @@ public class ChangeConnectorGutter : Control
             context.DrawGeometry(_palette.ForKind(block.Kind), current ? outline : null, geometry);
         }
     }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer() => new ChangeConnectorGutterAutomationPeer(this);
 
     /// <inheritdoc/>
     protected override void OnPointerPressed(PointerPressedEventArgs e)
