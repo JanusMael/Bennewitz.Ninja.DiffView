@@ -3646,8 +3646,8 @@ id, so a margin without one fails, and each id is counted within its owner — a
 margin that repeated one would fail too; that a margin is on screen at all, in the control view under
 its pane, is phase 2's peer walk. The menu entries' are held by the menu test, which opens every
 surface's menu and reads what its builder produced. So each id the code declares is asked whether it
-is there and unique, and none is asked for its value: the values are plan 00026's table, and a rename
-is a change a harness's author reads in review.
+is there and unique here; which id it is, is the fixture's question — *the ids a harness searches for
+are pinned by a fixture*, below.
 
 ## Plan 00026: a hit-test after a layout change needs a frame, and the lesson is XamlQuality's
 
@@ -3661,3 +3661,19 @@ desktop never meets the stale answer, acting on a window that has drawn. The les
 was sent to the XamlQuality session on 2026-09-30 for `docs/avalonia-gotchas.md`, with the versions,
 the failure and the source it was read from, and what stays here is `AGENTS.md` §5's instruction to
 draw a frame first.
+
+## Plan 00026: the ids a harness searches for are pinned by a fixture
+
+The plan derived every requirement of its walk, so its tests asked whether each part has an id and
+whether it is found once, never which id it is: renaming `Gutter` or `GoToRow` passed every gate. Plan
+00023's Windows back end will search for exactly those strings. A fable-judge pass over phase 3 named
+the gap, and Brian decided on 2026-09-30 to close it before the pull request rather than leave it to
+that plan: the ids are pinned in `fixtures/automation-ids.txt`, one owner and id per line, and
+`AccessibilityCoverageTests.Every_id_a_harness_searches_for_is_the_one_the_fixture_pins` compares them
+with the code both ways — an id the code declares that the fixture does not pin, and one the fixture
+pins that nothing declares. It is the bargain `fixtures/api` strikes for the public surface: a rename, an
+addition or a removal edits the file in the same change. What the code declares is read where each id
+is declared — the templates' markup, the margins a new pane builds, and the entries every surface's
+menu shows, with both panes asked, since only the right one offers `CopyToLeft` — so the fixture is the
+one place a value is written twice. This goes beyond the plan, which pins no values, and the plan is not
+edited.

@@ -66,6 +66,7 @@ const string MarginSource = "src/DiffView.Avalonia/Margins/DiffMargin.cs";
 const string PresenterTheme = "src/DiffView.Avalonia/Themes/DiffPanePresenter.axaml";
 const string MenuSource = "src/DiffView.Avalonia/DiffPaneMenu.cs";
 const string MenuItemSource = "src/DiffView.Avalonia/DiffMenuItem.cs";
+const string NumberMargin = "src/DiffView.Avalonia/Margins/DiffLineNumberMargin.cs";
 const string FindBarTheme = "src/DiffView.Avalonia/Themes/DiffFindBar.axaml";
 const string UiProbe = "src/DiffView.Avalonia/MutationProbe.cs";
 const string CoreProbe = "src/DiffView.Core/MutationProbe.cs";
@@ -692,6 +693,26 @@ List<Mutation> mutations =
     new("a menu entry stops taking its verb's name as its id", A11yClass,
         () => Sub(MenuItemSource, @"get => _automationId \?\? Verb\?\.ToString\(\);", "get => _automationId;"),
         "Every_entry_of_every_menu_a_surface_opens_carries_an_id_unique_within_it"),
+
+    // ---- The pin: which ids, not only that there are ids (Brian, 2026-09-30). A rename is caught as an id
+    // the fixture does not pin — one for each place an id is declared, markup, a margin and a menu entry — and
+    // a removal as an id the fixture pins that nothing declares. The fixture itself is outside the reverted
+    // scope, so every mutation moves the code away from it.
+    new("a part's automation id is renamed and the fixture still pins the old one", A11yClass,
+        () => Sub(SbsTheme, @"AutomationId=""Gutter""", @"AutomationId=""Connector"""),
+        "Every_id_a_harness_searches_for_is_the_one_the_fixture_pins"),
+
+    new("a margin's automation id is renamed and the fixture still pins the old one", A11yClass,
+        () => Sub(NumberMargin, @"""LineNumbers""\)", @"""LineNumber"")"),
+        "Every_id_a_harness_searches_for_is_the_one_the_fixture_pins"),
+
+    new("a menu entry's automation id is renamed and the fixture still pins the old one", A11yClass,
+        () => Sub(SbsSource, @"AutomationId = ""GoToRow"",", @"AutomationId = ""JumpToRow"","),
+        "Every_id_a_harness_searches_for_is_the_one_the_fixture_pins"),
+
+    new("a part loses its automation id and the fixture still pins it", A11yClass,
+        () => Sub(SbsTheme, @" AutomationProperties\.AutomationId=""Minimap""", ""),
+        "Every_id_a_harness_searches_for_is_the_one_the_fixture_pins"),
 
     // ---- BNXQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
     // about an out-of-range index: a column index past a five-column grid SURVIVES this gate, measured.
