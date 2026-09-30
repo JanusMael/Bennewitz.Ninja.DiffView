@@ -356,10 +356,11 @@ List<Mutation> mutations =
 
     // ⛔ One edit narrowing the derivation narrows every reading together. Measured: from Control to
     // TemplatedControl dropped the minimap and the connector gutter with the gate green. The markup
-    // cross-check is what trips.
+    // cross-check is what trips. Anchored on GetExportedTypes, because ConcreteControls — plan 00026's
+    // derivation, over GetTypes — carries the same Where, and a second match makes this a no-op.
     new("the derived element set is narrowed to templated controls", A11yClass,
-        () => Sub(A11yGate, @"\.Where\(t => typeof\(Control\)\.IsAssignableFrom\(t\) && !t\.IsAbstract\)",
-            ".Where(t => typeof(Avalonia.Controls.Primitives.TemplatedControl).IsAssignableFrom(t) && !t.IsAbstract)"),
+        () => Sub(A11yGate, @"(\.GetExportedTypes\(\)\s*)\.Where\(t => typeof\(Control\)\.IsAssignableFrom\(t\) && !t\.IsAbstract\)",
+            "$1.Where(t => typeof(Avalonia.Controls.Primitives.TemplatedControl).IsAssignableFrom(t) && !t.IsAbstract)"),
         "Every_interactive_control_has_an_automation_name"),
 
     new("the markup cross-check reads the wrong namespace", A11yClass,
