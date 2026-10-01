@@ -594,6 +594,13 @@ invariant.
 | Found beside it | An edit under the editor's folds throws the same way before its re-diff lands — an inserted line, a copy or a revert — on `main` as much as here: open item 12, measured and kept out of this fix |
 | Nothing else moves | The suite, 687 = 685 + 2, passes in `en-US` and `de-DE` under `catch-crash --expect auto`; the build is clean under `-warnaserror` |
 
+**Both fixes landed together on 2026-10-01**, rebased from `c187541` onto `main` once plan 00026 had
+merged. The rebase changed no line of either fix's source or tests — `git range-diff` moves only these
+records, which kept both sides where plan 00026's entries had landed at the same places. On `main`'s
+own sources the three border tests and both refold cases were red again; with the fixes the suite,
+711, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`, and the full
+`scripts/mutate-gates.sh` has 110 mutations as declared and all 81 gate-file assertions tripped first.
+
 ## The current block's border under a fold
 
 Found by hand on 2026-09-28: in the demo with *Show differences only* on, F7 selected a change that
