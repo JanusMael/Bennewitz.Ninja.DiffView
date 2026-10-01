@@ -266,6 +266,11 @@ wording.
     edit — and was kept out of item 11's fix. Probe:
     `~/c/cl/scratch/DiffView/refold/probe/ProbeEditUnderFold.cs`.
 
+13. **The first CI run after 2026-10-19 runs on Ubuntu 26.** `ubuntu-latest` moves then, and the
+    Linux leg renders the snapshot baselines. A frame the new image shifts fails as a snapshot with
+    its received file uploaded beside it, and is fixed then rather than pinned against now —
+    `DECISIONS.md`, *CI's actions run on Node.js 24, and the Linux runner is not pinned*.
+
 Items 3, 6, 9 and 10 are Brian's own. Nothing else is in flight; new work needs a new plan under
 `plans/`.
 

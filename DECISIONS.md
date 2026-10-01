@@ -3714,3 +3714,20 @@ refactor this fix does not need.
 folds across any rebuild, and AvaloniaEdit then throws from the layout pass. It is a different
 defect with its own test to write, so it is recorded under *Open* in `PROGRESS.md` rather than
 folded into this fix.
+
+## CI's actions run on Node.js 24, and the Linux runner is not pinned
+
+The CI runs of pull requests #10 and #11 carried two notices. `actions/checkout`,
+`actions/setup-dotnet` and `actions/upload-artifact`, all at `@v4`, ran on Node.js 20, which GitHub
+has deprecated; and `ubuntu-latest` becomes Ubuntu 26 from 2026-10-19. `ci.yml` moves to
+`checkout@v7` and `setup-dotnet@v6`, the majors `release.yml` already names, and to
+`upload-artifact@v7`. Each major in between was the move to Node.js 24, and setup-dotnet v5 also
+dropped .NET versions far older than this repository's — read from their release notes on
+2026-10-01. Nothing here downloads an artifact, so no upload and download majors have to match.
+
+Pinning the Linux jobs to `ubuntu-24.04` was chosen first and then not taken (Brian, 2026-10-01).
+The `main` ruleset requires its five checks by name, `Build & Test (ubuntu-latest)` among them, and
+the conventions work's `.github/repository.json` lists the same names, so a pin renames a required
+check: a ruleset edit, and a change to another session's pull request, against a risk that may never
+come. If Ubuntu 26 moves a Linux baseline, the first run after 2026-10-19 shows it as a snapshot
+failure, with the received frames uploaded beside it — `PROGRESS.md` open item 13.
