@@ -79,7 +79,9 @@ names outright. **Plan 00023 phases 1–3 are done** — phases 2–3 in PR #9. 
 merged** (PR #10, all five CI jobs green on run `36746697113`): every control the
 library defines has an automation peer — the seven it themes, which `BNXQ1006` holds to it, and the four
 it only draws — and every part an explicit `AutomationId` a harness can find it by in any culture, under
-`BNXQ1007` and `BNXQ1008`; *Plan 00026 phases* below has the record. **Plan 00025 is complete and merged** (PR #1,
+`BNXQ1007` and `BNXQ1008`; *Plan 00026 phases* below has the record. **The two fold fixes found by hand
+on 2026-09-28 are merged** (PR #11, all five CI jobs green on run `36870507585`): the current block's border
+under a fold, and the unified view's folds across a rebuild, open item 11. **Plan 00025 is complete and merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
 reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
@@ -600,6 +602,7 @@ records, which kept both sides where plan 00026's entries had landed at the same
 own sources the three border tests and both refold cases were red again; with the fixes the suite,
 711, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`, and the full
 `scripts/mutate-gates.sh` has 110 mutations as declared and all 81 gate-file assertions tripped first.
+All five CI jobs green on PR #11's run `36870507585`.
 
 ## The current block's border under a fold
 
