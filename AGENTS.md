@@ -541,6 +541,13 @@ git -c credential.helper='!gh auth git-credential' push https://github.com/Janus
 
 `gh` itself is authenticated over HTTPS, so `gh pr create` and `gh api` work normally.
 
+**`main` takes a change only through a pull request, and an admin's direct push does not say it skipped
+one.** Its ruleset requires a pull request and five checks by name — `ci.yml`'s
+`Build & Test (ubuntu-latest)`, `Build & Test (windows-latest)`, `Build & Test (macos-latest)`,
+`Culture Leg (de-DE)` and `Trim Check (Release linux-x64)` — up to date with `main`, and admins bypass it
+always, so `git push origin main` from an admin's account succeeds without a word. Push a branch and merge
+its pull request. Renaming one of those jobs renames a required check, which is a ruleset edit and Brian's.
+
 **A pull request description ends at its last line** — no AI attribution trailer, the same rule
 commits follow. Say so once at the point of use when a session instruction asks for one.
 
