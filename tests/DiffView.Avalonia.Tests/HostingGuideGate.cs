@@ -37,6 +37,18 @@ internal static class HostingGuideGate
     /// <summary>The <c>using:</c> CLR namespace a quickstart imports, which is what a reader copies.</summary>
     private static readonly Regex UsingNamespace = new(@"xmlns:[A-Za-z0-9]+\s*=\s*""using:([^""]+)""", RegexOptions.Compiled);
 
+    /// <summary>A backticked span in a table cell: the shape every id in the guide's id table takes.</summary>
+    private static readonly Regex Backticked = new(@"`([^`]+)`", RegexOptions.Compiled);
+
+    /// <summary>
+    /// The header row the guide's <c>AutomationId</c> table is found by, matched whole, so another table
+    /// that happens to share a column name is not taken for it.
+    /// </summary>
+    private const string IdTableHeader = "| Part | `AutomationId` | Unique within |";
+
+    /// <summary>What the id table's menu row gives as its scope, which is how that row is told apart.</summary>
+    private const string MenuScope = "the menu";
+
     /// <summary>A <c>PackageId</c> as the csproj declares it.</summary>
     private static readonly Regex DeclaredPackageId = new(@"<PackageId>([^<]+)</PackageId>", RegexOptions.Compiled);
 
@@ -248,6 +260,84 @@ internal static class HostingGuideGate
     {
         Match match = UsingNamespace.Match(xaml);
         return match.Success ? match.Groups[1].Value : null;
+    }
+
+    /// <summary>
+    /// Where the guide's <c>AutomationId</c> table disagrees with the ids the fixture pins: an id pinned and
+    /// not in the table, an id in the table and not pinned, and a menu row whose own ids are not exactly
+    /// the pinned menu entries that name no command. That row states a rule — an entry takes its command's
+    /// name — and names only the exceptions to it, so it is held to the rule rather than to every entry's
+    /// id. A guide with no table, or a table with no menu row, is a finding too, so a moved or retitled
+    /// table cannot read as agreement.
+    /// </summary>
+    /// <param name="markdown">The guide.</param>
+    /// <param name="pinned">Every pinned id, with the part that owns it.</param>
+    /// <param name="commandNames">The names a menu entry can take from its command.</param>
+    /// <param name="menuOwner">The owner the fixture files a menu entry's id under.</param>
+    public static List<string> IdTableMismatches(
+        string markdown,
+        IReadOnlyCollection<(string Owner, string Id)> pinned,
+        IReadOnlyCollection<string> commandNames,
+        string menuOwner)
+    {
+        string[] lines = markdown.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        int header = Array.FindIndex(lines, line => string.Equals(line.Trim(), IdTableHeader, StringComparison.Ordinal));
+        if (header < 0)
+        {
+            return ["the guide has no AutomationId table"];
+        }
+
+        HashSet<string> tableIds = new(StringComparer.Ordinal);
+        HashSet<string>? menuIds = null;
+
+        // The header, the separator under it, then the rows, up to the first line that is not one.
+        for (int i = header + 2; i < lines.Length && lines[i].TrimStart().StartsWith('|'); i++)
+        {
+            string[] cells = lines[i].Split('|');
+            if (cells.Length < 5)
+            {
+                continue;
+            }
+
+            HashSet<string> ids = new(Backticked.Matches(cells[2]).Select(match => match.Groups[1].Value), StringComparer.Ordinal);
+            if (string.Equals(cells[3].Trim(), MenuScope, StringComparison.Ordinal))
+            {
+                // The rule names the type every other entry's id comes from; that name is not an id.
+                ids.Remove(nameof(DiffCommand));
+                menuIds = ids;
+            }
+            else
+            {
+                tableIds.UnionWith(ids);
+            }
+        }
+
+        HashSet<string> partIds = new(
+            pinned.Where(pin => !string.Equals(pin.Owner, menuOwner, StringComparison.Ordinal)).Select(pin => pin.Id),
+            StringComparer.Ordinal);
+        List<string> findings =
+        [
+            .. partIds.Except(tableIds).Order(StringComparer.Ordinal).Select(id => $"pinned and not in the guide's table: {id}"),
+            .. tableIds.Except(partIds).Order(StringComparer.Ordinal).Select(id => $"in the guide's table and not pinned: {id}"),
+        ];
+
+        if (menuIds is null)
+        {
+            findings.Add("the guide's AutomationId table has no menu row");
+            return findings;
+        }
+
+        HashSet<string> exceptions = new(
+            pinned
+                .Where(pin => string.Equals(pin.Owner, menuOwner, StringComparison.Ordinal))
+                .Select(pin => pin.Id)
+                .Where(id => !commandNames.Contains(id, StringComparer.Ordinal)),
+            StringComparer.Ordinal);
+        findings.AddRange(exceptions.Except(menuIds).Order(StringComparer.Ordinal)
+            .Select(id => $"a menu entry with no command that the menu row leaves out: {id}"));
+        findings.AddRange(menuIds.Except(exceptions).Order(StringComparer.Ordinal)
+            .Select(id => $"named by the menu row and not a pinned menu entry with no command: {id}"));
+        return findings;
     }
 
     private static bool IsType(string name, Type[] surface) => surface.Any(type => Named(type, name));

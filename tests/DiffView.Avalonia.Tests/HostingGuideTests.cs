@@ -294,4 +294,102 @@ public sealed class HostingGuideTests
             window.Close();
         }
     }
+
+    // ── The id table ───────────────────────────────────────────────────────────────────────
+
+    /// <summary>A pinned set small enough to read: two parts' ids, a margin's, a verb's entry and an exception.</summary>
+    private static readonly (string Owner, string Id)[] SamplePins =
+    [
+        ("SideBySideDiffView", "LeftPane"),
+        ("InlineDiffView", "Pane"),
+        ("DiffPanePresenter", "LineNumbers"),
+        ("DiffMenuItem", "NextChange"),
+        ("DiffMenuItem", "Save"),
+    ];
+
+    /// <summary>
+    /// A guide-shaped id table, agreeing with <see cref="SamplePins"/> unless a parameter breaks exactly one
+    /// row of it.
+    /// </summary>
+    private static string IdTable(
+        string panes = "`LeftPane`; `Pane` in the unified view",
+        string menu = "the name of its `DiffCommand`; `Save` for the one with none") =>
+        "## Finding its parts\n\n"
+        + "| Part | `AutomationId` | Unique within |\n"
+        + "|---|---|---|\n"
+        + "| a view | the one you give it | your window |\n"
+        + "| the panes | " + panes + " | the view |\n"
+        + "| a pane's margin | `LineNumbers` | the pane |\n"
+        + "| an entry the library puts in a context menu | " + menu + " | the menu |\n\n"
+        + "Give the view an id where you place it.\n";
+
+    private static List<string> IdMismatches(string markdown) =>
+        HostingGuideGate.IdTableMismatches(markdown, SamplePins, ["NextChange"], nameof(DiffMenuItem));
+
+    [Fact]
+    public void A_table_that_names_exactly_the_pinned_ids_trips_nothing()
+    {
+        Assert.Empty(IdMismatches(IdTable()));
+    }
+
+    [Fact]
+    public void An_id_the_fixture_pins_and_the_table_leaves_out_is_caught()
+    {
+        Assert.Equal(["pinned and not in the guide's table: Pane"], IdMismatches(IdTable(panes: "`LeftPane`")));
+    }
+
+    [Fact]
+    public void An_id_the_table_names_and_the_fixture_does_not_pin_is_caught()
+    {
+        Assert.Equal(
+            ["in the guide's table and not pinned: RightPane"],
+            IdMismatches(IdTable(panes: "`LeftPane`, `RightPane`; `Pane` in the unified view")));
+    }
+
+    [Fact]
+    public void A_menu_row_that_leaves_out_an_entry_with_no_command_is_caught()
+    {
+        Assert.Equal(
+            ["a menu entry with no command that the menu row leaves out: Save"],
+            IdMismatches(IdTable(menu: "the name of its `DiffCommand`")));
+    }
+
+    [Fact]
+    public void A_menu_row_that_names_an_entry_with_a_command_is_caught()
+    {
+        Assert.Equal(
+            ["named by the menu row and not a pinned menu entry with no command: NextChange"],
+            IdMismatches(IdTable(menu: "the name of its `DiffCommand`; `Save` and `NextChange`")));
+    }
+
+    [Fact]
+    public void A_guide_with_no_id_table_is_caught()
+    {
+        Assert.Equal(["the guide has no AutomationId table"], IdMismatches("# Hosting DiffView\n\nNo table here.\n"));
+    }
+
+    /// <summary>
+    /// The guide's table is a host's copy of <c>fixtures/automation-ids.txt</c>, which the code is held to
+    /// both ways, so holding the table to the fixture holds it to the code. The menu row is held to the rule
+    /// it states: its own ids are exactly the pinned entries that name no <see cref="DiffCommand"/>.
+    /// </summary>
+    [Fact]
+    public void The_guides_id_table_names_exactly_the_ids_the_fixture_pins()
+    {
+        string markdown = File.ReadAllText(RepoPaths.Source(HostingGuideGate.DocumentPath));
+        (string Owner, string Id)[] pinned =
+        [
+            .. AccessibilityCoverageTests.PinnedIds()
+                .Select(line => line.Split(' ', 2))
+                .Select(pair => (pair[0], pair[1])),
+        ];
+
+        List<string> findings = HostingGuideGate.IdTableMismatches(
+            markdown, pinned, Enum.GetNames<DiffCommand>(), nameof(DiffMenuItem));
+
+        Assert.True(
+            findings.Count == 0,
+            $"{HostingGuideGate.DocumentPath}'s AutomationId table and fixtures/automation-ids.txt disagree:"
+            + Environment.NewLine + string.Join(Environment.NewLine, findings.Select(f => "  " + f)));
+    }
 }
