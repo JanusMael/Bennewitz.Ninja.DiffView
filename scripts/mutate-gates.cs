@@ -397,7 +397,8 @@ List<Mutation> mutations =
     // silent Clean(0) the rule returns when it is handed no assemblies.
     new("the template-part scan is handed no assemblies", PartsClass,
         () => Sub(PartsGate,
-            @"\s*\.WithAssemblies\(typeof\(FindScope\)\.Assembly, typeof\(SideBySideDiffView\)\.Assembly\)", ""),
+            @"\s*\.WithAssemblies\(\s*typeof\(FindScope\)\.Assembly,\s*typeof\(SideBySideDiffView\)\.Assembly,"
+                + @"\s*typeof\(AvaloniaEdit\.TextEditor\)\.Assembly\)", ""),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
     new("a control looks up a part no theme declares", PartsClass,
@@ -447,6 +448,23 @@ List<Mutation> mutations =
                 + "    <Setter Property=\"Template\">\n      <ControlTemplate>\n"
                 + "        <Border Name=\"PART_Probe\" />\n      </ControlTemplate>\n    </Setter>\n"
                 + "  </ControlTheme>\n</ResourceDictionary>$1"),
+        "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
+
+    // AvaloniaEdit's own lookups. The rule credits a lookup that a base class makes in its
+    // OnApplyTemplate to the control and checks it against that control's theme, but it reads only the
+    // code it is handed: TextArea's PART_CP, on the text area theme DiffPanePresenter applies, is checked
+    // only while AvaloniaEdit's assembly is in the scan. Measured at 928: the part dropped is one finding
+    // with the assembly and none without it.
+    new("the text area's theme stops declaring the part AvaloniaEdit's TextArea looks up", PartsClass,
+        () => Sub(PresenterTheme, @"<ContentPresenter Name=""PART_CP""",
+            @"<ContentPresenter Name=""PART_TextViewHost"""),
+        "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
+
+    // Not handed AvaloniaEdit's assembly, the rule goes dark on those lookups and reports clean. The floor
+    // cannot see it — one part of 48 — but AvaloniaEdit's five skipped controls vanish with the assembly,
+    // so the expected-Skipped assertion is what trips.
+    new("the template-part scan is not handed AvaloniaEdit's assembly", PartsClass,
+        () => Sub(PartsGate, @",\s*typeof\(AvaloniaEdit\.TextEditor\)\.Assembly\)", ")"),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
     // ---- The seam where a declared name stops being a real one. The markup attribute stays; only the
