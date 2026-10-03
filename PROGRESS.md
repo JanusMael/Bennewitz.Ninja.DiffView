@@ -83,7 +83,8 @@ it only draws — and every part an explicit `AutomationId` a harness can find i
 on 2026-09-28 are merged** (PR #11, all five CI jobs green on run `36870507585`): the current block's border
 under a fold, and the unified view's folds across a rebuild, open item 11. **BNXQ1003 reads AvaloniaEdit's lookups too**: `TemplatePartTests` hands the rule
 AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a template this library ships is
-checked; *BNXQ1003 reads AvaloniaEdit's lookups too* below has the record. **Plan 00025 is complete and
+checked (PR #13, all five CI jobs green on run `37133346769`); *BNXQ1003 reads AvaloniaEdit's lookups
+too* below has the record. **Plan 00025 is complete and
 merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
@@ -606,6 +607,7 @@ the rule AvaloniaEdit's assembly too; `DECISIONS.md` has why and what moved.
 | Each guard trips first | The no-assemblies mutation, re-pointed at the three-assembly call, trips the floor first; the scan not handed AvaloniaEdit trips the Skipped assertion first, one part of 48 being inside the floor's slack; the text area theme dropping `PART_CP` trips the findings assertion first |
 | The full harness | `scripts/mutate-gates.sh` in full over the branch's code commit: 112 mutations as declared — 108 killed by the test each names, 2 by the build and 2 green by design, nothing unexpected — and all 81 assertions in the gate files tripped first, with no `inert-at-pin` marker standing and the tree clean after it |
 | Nothing else moves | The suite, 711 with none added, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`; the build is clean under `-warnaserror` |
+| CI | All five jobs green on PR #13's run `37133346769` |
 
 ## Plan 00026 phases
 
