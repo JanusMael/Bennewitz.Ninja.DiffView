@@ -81,7 +81,10 @@ library defines has an automation peer — the seven it themes, which `BNXQ1006`
 it only draws — and every part an explicit `AutomationId` a harness can find it by in any culture, under
 `BNXQ1007` and `BNXQ1008`; *Plan 00026 phases* below has the record. **The two fold fixes found by hand
 on 2026-09-28 are merged** (PR #11, all five CI jobs green on run `36870507585`): the current block's border
-under a fold, and the unified view's folds across a rebuild, open item 11. **Plan 00025 is complete and merged** (PR #1,
+under a fold, and the unified view's folds across a rebuild, open item 11. **BNXQ1003 reads AvaloniaEdit's lookups too**: `TemplatePartTests` hands the rule
+AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a template this library ships is
+checked; *BNXQ1003 reads AvaloniaEdit's lookups too* below has the record. **Plan 00025 is complete and
+merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
 reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
@@ -188,7 +191,10 @@ wording.
    driver, `run-demo --detach` and the locale tool in PR #9. Phases 4–5, the Windows back end and the
    record, follow plan 00026 (decided 2026-09-25), which is complete: the back end finds DiffView's
    parts by the `AutomationId`s plan 00026 declares, scoped by the process and then by the part that
-   owns them, not by their names, which are translated (`DECISIONS.md`).
+   owns them, not by their names, which are translated (`DECISIONS.md`). Phase 4 is written in a session
+   on a Windows machine, not blind from a Linux one (Brian, 2026-10-01): the back end drives UI
+   Automation, which only Windows runs. It runs once items 12 and 15 have landed, so that it covers them
+   (Brian, 2026-10-03).
 
 6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
@@ -271,8 +277,21 @@ wording.
     its received file uploaded beside it, and is fixed then rather than pinned against now —
     `DECISIONS.md`, *CI's actions run on Node.js 24, and the Linux runner is not pinned*.
 
-Items 3, 6, 9 and 10 are Brian's own. Nothing else is in flight; new work needs a new plan under
-`plans/`.
+14. **Plan 00030 — a reference of the controls' template parts, generated from the code — waits on
+    XamlQuality.** Its *looked up* column is to come from BNXQ1003's own reading, which is private at
+    `2026.3.928`; XamlQuality was asked on 2026-10-03 to make it public (`DECISIONS.md`), and starts on it
+    once Brian confirms it there and places it in that repository's order. The draft is parked until a
+    release carries the reading, and returns then to the five tables it was asked for.
+
+15. **The hosting guide's id table is written by hand and checked by nothing.** `docs/hosting-diffview.md`
+    lists every `AutomationId` a host searches for, and nothing compares it with
+    `fixtures/automation-ids.txt`, which the code is held to. A test holding the table's ids to the
+    fixture both ways, and its menu row to the rule the row states — its four ids are exactly the
+    fixture's menu ids that name no `DiffCommand` — is a change of its own (Brian, 2026-10-03).
+
+Items 3, 6, 9 and 10 are Brian's own, and item 14 waits on XamlQuality. Next, in Brian's order of
+2026-10-03: item 12, then item 15, then item 5's Windows phase, which waits for both so that it covers
+them.
 
 ### Running it
 
@@ -571,6 +590,22 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## BNXQ1003 reads AvaloniaEdit's lookups too
+
+Found on 2026-10-02 by plan 00030's second step-back, which measured the rule before building a reading
+of its own: BNXQ1003 credits a lookup that a base class makes in its `OnApplyTemplate` to the control,
+but it reads only the code it is handed, and `TemplatePartTests` handed it the library's two assemblies.
+So `TextArea`'s lookup of `PART_CP`, on the text area theme `DiffPanePresenter` applies, was checked by
+nothing — and behind a null check, a theme without it shows no text and raises nothing. The gate hands
+the rule AvaloniaEdit's assembly too; `DECISIONS.md` has why and what moved.
+
+| Done-when item | Result |
+|---|---|
+| The rule sees the gap, and only with the assembly | Measured at 928 over a copy of the markup whose text area theme drops `PART_CP`: one finding with AvaloniaEdit's assembly — *TextArea looks up the template part 'PART_CP', and this ControlTheme does not declare it* — and none without it. With the assembly `Inspected` goes from 47 to 48, and the expected skips gain AvaloniaEdit's five controls whose themes ship with AvaloniaEdit |
+| Each guard trips first | The no-assemblies mutation, re-pointed at the three-assembly call, trips the floor first; the scan not handed AvaloniaEdit trips the Skipped assertion first, one part of 48 being inside the floor's slack; the text area theme dropping `PART_CP` trips the findings assertion first |
+| The full harness | `scripts/mutate-gates.sh` in full over the branch's code commit: 112 mutations as declared — 108 killed by the test each names, 2 by the build and 2 green by design, nothing unexpected — and all 81 assertions in the gate files tripped first, with no `inert-at-pin` marker standing and the tree clean after it |
+| Nothing else moves | The suite, 711 with none added, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`; the build is clean under `-warnaserror` |
 
 ## Plan 00026 phases
 

@@ -3731,3 +3731,47 @@ the conventions work's `.github/repository.json` lists the same names, so a pin 
 check: a ruleset edit, and a change to another session's pull request, against a risk that may never
 come. If Ubuntu 26 moves a Linux baseline, the first run after 2026-10-19 shows it as a snapshot
 failure, with the received frames uploaded beside it — `PROGRESS.md` open item 13.
+
+## `TemplatePartTests` hands BNXQ1003 AvaloniaEdit's assembly too
+
+BNXQ1003 credits a lookup that a base class makes in its `OnApplyTemplate` to the control, and checks it
+against that control's theme — but it reads only the code it is handed, and `TemplatePartTests` handed it
+the library's two assemblies. The text area theme `DiffPanePresenter` applies is this library's, and
+AvaloniaEdit's `TextArea` looks up `PART_CP` on it behind a null check, so a theme without that part shows
+no text and raises nothing. Measured at `2026.3.928` over a copy of the markup whose text area theme drops
+`PART_CP`: one finding with AvaloniaEdit's assembly in the scan — *TextArea looks up the template part
+'PART_CP', and this ControlTheme does not declare it* — and none without it. The gate hands the rule all
+three assemblies now.
+
+`Inspected` goes from 47 to 48 under the same floor of 20, and the expected skips from two to seven:
+AvaloniaEdit's `CompletionList`, `CompletionListBox`, `OverloadViewer`, `SearchPanel` and `TextEditor`
+declare parts whose themes ship with AvaloniaEdit rather than in this markup. Those five are what shows
+the new reading going dark — they vanish together when the assembly is not handed in, while one part of
+48 sits well inside the floor's slack — and an AvaloniaEdit bump that adds a control declaring parts adds
+a name, a visible edit at the bump. Two mutations are new: the text area theme dropping `PART_CP` trips
+the findings assertion first, and the scan without AvaloniaEdit trips the Skipped assertion first. The
+no-assemblies mutation is re-pointed at the three-assembly call, which it would otherwise have missed and
+failed the run as a no-op.
+
+## Plan 00030's *looked up* column comes from BNXQ1003, made public, and the plan waits for it
+
+Plan 00030 — a reference of the controls' template parts, generated from the code — was drafted with a
+reading of its own of which parts code looks up, and two step-backs took that reading apart. Read from the
+compiled IL, a lookup was an `ldstr "PART_…"` followed by a call to `Find`, which is narrower than the
+rule: BNXQ1003 reads `Find*` and `Get*` calls, lambdas, helpers, call chains, constructors and base
+classes. The reading's one cross-check was BNXQ1003's `Inspected`, which counts the `PART_` constants a
+control declares, used or not, together with its lookups — so the two agreed at 47 only because every
+constant happens to be used, and a legitimate change such as a constant for a part only a selector names
+would have failed the check with nothing to regenerate. And the rule turned out to read AvaloniaEdit's
+lookups itself once it is handed the assembly, as the entry above records. A second reading of one fact
+is what this repository's gates exist to keep from drifting apart.
+
+So the column will come from the rule (Brian, 2026-10-03). The rule's reading is private at `2026.3.928`
+— of `TemplatePartRule`'s methods only `Id`, `Summary` and `Analyze` are public — and XamlQuality was
+asked on 2026-10-03 for a public per-control reading: each part a control looks up, apart from the
+constants it only declares, and whether each lookup is the control's own code or an inherited base
+class's, with that class's assembly. The cells will read ✓ where this library's code looks a part up and
+*AvaloniaEdit* where only an inherited class does. The plan is parked until a release carries the
+reading, and returns then to the five tables it was asked for: no table of menu-entry ids, which restates
+`fixtures/automation-ids.txt`; a part the views declare differently shown rather than failed; and the
+hosting guide's id-table test as a change of its own.
