@@ -85,8 +85,9 @@ under a fold, and the unified view's folds across a rebuild, open item 11. **BNX
 AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a template this library ships is
 checked (PR #13, all five CI jobs green on run `37133346769`); *BNXQ1003 reads AvaloniaEdit's lookups
 too* below has the record. **The hosting guide's id table is held to the fixture**: a test fails when
-`docs/hosting-diffview.md` names an id the code does not have or leaves out one it does; *The hosting
-guide's id table, held to the fixture* below has the record. **Plan 00025 is complete and
+`docs/hosting-diffview.md` names an id the code does not have or leaves out one it does (PR #14, all five
+CI jobs green on run `37135065955`); *The hosting guide's id table, held to the fixture* below has the
+record. **Plan 00025 is complete and
 merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
@@ -609,6 +610,7 @@ It went ahead of item 12, whose plan waited on Brian's approval.
 | The real guide is held | `The_guides_id_table_names_exactly_the_ids_the_fixture_pins` passes over the real guide and fixture, and fails with the finding named under three scratch mutations: an id dropped from the table, a part's id renamed in its theme and the fixture but not in the guide, and `HideMinimap` dropped from the menu row. The check's own rules are load-bearing: with the menu row's type name kept as an id, the agreeing table and the real guide fail, and with a missing table read as agreement, the no-table test fails |
 | The full harness | Owed because `PinnedIds` became internal in a gate file: 112 mutations as declared — 108 killed by the test each names, 2 by the build and 2 green by design, nothing unexpected — and all 81 assertions in the gate files tripped first, with no `inert-at-pin` marker standing and the tree clean after it |
 | Nothing else moves | The suite, 718 = 711 + 7, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`; the build is clean under `-warnaserror` |
+| CI | All five jobs green on PR #14's run `37135065955` |
 
 ## BNXQ1003 reads AvaloniaEdit's lookups too
 
