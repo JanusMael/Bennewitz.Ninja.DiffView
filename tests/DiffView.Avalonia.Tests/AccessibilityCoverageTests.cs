@@ -1197,7 +1197,7 @@ public sealed class AccessibilityCoverageTests
     /// The ids <c>fixtures/automation-ids.txt</c> pins, one <c>owner id</c> per line; a blank line or a line
     /// starting <c>#</c> pins nothing. Read by content, whatever byte-order mark or terminator the file has.
     /// </summary>
-    private static IEnumerable<string> PinnedIds() =>
+    internal static IEnumerable<string> PinnedIds() =>
         File.ReadAllText(RepoPaths.Source(Path.Combine("fixtures", "automation-ids.txt")))
             .TrimStart('﻿')
             .Replace("\r\n", "\n", StringComparison.Ordinal)
