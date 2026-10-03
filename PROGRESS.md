@@ -84,7 +84,9 @@ on 2026-09-28 are merged** (PR #11, all five CI jobs green on run `36870507585`)
 under a fold, and the unified view's folds across a rebuild, open item 11. **BNXQ1003 reads AvaloniaEdit's lookups too**: `TemplatePartTests` hands the rule
 AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a template this library ships is
 checked (PR #13, all five CI jobs green on run `37133346769`); *BNXQ1003 reads AvaloniaEdit's lookups
-too* below has the record. **Plan 00025 is complete and
+too* below has the record. **The hosting guide's id table is held to the fixture**: a test fails when
+`docs/hosting-diffview.md` names an id the code does not have or leaves out one it does; *The hosting
+guide's id table, held to the fixture* below has the record. **Plan 00025 is complete and
 merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
@@ -284,15 +286,15 @@ wording.
     once Brian confirms it there and places it in that repository's order. The draft is parked until a
     release carries the reading, and returns then to the five tables it was asked for.
 
-15. **The hosting guide's id table is written by hand and checked by nothing.** `docs/hosting-diffview.md`
-    lists every `AutomationId` a host searches for, and nothing compares it with
-    `fixtures/automation-ids.txt`, which the code is held to. A test holding the table's ids to the
-    fixture both ways, and its menu row to the rule the row states — its four ids are exactly the
-    fixture's menu ids that name no `DiffCommand` — is a change of its own (Brian, 2026-10-03).
+15. ~~The hosting guide's id table is written by hand and checked by nothing~~ — **closed.**
+    `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds
+    `docs/hosting-diffview.md`'s `AutomationId` table to `fixtures/automation-ids.txt` both ways, and its
+    menu row to the rule the row states: its four ids are exactly the fixture's menu ids that name no
+    `DiffCommand`. *The hosting guide's id table, held to the fixture* below has the record.
 
 Items 3, 6, 9 and 10 are Brian's own, and item 14 waits on XamlQuality. Next, in Brian's order of
-2026-10-03: item 12, then item 15, then item 5's Windows phase, which waits for both so that it covers
-them.
+2026-10-03: item 12, whose plan 00031 waits on his approval, then item 5's Windows phase, which waits for
+it so that it covers item 12 as well as item 15.
 
 ### Running it
 
@@ -591,6 +593,22 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## The hosting guide's id table, held to the fixture
+
+Open item 15, decided on 2026-10-03 as a change of its own: `docs/hosting-diffview.md` lists every
+`AutomationId` a host searches for, by part and by the scope that makes it unique, and nothing compared
+that table with `fixtures/automation-ids.txt`, which the code is held to both ways — though the fixture's
+own header says the guide tells a host the same ids. `HostingGuideGate.IdTableMismatches` reads the table
+and reports where it disagrees with the fixture; `DECISIONS.md` has why the menu row is held to a rule.
+It went ahead of item 12, whose plan waited on Brian's approval.
+
+| Done-when item | Result |
+|---|---|
+| Each kind of disagreement is caught | Six tests over a guide-shaped table, each broken in one way: an id the fixture pins and the table leaves out, an id the table names and the fixture does not pin, a menu row that leaves out an entry with no command, one that names an entry with a command, and a guide with no table at all — beside the agreeing table, which trips nothing |
+| The real guide is held | `The_guides_id_table_names_exactly_the_ids_the_fixture_pins` passes over the real guide and fixture, and fails with the finding named under three scratch mutations: an id dropped from the table, a part's id renamed in its theme and the fixture but not in the guide, and `HideMinimap` dropped from the menu row. The check's own rules are load-bearing: with the menu row's type name kept as an id, the agreeing table and the real guide fail, and with a missing table read as agreement, the no-table test fails |
+| The full harness | Owed because `PinnedIds` became internal in a gate file: 112 mutations as declared — 108 killed by the test each names, 2 by the build and 2 green by design, nothing unexpected — and all 81 assertions in the gate files tripped first, with no `inert-at-pin` marker standing and the tree clean after it |
+| Nothing else moves | The suite, 718 = 711 + 7, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`; the build is clean under `-warnaserror` |
 
 ## BNXQ1003 reads AvaloniaEdit's lookups too
 

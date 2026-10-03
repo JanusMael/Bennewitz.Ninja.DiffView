@@ -3775,3 +3775,20 @@ class's, with that class's assembly. The cells will read ✓ where this library'
 reading, and returns then to the five tables it was asked for: no table of menu-entry ids, which restates
 `fixtures/automation-ids.txt`; a part the views declare differently shown rather than failed; and the
 hosting guide's id-table test as a change of its own.
+
+## The hosting guide's id table is held to the fixture, and its menu row to the rule it states
+
+`docs/hosting-diffview.md` lists every `AutomationId` a host searches for, by part and by the scope that
+makes each one unique, and the list is written by hand. Nothing compared it with
+`fixtures/automation-ids.txt`, which `AccessibilityCoverageTests` holds to the code both ways — though the
+fixture's own header says the guide tells a host the same ids. The table stays in the guide rather than
+becoming a link, because it is grouped by what a host scopes a search to, which no generated list says,
+and `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` now holds it to the
+fixture both ways.
+
+The menu row is the one that lists no ids of its own: it states a rule — an entry takes its command's
+name — and names the four entries that have no command. Listing all seventeen would put a second copy of
+the command names in the guide, so the row is held to its rule instead: its own ids are exactly the pinned
+menu entries that name no `DiffCommand`, and the rule's reference to that type is not read as an id. The
+fixture keeps one reader — `AccessibilityCoverageTests.PinnedIds`, made internal for it — rather than a
+second parse beside the first.
