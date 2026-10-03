@@ -28,11 +28,12 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// shipping control, and was declined for that reason.
 /// </para>
 /// <para>
-/// ⚠ <b>Only one of the two assemblies is load-bearing.</b> The UI assembly alone yields the same 47;
-/// the model assembly alone yields 0, having no templated controls. It is passed as forward cover —
-/// the same reasoning that keeps inert names in the accessibility gate's set — and that gate holds its
-/// forward cover to the <em>inverse</em> assertion, so this one does too rather than leaving the claim
-/// as a remark nothing checks.
+/// ⚠ <b>Two of the three assemblies are load-bearing.</b> The UI assembly alone yields 47, and
+/// AvaloniaEdit's adds the one part its own code looks up on a template this library ships, for 48;
+/// the model assembly alone yields 0, having no templated controls. The model is passed as forward
+/// cover — the same reasoning that keeps inert names in the accessibility gate's set — and that gate
+/// holds its forward cover to the <em>inverse</em> assertion, so this one does too rather than leaving
+/// the claim as a remark nothing checks.
 /// </para>
 /// <para>
 /// ⛔ <b>At <c>924</c> the blinding has a direct signal, and the floor is no longer the only guard.</b>
@@ -42,7 +43,8 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// ⚠ <b>But "<c>Skipped</c> is empty" is the wrong assertion.</b> A themed
 /// control that declares no template parts is skipped legitimately, and two of this library's do. What
 /// separates the blinding is <em>which</em> controls: every themed control is skipped with no
-/// assemblies, only those two in the real configuration. So the assertion names both, keyed on
+/// assemblies; in the real configuration only those two are, beside five of AvaloniaEdit's whose themes
+/// ship with AvaloniaEdit rather than in this markup. So the assertion names all seven, keyed on
 /// <see cref="XamlSkip.Subject"/> rather than the prose in <see cref="XamlSkip.Reason"/>.
 /// </para>
 /// </para>
@@ -54,19 +56,30 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// credited the lookup to the controller, which has no theme, skipped it, and this test held every
 /// host's constants against the controller's parts by hand; that assertion retired with the pin.
 /// </para>
+/// <para>
+/// ⭐ <b>AvaloniaEdit's assembly is handed in too, so the parts AvaloniaEdit's own code looks up on this
+/// library's templates are checked.</b> The rule credits a lookup that a base class makes in its
+/// <c>OnApplyTemplate</c> to the control and checks it against that control's theme, but it reads only
+/// the code it is handed. The theme <see cref="DiffPanePresenter"/> applies to its text area is this
+/// library's, and AvaloniaEdit's <c>TextArea</c> looks up <c>PART_CP</c> on it — the presenter its text
+/// view is shown in, behind a null check, so a theme without it shows no text and says nothing. Measured
+/// at <c>928</c> over a text area theme that drops <c>PART_CP</c>: one finding with AvaloniaEdit's
+/// assembly, none without it.
+/// </para>
 /// </remarks>
 public sealed class TemplatePartTests
 {
     /// <summary>
-    /// Well under the 47 the rule inspects today — <c>DiffFindBar</c> 11, <c>InlineDiffView</c> 8,
-    /// <c>SideBySideDiffView</c> 14, <c>DiffViewer</c> 13, and one literal inlined at its use site —
-    /// because what this number guards is a zero, not a part count.
+    /// Well under the 48 the rule inspects today — <c>DiffFindBar</c> 11, <c>InlineDiffView</c> 8,
+    /// <c>SideBySideDiffView</c> 14, <c>DiffViewer</c> 13, one literal inlined at its use site, and the
+    /// part AvaloniaEdit's <c>TextArea</c> looks up on the text area theme — because what this number
+    /// guards is a zero, not a part count.
     /// </summary>
     /// <remarks>
     /// ⛔ <b>Deliberately slack, like the accessibility gate's stock floor.</b>
     /// <see cref="TemplatePartRule"/> returns <c>Clean(0)</c> when it is handed no assemblies, so the
-    /// failure this number exists to catch is 47 dropping to 0 — and nothing else here can see that,
-    /// because a re-rooted scan measures the same 47 (parts come from compiled code, not from the
+    /// failure this number exists to catch is 48 dropping to 0 — and nothing else here can see that,
+    /// because a re-rooted scan measures the same 48 (parts come from compiled code, not from the
     /// markup root). Set at its exact population it would instead demand a visible edit every time a
     /// part is legitimately added or removed, and it buys no detection to pay that: a partial loss of
     /// parts is caught by nothing either way.
@@ -96,7 +109,10 @@ public sealed class TemplatePartTests
 
         XamlScanContext context = XamlScanContext
             .Load(RepoPaths.Source("src"))
-            .WithAssemblies(typeof(FindScope).Assembly, typeof(SideBySideDiffView).Assembly);
+            .WithAssemblies(
+                typeof(FindScope).Assembly,
+                typeof(SideBySideDiffView).Assembly,
+                typeof(AvaloniaEdit.TextEditor).Assembly);
 
         XamlRuleResult result = new TemplatePartRule().Analyze(context);
 
@@ -112,19 +128,32 @@ public sealed class TemplatePartTests
         // empty", which is wrong. Measured: a themed control with no template parts
         // at all is skipped legitimately, and two of ours are. What distinguishes the blinding is WHICH
         // controls: handed no assemblies the rule skips every themed control, where the real
-        // configuration skips only those two. Keyed on Subject rather than on Reason, which is prose.
+        // configuration skips only those two, beside five of AvaloniaEdit's that declare parts but whose
+        // themes ship with AvaloniaEdit rather than in this markup. Keyed on Subject rather than on
+        // Reason, which is prose.
         //
         // These are a written expectation like a floor, but a far narrower one. DiffPaneHeader and
         // DiffStatusStrip are each the separately checkable claim "this control has a ControlTheme and
         // declares no parts". A new name appearing means a control lost its parts, the scan lost an
         // assembly, or the model gained a control with no theme — measured; a name disappearing means one
-        // gained parts, which is a real change and should need a visible edit.
+        // gained parts, which is a real change and should need a visible edit. AvaloniaEdit's five vanish
+        // together when its assembly is not handed in — the floor cannot see that, its one part being
+        // well inside the slack — and an AvaloniaEdit bump that adds a control declaring parts adds a name.
         Assert.Equal(
-            [nameof(DiffPaneHeader), nameof(DiffStatusStrip)],
+            [
+                nameof(AvaloniaEdit.CodeCompletion.CompletionList),
+                nameof(AvaloniaEdit.CodeCompletion.CompletionListBox),
+                nameof(DiffPaneHeader),
+                nameof(DiffStatusStrip),
+                nameof(AvaloniaEdit.CodeCompletion.OverloadViewer),
+                nameof(AvaloniaEdit.Search.SearchPanel),
+                nameof(AvaloniaEdit.TextEditor),
+            ],
             result.Skipped.Select(s => s.Subject).OrderBy(s => s, StringComparer.Ordinal));
 
         // The controller's lookups are findings here too: from 2026.3.925 the rule checks each one
-        // against the theme of every control whose template it runs on.
+        // against the theme of every control whose template it runs on. So are AvaloniaEdit's, on the
+        // templates this library ships.
         Assert.True(
             result.Findings.Count == 0,
             "A control looks up a template part its own theme does not declare:" + Environment.NewLine
