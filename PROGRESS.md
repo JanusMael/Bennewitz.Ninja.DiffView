@@ -87,7 +87,9 @@ checked (PR #13, all five CI jobs green on run `37133346769`); *BNXQ1003 reads A
 too* below has the record. **The hosting guide's id table is held to the fixture**: a test fails when
 `docs/hosting-diffview.md` names an id the code does not have or leaves out one it does (PR #14, all five
 CI jobs green on run `37135065955`); *The hosting guide's id table, held to the fixture* below has the
-record. **Plan 00025 is complete and
+record. **An edit under the editor's folds no longer breaks the layout**: plan 00031's folds follow their
+lines and keep the name they were collapsed under; *Plan 00031 phases* below has the record. **Plan 00025
+is complete and
 merged** (PR #1,
 2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
 is complete**: the demo logs what its user did, and the library the two facts nothing public
@@ -261,20 +263,11 @@ wording.
     and refolds — with the refold last, after the pane's text is composed for that model. *The
     unified view's folds across a rebuild* below has the record.
 
-12. **An edit under the editor's folds throws before its re-diff lands — found 2026-09-28,
-    unfixed.** Item 11's failure by another road: text that changes under folds nothing recomputes
-    until the next model arrives. `FoldPlaceholderGenerator` keeps the line ranges it was handed
-    when `SetCollapsedLines` ran, while AvaloniaEdit moves each collapsed section with its lines, so
-    an edit that moves a fold's lines puts the two out of step and the next layout pass throws the
-    same *Line N was skipped by a VisualLineElementGenerator, but it is not collapsed*. Measured with
-    a throwaway probe on `main` at `c187541`, the folding pair folded with no context and its right
-    side editable: a line inserted at the top, block 0 copied to the right, and a `Revert` after a
-    same-line edit each threw from the first layout pass after the change — the first two before
-    `ReDiffDelay` had run, the third before the build `ReDiffNow` starts had landed. Only the editor
-    edits, so the viewer and the unified view are not exposed. It needs a failing test and a choice
-    of repair — refold on every edit, ranges that move with their lines, or folds that open under an
-    edit — and was kept out of item 11's fix. Probe:
-    `~/c/cl/scratch/DiffView/refold/probe/ProbeEditUnderFold.cs`.
+12. ~~An edit under the editor's folds throws before its re-diff lands~~ — **closed by plan 00031.**
+    `FoldPlaceholderGenerator` reads the pane's live collapsed sections, which AvaloniaEdit moves with
+    their lines, instead of the line numbers it was handed; and each fold keeps the identity it was
+    collapsed under, so a click or the expand command still opens a fold that moved before the re-diff
+    lands. *Plan 00031 phases* below has the record.
 
 13. **The first CI run after 2026-10-19 runs on Ubuntu 26.** `ubuntu-latest` moves then, and the
     Linux leg renders the snapshot baselines. A frame the new image shifts fails as a snapshot with
@@ -293,9 +286,8 @@ wording.
     menu row to the rule the row states: its four ids are exactly the fixture's menu ids that name no
     `DiffCommand`. *The hosting guide's id table, held to the fixture* below has the record.
 
-Items 3, 6, 9 and 10 are Brian's own, and item 14 waits on XamlQuality. Next, in Brian's order of
-2026-10-03: item 12, whose plan 00031 waits on his approval, then item 5's Windows phase, which waits for
-it so that it covers item 12 as well as item 15.
+Items 3, 6, 9 and 10 are Brian's own, and item 14 waits on XamlQuality. Next: item 5's Windows phase, in a
+session on a Windows machine, which covers items 12 and 15 now that both have landed.
 
 ### Running it
 
@@ -594,6 +586,14 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00031 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The tests, red on `main` | S | done | `EditUnderFoldTests`, nine tests over the folding pair with the right side editable and no context rows: a line typed above the folds, block 0 copied above them and a revert after a same-line edit each leave every fold over the text it covered; deleting a fold's first line shrinks it by one; removing every line of a fold leaves no placeholder and the other folds standing, while a removal that starts on the fold's first line keeps that line and the fold shrinks onto the line after it until the re-diff — a ninth test pins that, `DECISIONS.md` has why; a moved placeholder clicked, and the expand command on a moved placeholder's line, each open that fold; and once the re-diff lands the folds are the new model's. Each asserts nothing thrown and no decorator faulted on either pane. Red on `main`'s sources, all nine with the layout's own *Line N was skipped by a VisualLineElementGenerator, but it is not collapsed*. With only the generator change applied — the spike's state — seven pass and the click and the caret stay red, the click at the section count and the caret at the command, which could not execute |
+| 2 Folds follow their lines | S | done | `FoldPlaceholderGenerator` reads each fold's live `CollapsedLineSection` and keeps no line numbers; a fold is a `CollapsedFold` carrying the identity it was collapsed under, which the placeholder reports on a click and `DiffPanePresenter.FoldIdentityAt` answers for the caret, and `DiffBuildController.FoldNamed` maps an identity to the model's run for both. A document swap clears the generator's folds. Four scratch mutations, each killed by the test named for it: the generator back to the numbers it was handed, the placeholder reporting its live line, the caret lookup comparing with the model's lines again, and a section read without its collapsed check — which survived until the tests asserted the panes' faults beside the dispatcher. The suite, 727 = 718 + 9, passes in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`; the build is clean under `-warnaserror`, and `mutate-gates --guards` derives 81 with exit 0. By hand on this box per `AGENTS.md` §9, the demo built from the branch with `--edit right` and *Show differences only*: a line typed above both folds, the copy arrow of the block above the last fold, and *Revert the right side*. Its log has each edit, each re-diff landing and the revert, and no warning, error, exception or fault |
+| 3 The record | XS | done | `AGENTS.md` §6 gains *A fold follows its lines, and keeps the name it was collapsed under*, and §7's refold row stops naming the generator's line ranges; `DECISIONS.md` has what the work found beyond the plan; open item 12 closes |
 
 ## The hosting guide's id table, held to the fixture
 

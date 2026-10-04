@@ -3792,3 +3792,35 @@ the command names in the guide, so the row is held to its rule instead: its own 
 menu entries that name no `DiffCommand`, and the rule's reference to that type is not read as an id. The
 fixture keeps one reader — `AccessibilityCoverageTests.PinnedIds`, made internal for it — rather than a
 second parse beside the first.
+
+## Plan 00031: folds follow their lines — what the work found beyond the plan
+
+The plan is built as written: `FoldPlaceholderGenerator` reads the pane's live sections, and each fold
+keeps the identity it was collapsed under. Four findings refine it, recorded here rather than in the
+approved plan.
+
+- **On `main`, the layout's own exception rather than the collector.** Phase 1 expected each test that
+  edits under a fold to fail at its collector. All nine failed with the layout's *Line N was skipped by
+  a VisualLineElementGenerator, but it is not collapsed*, thrown out of `Dispatcher.UIThread.RunJobs`
+  into the test rather than raised as an unhandled dispatcher exception — the same failure, reached a
+  step sooner.
+- **Under the generator change alone, the caret stops at the command.** Phase 1 expected the click and
+  the caret to stay red at the section count there. The click does — four folds where three were
+  expected. The expand command never gets that far: with the caret on a moved placeholder's line,
+  `FoldAtCaret` compared the caret with the model's lines, found no fold, and the command could not
+  execute.
+- **Whether every line of a fold is deleted depends on which lines AvaloniaEdit deletes.** A removal from
+  the end of the header's text to the end of the fold's last line deletes every line of the fold, and the
+  height tree uncollapses its section, as the plan says. A removal of the same text from the start of the
+  fold's first line to the start of the line after it keeps the first line — AvaloniaEdit's line manager
+  keeps the line a removal starts in and gives it what followed — so the section keeps that one line, and
+  the fold hides the line after the removal until the re-diff folds again. The layout stays whole either
+  way, and a test pins which way AvaloniaEdit 12.0.0 goes.
+- **The tests assert that no decorator faulted, not only that nothing was thrown.** The scratch mutation
+  that read a section without its collapsed check survived the first version of the tests: the generator
+  threw on the uncollapsed section, caught it as the fault boundary it is, reported it and disabled
+  itself, and the frame still rendered. Every test now asserts both panes' `Faults` empty beside the
+  dispatcher, and that mutation fails the deletion test.
+
+A document swap now clears the generator's folds as well as the pane's, because the old sections still
+hold the old document's lines.
