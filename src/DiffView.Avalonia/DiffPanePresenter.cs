@@ -89,7 +89,7 @@ public class DiffPanePresenter : TextEditor
     private readonly DiffLineNumberMargin _lineNumberMargin;
     private readonly ChangeMarkerMargin _changeMarkerMargin;
     private IReadOnlySet<int> _modifiedLines = new HashSet<int>();
-    private readonly List<CollapsedLineSection> _collapsed = [];
+    private readonly List<CollapsedFold> _collapsed = [];
     private readonly List<RenderFaultEventArgs> _faults = [];
     private SyntaxHighlighting? _syntax;
     private bool _syntaxDisabled;
@@ -150,7 +150,7 @@ public class DiffPanePresenter : TextEditor
         TextArea.TextView.ElementGenerators.Insert(0, _generator);
         _foldGenerator = new FoldPlaceholderGenerator(
             (line, ex) => ReportFault(nameof(FoldPlaceholderGenerator), line, ex),
-            line => FoldExpandRequested?.Invoke(this, line));
+            identity => FoldExpandRequested?.Invoke(this, identity));
         TextArea.TextView.ElementGenerators.Add(_foldGenerator);
 
         _backgroundRenderer = new DiffLineBackgroundRenderer(this);
@@ -926,9 +926,11 @@ public class DiffPanePresenter : TextEditor
     private void OnDocumentSwapped(object? sender, EventArgs e)
     {
         // A new document has a new height tree; the old primed set and the old collapsed
-        // sections mean nothing to it.
+        // sections mean nothing to it — the sections still hold the old document's lines, so the
+        // generator must stop reading them too.
         _primer.Forget();
         _collapsed.Clear();
+        _foldGenerator.SetFolds([]);
         RequestPrime();
     }
 
@@ -944,15 +946,14 @@ public class DiffPanePresenter : TextEditor
     internal int SetCollapsedLines(IReadOnlyList<(int First, int Last)> ranges)
     {
         ArgumentNullException.ThrowIfNull(ranges);
-        foreach (CollapsedLineSection section in _collapsed)
+        foreach (CollapsedFold fold in _collapsed)
         {
-            section.Uncollapse();
+            fold.Section.Uncollapse();
         }
 
         _collapsed.Clear();
 
         TextView textView = TextArea.TextView;
-        List<(int First, int Last)> taken = [];
         if (Document is { } document)
         {
             foreach ((int first, int last) in ranges)
@@ -962,15 +963,19 @@ public class DiffPanePresenter : TextEditor
                     continue;
                 }
 
-                _collapsed.Add(textView.CollapseLines(document.GetLineByNumber(first), document.GetLineByNumber(last)));
-                taken.Add((first, last));
+                // A fold is named by its first line as the model has it now, and keeps that name
+                // while an edit before the re-diff moves its lines.
+                _collapsed.Add(new CollapsedFold(
+                    textView.CollapseLines(document.GetLineByNumber(first), document.GetLineByNumber(last)),
+                    first));
             }
         }
 
-        // The generator spans exactly what was collapsed. Without it the text view walks from a
-        // visual line to the next document line, finds it collapsed, and throws.
+        // The generator spans exactly what is collapsed, read from the sections as they are when it
+        // runs. Without it the text view walks from a visual line to the next document line, finds it
+        // collapsed, and throws.
         _foldGenerator.Reset();
-        _foldGenerator.SetRanges(taken);
+        _foldGenerator.SetFolds([.. _collapsed]);
 
         textView.Redraw();
         textView.InvalidateMeasure();
@@ -981,9 +986,28 @@ public class DiffPanePresenter : TextEditor
     internal int CollapsedSectionCount => _collapsed.Count;
 
     /// <summary>
-    /// A fold's placeholder was clicked; the argument is the run's first collapsed line. The pane
-    /// does not act on it — which rows a fold covers is the composite's to decide, because a run
-    /// is a row range and this pane knows only one side of it.
+    /// The identity of the fold whose placeholder is on <paramref name="headerLine"/> — the line before
+    /// the fold, as the fold is now — or null where no placeholder is. Where a fold has moved, this is
+    /// the only thing that knows which one it is: the model's lines are the old ones until the re-diff.
+    /// </summary>
+    internal int? FoldIdentityAt(int headerLine)
+    {
+        foreach ((int first, int _, int identity) in _foldGenerator.Folds)
+        {
+            if (first - 1 == headerLine)
+            {
+                return identity;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// A fold's placeholder was clicked; the argument is the fold's identity, its first line as the
+    /// model had it when this pane collapsed it. The pane does not act on it — which rows a fold
+    /// covers is the composite's to decide, because a run is a row range and this pane knows only one
+    /// side of it.
     /// </summary>
     internal event EventHandler<int>? FoldExpandRequested;
 

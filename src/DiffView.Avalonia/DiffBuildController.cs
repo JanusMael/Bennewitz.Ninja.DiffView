@@ -1046,23 +1046,38 @@ internal sealed class DiffBuildController
     /// <summary>
     /// The run the caret is on, which is the only run a keyboard can name: a row behind a
     /// placeholder is not on screen and the caret cannot reach it, so what the caret can be on is
-    /// the placeholder's own line.
+    /// the placeholder's own line. The pane says which fold's placeholder that is, because an edit
+    /// before the re-diff can have moved it off the line the model gives it.
     /// </summary>
     private FoldedRun? FoldAtCaret()
     {
         // A caret is in exactly one pane; where nothing is focused, the left is the side whose
         // line numbers the strip and the key map already speak of first.
         DiffSide side = FocusedSide ?? DiffSide.Left;
-        if (Document is not { } document || Pane(side) is not { } pane)
+        if (Pane(side) is not { } pane || pane.FoldIdentityAt(pane.TextArea.Caret.Line) is not { } identity)
         {
             return null;
         }
 
-        int caretLine = pane.TextArea.Caret.Line;
+        return FoldNamed(side, identity);
+    }
+
+    /// <summary>
+    /// The taken run a pane names by a fold's identity: the fold's first line on that side as the
+    /// model has it, which is what the pane collapsed it under. A run is a row range, so it is found
+    /// by asking each taken fold what it collapses on that side.
+    /// </summary>
+    private FoldedRun? FoldNamed(DiffSide side, int identity)
+    {
+        if (Document is not { } document)
+        {
+            return null;
+        }
+
         for (int fold = 0; fold < _projection.FoldCount; fold++)
         {
             FoldedRun run = _projection.FoldAt(fold);
-            if (FoldPlan.LinesOf(document, run, side) is { } lines && lines.First - 1 == caretLine)
+            if (FoldPlan.LinesOf(document, run, side) is { } lines && lines.First == identity)
             {
                 return run;
             }
@@ -1121,24 +1136,14 @@ internal sealed class DiffBuildController
     }
 
     /// <summary>
-    /// A placeholder was clicked. The pane reports a line on its own side; which run that is is a
-    /// row range, so the fold is found by asking each taken fold what it collapses on that side.
+    /// A placeholder was clicked. The pane reports the fold's identity on its own side — not where
+    /// the fold is now, which an edit before the re-diff can move.
     /// </summary>
-    private void OnFoldExpandRequested(object? sender, int firstCollapsedLine)
+    private void OnFoldExpandRequested(object? sender, int identity)
     {
-        if (sender is not DiffPanePresenter pane || Document is not { } document)
+        if (sender is DiffPanePresenter pane && FoldNamed(pane.Side, identity) is { } run)
         {
-            return;
-        }
-
-        for (int fold = 0; fold < _projection.FoldCount; fold++)
-        {
-            FoldedRun run = _projection.FoldAt(fold);
-            if (FoldPlan.LinesOf(document, run, pane.Side) is { } lines && lines.First == firstCollapsedLine)
-            {
-                OpenFold(run);
-                return;
-            }
+            OpenFold(run);
         }
     }
 
