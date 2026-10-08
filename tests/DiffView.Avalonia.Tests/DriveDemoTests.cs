@@ -46,6 +46,8 @@ public sealed class DriveDemoTests
             "then", "geometry", "0x1200017",
             "then", "capture", "popup", "menu.png",
             "then", "hover", "300", "200",
+            "then", "drag", "left", "539", "364", "to", "639", "364",
+            "then", "drag", "3", "1089", "100", "to", "1089", "400", "in", "popup",
         ];
 
         (int exitCode, string output) = Run(["--parse", .. chain]);
@@ -64,6 +66,8 @@ public sealed class DriveDemoTests
                 "geometry\t18874391",
                 "capture\tpopup\tmenu.png",
                 "hover\t300\t200\tin\tdemo",
+                "drag\tleft\t539\t364\tto\t639\t364\tin\tdemo",
+                "drag\tright\t1089\t100\tto\t1089\t400\tin\tpopup",
             ],
             lines);
 
@@ -84,6 +88,15 @@ public sealed class DriveDemoTests
     [InlineData("key", "key takes one chord")]
     [InlineData("click left --id SideBySide//LeftPane", "is not an AutomationId path")]
     [InlineData("click left --id /LeftPane", "is not an AutomationId path")]
+    [InlineData("drag left 1 2 3 4", "drag takes <x> <y> to <x> <y>")]
+    [InlineData("drag left 1 2 to 3", "drag takes <x> <y> to <x> <y>")]
+
+    // The separator is the word `to` and not merely a token in that position: without this the
+    // arity cases above pass whatever the parser accepts there, which is how a keyword stops being
+    // one without anything noticing.
+    [InlineData("drag left 1 2 at 3 4", "drag takes <x> <y> to <x> <y>")]
+    [InlineData("drag left 1 2 to 3 4 near popup", "drag takes <x> <y> to <x> <y>")]
+    [InlineData("drag sideways 1 2 to 3 4", "`sideways` is not a button")]
     public void A_malformed_chain_is_refused_as_usage_and_says_what_is_wrong(string chain, string expected)
     {
         (int exitCode, string output) = Run(["--parse", .. chain.Split(' ')]);

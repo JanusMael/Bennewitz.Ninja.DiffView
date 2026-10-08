@@ -11,6 +11,7 @@
 //   scripts/drive-demo.sh key ctrl+Down                 a key chord into the demo
 //   scripts/drive-demo.sh click left 88 16              a click, relative to the demo's window
 //   scripts/drive-demo.sh click left 105 829 in popup   ... or to the popup found last
+//   scripts/drive-demo.sh drag left 539 364 to 639 364  press, travel and release — the splitter
 //   scripts/drive-demo.sh mark                          remember the top-level windows there are now
 //   scripts/drive-demo.sh popup                         the window that has appeared since the mark
 //   scripts/drive-demo.sh geometry demo                 position, size and map state
@@ -82,6 +83,11 @@
 //   the same chord alone does not.
 // - Synthetic motion raises a tooltip here, which is what plan 00023 expected of `SendInput` and the
 //   reason `hover` is a verb rather than a museum piece.
+// - ⛔ A drag is a press, a TRAVEL and a release. A press, a jump to the far point and a release is
+//   two positions rather than a gesture: the splitter and the overview map both move with the
+//   pointer and see nothing in between, so the path is walked in steps with the button held. Both
+//   back ends do it that way, and both release from a `finally` — a button left down is the
+//   person's pointer taken hostage.
 //
 // xwininfo's per-window fields are read by their labels. Those are fixed strings in the program, and
 // measured so: it imports no gettext — only setlocale and nl_langinfo, which serve window names — and
@@ -191,6 +197,7 @@ internal static class Usage
                                                  holds the foreground with nothing focused in it)
           click <button> <x> <y> [in <window>]  button: left, middle or right (or 1, 2, 3)
           click <button> --id <path>            by AutomationId, where the back end can
+          drag <button> <x> <y> to <x> <y>      press, travel and release; [in <window>] too
           mark                                  remember the top-level windows there are now
           popup                                 the window that appeared since the mark
           geometry <window>                     position, size and map state
@@ -295,6 +302,27 @@ internal sealed record HoverVerb(Target Target) : Verb
     public override IReadOnlyList<string> Canonical() => ["hover", .. Target.Canonical()];
 }
 
+/// <summary>
+/// A press, a path, and a release. Both ends are coordinates in the same window, because what this
+/// exists for — the splitter between the panes and the overview map's viewport — are drags to a
+/// position rather than onto a part, and a part has no "drop here" of its own.
+/// </summary>
+internal sealed record DragVerb(MouseButton Button, PointTarget From, int ToX, int ToY) : Verb
+{
+    public override IReadOnlyList<string> Canonical() =>
+    [
+        "drag",
+        Button.ToString().ToLowerInvariant(),
+        From.X.ToString(CultureInfo.InvariantCulture),
+        From.Y.ToString(CultureInfo.InvariantCulture),
+        "to",
+        ToX.ToString(CultureInfo.InvariantCulture),
+        ToY.ToString(CultureInfo.InvariantCulture),
+        "in",
+        From.RelativeTo.Canonical,
+    ];
+}
+
 internal static class VerbParser
 {
     /// <summary>A chain of verbs separated by `then`; `then` is therefore no verb's argument.</summary>
@@ -342,6 +370,8 @@ internal static class VerbParser
             "capture" when rest.Length == 2 && rest[1].Length > 0 => new CaptureVerb(WindowOf(rest[0]), rest[1]),
             "capture" => throw new UsageException("capture takes a window and an output path"),
             "hover" => new HoverVerb(TargetOf(rest, "hover")),
+            "drag" when rest.Length >= 1 => Drag(Button(rest[0]), rest[1..]),
+            "drag" => throw new UsageException("drag takes a button and two points"),
             _ => throw new UsageException($"unknown verb `{tokens[0]}`"),
         };
     }
@@ -370,6 +400,20 @@ internal static class VerbParser
     /// <summary>Whether a path is steps and not holes: a blank step would scope a search to nothing.</summary>
     private static bool Steps(string path) =>
         path.Length > 0 && path.Split('/').All(step => step.Length > 0);
+
+    /// <summary>
+    /// `drag <button> <x> <y> to <x> <y> [in <window>]`. Both ends are read against the same window:
+    /// a drag whose ends were relative to different things would be unreadable in a recipe, and
+    /// there is nothing a drag means across two windows.
+    /// </summary>
+    private static Verb Drag(MouseButton button, string[] rest) => rest switch
+    {
+        [var x1, var y1, "to", var x2, var y2] =>
+            new DragVerb(button, new PointTarget(Coordinate(x1), Coordinate(y1), WindowRef.Demo), Coordinate(x2), Coordinate(y2)),
+        [var x1, var y1, "to", var x2, var y2, "in", var window] =>
+            new DragVerb(button, new PointTarget(Coordinate(x1), Coordinate(y1), WindowOf(window)), Coordinate(x2), Coordinate(y2)),
+        _ => throw new UsageException("drag takes <x> <y> to <x> <y> [in <window>]"),
+    };
 
     private static int Coordinate(string token) =>
         int.TryParse(token, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int value)
@@ -591,6 +635,9 @@ internal sealed partial class X11 : IBackEnd
             case ClickVerb click:
                 (int x, int y) = Absolute(click.Target, state, "click");
                 Tool("xdotool", "mousemove", Invariant(x), Invariant(y), "click", Invariant((int)click.Button));
+                break;
+            case DragVerb drag:
+                Drag(drag, state);
                 break;
             case MarkVerb:
                 state.Mark = [.. Children().Select(w => w.Id)];
@@ -889,6 +936,48 @@ internal sealed partial class X11 : IBackEnd
         finally
         {
             File.Delete(raw);
+        }
+    }
+
+    /// <summary>
+    /// Press, travel, release. ⛔ The travel is the point: a press, a jump and a release is two
+    /// positions rather than a gesture, and the splitter and the map both move with the pointer, so
+    /// they see nothing between them. One `mousemove` per step with the button held is what a hand does.
+    /// </summary>
+    private void Drag(DragVerb drag, DriveState state)
+    {
+        (int fromX, int fromY) = Absolute(drag.From, state, "drag");
+        WindowInfo over = Info(Resolve(drag.From.RelativeTo, state));
+        if (drag.ToX < 0 || drag.ToY < 0 || drag.ToX >= over.Width || drag.ToY >= over.Height)
+        {
+            throw new DriveException(string.Create(
+                CultureInfo.InvariantCulture,
+                $"a drag to {drag.ToX},{drag.ToY} ends outside {drag.From.RelativeTo.Canonical}, which is "
+                + $"{over.Width}x{over.Height}: refused rather than released over whatever lies there"));
+        }
+
+        int toX = over.X + drag.ToX;
+        int toY = over.Y + drag.ToY;
+
+        Tool("xdotool", "mousemove", Invariant(fromX), Invariant(fromY));
+        Tool("xdotool", "mousedown", Invariant((int)drag.Button));
+        try
+        {
+            const int steps = 16;
+            for (int i = 1; i <= steps; i++)
+            {
+                Tool(
+                    "xdotool",
+                    "mousemove",
+                    Invariant(fromX + ((toX - fromX) * i / steps)),
+                    Invariant(fromY + ((toY - fromY) * i / steps)));
+                Thread.Sleep(25);
+            }
+        }
+        finally
+        {
+            // Released whatever happened in between: a button left down is the pointer taken hostage.
+            Tool("xdotool", "mouseup", Invariant((int)drag.Button));
         }
     }
 
@@ -1194,6 +1283,24 @@ internal sealed class Windows : IBackEnd
 
                 Click(click.Button, x, y, onto);
                 break;
+            case DragVerb drag:
+                (int fromX, int fromY, long surface) = Absolute(drag.From, state, "drag");
+                WindowInfo over = Info(surface);
+                if (drag.ToX < 0 || drag.ToY < 0 || drag.ToX >= over.Width || drag.ToY >= over.Height)
+                {
+                    throw new DriveException(string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"a drag to {drag.ToX},{drag.ToY} ends outside {drag.From.RelativeTo.Canonical}, which is "
+                        + $"{over.Width}x{over.Height}: refused rather than released over whatever lies there"));
+                }
+
+                if (surface == Demo().Id)
+                {
+                    Activate(surface);
+                }
+
+                Drag(drag.Button, fromX, fromY, over.X + drag.ToX, over.Y + drag.ToY, surface);
+                break;
             case MarkVerb:
                 state.Mark = [.. Tops()];
                 state.Popup = null;
@@ -1475,6 +1582,49 @@ internal sealed class Windows : IBackEnd
         Thread.Sleep(50);
         Beneath(x, y, expected, "click");
         Native.Inject([Native.Button(down), Native.Button(up)], "a click");
+    }
+
+    /// <summary>
+    /// Press, travel, release. ⛔ The travel is the part that matters and the part a first attempt
+    /// leaves out: a press followed by a jump to the far point and a release is two positions, not a
+    /// gesture, and a control that tracks the pointer sees nothing between them. Avalonia's splitter
+    /// and the overview map both move with the pointer, so the path is walked in steps with the
+    /// button held, as a hand would.
+    /// </summary>
+    private static void Drag(MouseButton button, int fromX, int fromY, int toX, int toY, long expected)
+    {
+        (uint down, uint up) = button switch
+        {
+            MouseButton.Left => (0x0002u, 0x0004u),
+            MouseButton.Middle => (0x0020u, 0x0040u),
+            _ => (0x0008u, 0x0010u),
+        };
+
+        Native.SetCursorPos(fromX, fromY);
+        Thread.Sleep(80);
+        Beneath(fromX, fromY, expected, "drag");
+        Native.Inject([Native.Button(down)], "a drag's press");
+
+        try
+        {
+            const int steps = 16;
+            for (int i = 1; i <= steps; i++)
+            {
+                Native.SetCursorPos(
+                    fromX + ((toX - fromX) * i / steps),
+                    fromY + ((toY - fromY) * i / steps));
+
+                // Slower than a hand, deliberately: a control that coalesces moves still sees every
+                // one of these, and a run nobody is watching has no reason to hurry.
+                Thread.Sleep(25);
+            }
+        }
+        finally
+        {
+            // Released whatever happened in between: a button left down is the pointer taken
+            // hostage, and the person gets their desktop back in that state.
+            Native.Inject([Native.Button(up)], "a drag's release");
+        }
     }
 
     /// <summary>
