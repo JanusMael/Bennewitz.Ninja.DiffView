@@ -3911,3 +3911,42 @@ written blind against a machine nobody is sitting at would be exactly what phase
 Windows session to avoid. `BackEnds.ForThisPlatform` says so when it is asked on a Mac. The owed
 macOS run (`PROGRESS.md` open item 9) is what would justify writing it, and whoever does that run
 writes it then.
+
+## A section number of `AGENTS.md` is an anchor: rewrite the section, keep the number
+
+`AGENTS.md`'s sections are cited by number from `DECISIONS.md`, from `PROGRESS.md`, from the plans
+and from the documents under `docs/` — 153 references over 24 documents when this was counted. The
+rule those citations rely on, unwritten until now and followed by accident:
+
+**Retitle a section and rewrite it whole as freely as the work requires. Do not remove its number
+and do not renumber it.**
+
+Plan 00023 phase 5 is the case that made this explicit and also the proof that the licence half is
+real: §9 was rewritten from about 75 lines of Linux-specific prose into a verb table with a platform
+split, and retitled from *Looking at the running app on this Linux box* to *Looking at the running
+app*. Every one of the five `DECISIONS.md` citations of it still resolved afterwards, because what
+they cite is the subject of the section and not its wording. Had the same change renumbered it, all
+five would have pointed at nothing and nothing would have said so.
+
+**Why the rule lands on the number rather than on the citations.** A citation can live in a plan,
+and an approved plan is never edited (`CLAUDE.md`). So a rule requiring citations to follow a moved
+section would be unsatisfiable the moment a plan held one: the repair would be demanded in a file
+that may not be repaired. A section number can always be repaired in `AGENTS.md`. The asymmetry
+decides where the obligation sits, and it is why
+`DocumentationCitationTests.Every_section_of_AGENTS_a_document_cites_by_number_exists` names the
+section and sends the reader to `AGENTS.md`, never to the citing document.
+
+⚠ **What the gate does not check, and no gate can.** That a section still *says* what the citing
+sentence claims. A section may be rewritten until the sentence citing it is false, and nothing will
+fail. The measured case: during plan 00023 phase 5 a reviewer grepped the rewritten §9 for
+`IsViewable`, found nothing, and was about to report the unmapped-window trap as lost from the
+repository — the trap was present throughout, under *unmapped*, *map state*, `BadMatch` and
+`error_code`. **A keyword grep is the wrong instrument for deciding whether a lesson survived a
+rewrite**, and the right one is reading the section. Whoever rewrites a section owes its citations
+that reading.
+
+⚠ **`§N` is not a repo-wide synonym for a section of this file.** `plans/00026` cites XamlQuality's
+`docs/ai-drivable-ui.md` by bare `§4` and `§5`, and `plans/00001` cites ClaudeForge's
+`docs/UI-STYLE-GUIDE.md` §2. The gate attributes each reference to the nearest markdown filename on
+its line, and treats a bare one as this file's only inside `AGENTS.md` itself. A reading that assumed
+otherwise would pass today while blaming a frozen plan tomorrow for a section it never cited.
