@@ -1,0 +1,4 @@
+?? plans/00030-a-parts-reference-the-code-writes.md
+ M src/DiffView.Avalonia/DiffBuildController.cs
+ M src/DiffView.Avalonia/SideBySideDiffView.cs
+?? tests/DiffView.Avalonia.Tests/Composite/scratch-output.txt

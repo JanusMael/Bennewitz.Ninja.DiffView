@@ -1,0 +1,2 @@
+?? plans/00030-a-parts-reference-the-code-writes.md
+ M src/DiffView.Avalonia/DiffBuildController.cs
