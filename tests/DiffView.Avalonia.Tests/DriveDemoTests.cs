@@ -190,6 +190,61 @@ public sealed class DriveDemoTests
     }
 
     [Fact]
+    public void The_interactive_pass_prints_through_the_host_so_a_functions_return_value_is_its_own()
+    {
+        // ⛔ A PowerShell function returns everything written to its OUTPUT stream, not just the
+        // value after `return`. The pass gates every capture on the step before it — `if (Drive …)`
+        // — so one Write-Output inside a function makes that gate true whenever the function
+        // printed anything, which is to say always. The first run of the pass (2026-10-08) had
+        // exactly that defect: every guarded block ran whether its step had succeeded or not, and
+        // it produced a frame named for the colour-blind palette that was the demo with a menu open
+        // over it. Nothing in the run's own summary was wrong — the failures go in a separate list
+        // — so what a reader had to go on was a frame whose name was a lie.
+        //
+        // The whole script is held to Write-Host rather than only its functions: a line moved into
+        // a function later would otherwise reopen the gate without touching this test. The reader
+        // beside it keeps its Write-Output on purpose — that report IS its output — which is why
+        // this names one file and not the directory.
+        // Comments are stripped before the reading, and the script's own header names the trap in
+        // prose — so a reading that scanned the file whole would fail on the documentation of the
+        // very rule it enforces, which it did when this was first written. Line numbers survive the
+        // strip, because a hit a reader cannot find is half a finding.
+        string[] lines = File.ReadAllLines(RepoPaths.Source(Path.Combine("scripts", "drive-demo-interactive.ps1")));
+        List<string> offenders = [];
+        bool inBlockComment = false;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i].Trim();
+
+            if (inBlockComment)
+            {
+                inBlockComment = !line.Contains("#>", StringComparison.Ordinal);
+                continue;
+            }
+
+            if (line.StartsWith("<#", StringComparison.Ordinal))
+            {
+                inBlockComment = !line.Contains("#>", StringComparison.Ordinal);
+                continue;
+            }
+
+            // Everything from the first # is a line comment. Conservative in the safe direction:
+            // a Write-Output after one is a comment, and one before it is still read.
+            if (line.Split('#')[0].Contains("Write-Output", StringComparison.OrdinalIgnoreCase))
+            {
+                offenders.Add($"drive-demo-interactive.ps1:{i + 1}: {line}");
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "The interactive pass writes to the output stream, so a function's return value carries "
+            + "its chatter and `if (Drive …)` gates on nothing. Use Write-Host:"
+            + Environment.NewLine + string.Join(Environment.NewLine, offenders));
+    }
+
+    [Fact]
     public void Nothing_in_scripts_assumes_a_uid_a_display_or_a_repository_path()
     {
         // The scratch scripts the driver replaced each wrote all three in: the cookie under
