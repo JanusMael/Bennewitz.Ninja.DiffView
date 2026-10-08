@@ -16,8 +16,8 @@ and --log-level; pass any of them through -Extra.
 
 -Detach starts the demo in a session of its own and returns once its window is up, printing the pid
 and the log, because an agent's turn boundary reaps a background child otherwise (AGENTS.md §9).
-scripts/drive-demo.cs's `launch` does the work, so there is one launcher; its Windows back end is
-plan 00023 phase 4, and until then it says so.
+scripts/drive-demo.cs's `launch` does the work, so there is one launcher. On Windows it starts the
+demo through the shell, which is what detaches it, and reports the folder the demo logs to.
 #>
 [CmdletBinding()]
 param(
