@@ -27,6 +27,9 @@ public sealed class DriveDemoTests
     private static string Fixture(string name) =>
         RepoPaths.Source(Path.Combine("fixtures", "x11", name));
 
+    private static string WindowsFixture(string name) =>
+        RepoPaths.Source(Path.Combine("fixtures", "windows", name));
+
     [Fact]
     public void Every_verb_prints_in_canonical_form_and_reads_back_to_the_same_lines()
     {
@@ -37,7 +40,7 @@ public sealed class DriveDemoTests
             "then", "key", "ctrl+Down",
             "then", "click", "left", "88", "16",
             "then", "click", "3", "105", "829", "in", "popup",
-            "then", "click", "Right", "--name", "Show whitespace",
+            "then", "click", "Right", "--id", "SideBySide/LeftPane/LineNumbers",
             "then", "mark",
             "then", "popup",
             "then", "geometry", "0x1200017",
@@ -55,7 +58,7 @@ public sealed class DriveDemoTests
                 "key\tctrl+Down",
                 "click\tleft\t88\t16\tin\tdemo",
                 "click\tright\t105\t829\tin\tpopup",
-                "click\tright\t--name\tShow whitespace",
+                "click\tright\t--id\tSideBySide/LeftPane/LineNumbers",
                 "mark",
                 "popup",
                 "geometry\t18874391",
@@ -65,7 +68,7 @@ public sealed class DriveDemoTests
             lines);
 
         // Fed back, the canonical tokens give the same lines: nothing the canonical form prints is read
-        // differently the second time, a name with a space in it included.
+        // differently the second time, an id path with its separators included.
         string[] again = [.. lines.SelectMany((line, i) => i == 0 ? line.Split('\t') : ["then", .. line.Split('\t')])];
         (int againExit, string againOutput) = Run(["--parse", .. again]);
         Assert.True(againExit == 0, againOutput);
@@ -73,12 +76,14 @@ public sealed class DriveDemoTests
     }
 
     [Theory]
-    [InlineData("click left 5", "click takes <x> <y> [in <window>], or --name <text>")]
+    [InlineData("click left 5", "click takes <x> <y> [in <window>], or --id <path>")]
     [InlineData("mark then", "an empty verb")]
     [InlineData("frobnicate", "unknown verb `frobnicate`")]
     [InlineData("click sideways 1 2", "`sideways` is not a button")]
     [InlineData("geometry nowhere", "`nowhere` is not a window")]
     [InlineData("key", "key takes one chord")]
+    [InlineData("click left --id SideBySide//LeftPane", "is not an AutomationId path")]
+    [InlineData("click left --id /LeftPane", "is not an AutomationId path")]
     public void A_malformed_chain_is_refused_as_usage_and_says_what_is_wrong(string chain, string expected)
     {
         (int exitCode, string output) = Run(["--parse", .. chain.Split(' ')]);
@@ -125,6 +130,50 @@ public sealed class DriveDemoTests
         Assert.Equal(
             "16777235 1728x873+10+10 not-viewable",
             Single(Run(["--parse-info", Fixture("window-unmapped.txt")])));
+    }
+
+    [Theory]
+    [InlineData("ctrl+Down", "VK_CONTROL 0x11|VK_DOWN 0x28 extended")]
+    [InlineData("shift+F7", "VK_SHIFT 0x10|VK_F7 0x76")]
+    [InlineData("ctrl+shift+f", "VK_CONTROL 0x11|VK_SHIFT 0x10|VK_F 0x46")]
+    [InlineData("alt+v", "VK_MENU 0x12|VK_V 0x56")]
+    [InlineData("F12", "VK_F12 0x7B")]
+    [InlineData("Return", "VK_RETURN 0x0D")]
+    [InlineData("Page_Down", "VK_NEXT 0x22 extended")]
+    [InlineData("super+Left", "VK_LWIN 0x5B extended|VK_LEFT 0x25 extended")]
+    public void A_chord_is_read_as_the_modifiers_it_holds_and_the_one_key_they_hold(string chord, string expected)
+    {
+        // The arrows and the navigation block must come out extended: they share their virtual-key
+        // codes with the numeric keypad, and without the flag `Down` can arrive as the keypad's 2.
+        (int exitCode, string output) = Run(["--parse-chord", chord]);
+
+        Assert.True(exitCode == 0, output);
+        Assert.Equal(expected.Split('|'), Lines(output));
+    }
+
+    [Theory]
+    [InlineData("hyper+a", "`hyper` in `hyper+a` is not a modifier")]
+    [InlineData("ctrl+Enormous", "`Enormous` in `ctrl+Enormous` is not a key this driver can send")]
+    [InlineData("F25", "`F25` in `F25` is not a key this driver can send")]
+    public void A_chord_nobody_can_send_is_refused_and_says_which_part_of_it_is_wrong(string chord, string expected)
+    {
+        (int exitCode, string output) = Run(["--parse-chord", chord]);
+
+        Assert.Equal(2, exitCode);
+        Assert.Contains(expected, output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_elements_report_is_read_by_its_fields_wherever_on_the_desktop_it_is()
+    {
+        // Tab-separated fields and not prose, so no locale reaches the reading; and a window left of
+        // the primary screen has negative coordinates, which a reader that forgot the sign drops.
+        Assert.Equal(
+            "SideBySide/LeftPane ControlType.Edit 531x618+268+346 in 70387178",
+            Single(Run(["--parse-element", WindowsFixture("element-left-pane.txt")])));
+        Assert.Equal(
+            "Unified/Pane ControlType.Edit 1024x768+-1612+-284 in 133182",
+            Single(Run(["--parse-element", WindowsFixture("element-on-a-second-screen.txt")])));
     }
 
     [Fact]
