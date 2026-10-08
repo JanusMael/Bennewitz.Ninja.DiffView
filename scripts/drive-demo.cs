@@ -75,6 +75,13 @@
 //   button.
 // - A context menu is a window of its own, as it is on X11, so `mark` and `popup` work the same way:
 //   the top-level windows of the demo's process, diffed, then settled.
+// - ⛔ `key` needs a `click` before it on a window nobody has touched yet. Holding the foreground is
+//   not the same as having something focused inside, and a chord sent into that gap does nothing at
+//   all — measured, twice, and it reads as "input does not work here", which is the wrong and
+//   expensive conclusion. `click left --id SideBySide/LeftPane then key ctrl+f` opens the find bar;
+//   the same chord alone does not.
+// - Synthetic motion raises a tooltip here, which is what plan 00023 expected of `SendInput` and the
+//   reason `hover` is a verb rather than a museum piece.
 //
 // xwininfo's per-window fields are read by their labels. Those are fixed strings in the program, and
 // measured so: it imports no gettext — only setlocale and nl_langinfo, which serve window names — and
@@ -180,6 +187,8 @@ internal static class Usage
           launch [demo flags...]                build and start the demo detached, wait for its window
           window                                the demo's main window
           key <chord>                           a key chord into the demo, e.g. ctrl+Down
+                                                (click something first: a window nobody has touched
+                                                 holds the foreground with nothing focused in it)
           click <button> <x> <y> [in <window>]  button: left, middle or right (or 1, 2, 3)
           click <button> --id <path>            by AutomationId, where the back end can
           mark                                  remember the top-level windows there are now

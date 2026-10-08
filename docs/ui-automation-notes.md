@@ -91,6 +91,19 @@ against the DiffView demo, unless a line says otherwise.
   menu, so the click then lands on whatever was underneath it. A driver that raises must raise the
   window the *target* belongs to, which for a menu entry is the menu's own window — or, better, not
   raise at all.
+- ⛔ **Holding the foreground is not the same as having something focused inside the window, and a
+  chord sent into the gap does nothing at all.** Measured: a freshly launched demo took the
+  foreground, `SendInput` accepted `ctrl+f`, and the find bar did not open — twice, which is what
+  made it look like the input path was broken. One `click` on a pane first, and the same chord
+  opened the bar: `SideBySide/FindBar/FindQuery` went from absent to present in the automation tree.
+  So **a `key` verb needs a `click` before it** on a window nobody has interacted with. This is a
+  silent no-op rather than a wrong action, so it is a usability trap rather than a dangerous one —
+  but it reads exactly like "synthetic input does not work here", which is the wrong conclusion and
+  the expensive one.
+- **Synthetic pointer motion does raise a tooltip on Windows**, which plan 00023 predicted and is
+  the opposite of what X11 was once thought to do: `SendInput`/`SetCursorPos` motion produces the
+  dwell a tooltip waits on. Measured — hovering a pane's line-number margin raised a 161×35 tooltip
+  window reading *Line 15 · right line 18*, captured and read back.
 - **The TailBlazer port, which runs ~31 harnesses on this estate, sends no synthetic input on a
   shared desktop at all** (their account, 2026-10-08). Their three-part answer:
   1. Drive through UI Automation **patterns** where the control honestly has the action.
