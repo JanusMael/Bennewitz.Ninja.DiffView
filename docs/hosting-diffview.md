@@ -251,7 +251,18 @@ is one record: `DiffViewLocalization.Resolver` is consulted first and outranks t
 translations by construction, and `DiffViewLocalization.Culture` pins which culture is resolved.
 Returning `null` from the resolver falls through to the bundled translation, then to English.
 
-Formatting — numbers, dates — follows the current culture independently, as it should.
+**Pinning `Culture` moves the words and not the numbers**, which surprises people often enough to be
+worth stating plainly. Text resolves against `DiffViewLocalization.Culture`; values — a header's line
+and character counts, the strip's timing — are formatted against the machine's `CurrentCulture`, not
+the culture you pinned. So pinning German on a US-formatted machine renders `2,880 Zeilen` where German writes
+`2.880`, and every gate in the suite stays green while it does.
+
+This is .NET's own separation of UI culture from formatting culture, and the library does not
+override it: the two answer different questions, and German words with the number habits of the
+machine in front of you is a real configuration rather than a defect. **If you want them to agree,
+that is yours to set** — .NET's `DefaultThreadCurrentCulture`, assigned at start-up before the first
+window, and the UI thread's own `CurrentCulture` as well if you set it any later. The library offers
+no knob of its own, by design.
 
 ## Finding its parts from a test or an agent
 

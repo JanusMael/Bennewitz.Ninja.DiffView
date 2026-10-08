@@ -2,8 +2,8 @@
 
 ## Resume
 
-**`main` carries everything through PR #17, and CI is green on it** — all five jobs, runs
-`37807787219` and `37807831329`, 2026-10-08. *A resume names the pull request it was written for and
+**`main` carries everything through PR #23, and CI is green on it** — all five jobs, run
+`37857329501`, 2026-10-08. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
 wrong the moment it is true.* The suite is **741**, passing in `en-US` and in the `de-DE` culture leg
 alike; Windows and macOS run **677**, the suite less the 64 frame cases that are Linux's baselines,
@@ -14,11 +14,18 @@ Linux, and the last full run — PR #14's, owed because that change made a gate 
 — had all 112 behave as declared, 108 killed by the test each names, 2 by the build and 2 green by
 design, with all 81 guards tripped first by one of them and no `inert-at-pin` marker standing.
 
-**Every change of DiffView's own is merged.** The four most recent, newest first, each with its
-record below:
+**Every change of DiffView's own is merged**, and the instrument work that followed plan 00023's
+record is a run of small ones carrying no plan of their own — so their record is the commit and, where
+they settled a rule, `DECISIONS.md`. Newest first:
 
-| Change | What it did | Record below |
+| Change | What it did | Record |
 |---|---|---|
+| **PR #23** | `scripts/drive-demo` gains a `drag` verb — press, travel in steps, release from a `finally`, because a press and a jump are two positions and not a gesture; and a one-step `AutomationId` path stops crashing the reader, a pipeline of one element being a scalar under `Set-StrictMode` | the commits |
+| **PR #22** | Three facts the `AGENTS.md` §9 rewrite dropped, restored | the commit |
+| **PR #21** | A behaviour test proven able to fail from a committed harness, `scripts/mutate-behaviour` | the commit |
+| **PR #20** | A section number of `AGENTS.md` is an anchor: rewrite the section, keep the number | `DECISIONS.md` |
+| **PR #19** | A test that a section another document cites is a section that exists | the commit |
+| **PR #18** | A revert's test waits for the build it starts, rather than pumping for it | the commit |
 | **PR #16** | Plan 00023 phases 4–5: `scripts/drive-demo` drives the demo on Windows as well as under X11, finding a part by its `AutomationId` rather than a coordinate, and refusing a click or a chord that would land anywhere but the window it aimed at. Open item 5 closes | *Plan 00023 phases*, *Plan 00023 phase 4 verification* |
 | **PR #13** | `TemplatePartTests` hands `BNXQ1003` AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a theme this library ships is checked — `TextArea`'s lookup of `PART_CP` was checked by nothing, and behind a null check a theme without it shows no text and raises nothing | *BNXQ1003 reads AvaloniaEdit's lookups too* |
 | **PR #14** | `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds `docs/hosting-diffview.md`'s `AutomationId` table to `fixtures/automation-ids.txt` both ways, and its menu row to the rule the row states; open item 15 closes | *The hosting guide's id table, held to the fixture* |
@@ -43,10 +50,12 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-**Next: the by-hand Windows and macOS runs plan 00001 phase 10 owes** (open item 9). Plan 00023 has
-now built the instrument for them and proved it drives the demo on Windows — but an instrument is
-not a run, and nothing has yet judged how this control *reads* at real size on a platform that is
-not Linux. The driver makes those runs cheap; it does not make them done.
+**Next: open item 10, the `Bennewitz.Ninja.AppServices.Avalonia` migration.** Open item 9's **Windows
+half is discharged** — the capture pass and the interactive pass both ran, and what they found is in
+that item and in `DECISIONS.md` — leaving **macOS**, which no instrument covers and for which plan
+00023 deliberately writes no back end. An instrument is not a run, and the run is what pays: it found
+a half-localized surface no gate in the suite can see, and two driver steps that reported success and
+did nothing.
 
 ### What ships
 
@@ -178,7 +187,45 @@ wording.
 
 9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. The suite passes on those
    platforms now, without its Linux-only baselines, which makes these runs the only look anything
-   takes at rendering there. Plan 00023's harness is what would make them repeatable.
+   takes at rendering there.
+
+   ✅ **Windows is discharged, 2026-10-08**, in two halves. The **capture half** took ten
+   configurations through `scripts/drive-demo` — both variants, both non-default themes, the unified
+   view, the viewer, `--edit both`, `de-DE` and `pt-BR` — and proved each flag took by measurement
+   rather than by assumption, `--variant` and `--theme` by pixel difference and the three that move
+   too little that way by reading the status strip, which names the culture, the variant and the
+   editable sides. The **interactive half** is `scripts/drive-demo-interactive.ps1`, added with this
+   item and Windows-only for the reason `scripts/drive-demo-uia.ps1` is: it addresses parts by
+   `AutomationId`, which the X11 back end refuses outright. It covers what only exists while the
+   thing is being used — the focus accent, the pane menu and light-dismiss, both margins' tooltips,
+   the View menu at real DPI, `F7` navigation, the find bar, the splitter and map drags, and the
+   colour-blind palette. The frames are a look and not a test (`AGENTS.md` §9), so they stay on the
+   Windows box; what is durable is below and in `DECISIONS.md`.
+
+   ⛔ **macOS is still owed and no instrument covers it.** Plan 00023 specifies that back end and
+   deliberately does not write it, because Accessibility and Screen Recording are per-application
+   grants that cannot be scripted; `DECISIONS.md`, *Plan 00023 phase 5*, has why, and whoever does
+   that run writes the back end then. **This item stays open for macOS alone.**
+
+   What the Windows run produced, none of it visible to any gate in the suite:
+
+   - ✅ **German words, English numbers** — decided and recorded. `DECISIONS.md`, *The library
+     translates its words and not its numbers*, and `docs/hosting-diffview.md`.
+   - ✅ **Two steps that reported success and did nothing** — a splitter drag that began on a
+     connector polygon, and a palette entry whose window UI Automation named as the main window while
+     its pixels belonged to a popup. Both fixed, and the second would have gone on to produce a
+     *wrong* result rather than a refusal had only the guard been repaired. `DECISIONS.md`, *A step
+     that reports success is not a step that did anything*.
+   - ⚠ **A copy arrow hides the line number it is drawn over**, for the first line of every block —
+     the line a reader is most likely to want to cite. `AGENTS.md` §6 says *drawn over*, so this is
+     intended and tested, and the number is not dimmed or shifted but gone. **Whether that trade is
+     right at real size is a judgement, and Brian's.** The one-sided block's arrow in the padding row
+     reads well.
+   - ⚠ **The demo has no `--palette` flag**, so the colour-blind palette is reachable only through
+     the View menu and the capture half structurally cannot reach the one palette whose purpose is
+     that some readers cannot use the other. This is the argument that added `--edit` (`AGENTS.md`
+     §9): a flag setting the same toggle the menu sets, so the two cannot disagree. Small, and not
+     yet done.
 
 10. **`LayeredEditors.Avalonia.Diagnostics` → `Bennewitz.Ninja.AppServices.Avalonia`: deferred
     2026-09-23, deliberately.** The demo keeps its hand-packed `1.0.1` from `../nuget-local`, and

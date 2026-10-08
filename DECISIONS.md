@@ -3950,3 +3950,67 @@ that reading.
 `docs/UI-STYLE-GUIDE.md` §2. The gate attributes each reference to the nearest markdown filename on
 its line, and treats a bare one as this file's only inside `AGENTS.md` itself. A reading that assumed
 otherwise would pass today while blaming a frozen plan tomorrow for a section it never cited.
+
+## The library translates its words and not its numbers, and that is the decision
+
+Open item 9's Windows run put `--culture de-DE` on screen and the header read **`2,880 Zeilen`** and
+**`123,732 Zeichen`**, where German writes `2.880` and `123.732`. The words around them were German
+throughout — *Bereit*, *429 Änderungen*, *Zeilen*, *Zeichen* — so one sentence disagreed with itself.
+
+The mechanism is two lines of `DiffViewStrings` and neither is an accident. Text resolves against
+`localization.Culture ?? CultureInfo.CurrentUICulture`; values are formatted with
+`string.Format(CultureInfo.CurrentCulture, …)`, the machine's. A host that sets
+`DiffViewLocalization.Culture` therefore moves the language and cannot move the separators, because
+the library exposes no formatting culture of its own.
+
+**Decided 2026-10-08: the split stays, and the gap it leaves is a documentation gap rather than an
+API one.** .NET separates UI culture from formatting culture deliberately, and the configuration
+this produces — translated words with the reader's own number habits — is one a person can genuinely
+want. A `FormatCulture` beside `Culture` would be new public surface, a behaviour change for every
+existing host, and a second way to express something the framework already expresses. `docs/hosting-diffview.md`
+says so under *Localization happens whether you ask or not*, names the two sites, and points a host
+who wants them to agree at `CultureInfo.DefaultThreadCurrentCulture`.
+
+⚠ **What this is a decision about is the record, not the discovery.** Before this, nothing in
+`DECISIONS.md`, `AGENTS.md` or plans 00014 and 00016 said anything either way — while the hosting
+guide already carried the sentence *"Formatting — numbers, dates — follows the current culture
+independently, as it should"*, which asserts the conclusion and names neither the mechanism nor what
+a host may do about it. So the behaviour was defensible, undocumented in the place decisions live,
+and asserted without evidence in the place hosts read. **Every localization gate in the suite passes
+over it**, the locale review packet is clean, and one German screenshot shows it at a glance — which
+is the clearest argument open item 9 produced for why a by-hand look in a locale is owed at all.
+
+## A step that reports success is not a step that did anything
+
+Open item 9's interactive pass drives the demo through `scripts/drive-demo` and gates each capture on
+the step before it. Two of its steps printed `ok` and did nothing, and neither announced itself.
+
+**The splitter drag.** The press, the walk and the release each took, so the driver had nothing to
+refuse, and the panes did not move. The verb was not at fault: the overview map's drag moved 65% of
+the frame on the same run, while a before-and-after comparison of the splitter pair found 48 pixels
+moved — a 3×16 block, which is the caret blinking. The coordinate was at fault. At the scroll
+position `F7` leaves behind, the drag's `y` was inside a connector polygon, and §6 is explicit that a
+press on a polygon selects that block where a press on the empty column drags the splitter. The step
+had been measuring block selection.
+
+**The palette entry.** A menu declared in the main window's XAML — the demo's menu bar, as against
+the library's context menus, which are built at run time — stays a descendant of the main window in
+the UI Automation tree while being drawn in a popup of its own. The reader reported the main window;
+the pixels belonged to the popup. The refusal that followed was the *smaller* half of the problem:
+because the part looked like the demo's own window, the caller would have raised the demo before
+clicking, and raising it light-dismisses the menu, so the click would have landed on the pane
+underneath. Plan 00023 phase 4 already names that outcome as the one to avoid. **A fix to the guard
+alone would have bought exactly it.**
+
+So the correction is to the window a part is *drawn* in, made in the driver where the Win32 to ask
+the question already is, and printed when it fires. Only a window of the same process may stand in,
+so another application lying over the demo still fails at the pixel, unchanged. The reader keeps its
+first-match rule: the popup is not in its candidate set at all, so a tie-break there would have been
+unexercised — it was written, measured against the live demo, and reverted.
+
+**The standing lesson is the one the pass now encodes**: where a verb's effect is a state change,
+assert the state. The splitter step reads the left pane's own width either side of the drag — 531 to
+681 on the run that proved it — and the palette step is judged by the status strip in its frame
+reading `colour-blind` rather than by its exit code. This is `AGENTS.md` §5's rule about frames and
+pixel assertions, arriving from the other direction: there, a frame is too coarse to prove a small
+drawing; here, an exit code is too coarse to prove anything at all.
