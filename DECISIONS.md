@@ -3824,3 +3824,78 @@ approved plan.
 
 A document swap now clears the generator's folds as well as the pane's, because the old sections still
 hold the old document's lines.
+
+## Plan 00023 phase 4: the driver addresses a part with `--id`, not `--name`
+
+The approved plan's verb vocabulary says a target is *a coordinate, or an automation name*, and the
+committed parser carried `--name`. The Windows back end takes **`--id`**, and the X11 back end
+refuses an id where it refused a name.
+
+The plan is approved and is not edited, so the change is recorded here. The reason is the closing
+line of *Plan 00023's Windows back end finds DiffView's parts by `AutomationId`*, above: **a name
+stays what a person hears, and no harness searches by one.** A flag spelled `--name` whose argument
+is an `AutomationId` would contradict that in the command line's own words, and would invite exactly
+the search the decision rules out — a harness looking for *Left pane*, which finds nothing on a
+German machine. The argument is a **path** of ids, `SideBySide/LeftPane/LineNumbers`, each step
+unique within the step before it, because that is the scope the same decision lays down: a view
+within the window, a part within the view, a margin within the pane. Brian confirmed the spelling on
+2026-10-08.
+
+## Plan 00023 phase 4: the driver never raises the demo, and refuses instead
+
+Synthetic input on a desktop someone is working at has two failure modes, and the driver's answer to
+both is to refuse rather than to arrange the world so it can act.
+
+**An injected click goes to whatever window is topmost at that pixel.** Measured on 2026-10-08 with
+the demo behind another application's window: every click went into that application, the driver
+reported success, and the demo's log stayed empty — a false success in someone else's program. The
+back end now resolves `WindowFromPoint` and `GetAncestor(GA_ROOT)` before clicking and refuses when
+the pixel does not belong to the window it aimed at, naming what is in the way. This is the X11 back
+end's *refused rather than sent to whatever lies there* arrived at from an unrelated direction, which
+is the argument for it being part of the vocabulary rather than one platform's detail.
+
+**An injected chord goes to whatever holds the keyboard**, which is worse: `ctrl+f` or `ctrl+s` typed
+into the person's own application does something real and unasked. `key` refuses unless the demo
+actually took the foreground, and it checks `GetForegroundWindow` rather than trusting
+`SetForegroundWindow`, which Windows refuses outright for a process that does not already hold the
+foreground.
+
+⛔ **The rejected fix is raising the window**, and it is rejected on its merits rather than on taste.
+Raising the demo over the person's work means the demo takes *their* clicks — the same defect pointed
+the other way. Raising before clicking an entry of a menu the demo opened light-dismisses that menu,
+so the click lands on the pane underneath: a plausible-looking wrong result rather than a failure.
+And a raise is not reliable anyway. An earlier draft of this back end did raise, by z-order, and
+Brian stopped it.
+
+The wider shape comes from the TailBlazer port on this estate, asked directly on 2026-10-08: it runs
+about thirty harnesses and sends **no** synthetic input on a shared desktop at all — automation
+patterns where a control honestly has the action, an internal peer of its own where Avalonia's is
+silent, and a headless fixture for anything that truly needs a keystroke or a drag. That is not
+available here: DiffView's peers advertise no pattern by design (§1), and adding one so a driver
+could poke it is the thing that port's own rule forbids. The difference that makes real input
+defensible is that `drive-demo` is a **by-hand** instrument with someone watching the window, not an
+unattended assertion run — so an unobstructed, focused window is a precondition the driver checks,
+and the headless suite stays the evidence for everything else.
+
+## Plan 00023 phase 4: the UI Automation reader is a PowerShell script beside the app
+
+`scripts/drive-demo-uia.ps1` is the one place this repository's script convention — a .NET 10
+file-based app with thin `.sh` and `.ps1` wrappers — bends. UI Automation's managed client,
+`System.Windows.Automation`, lives in the Windows Desktop framework: referencing it from
+`drive-demo.cs` would give the whole driver a Windows-only target framework, and the driver is the
+one tool here that has to run on three platforms. The alternative was hand-declaring the COM
+interfaces, where the vtable order is the entire contract and the Windows SDK's own
+`UIAutomationClient.idl` is the only authority for it — several hundred lines of declarations in a
+script, to avoid one more file. The reader prints tab-separated fields, so no locale reaches the
+reading, and `Windows.ParseElement` is tested against fixtures through the real command line.
+
+## Plan 00023 phase 5: the macOS back end is specified and not written
+
+Plan 00023 names the mechanism — `osascript` to activate, `CGWindowListCopyWindowInfo` to enumerate,
+`screencapture -l<id>` to grab — and the plan's own scope puts the back end out. It stays out, and
+the reason is not effort: **Accessibility and Screen Recording are per-application permission grants
+that cannot be scripted.** A first run prompts a human, in CI it simply will not work, and a back end
+written blind against a machine nobody is sitting at would be exactly what phase 4 was moved to a
+Windows session to avoid. `BackEnds.ForThisPlatform` says so when it is asked on a Mac. The owed
+macOS run (`PROGRESS.md` open item 9) is what would justify writing it, and whoever does that run
+writes it then.

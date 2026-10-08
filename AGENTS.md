@@ -567,112 +567,127 @@ that repository when no session is running. Keep no copy here: once a lesson lan
 this file is a pointer, plus whatever is specific to DiffView or to this machine. `DECISIONS.md` records
 why.
 
-## 9. Looking at the running app on this Linux box
+## 9. Looking at the running app
 
-> Written after four plans' worth of UI work had been judged only on headless frames, because
-> `AGENTS.md` and the handoff notes both carried "this box cannot screenshot a window". **That is
-> false**, and the rest of this section is the recipe that works.
+> Written when this section was 75 lines of prose about driving the demo on one Linux box, each
+> paragraph a recipe someone had rebuilt from scratch. **The instruments are committed now** — plan
+> 00023 — so this section names the verbs and keeps only what a verb cannot carry: the traps that
+> are about the machine rather than about the driver, and the judgement a frame cannot give.
 
-- **Read the demo's log before reproducing anything.** Since plan 00029 it says what was done, not
-  only what the control did: the machine (`Host:`), the window's size and scaling, each choice from
-  the demo's menu with the state it left, each command by name and where it came from, each copy a
-  pane asked for, and each edit once it rests; and, from the library, raised to the demo's
-  `Information`, where each click in a pane landed, each selection a pointer made and each fold that
-  opened. Positions and counts, never text. The file is under `LogPaths.LogsDirectory` —
-  `$XDG_STATE_HOME/DiffView/logs`, or `~/.local/state/DiffView/logs` without it — and *Debug ▸ Open
-  logs folder* opens it. The log is also what says whether a driven step took: plan 00029's pass
-  grabbed frames a second or two stale while the log already had the action.
-- **`scripts/drive-demo.sh` drives the demo on this box** (plan 00023). `launch` starts it detached
-  and waits for its window; `window`, `geometry`, `key`, `click`, `mark` / `popup`, `capture` and
-  `hover` do the rest, chained with `then`, at coordinates relative to the demo's window or to the
-  popup found last. It carries the traps this section records — the window manager's frame, the
-  unmapped window with the demo's class, a popup's second layout pass, mutter's own override windows,
-  a black frame, a turn that reaps its children — so reach for it before rebuilding a driver from this
-  prose. `DriveDemoTests` holds how it reads its command line and `xwininfo`'s reports.
+**`scripts/drive-demo.{sh,ps1}` drives the demo; `scripts/catch-crash.{sh,ps1}` judges a test run.**
+Both are thin wrappers over a .NET 10 file-based app, and both run on every platform here. Reach for
+them before rebuilding a driver from this prose: they carry the traps below, and `DriveDemoTests`
+holds how they read.
+
+| Verb | What it does |
+|---|---|
+| `launch [demo flags]` | Builds the demo and starts it detached, then waits for its window; prints the pid and where it logs |
+| `window` | The demo's main window |
+| `geometry <window>` | Position, size and whether it is on screen |
+| `key <chord>` | A key chord into the demo, in `xdotool`'s spelling (`ctrl+Down`, `shift+F7`) on both back ends |
+| `click <button> <x> <y> [in <window>]` | A click, in window-relative coordinates |
+| `click <button> --id <path>` | A click on the part a path of `AutomationId`s names — Windows only |
+| `mark` / `popup` | Remember the top-level windows there are, then name the one that appeared |
+| `capture <window> <out.png>` | The window's pixels |
+| `hover <x> <y>` / `hover --id <path>` | Park the pointer there and wait for a tooltip; it becomes the popup |
+
+Verbs chain with `then`, and what a chain learns — the mark, the popup, the pid — is kept for the
+next invocation. `--parse`, `--parse-children`, `--parse-info`, `--parse-chord` and `--parse-element`
+run nothing and print what the driver read, which is what makes it testable without a window.
+
+- **Read the demo's log before reproducing anything.** Since plan 00029 it says what was *done*, not
+  only what the control did: the machine, the window's size and scaling, each choice from the demo's
+  menu with the state it left, each command by name and where it came from, each copy a pane asked
+  for, each edit once it rests; and, from the library, raised to the demo's `Information`, where each
+  click in a pane landed, each selection a pointer made and each fold that opened. Positions and
+  counts, never text. `LogPaths.LogsDirectory` is where, and *Debug ▸ Open logs folder* opens it.
+- ⛔ **An empty log after a driven step means the step did not arrive.** It is a live file — measured
+  on Windows, a click was readable from outside the process within a second — so the log not moving
+  is the signal and it is the correct one. Reading it as a slow sink cost a session an hour here, and
+  the real cause was a click that had gone into another application entirely.
 - **`ActionLog` is built after the window's own `PaneContextMenuOpening` subscriptions**, because it
   wraps the menu's entries for logging in that same event: built first, it misses the demo's own
   entries (`DemoActionLogTests.A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header`).
-- **The session is Wayland (`XDG_SESSION_TYPE=wayland`) with XWayland at `DISPLAY=:0`, and the
-  demo is an XWayland client** — Avalonia's X11 backend — so it has a real X window that can be
-  grabbed. So does Beyond Compare (`/usr/bin/bcompare`).
-- **Nothing can grab the root, and that is XWayland rather than a refusal.** Every client is
-  redirected to a Wayland surface, so the X root holds no client pixels: a root or region grab
-  comes back **solid black**, and `import -window root` errors outright with
-  `import: ... @ error/import.c/ImportImageCommand/1289`. Reading either as "the compositor
-  refuses grabs" is the mistake. `xdpyinfo` reports the real geometry (2304×1296 here) all the
-  same, so a grab that *succeeds* and is black is the same finding as one that fails.
-- **`import` does not work on this box at all, and `ffmpeg` does.** ImageMagick 7.1.1-43 is built
-  with the `x` delegate but lists no X coder, and every form fails — `import -window <id>`,
-  `magick import`, `magick x:root`, with and without `-screen`. **Grab a window by id with
-  `ffmpeg`'s `x11grab`**, which reads that window's own backing store:
-
-  ```bash
-  DISPLAY=:0 XAUTHORITY=$XAUTHORITY ffmpeg -hide_banner -loglevel error \
-      -f x11grab -window_id 0x1200017 -video_size 1100x720 -i :0.0 -frames:v 1 -y demo.png
-  ```
-
-  `-video_size` must be that window's own size, from `xwininfo -id <id>`; a mismatch silently
-  crops or pads. `XAUTHORITY` matters — without it `x11grab` reports
-  **`outside the screen size 0x0`**, which reads like a compositor problem and is an auth one.
-  `scripts`-adjacent throwaway: the wrapper used on 2026-09-11 took an id and an output path and
-  read the geometry itself, which is the shape to reuse.
-- **Grab the client's window, not the frame.** `xwininfo -root -tree | grep -i "DiffView Demo"`
-  gives two: mutter's decoration (`("mutter-x11-frames" ...)`) and the app's own
-  (`("DiffView.Demo" "DiffView.Demo")`, 1100×720). Only the second has content. The main window
-  is titled `DiffView Demo`; the F12 live-log window is a **second** X window titled
-  `Live Debug Logs`, so match on the title rather than taking the first hit.
-- **A black frame means the session is not presenting, not that the app is broken.** An RDP session
-  that has closed leaves XWayland up and its clients running with nothing composited: on
-  2026-09-11 the demo reached `State "Building" → "Ready"` in its log while every capture came back
-  black. **Check `mean` on a grab before believing it** —
-  `magick shot.png -format "%[fx:mean]" info:` near zero is a black frame — and check the log
-  rather than concluding from pixels.
-- **Launch the demo detached or it will not survive.** A background command started through the
-  agent harness is reaped at the turn boundary — the first two attempts died with exit 144 before
-  anything could be captured. `scripts/run-demo.sh --detach` is the way now: the driver's `launch`
-  starts the demo in a session of its own with its output in a log file, and returns once the window
-  is up, printing the pid and the log's path.
-- **Of the screenshot tools, only `import` is installed and it does not work** — there is no
-  `grim`, `spectacle`, `gnome-screenshot`, `flameshot`, `maim` or `xwd`. `ffmpeg` is present and
-  is the one that does, per the recipe above.
-- **A run whose frames fail is still worth doing, and a run whose frames work is worth more.** The
-  2026-09-11 pass found `--edit` missing from the `[DebugFlags] active:` summary line before a
-  single frame was captured, and then, once frames worked, that the pane's context menu fits at
-  real size with no scroll chevron — the opposite of what its headless snapshot suggested, that
-  window being 600 px tall where the demo's is 720 — and that the expand entry said "here" while
-  acting on the caret. None of the three would have come from a headless test.
-- **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
-  bullet claimed the opposite for three plans; check before repeating it. `xdotool key F7` and
-  `xdotool key ctrl+Down` into a focused pane both work, and that is how plan 00009's rebind was
-  judged by hand. The demo's flags are `--theme`, `--variant`, `--left`, `--right`, `--unified`,
-  `--viewer`, **`--edit left|right|both`** and `--log-level`. `--edit` is the one this bullet
-  asked for over three plans and got on 2026-09-11: in-pane editing and the copy arrows no longer
-  need a menu drive to switch on, which was the slowest part of a by-hand pass and the one most
-  likely to go wrong, the View popup keeping its scroll offset between openings. It sets the same
-  two menu items rather than a second switch beside them, so the flag and the menu cannot
-  disagree; `--unified` and `--viewer` tick an entry of View ▸ Control the same way.
-- **What this does not change.** A captured window is a look, not a test: it is one machine, one
-  variant and one moment. The snapshot frames under `Snapshots/` with their pixel assertions stay
-  the evidence, per §5. This is for the judgement a frame cannot give — whether a thing reads
-  right at real size, in a real window, at the real DPI — which is what Windows and macOS runs are
-  still owed for.
-
-- **Driving a menu, a tooltip or an accelerator with `xdotool` is XamlQuality's to document**, and it
-  does: `docs/avalonia-gotchas.md` in `JanusMael/Bennewitz.Ninja.XamlQuality`, under *Linux platform
-  integration*, the entry *Driving an Avalonia app with `xdotool`: a menu is its own X window, a
-  tooltip never appears, and accelerators do not arrive* — how to find and grab a menu's popup, scroll
-  it and grab again, and why an accelerator does not arrive where a click does. ⚠ **Its tooltip half
-  did not reproduce here on 2026-09-28** — *Tooltips can be driven here*, below — and the measurement
-  went to XamlQuality the same day.
 - **New demo items belong in a submenu.** The demo's View menu is already taller than its popup and
-  scrolls, and a submenu is one more row here and its own popup to grab, where four more rows push
-  something else off the end.
+  scrolls; a submenu is one more row here and its own popup to grab.
+- **A captured window is a look, not a test.** It is one machine, one variant and one moment. The
+  snapshot frames under `Snapshots/` with their pixel assertions stay the evidence, per §5. This is
+  for the judgement a frame cannot give — whether a thing reads right at real size, in a real window,
+  at the real DPI.
+
+### What both back ends refuse, and why it is the whole safety story
+
+**A driver that acts where it was not aimed is worse than one that fails**, because it reports
+success. Both back ends therefore check before they act, and the two platforms arrived at that rule
+from opposite directions:
+
+- **Neither sends a click outside the window it is relative to.** Under X11 that guards a coordinate
+  the caller got wrong; on Windows it also guards a window lying *over* the demo, because an injected
+  click goes to whatever is topmost at that pixel — measured, every click went into another
+  application and the driver reported success.
+- **The Windows back end will not type unless the demo actually holds the keyboard**, because an
+  injected chord goes to whatever does: `ctrl+f` or `ctrl+s` into the person's own window does
+  something real. `SetForegroundWindow` is refused outright for a process that does not already hold
+  the foreground, so asking is not evidence of getting.
+- ⛔ **Neither raises the demo to satisfy those checks, and neither should.** Raising it over the
+  person's work takes *their* clicks instead — the same defect pointed the other way — and raising
+  before clicking a menu entry light-dismisses the menu, so the click lands on what was underneath.
+  The TailBlazer port, which runs about thirty of these harnesses on this estate, sends no synthetic
+  input on a shared desktop at all for this reason. A by-hand pass here is attended, so the input
+  verbs stay and an unobstructed, focused window is a **precondition the driver checks**.
+
+### On Windows
+
+- **Parts are addressed by `AutomationId`, never by name** — the names are translated into eight
+  locales. `click left --id SideBySide/LeftPane/LineNumbers`: each step is unique within the step
+  before it, which is the scope `DECISIONS.md` lays down and `fixtures/automation-ids.txt` pins. The
+  reader is `scripts/drive-demo-uia.ps1`, a script of its own because UI Automation's managed client
+  lives in the Windows Desktop framework and referencing it would make a portable driver a
+  Windows-only one.
+- ⛔ **`key` needs a `click` before it on a window nobody has touched.** Holding the foreground is not
+  the same as having something focused inside, and a chord sent into that gap does nothing at all —
+  which reads as "synthetic input does not work here" and is the expensive wrong conclusion.
+  `click left --id SideBySide/LeftPane then key ctrl+f` opens the find bar; the chord alone does not.
+- ⛔ **A running demo locks its own assemblies**, so the solution cannot rebuild while it is up —
+  `dotnet test` fails with MSB3027 naming the process. No Linux equivalent. Close it by the pid the
+  launch recorded, never by name.
+- **A part switched off is genuinely absent from the automation tree** — the map, the headers, the
+  strip, the banner's action and the find bar are hidden through `IsVisible` — so "not found" is
+  usually a part that is off rather than a part that is missing, and the driver says so.
+- **Synthetic motion raises a tooltip here**, which is what plan 00023 expected of `SendInput` and
+  the reason `hover` is a verb rather than a museum piece.
+- The capture traps are XamlQuality's now (§8): `PrintWindow` without `PW_RENDERFULLCONTENT` returns
+  an entirely black frame for an Avalonia window and reports success, and a process that has not
+  declared itself per-monitor DPI aware is answered in virtualised coordinates.
+
+### On Linux, and on this box in particular
+
+- **The session is Wayland with XWayland at `DISPLAY=:0`, and the demo is an XWayland client** —
+  Avalonia's X11 backend — so it has a real X window that can be grabbed. So does Beyond Compare.
+- ⛔ **Nothing can grab the root, and that is XWayland rather than a refusal.** Every client is
+  redirected to a Wayland surface, so the X root holds no client pixels: a root or region grab comes
+  back **solid black**. Reading that as "the compositor refuses grabs" is the mistake.
+- **`ffmpeg`'s `x11grab` by window id is what works here; ImageMagick's `import` does not**, in any
+  form, though it is installed. `XAUTHORITY` matters — without it `x11grab` reports *outside the
+  screen size 0x0*, which reads like a compositor problem and is an auth one.
+- ⛔ **A black frame means the session is not presenting**, not that the app is broken: a closed
+  remote-desktop connection leaves XWayland up with nothing composited. The driver refuses a frame
+  with no pixel brighter than black and keeps the file.
+- **Grab the client's window, not the frame**, and **the main window is the one titled
+  `DiffView Demo`, not the widest** — the F12 live-log window shares the class and is wider.
+- **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
+  section claimed the opposite for three plans; check before repeating it.
+- **The demo's flags** are `--theme`, `--variant`, `--left`, `--right`, `--unified`, `--viewer`,
+  `--edit left|right|both`, `--culture` and `--log-level`. `--edit` sets the same two menu items the
+  View menu does, so the flag and the menu cannot disagree.
+- **Driving a menu, a tooltip or an accelerator with `xdotool` is XamlQuality's to document** (§8),
+  under *Linux platform integration*: how to find and grab a menu's popup, and why an accelerator
+  does not arrive where a click does.
 
 ### When the whole session is wedged rather than not presenting
 
-§9 already says a **black frame** means the session is not presenting, which is what a closed RDP
-connection leaves behind. There is a second, worse state that looks similar from a distance and is
-not the same thing, and on **2026-09-12** it cost a session's afternoon to work out from scratch.
+A **black frame** means the session is not presenting. There is a second, worse state that looks
+similar from a distance, and on **2026-09-12** it cost a session's afternoon to work out from scratch.
 
 The signature, all four together:
 
@@ -688,61 +703,57 @@ refused here, `kernel.dmesg_restrict` is 1 — and look for `ring <engine> timeo
 `GPU reset begin!`. If `MES(...) failed to respond` and `psp gfx command LOAD_IP_FW failed` follow,
 the device reset has itself failed and **there is no software recovery**: every outstanding
 `dma_fence` is unsignallable, so anything that touches the GPU blocks forever. A power cycle is the
-only way out and nothing is lost by taking it — the journal is persistent (`/var/log/journal` is its
-own btrfs subvolume), so the whole failure can be reconstructed afterwards from `journalctl -b -1`.
+only way out and nothing is lost by taking it — the journal is persistent, so the whole failure can
+be reconstructed afterwards from `journalctl -b -1`.
 
 **Do not conclude anything about the app from this.** Its window is gone because the compositor is,
 and a run that ends this way has produced no evidence either way.
 
 The two machine-level mitigations that exist as of 2026-09-12 — a udev rule that saves the device
 coredump before it expires, and `kernel.hung_task_panic` with `kernel.panic=20` — are configuration
-of this host, not of this repository. They are documented in the `lmstudio-opencode` repo, which is
-where machine and GPU configuration lives.
+of this host, not of this repository. They are documented in the `lmstudio-opencode` repo.
 
 ### Two ways a grab fails that look like the app's fault
 
-Both cost time on **2026-09-13**, driving plan 00014 phase 4.
+Both cost time on **2026-09-13**, and the driver carries both.
 
 - **`xdotool search --class DiffView | head -1` can return an unmapped window.** The demo has two
-  matching X windows; the first is `IsUnMapped` and `x11grab` rejects it with
-  `Cannot get the image data ... error_code:8` — a `BadMatch`, which reads like a geometry or
-  compositor problem and is neither. **Filter on map state**, not position in the list:
-  `xwininfo -id "$w" | grep -q IsViewable`.
-- **`pkill -f 'DiffView.Demo'` kills the turn, not the app.** The pattern appears in the agent
+  matching X windows; the first is `IsUnMapped` and `x11grab` rejects it with `error_code:8` — a
+  `BadMatch`, which reads like a geometry or compositor problem and is neither. Filter on map state.
+- ⛔ **`pkill -f 'DiffView.Demo'` kills the turn, not the app.** The pattern appears in the agent
   harness's own shell command line, so the shell matches itself and the turn ends at exit 144 — the
-  same exit code §9 attributes to the harness reaping a background child, which sends you looking in
-  entirely the wrong place. Close the window instead (`xdotool windowkill <id>`), or kill a PID you
-  recorded at launch.
+  same exit code the harness's own reaping produces, which sends you looking in the wrong place.
+  Close the window instead, or kill a pid you recorded at launch.
 
 ### Mutter keeps override windows that are not menus
 
 A menu's popup is found as a viewable override-redirect window, and mutter keeps two of its own: a
-screen-sized *mutter guard window* and a 1×1 at (−100, −100). On **2026-09-28** a finder that took the
-tallest such window picked each in turn, and the 1×1, polled before the real popup had mapped, sent a
-menu click to (5, 729) on the screen. Filter both out by size, and refuse a click outside the popup's
-own bounds. After a synthetic right-click opens a context menu, X keyboard focus can also land on
-that 1×1 window, and every key after it reaches nothing until `xdotool windowactivate --sync <id>`
-gives the demo its focus back. The general lessons are XamlQuality's (§8).
+screen-sized *mutter guard window* and a 1×1 at (−100, −100). On **2026-09-28** a finder that took
+the tallest such window picked each in turn, and the 1×1, polled before the real popup had mapped,
+sent a menu click to (5, 729) on the screen. The driver filters both out by size and refuses a click
+outside the popup's own bounds. After a synthetic right-click opens a context menu, X keyboard focus
+can also land on that 1×1 window, and every key after it reaches nothing until the demo is
+reactivated. The general lessons are XamlQuality's (§8).
 
 ### Tooltips can be driven here
 
 This said the opposite from 2026-09-13 until **2026-09-28**, when plan 00023's driver measured it
-again: `scripts/drive-demo.sh hover` raised the tooltip on every trial — the change-marker margin's and
-the line-number margin's, jumping in from outside the window, from its far corner, from another line
-of the same margin, and with the demo in `pt-BR` — and the scratch script behind the old finding,
-parking where it always had, raised the same tooltip pixel for pixel. The demo's Avalonia was 12.1.2
-on both dates; what made the first measurement fail was never established. A tooltip is its own
-override-redirect window, found by the same root-child diff as a menu, so a tooltip's layout at real
-size and in a locale can be judged from a driven frame now. The headless tests that assert its text
-stay the evidence for the text. `DECISIONS.md` has the trials.
+again: `hover` raised the tooltip on every trial — the change-marker margin's and the line-number
+margin's, jumping in from outside the window, from its far corner, from another line of the same
+margin, and with the demo in `pt-BR` — and the scratch script behind the old finding raised the same
+tooltip pixel for pixel. The demo's Avalonia was 12.1.2 on both dates; what made the first
+measurement fail was never established. A tooltip is its own override-redirect window, found by the
+same root-child diff as a menu, so a tooltip's layout at real size and in a locale can be judged from
+a driven frame. The headless tests that assert its text stay the evidence for the text.
+`DECISIONS.md` has the trials.
 
 ### Driving a locale
 
 `--culture <name>` sets `DiffViewLocalization.Culture` before the first window, which moves the
-library's text without touching the operating system. The demo's own chrome stays English on
-purpose, so a frame shows exactly the surface under judgement — and the status strip names the
-culture, which is how you confirm the flag took rather than assuming it.
+library's text without touching the operating system. The demo's own chrome stays English on purpose,
+so a frame shows exactly the surface under judgement — and the status strip names the culture, which
+is how you confirm the flag took rather than assuming it.
 
-Measure before you look: `scripts/measure-menu-width.sh` reports each locale's widest menu entry
-against English's in display columns, a CJK glyph taking two, and the widest locale is not the one
-you expect: on 2026-09-13 German measured 100% of English's widest menu entry and Portuguese 117%.
+Measure before you look: `scripts/measure-menu-width.{sh,ps1}` reports each locale's widest menu
+entry against English's in display columns, a CJK glyph taking two, and the widest locale is not the
+one you expect: on 2026-09-13 German measured 100% of English's widest menu entry and Portuguese 117%.

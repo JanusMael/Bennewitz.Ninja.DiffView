@@ -2,20 +2,22 @@
 
 ## Resume
 
-**`main` is `bead9f3`, and CI is green on it** — all five jobs, run `37206393185`, 2026-10-04. The
-suite is **727**, passing in `en-US` and in the `de-DE` culture leg alike; Windows and macOS run
-**663**, the suite less the 64 frame cases that are Linux's baselines, and each lists by name the
-ones it left out. The trimmed publish carries no `IL` warning. `scripts/mutate-gates.sh` carries
+**`main` is `bb74827`, and CI is green on it** — all five jobs, PR #16's runs `37803413441` and
+`37803422481`, 2026-10-08. The suite is **741**, passing in `en-US` and in the `de-DE` culture leg
+alike; Windows and macOS run **677**, the suite less the 64 frame cases that are Linux's baselines,
+and each lists by name the ones it left out. The trimmed publish carries no `IL` warning.
+`scripts/mutate-gates.sh` carries
 **112** mutations and derives **81** guards from the gate files; CI runs its `--guards` half on
 Linux, and the last full run — PR #14's, owed because that change made a gate file's member internal
 — had all 112 behave as declared, 108 killed by the test each names, 2 by the build and 2 green by
 design, with all 81 guards tripped first by one of them and no `inert-at-pin` marker standing.
 
-**Every change of DiffView's own is merged.** The three most recent are each their own rather than a
-plan's phase, and each has its record below:
+**Every change of DiffView's own is merged.** The four most recent, newest first, each with its
+record below:
 
 | Change | What it did | Record below |
 |---|---|---|
+| **PR #16** | Plan 00023 phases 4–5: `scripts/drive-demo` drives the demo on Windows as well as under X11, finding a part by its `AutomationId` rather than a coordinate, and refusing a click or a chord that would land anywhere but the window it aimed at. Open item 5 closes | *Plan 00023 phases*, *Plan 00023 phase 4 verification* |
 | **PR #13** | `TemplatePartTests` hands `BNXQ1003` AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a theme this library ships is checked — `TextArea`'s lookup of `PART_CP` was checked by nothing, and behind a null check a theme without it shows no text and raises nothing | *BNXQ1003 reads AvaloniaEdit's lookups too* |
 | **PR #14** | `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds `docs/hosting-diffview.md`'s `AutomationId` table to `fixtures/automation-ids.txt` both ways, and its menu row to the rule the row states; open item 15 closes | *The hosting guide's id table, held to the fixture* |
 | **PR #15** | Plan 00031: a fold follows its lines and keeps the name it was collapsed under, so an edit under the editor's folds no longer breaks the layout before its re-diff lands; open item 12 closes | *Plan 00031 phases* |
@@ -26,9 +28,9 @@ plan's phase, and each has its record below:
 another session's pull request, which is half of why the Linux jobs were left unpinned.
 
 **Plans 00001, 00003–00022, 00024–00026, 00028, 00029 and 00031 are complete and closed**, and plan
-00002 was rejected on its own review before any code was written. Of what is left: **plan 00023
-phases 1–3 are done and phases 4–5 — the Windows back end — are next** (open item 5), plan 00027 is
-unstarted (item 6), and plan 00030 is parked on XamlQuality (item 14). *History — plan by plan*
+00002 was rejected on its own review before any code was written. Of what is left: **plan 00027 is
+unstarted** (item 6) and **plan 00030 is parked on XamlQuality** (item 14), waiting on a public
+per-control reading of `BNXQ1003`. *History — plan by plan*
 below is each plan's account as it closed, and the per-plan tables under it are the verifications.
 
 **The three CI defects are history**, and the section of that name below is their record. The first
@@ -39,8 +41,10 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-**Next: open item 5's Windows phase**, in a session on a Windows machine, now that items 12 and 15
-have landed for it to cover.
+**Next: the by-hand Windows and macOS runs plan 00001 phase 10 owes** (open item 9). Plan 00023 has
+now built the instrument for them and proved it drives the demo on Windows — but an instrument is
+not a run, and nothing has yet judged how this control *reads* at real size on a platform that is
+not Linux. The driver makes those runs cheap; it does not make them done.
 
 ### What ships
 
@@ -134,14 +138,17 @@ wording.
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
 
-5. **Plan 00023 phases 4–5 — the window harness.** Phases 1–3 are done: `catch-crash`, then the X11
-   driver, `run-demo --detach` and the locale tool in PR #9. Phases 4–5, the Windows back end and the
-   record, follow plan 00026 (decided 2026-09-25), which is complete: the back end finds DiffView's
-   parts by the `AutomationId`s plan 00026 declares, scoped by the process and then by the part that
-   owns them, not by their names, which are translated (`DECISIONS.md`). Phase 4 is written in a session
-   on a Windows machine, not blind from a Linux one (Brian, 2026-10-01): the back end drives UI
-   Automation, which only Windows runs. It runs once items 12 and 15 have landed, so that it covers them
-   (Brian, 2026-10-03).
+5. ~~**Plan 00023 phases 4–5 — the window harness**~~ — **closed by plan 00023, 2026-10-08, PR #16.**
+   All five phases are done: `catch-crash`, the X11 driver, `run-demo --detach` and the locale tool,
+   then the Windows back end and this record. The back end finds DiffView's parts by the
+   `AutomationId`s plan 00026 declares, scoped by the process and then by the part that owns them, not
+   by their names, which are translated; it was written in a session on a Windows machine rather than
+   blind from a Linux one (Brian, 2026-10-01), and every verb was run against the running demo there.
+   ⚠ **This builds the instrument and does not discharge the debt it exists for**: the by-hand Windows
+   and macOS runs plan 00001 phase 10 owes are item 9, and they are still owed — what phase 4 proved is
+   that the driver works, not that the control looks right at real size on three platforms. The macOS
+   back end stays specified and unwritten, because its permission grants are interactive
+   (`DECISIONS.md`).
 
 6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
@@ -784,8 +791,8 @@ which this repository pins from plan 00028 on).
 | 1 `catch-crash` | S | done | `scripts/catch-crash.cs` plus `.sh` and `.ps1` wrappers, following the `gen-locale-review` convention. Re-runs the suite until it catches an abort and keeps that log; `--check <log>` judges a captured one and runs nothing, which is what makes it testable through its real command line. Two fixtures under `fixtures/test-runs/`. 3 tests, 2 of 2 mutations killed |
 | 2 The driver, X11 only | M | done | `scripts/drive-demo.cs` plus `.sh` and `.ps1` wrappers: `launch`, `window`, `key`, `click`, `mark`, `popup`, `geometry`, `capture` and `hover`, chained with `then`, over an X11 back end that discovers its display, its cookie and the checkout. `--parse`, `--parse-children` and `--parse-info` run nothing, which is what makes it testable through its real command line; three fixtures under `fixtures/x11/`, captured under `de_DE.UTF-8`. It reproduces the three scratch capture scripts pixel for pixel on one running demo, and found on the way that tooltips can be driven here after all (`DECISIONS.md`). 10 tests, 12 of 12 mutations killed |
 | 3 `run-demo --detach` and the locale tool | S | done | `--detach` on `scripts/run-demo.sh` and `-Detach` on `run-demo.ps1` hand off to the driver's `launch`, so there is one launcher (`DECISIONS.md`); tried from outside the checkout, in `ja-JP`, and through `pwsh` with `--viewer`. `scripts/measure-menu-width.cs` plus `.sh` and `.ps1` wrappers, beside `gen-locale-review`, taking its widths from `Wcwidth` (Brian, 2026-09-29): its report is the Python's line for line but for one space the Python's own header disagreed with, and `--columns <text>` gives one text's width. 5 tests, 3 of 3 mutations killed |
-| 4 The Windows back end | M | not started | Cannot be verified here |
-| 5 The record | S | not started | |
+| 4 The Windows back end | M | done | Written and measured in a session on a Windows machine (Brian, 2026-10-01), because UI Automation only runs on one — the plan's risk row assumed it would be written on Linux against a vocabulary, and it was not. `System.Windows.Automation` through `scripts/drive-demo-uia.ps1`, `SendInput`, `PrintWindow`; parts addressed by `AutomationId` as a path whose each step is unique within the step before it, and the flag is `--id` rather than the plan's `--name` (`DECISIONS.md`). A PNG is written by hand so the driver takes no dependency, proven against GDI+. **Every verb was run against the running demo**, which is also the first reading of DiffView at the UI Automation layer that plan 00026's acceptance test owed. Two guards the plan did not ask for, each from a measured false success: a click that would land on another window is refused, and a chord is refused unless the demo holds the keyboard. 14 tests, the chord cases proven able to fail; suite 677 on Windows = 727 less the 64 Linux baselines plus these 14 |
+| 5 The record | S | done | This table, the verification below, `AGENTS.md` §9 rewritten around the verbs with the platform split made explicit, four `DECISIONS.md` entries — the `--id` spelling, the refuse-rather-than-raise rule, the PowerShell reader, and why macOS stays unwritten — `CHANGELOG.md`, and open item 5 closed. `docs/ui-automation-notes.md` stages what was measured on both platforms for XamlQuality's two documents, sent to that session 2026-10-08 (`AGENTS.md` §8); it becomes a pointer once they land there |
 
 ## Plan 00023 phase 1 verification
 
@@ -827,6 +834,31 @@ which this repository pins from plan 00028 on).
 | The suite | 697 = 692 + 5 in `en-US` and `de-DE`, healthy under `catch-crash --expect auto`, no existing test edited; the build clean under `-warnaserror` |
 | Scratch cleared | `launch-demo.sh` and `measure-menu-width.py` deleted |
 | CI, for phases 2–3 together | All five jobs green on PR #9's run `36572803768`. Windows and macOS run 633 — the suite less the 64 frame cases that are Linux's baselines — so the fifteen new tests pass there on their first run, each script compiled by `dotnet run` and `Wcwidth` restored on the runner |
+
+## Plan 00023 phase 4 verification
+
+Measured 2026-10-08 on Windows 11 Pro 26200, .NET 10.0.401, Avalonia 12.0.0, PowerShell 7.6.6, at 96
+DPI — against the demo, running.
+
+| Done-when item | Result |
+|---|---|
+| The back end is written where it can be proven | In a session on the Windows machine, per Brian's call of 2026-10-01. The plan's risk row — *the Windows back end is written on Linux against a vocabulary* — does not describe what happened, which is why the row about what it cannot verify no longer applies |
+| Parts are addressed by `AutomationId`, scoped | A path whose each step is unique within the step before it: `SideBySide` found in the demo's window, `LeftPane` in the view, `LineNumbers` in the pane. The reader scopes to the process's windows as `TreeScope.Children`, then descends inside one — never `RootElement` with `TreeScope.Descendants`, which walks every application on the desktop |
+| **The first reading of DiffView at the UI Automation layer** | Which plan 00026's acceptance test owed and no run had ever made. Every peer is a control element of the type `AGENTS.md` §1 declares — the view `Group`, the panes `Edit`, the headers `Header`, the gutter and both margins `Custom`, the map `ScrollBar`, the strip `StatusBar` — each found by the id `fixtures/automation-ids.txt` pins, with true bounds |
+| A part switched off is absent, and says so | With the unified view, the viewer, the find bar and the banner's action off, a search for each found nothing while every visible part resolved — the hosting guide's *a part that is not on screen is not in the tree*, observed from the consumer side. The driver's error says a part switched off looks exactly like a missing one |
+| Every verb runs | `launch`, `window`, `geometry`, `capture` (the demo and a popup), `click` by coordinate and by id, `mark`, `popup`, `key`, `hover`. A right-click opened the pane's context menu as a top-level window of its own, found by the mark/popup diff exactly as under X11 |
+| `key` works | `ctrl+f` opened the find bar, proven by `SideBySide/FindBar/FindQuery` going from absent to present in the automation tree. ⛔ **It needs a `click` before it on a window nobody has touched**: holding the foreground is not the same as having something focused inside, and a chord sent into that gap does nothing at all — measured twice, and it reads as "synthetic input does not work here", which is the expensive wrong conclusion |
+| `hover` works, which the plan hoped rather than knew | The plan committed `hover` on the argument that `SendInput`'s real pointer input *plausibly* produces the dwell a tooltip waits on where `xdotool`'s motion did not. It does: hovering a pane's line-number margin raised a 161×35 tooltip window reading *Line 15 · right line 18*, captured through `capture popup` and read back |
+| A click that would land elsewhere is refused | Measured the expensive way first: with the demo behind another application's window, every click went into that application and the driver reported success. `WindowFromPoint` plus `GetAncestor(GA_ROOT)` now refuses and names what is in the way — and it caught the Edge window that arrived over the demo mid-pass |
+| A chord is never typed into someone else's window | `key` refuses unless the demo actually took the foreground, checked through `GetForegroundWindow` rather than trusted from `SetForegroundWindow`, which Windows refuses for a process that does not already hold the foreground |
+| The driver does not raise the demo | By decision (`DECISIONS.md`), because raising it over the person's work takes their clicks, and raising before clicking a menu entry light-dismisses that menu so the click lands underneath |
+| Capture is honest | `PrintWindow` **without** `PW_RENDERFULLCONTENT` returns an entirely black frame for an Avalonia window and reports success — mean grey 0, brightest pixel 0; with the flag, mean 46.8 and brightest 250 on the same window. The same false green as the X11 black frame by an unrelated route, so `capture` passes the flag and checks the pixels regardless. `PW_CLIENTONLY` beside it makes a capture the client area, 1100×720 for a window whose frame is 1116×759, so a coordinate means the same thing as it does under X11 |
+| No dependency is added to get a PNG | Hand-written: `ZLibStream`, a CRC-32, one unfiltered scanline per row, colour type 2. Verified by decoding with GDI+ — 24-bit PNG, right dimensions, right way up, right channel order — and by looking at the frames |
+| Coordinates survive a scaled display | The process declares itself per-monitor DPI aware (`Native.PerMonitorAwareV2`) before reading a rectangle; unaware, Windows answers `GetWindowRect` in virtualised coordinates past 100%. ⚠ **Not provable here** — this machine reports 96 DPI, so the guard is reasoned from the documented behaviour and the first scaled display is what will test it |
+| New tests proven able to fail | 14 tests, driven through the real command line as the rest of `DriveDemoTests` is: the chord parser, the element reader over two fixtures under `fixtures/windows/`, and the `--id` form through the canonical round trip. Proven by dropping the extended-key flag — which is what tells the arrows from the numeric keypad — and watching `ctrl+Down` go red first |
+| The suite | **677** on Windows = Linux's 727, less the 64 frame cases that are Linux's baselines, plus these 14. `dotnet build -warnaserror` clean. No gate file changed, so no `scripts/mutate-gates` run is owed |
+| CI | All five jobs green on PR #16, runs `37803413441` and `37803422481` on `db910c5`. ⚠ The first push's macOS job failed on `EditUnderFoldTests.A_revert_after_a_same_line_edit_leaves_each_fold_over_the_lines_it_covered` — plan 00031's, not this phase's — and the **same commit passed on another run**, so it is intermittent. Its own item is below |
+| The CI-green record on the branch before the merge | **Not done, deliberately**, where PRs #8, #9, #11 and #13–#15 did it: that record lives in this file, and a background session was rewriting this file's resume at the time. The run numbers are in the row above, and this phase carries them instead |
 ## Plan 00022 phases
 
 | Phase | Size | Status | Notes |
