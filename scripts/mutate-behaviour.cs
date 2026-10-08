@@ -94,7 +94,7 @@ if (chosen.Count == 0)
     return 2;
 }
 
-string dirty = Git.Status(repo);
+string dirty = Git.Reverting(repo);
 if (dirty.Length > 0 && !force)
 {
     Console.Error.WriteLine("mutate-behaviour: refusing to start on a dirty tree. It reverts with");
@@ -268,9 +268,22 @@ internal static partial class Judge
 
 internal static class Git
 {
+    /// <summary>What a mutation may touch, and therefore what a revert of one can destroy.</summary>
+    private static readonly string[] Scope = ["src", "tests"];
+
     /// <summary>
+    /// What the refusal reads: the scope a revert can reach, and nothing else. A draft parked
+    /// untracked under `plans/` is no reason to refuse, because no revert here will touch it — but
+    /// it would make a whole-repository check refuse for ever in a checkout that holds one.
     /// ⛔ `--untracked-files=all`, not the default: `status.showUntrackedFiles=no` in a user's config
     /// would otherwise hide exactly the file a `git checkout` is about to delete.
+    /// </summary>
+    public static string Reverting(string repo) =>
+        Shell.Run(repo, "git", ["status", "--porcelain", "--untracked-files=all", "--", .. Scope]).Output.Trim();
+
+    /// <summary>
+    /// The whole repository, which is what the stray-write comparison needs: an edit that landed
+    /// outside <see cref="Scope"/> is precisely the one a scoped reading cannot see.
     /// </summary>
     public static string Status(string repo) =>
         Shell.Run(repo, "git", ["status", "--porcelain", "--untracked-files=all"]).Output.Trim();
