@@ -1,0 +1,13 @@
+Restore complete (0.4s)
+  DiffView.Avalonia.Tests succeeded (1.3s) -> tests/DiffView.Avalonia.Tests/bin/Debug/net10.0/DiffView.Avalonia.Tests.dll
+Running tests from tests/DiffView.Avalonia.Tests/bin/Debug/net10.0/DiffView.Avalonia.Tests.dll (net10.0|x64)
+The active test run was aborted. Reason: Test host process crashed.
+
+Test run summary: Failed!
+  tests/DiffView.Avalonia.Tests/bin/Debug/net10.0/DiffView.Avalonia.Tests.dll (net10.0|x64) failed with 1 error(s) (2s 004ms)
+
+  total: 4
+  failed: 0
+  succeeded: 4
+  skipped: 0
+  duration: 2s 210ms
