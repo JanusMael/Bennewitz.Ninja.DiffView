@@ -2975,7 +2975,7 @@ does not compile, and the two mutations that edit the moved code report `no-op`.
   first run agrees on Linux and macOS and not on `windows-latest`, whose drift test still fails on
   exactly the rows cloned on the runner. The digest hashes raw bytes and a Windows runner checks text
   out CRLF — proven by reproducing both digests of a one-file row from its LF and CRLF bytes, as
-  `PROGRESS.md`'s *Resume* records — and it went to XamlQuality the same day.
+  `PROGRESS.md`'s *The three CI defects* records — and it went to XamlQuality the same day.
 - The harness prints a build error's whole line — a 140-character cut kept the path and lost the
   cause — and `AGENTS.md` states its rebuild-on-exit once rather than twice.
 - **Merged by rebase**, because `main`'s ruleset allows only squash and rebase and a squash would

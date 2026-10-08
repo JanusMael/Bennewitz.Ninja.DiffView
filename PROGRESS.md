@@ -2,104 +2,45 @@
 
 ## Resume
 
-**This repository has a remote, and CI has run.** `main` is at
-`https://github.com/JanusMael/Bennewitz.Ninja.DiffView`, public, and the first execution of a
-workflow written dormant in plan 00018 found **three defects that had been green here for
-twenty-three plans**. Everything below the fold is still true; what changed is that "green" now
-means something it did not mean before, because it is no longer a statement about one machine.
+**`main` is `bead9f3`, and CI is green on it** — all five jobs, run `37206393185`, 2026-10-04. The
+suite is **727**, passing in `en-US` and in the `de-DE` culture leg alike; Windows and macOS run
+**663**, the suite less the 64 frame cases that are Linux's baselines, and each lists by name the
+ones it left out. The trimmed publish carries no `IL` warning. `scripts/mutate-gates.sh` carries
+**112** mutations and derives **81** guards from the gate files; CI runs its `--guards` half on
+Linux, and the last full run — PR #14's, owed because that change made a gate file's member internal
+— had all 112 behave as declared, 108 killed by the test each names, 2 by the build and 2 green by
+design, with all 81 guards tripped first by one of them and no `inert-at-pin` marker standing.
 
-**`main` carries plans 00025 and 00024 and two build changes from `Bennewitz.Ninja.Templates`' plan
-00004**: PR #3 takes AutoVersioning to `2026.3.916` and drops `IsContinuousIntegration`, which
-nothing read, and PR #5 turns the trim analyzer on and marks both libraries trimmable — a mark
-`PackagingTests.Every_packable_assembly_is_marked_trimmable` reads back off the compiled assemblies.
-Plan 00021 sits on all four.
-`dotnet build DiffView.slnx -warnaserror` is clean over the lot, the trim analyzer included, and the
-suite with plan 00021 is **658** — plan 00025's 621, which is smaller than the 679 before it because
-that plan removed `tests/ThemeAudit.Tests` along with the tool, plus plan 00021's 36 and #5's one.
+**Every change of DiffView's own is merged.** The three most recent are each their own rather than a
+plan's phase, and each has its record below:
 
-| Defect | Where | State |
+| Change | What it did | Record below |
 |---|---|---|
-| **A** — `docs/theme-audit.md` stale on CI | was all four test jobs | ✅ **Retired 2026-09-24**: `XamlQuality 2026.3.924`'s rooting fix on Linux and macOS, and on Windows reference clones checked out LF |
-| **B** — `PackagingTests` packed a configuration the suite never built | all four test jobs | **Fixed**, plan 00024 phase 1 |
-| **C** — 66 rendering tests failed | Windows and macOS only | ✅ **Retired 2026-09-24** by plan 00024 phase 3: the 64 frame cases are Linux's baselines, filtered elsewhere and counted, and the two pixel measurements read coverage |
+| **PR #13** | `TemplatePartTests` hands `BNXQ1003` AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a theme this library ships is checked — `TextArea`'s lookup of `PART_CP` was checked by nothing, and behind a null check a theme without it shows no text and raises nothing | *BNXQ1003 reads AvaloniaEdit's lookups too* |
+| **PR #14** | `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds `docs/hosting-diffview.md`'s `AutomationId` table to `fixtures/automation-ids.txt` both ways, and its menu row to the rule the row states; open item 15 closes | *The hosting guide's id table, held to the fixture* |
+| **PR #15** | Plan 00031: a fold follows its lines and keeps the name it was collapsed under, so an edit under the editor's folds no longer breaks the layout before its re-diff lands; open item 12 closes | *Plan 00031 phases* |
 
-✅ **All five CI jobs pass** (run `36089558680`, plan 00024 phase 3) — the first time that has
-been true anywhere. Windows and macOS run 557 tests, the suite less the 64 frame cases that are
-Linux's baselines, and list the 64 they left out. Defect C had counted 66 cases there: those 64 and
-the two pixel measurements that read one rasterizer's rounding.
+**One pull request is open, and it is not this repository's to merge**: #2,
+`conventions/repository-settings`, carrying `scripts/repo-conventions.cs` and
+`.github/repository.json` from `Bennewitz.Ninja.Templates`' own plan 00003. `DECISIONS.md` has it as
+another session's pull request, which is half of why the Linux jobs were left unpinned.
 
-⚠ **The red `Culture Leg (de-DE)` was never a localization defect.** It failed **1 of 613** — the same
-defect-A test as `ubuntu-latest` — and passes on PR #1, 621 of 621. The leg's name invites the wrong
-conclusion; nothing in it was about German.
+**Plans 00001, 00003–00022, 00024–00026, 00028, 00029 and 00031 are complete and closed**, and plan
+00002 was rejected on its own review before any code was written. Of what is left: **plan 00023
+phases 1–3 are done and phases 4–5 — the Windows back end — are next** (open item 5), plan 00027 is
+unstarted (item 6), and plan 00030 is parked on XamlQuality (item 14). *History — plan by plan*
+below is each plan's account as it closed, and the per-plan tables under it are the verifications.
 
-**Defect A is the one worth reading about**, because the shape of it is the lesson. The theme
-audit's content digest hashed each file's path *relative to the configuration's own directory*
-alongside its bytes. ClaudeForge resolves to a **sibling checkout** on a developer machine
-(`../cl/ClaudeForge/src`) and to a **fetched copy** on CI (`reference/ClaudeForge/src`) — a
-both-spellings form the audit's `paths` explicitly supports. Same 43 files, same pinned commit,
-clean worktree, every count in the row identical; only the digest moved. It could never have passed
-in both places. The method's own summary is the indictment: the report changes *"whenever a pin bump
-changes what was audited, and only then."*
+**The three CI defects are history**, and the section of that name below is their record. The first
+execution of the workflow plan 00018 wrote dormant found three defects that had been green on this
+machine for twenty-three plans, two of them invisible from a developer checkout by construction;
+A and C are retired, and **B is the one that leaves a standing rule** — a packaging check must pack
+the configuration the suite built, so `PackagingTests` reads it from `AssemblyConfigurationAttribute`
+rather than naming one. What survives as practice rather than as news is in *Running it*: a local
+green is evidence about one machine, and CI judges the claim.
 
-It took **three days and three measured, dead hypotheses** to find, and then one artifact upload to
-see. That upload is the other half of phase 1: CI wrote `theme-audit.received.md` and threw the
-runner away, so the failure named a file nobody outside the runner could read. With it kept, the
-diff was **one line**.
-
-**The fix is upstream and merged**, in `Bennewitz.Ninja.XamlQuality` — the audit moved there on
-2026-09-20 and DiffView now consumes it. Both digest call sites root at the deepest directory the
-scanned files share, which is a property of the audited set rather than of the machine. Predicted
-result for this repository, computed from the same 43 files: **`b7ea0ec438c5` in both layouts**,
-where it was `0ef898b7243a` here and `f95218bc267e` on CI.
-
-✅ **Confirmed 2026-09-24, against `XamlQuality 2026.3.924`: the regenerated row reads exactly
-`b7ea0ec438c5`, and nothing but digests moved.** Six changed — the three theme rows, DiffView and its
-colour-blind twin sharing one value as they should, both AvaloniaEdit themes, Fluent controls, and
-ClaudeForge. That the *prediction* held is what makes the diagnosis complete rather than merely a
-report that moved: a different value would have meant the root cause was only partly understood.
-
-⛔ **And then Windows.** PR #1's first run (`36083597792`) has `windows-latest` still failing the drift
-test, on exactly the rows whose files come from checkouts cloned on the runner; DiffView's own two
-rows, pinned LF by `.gitattributes`, match. The digest hashes raw bytes, and a Windows runner checks
-text out CRLF. Proven by arithmetic on the one-file row: *AvaloniaEdit Fluent theme* hashes to
-`60346377b215` as LF — the committed value — and to `63465b5f74f7` as CRLF, exactly Windows'. The
-rooting fix was right and incomplete: a digest that describes *what* was audited must not see line
-endings either. Reported to XamlQuality on 2026-09-24 with that evidence. **Fixed twice over**:
-DiffView's reference clones now check out LF on every platform, so Windows audits the pinned
-commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, in `2026.3.925`,
-which this repository pins from plan 00028 on).
-
-Plans 00001, 00003–00020 and 00022 are complete and closed; plan 00002 was rejected on its own
-review before any code was written. **Plan 00021 is complete** (PR #6) — `DiffBuildController` and
-`IDiffSurface`, then `DiffViewer`, then one compiled theme per control and the viewer in the demo,
-then the hosting guide's account of the three controls — rebased onto `main` a second time once #3
-and #5 had landed, and green there: 658 in `en-US` and `de-DE`, and the trimmed publish without an
-`IL` warning. The viewer **does not gate the release**, and it has no find, which the hosting guide
-names outright. **Plan 00023 phases 1–3 are done** — phases 2–3 in PR #9. **Plan 00026 is complete and
-merged** (PR #10, all five CI jobs green on run `36746697113`): every control the
-library defines has an automation peer — the seven it themes, which `BNXQ1006` holds to it, and the four
-it only draws — and every part an explicit `AutomationId` a harness can find it by in any culture, under
-`BNXQ1007` and `BNXQ1008`; *Plan 00026 phases* below has the record. **The two fold fixes found by hand
-on 2026-09-28 are merged** (PR #11, all five CI jobs green on run `36870507585`): the current block's border
-under a fold, and the unified view's folds across a rebuild, open item 11. **BNXQ1003 reads AvaloniaEdit's lookups too**: `TemplatePartTests` hands the rule
-AvaloniaEdit's assembly, so a part AvaloniaEdit's own code looks up on a template this library ships is
-checked (PR #13, all five CI jobs green on run `37133346769`); *BNXQ1003 reads AvaloniaEdit's lookups
-too* below has the record. **The hosting guide's id table is held to the fixture**: a test fails when
-`docs/hosting-diffview.md` names an id the code does not have or leaves out one it does (PR #14, all five
-CI jobs green on run `37135065955`); *The hosting guide's id table, held to the fixture* below has the
-record. **An edit under the editor's folds no longer breaks the layout**: plan 00031's folds follow their
-lines and keep the name they were collapsed under (PR #15, all five CI jobs green on run `37205911792`);
-*Plan 00031 phases* below has the record. **Plan 00025 is complete and
-merged** (PR #1,
-2026-09-24). **Plan 00024 is complete**: every CI job passes, on all three platforms. **Plan 00029
-is complete**: the demo logs what its user did, and the library the two facts nothing public
-reports. It was re-parented onto `main` once PR #6 had merged, with no change to its tree; *Plan
-00029 phases* below has the record. **Plan 00028 is complete** (PR #8, all five CI jobs green): both
-quality packages at `2026.3.928`, and every rule re-read there — `BNAQ1004` adopted over internal
-types in place of a hand-rolled test, `BNAQ1002`'s stock half given a control, `BNXQ1003` checking the
-controller's lookups itself, `BNXQ1004` on a floor the new pin did not take away, `BNXQ1005` declined
-— with one full harness run proving every guard at the new pins. *Plan 00028 phases* below has the
-record.
+**Next: open item 5's Windows phase**, in a session on a Windows machine, now that items 12 and 15
+have landed for it to cover.
 
 ### What ships
 
@@ -291,9 +232,10 @@ session on a Windows machine, which covers items 12 and 15 now that both have la
 
 ### Running it
 
-**CI is the other judge now, and it disagrees with this machine.** Three defects were green here
-for twenty-three plans; two of the three are invisible from a developer checkout by construction.
-A local green is evidence about one machine — `catch-crash` judges a run, and CI judges the claim.
+**CI is the other judge, and it has disagreed with this machine before.** Three defects were green
+here for twenty-three plans; two of the three are invisible from a developer checkout by
+construction. A local green is evidence about one machine — `catch-crash` judges a run, and CI
+judges the claim.
 
 **`scripts/run-demo.sh` (and `run-demo.ps1`) is the by-hand path.** `--edit left|right|both` starts
 a side editable so a run no longer opens with a menu drive, `--unified` opens the inline view and
@@ -745,6 +687,66 @@ is now inserted first; having no length, it displaces nothing there. `AGENTS.md`
 | Windows and macOS | Red, as the plan expected, on defect C's 66 — and Windows on one more: defect A's CRLF remainder, which this plan's first CI run found |
 | The transcription is faithful | The pushed tip differs from the scratch branch the phases were proven on only in `main`'s own records, this file's phase marker, one folded `AGENTS.md` statement, and the harness printing a build error's whole line |
 | Merged | Rebase-merged by admin on 2026-09-24 — `main`'s ruleset allows only squash and rebase, and two required checks are red — so each phase is its own commit on `main`; the merged tree is the pull request's plus `main`'s own §9 commit, and nothing else |
+
+## The three CI defects
+
+Written in *Resume* while they were live, and moved here when they stopped being news. This
+repository got a remote and a first CI run during plans 00021–00025, and the first execution of the
+workflow plan 00018 had written dormant found three defects that had been green on this machine for
+twenty-three plans — two of them invisible from a developer checkout by construction. `main` has
+been green on all five jobs since run `36089558680`, which was the first time that was true
+anywhere.
+
+| Defect | Where | State |
+|---|---|---|
+| **A** — `docs/theme-audit.md` stale on CI | was all four test jobs | ✅ **Retired 2026-09-24**: `XamlQuality 2026.3.924`'s rooting fix on Linux and macOS, and on Windows reference clones checked out LF |
+| **B** — `PackagingTests` packed a configuration the suite never built | all four test jobs | **Fixed**, plan 00024 phase 1 — the one of the three that leaves a standing rule, *Resume* above |
+| **C** — 66 rendering tests failed | Windows and macOS only | ✅ **Retired 2026-09-24** by plan 00024 phase 3: the 64 frame cases are Linux's baselines, filtered elsewhere and counted, and the two pixel measurements read coverage |
+
+Plan 00024's *phases* and its two *verification* tables below are where each was fixed and what the
+fix was proven against; defect B's is the one that shows the fix proven in both directions before it
+was committed.
+
+⚠ **The red `Culture Leg (de-DE)` was never a localization defect.** It failed **1 of 613** — the
+same defect-A test as `ubuntu-latest` — and passed on PR #1, 621 of 621. The leg's name invites the
+wrong conclusion; nothing in it was about German.
+
+**Defect A is the one worth reading about**, because the shape of it is the lesson. The theme
+audit's content digest hashed each file's path *relative to the configuration's own directory*
+alongside its bytes. ClaudeForge resolves to a **sibling checkout** on a developer machine
+(`../cl/ClaudeForge/src`) and to a **fetched copy** on CI (`reference/ClaudeForge/src`) — a
+both-spellings form the audit's `paths` explicitly supports. Same 43 files, same pinned commit,
+clean worktree, every count in the row identical; only the digest moved. It could never have passed
+in both places. The method's own summary is the indictment: the report changes *"whenever a pin bump
+changes what was audited, and only then."*
+
+It took **three days and three measured, dead hypotheses** to find, and then one artifact upload to
+see. That upload is the other half of plan 00024 phase 1: CI wrote `theme-audit.received.md` and
+threw the runner away, so the failure named a file nobody outside the runner could read. With it
+kept, the diff was **one line**.
+
+**The fix is upstream and merged**, in `Bennewitz.Ninja.XamlQuality` — the audit moved there on
+2026-09-20 and DiffView consumes it. Both digest call sites root at the deepest directory the
+scanned files share, which is a property of the audited set rather than of the machine. The value
+predicted for this repository, computed from the same 43 files, was **`b7ea0ec438c5` in both
+layouts**, where it was `0ef898b7243a` here and `f95218bc267e` on CI.
+
+✅ **Confirmed 2026-09-24, against `XamlQuality 2026.3.924`: the regenerated row read exactly
+`b7ea0ec438c5`, and nothing but digests moved.** Six changed — the three theme rows, DiffView and
+its colour-blind twin sharing one value as they should, both AvaloniaEdit themes, Fluent controls,
+and ClaudeForge. That the *prediction* held is what makes the diagnosis complete rather than merely
+a report that moved: a different value would have meant the root cause was only partly understood.
+
+⛔ **And then Windows.** PR #1's first run (`36083597792`) had `windows-latest` still failing the
+drift test, on exactly the rows whose files come from checkouts cloned on the runner; DiffView's own
+two rows, pinned LF by `.gitattributes`, matched. The digest hashes raw bytes, and a Windows runner
+checks text out CRLF. Proven by arithmetic on the one-file row: *AvaloniaEdit Fluent theme* hashes
+to `60346377b215` as LF — the committed value — and to `63465b5f74f7` as CRLF, exactly Windows'. The
+rooting fix was right and incomplete: a digest that describes *what* was audited must not see line
+endings either. Reported to XamlQuality on 2026-09-24 with that evidence. **Fixed twice over**:
+DiffView's reference clones now check out LF on every platform, so Windows audits the pinned
+commits' own bytes, and XamlQuality's digest reads a CRLF pair as LF (its #22, in `2026.3.925`,
+which this repository pins from plan 00028 on).
 
 ## Plan 00024 phases
 
