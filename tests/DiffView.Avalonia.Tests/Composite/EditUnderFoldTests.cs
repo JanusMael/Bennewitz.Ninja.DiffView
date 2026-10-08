@@ -39,15 +39,64 @@ public sealed class EditUnderFoldTests
         await EditAsync(host => Assert.True(host.View.CopyBlock(0, DiffSide.Right)));
     }
 
+    /// <summary>
+    /// A revert is the one edit here that does not wait for the debounce: it replaces the whole text
+    /// and re-diffs at once. AvaloniaEdit keeps the sections across that replacement, but every line
+    /// they covered has gone, so nothing is collapsed until the build lands — the folds come back from
+    /// the re-diff rather than by following their lines, which is what the other two edits prove. So
+    /// the three stages are asserted apart, and the last wait is on the build the revert started.
+    /// </summary>
+    /// <remarks>
+    /// Waiting on a pump instead is what made this test fail on macOS alone and intermittently: the
+    /// worker runs the diff on the thread pool and posts its outcome to the dispatcher, so a single
+    /// <see cref="CompositeHost.Layout"/> lands the re-diff only when the pool happened to finish
+    /// first. The run that caught it read the first fold's nineteen lines at their full height.
+    /// </remarks>
     [AvaloniaFact]
     public async Task A_revert_after_a_same_line_edit_leaves_each_fold_over_the_lines_it_covered()
     {
-        // The same-line edit moves no line; the revert then puts the source's text back.
-        await EditAsync(host =>
+        await WithCollectorAsync(async thrown =>
         {
+            using CompositeHost host = await FoldedAsync();
+            List<Fold> before = RightFolds(host);
+            Assert.True(before.Count > 1, "the pair should fold more than one run on the right");
+
+            // The same-line edit moves no line, and it re-diffs on the debounce that the
+            // hand-advanced clock never fires, so every fold stands through it on the sections alone.
             host.View.RightDocument.Insert(0, "x");
+            Assert.Null(host.View.CurrentBuild);
             CompositeHost.Layout();
-            host.View.Revert(DiffSide.Right);
+            host.Capture().Dispose();
+            AssertWhole(host, thrown, "after the edit");
+            AssertEachFolded(host, before);
+
+            // The revert's own build is held on a gate, which is the only way to be sure of reading
+            // what the replacement left behind: the dispatcher cannot run between two statements
+            // here, but this thread can be descheduled while the worker finishes, and that is the
+            // race the test used to depend on.
+            using ManualResetEventSlim gate = new(initialState: false);
+            host.View.Builder = (left, right, options, token) =>
+            {
+                gate.Wait(token);
+                return CompositeHost.ZeroTimeBuilder(left, right, options, token);
+            };
+
+            try
+            {
+                host.View.Revert(DiffSide.Right);
+                Assert.NotNull(host.View.CurrentBuild);
+                AssertNoneFolded(host, before);
+            }
+            finally
+            {
+                gate.Set();
+            }
+
+            await host.WaitForBuildAsync();
+            host.Capture().Dispose();
+            AssertWhole(host, thrown, "across the revert's re-diff");
+            AssertEachFolded(host, before);
+            TestLogSink.AssertNoWarnings();
         });
     }
 
@@ -222,7 +271,8 @@ public sealed class EditUnderFoldTests
 
     /// <summary>
     /// Folds the pair with its right side editable, applies <paramref name="change"/>, and requires the
-    /// layout whole and every fold collapsed over the text it covered before the change.
+    /// layout whole and every fold collapsed over the text it covered before the change. For a change
+    /// that leaves the re-diff to the debounce; one that re-diffs at once is written out in full.
     /// </summary>
     private static async Task EditAsync(Action<CompositeHost> change)
     {
@@ -233,15 +283,17 @@ public sealed class EditUnderFoldTests
             Assert.True(before.Count > 1, "the pair should fold more than one run on the right");
 
             change(host);
+
+            // Neither change that reaches here re-diffs: both go through the debounce, which the
+            // hand-advanced clock never fires. So the folds below stand on the sections following
+            // their lines, and not on a build having landed and refolded them. A change that
+            // re-diffs at once has to wait for that build — the revert's own test does, and says why.
+            Assert.Null(host.View.CurrentBuild);
             CompositeHost.Layout();
             host.Capture().Dispose();
 
             AssertWhole(host, thrown, "after the edit");
-            TextDocument document = host.View.RightDocument;
-            foreach (Fold fold in before)
-            {
-                AssertFolded(host.Right, LineOf(document, fold.FirstText), LineOf(document, fold.LastText));
-            }
+            AssertEachFolded(host, before);
 
             TestLogSink.AssertNoWarnings();
         });
@@ -293,6 +345,41 @@ public sealed class EditUnderFoldTests
         TextView view = pane.TextArea.TextView;
         Assert.Equal(view.GetVisualTopByDocumentLine(first), view.GetVisualTopByDocumentLine(last + 1), Tolerance);
         Assert.NotNull(PlaceholderOn(pane, first - 1));
+    }
+
+    /// <summary>
+    /// The counterpart of <see cref="AssertFolded"/>: the run takes at least a line's height per line
+    /// it holds, so nothing at all is collapsed over it. A floor rather than an equality because
+    /// padding only adds — a line at a run's edge can carry rows for the other side.
+    /// </summary>
+    private static void AssertNotFolded(DiffPanePresenter pane, int first, int last)
+    {
+        TextView view = pane.TextArea.TextView;
+        double height = view.GetVisualTopByDocumentLine(last + 1) - view.GetVisualTopByDocumentLine(first);
+        double owed = (last - first + 1) * view.DefaultLineHeight;
+        Assert.True(
+            height >= owed - Tolerance,
+            $"lines {first}-{last} take {height:0.##} of the {owed:0.##} they owe, so something is collapsed over them");
+    }
+
+    /// <summary>Every fold of <paramref name="before"/> collapsed over the text it covered.</summary>
+    private static void AssertEachFolded(CompositeHost host, List<Fold> before)
+    {
+        TextDocument document = host.View.RightDocument;
+        foreach (Fold fold in before)
+        {
+            AssertFolded(host.Right, LineOf(document, fold.FirstText), LineOf(document, fold.LastText));
+        }
+    }
+
+    /// <summary>Not one of them collapsed: the lines each covered take their own height back.</summary>
+    private static void AssertNoneFolded(CompositeHost host, List<Fold> before)
+    {
+        TextDocument document = host.View.RightDocument;
+        foreach (Fold fold in before)
+        {
+            AssertNotFolded(host.Right, LineOf(document, fold.FirstText), LineOf(document, fold.LastText));
+        }
     }
 
     private static FoldPlaceholderElement? PlaceholderOn(DiffPanePresenter pane, int headerLine)
