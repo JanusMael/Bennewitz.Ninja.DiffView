@@ -17,6 +17,16 @@ All notable changes to DiffView are recorded here. The format follows
   `LeftPane`, `Gutter`, `FindQuery` and the rest, listed in the hosting guide. `DiffMenuItem.AutomationId`
   is new: an entry takes its verb's name unless one is set, and an entry a host adds sets its own.
 
+- Plan 00023 phase 4 — `scripts/drive-demo` drives the demo on **Windows** as well as under X11, with
+  the same verbs, so a by-hand pass written on one platform runs on the other. It finds a part by its
+  `AutomationId` rather than by a coordinate — `click left --id SideBySide/LeftPane/LineNumbers`,
+  each step of the path unique within the step before it — through `scripts/drive-demo-uia.ps1`,
+  because UI Automation's managed client cannot be referenced from a portable app. Input is
+  `SendInput` and capture is `PrintWindow`, so no tool has to be installed. It **refuses** a click
+  that would land on another window and a chord sent while the demo does not hold the keyboard,
+  rather than acting where it was not aimed, and it never raises the demo over whatever the person is
+  doing. The macOS back end stays specified and unwritten: its permission grants are interactive.
+
 - Plan 00023 phase 3 — `--detach` on `scripts/run-demo.sh` (`-Detach` on `run-demo.ps1`), which
   starts the demo in a session of its own through the driver's `launch` and returns once its window
   is up; and `scripts/measure-menu-width.{cs,sh,ps1}`, which reports each shipped locale's widest menu
