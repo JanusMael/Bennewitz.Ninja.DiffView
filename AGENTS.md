@@ -675,8 +675,10 @@ from opposite directions:
 
 ### On Linux, and on this box in particular
 
-- **The session is Wayland with XWayland at `DISPLAY=:0`, and the demo is an XWayland client** —
-  Avalonia's X11 backend — so it has a real X window that can be grabbed. So does Beyond Compare.
+- **The session is Wayland (`XDG_SESSION_TYPE=wayland`) with XWayland at `DISPLAY=:0`, and the demo
+  is an XWayland client** — Avalonia's X11 backend — so it has a real X window that can be grabbed.
+  So does Beyond Compare, at `/usr/bin/bcompare`, which is the reference a by-hand pass compares
+  against. The demo's own window is **1100×720**.
 - ⛔ **Nothing can grab the root, and that is XWayland rather than a refusal.** Every client is
   redirected to a Wayland surface, so the X root holds no client pixels: a root or region grab comes
   back **solid black**. Reading that as "the compositor refuses grabs" is the mistake.
