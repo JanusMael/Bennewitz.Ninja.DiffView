@@ -73,6 +73,55 @@ public sealed class MutateBehaviourTests
     }
 
     [Fact]
+    public void An_edit_that_changed_only_the_file_it_declared_has_strayed_nowhere()
+    {
+        (int exitCode, string output) = Run(
+        [
+            "--strayed",
+            Fixture("status-before.txt"),
+            Fixture("status-after-clean.txt"),
+            "src/DiffView.Avalonia/DiffBuildController.cs",
+        ]);
+
+        // The untracked draft is in both readings, so it is not a stray — only what APPEARED is.
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("nothing strayed", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_edit_that_wrote_outside_the_file_it_declared_is_caught_and_named()
+    {
+        (int exitCode, string output) = Run(
+        [
+            "--strayed",
+            Fixture("status-before.txt"),
+            Fixture("status-after-stray.txt"),
+            "src/DiffView.Avalonia/DiffBuildController.cs",
+        ]);
+
+        // This is the guard the harness exists to add over the one-off it came from. Without it a
+        // write outside the declared file reads as a no-op, survives the revert that cannot reach
+        // it, and contaminates every mutation after it.
+        Assert.Equal(1, exitCode);
+        Assert.Contains("SideBySideDiffView.cs", output, StringComparison.Ordinal);
+        Assert.Contains("scratch-output.txt", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("DiffBuildController.cs", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_narrowed_list_is_narrowed()
+    {
+        // `--list` used to print from inside the argument loop and return, so `--only` had not been
+        // read yet and a narrowed list silently showed everything. A filter that does nothing is
+        // worse than one that errors, because its output looks like an answer.
+        (int exitCode, string output) = Run(["--only", "refold", "--list"]);
+
+        Assert.True(exitCode == 0, output);
+        Assert.Equal(1, output.Split('\n').Count(l => l.Contains("expects:", StringComparison.Ordinal)));
+        Assert.Contains("refold", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Every_mutation_declares_the_file_it_may_touch_and_why_it_expects_what_it_does()
     {
         (int exitCode, string output) = Run(["--list"]);

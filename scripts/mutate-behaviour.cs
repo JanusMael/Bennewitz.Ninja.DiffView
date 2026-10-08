@@ -49,20 +49,19 @@ using System.Text.RegularExpressions;
 string repo = Repo.Root();
 List<string> only = [];
 bool force = false;
+bool list = false;
 
+// ⛔ Every flag is COLLECTED here and acted on below, none of them acting from inside the loop.
+// An earlier version printed the list from inside it and returned, so `--only x --list` silently
+// listed everything: a filter that does nothing is worse than one that errors, because the output
+// looks like an answer. Only `--judge` returns early, and it reads a file and runs nothing.
 for (int i = 0; i < args.Length; i++)
 {
     switch (args[i])
     {
         case "--list":
-            foreach (Mutation m in Mutations.All)
-            {
-                Console.WriteLine($"  {m.Name}");
-                Console.WriteLine($"      {m.File}");
-                Console.WriteLine($"      expects: {m.Expect} — {m.Because}");
-            }
-
-            return 0;
+            list = true;
+            break;
 
         case "--force":
             force = true;
@@ -78,6 +77,15 @@ for (int i = 0; i < args.Length; i++)
             Console.WriteLine(read);
             return read.Verdict == wanted ? 0 : 1;
 
+        // Runs nothing: two captured `git status` readings and the file a mutation declared. It is
+        // how the stray-write guard is proven, because a real stray is not something a test can
+        // arrange — the build would have to write into src or tests on its own.
+        case "--strayed" when i + 3 < args.Length:
+            string strayed = Git.Strayed(
+                File.ReadAllText(args[i + 1]), File.ReadAllText(args[i + 2]), args[i + 3]);
+            Console.WriteLine(strayed.Length == 0 ? "nothing strayed" : strayed);
+            return strayed.Length == 0 ? 0 : 1;
+
         default:
             Console.Error.WriteLine($"mutate-behaviour: unknown argument `{args[i]}`");
             return 2;
@@ -92,6 +100,18 @@ if (chosen.Count == 0)
 {
     Console.Error.WriteLine("mutate-behaviour: --only matched no mutation. Try --list.");
     return 2;
+}
+
+if (list)
+{
+    foreach (Mutation m in chosen)
+    {
+        Console.WriteLine($"  {m.Name}");
+        Console.WriteLine($"      {m.File}");
+        Console.WriteLine($"      expects: {m.Expect} — {m.Because}");
+    }
+
+    return 0;
 }
 
 string dirty = Git.Reverting(repo);
@@ -130,7 +150,7 @@ try
         {
             // Compared before the run, not after it: an edit that lands somewhere unexpected must stop
             // the run before it has spent four minutes producing a verdict about the wrong tree.
-            string stray = Git.Strayed(repo, statusBefore, mutation.File);
+            string stray = Git.StrayedSince(repo, statusBefore, mutation.File);
             if (stray.Length > 0)
             {
                 Console.Error.WriteLine($"mutate-behaviour: `{mutation.Name}` wrote outside {mutation.File}:");
@@ -294,21 +314,33 @@ internal static class Git
     public static void Restore(string repo, string file) =>
         Shell.Run(repo, "git", ["checkout", "--", file]);
 
-    /// <summary>Whatever the edit changed besides the file it declared.</summary>
-    public static string Strayed(string repo, string before, string declared)
+    /// <summary>Whatever the edit changed besides the file it declared, against the repository now.</summary>
+    public static string StrayedSince(string repo, string before, string declared) =>
+        Strayed(before, Status(repo), declared);
+
+    /// <summary>
+    /// Whatever appeared between two readings of the repository's status that the mutation did not
+    /// declare. Pure, and separated from the reading so it can be proven: this is the one safety
+    /// property this harness adds over the one-off it came from, and an untested guard is a claim.
+    /// </summary>
+    public static string Strayed(string before, string after, string declared)
     {
         HashSet<string> was = [.. before.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.Trim())];
-        List<string> now = [];
-        foreach (string line in Status(repo).Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        List<string> strayed = [];
+        foreach (string line in after.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
             string entry = line.Trim();
+
+            // The declared file is matched at the end of the status entry, past its ` M ` marker —
+            // and only the declared one, so a second file the edit touched is a stray even when the
+            // mutation meant to touch it.
             if (!was.Contains(entry) && !entry.EndsWith(declared, StringComparison.Ordinal))
             {
-                now.Add(entry);
+                strayed.Add(entry);
             }
         }
 
-        return string.Join(Environment.NewLine, now);
+        return string.Join(Environment.NewLine, strayed);
     }
 }
 
