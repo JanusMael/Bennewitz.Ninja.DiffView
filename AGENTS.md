@@ -253,6 +253,19 @@ no dates, no counts.
   captured without waiting is a coin toss. A test that wants colour waits on
   `CompositeHost.PumpUntilAsync` with a `SyntaxProbe` condition — the built runs' foregrounds,
   which are readable the moment the line is rebuilt — never on a sleep.
+- ⛔ **A build is awaited, never pumped for.** `DiffBuildController.RunBuildAsync` runs the diff on the
+  thread pool and posts its outcome to the dispatcher, so one `CompositeHost.Layout()` lands a build
+  only when the pool happened to finish first: green on a fast desk, intermittently red on a slower
+  runner, at the same commit. `CompositeHost.WaitForBuildAsync` is the wait, and `View.CurrentBuild`
+  says whether there is one — a test asserting a state *before* a re-diff pins `Assert.Null` on it, so
+  the premise cannot quietly stop holding when a verb starts re-diffing at once. `SideBySideDiffView.Revert`
+  is that verb: it re-diffs through `ReDiffNow` rather than the debounce the hand-advanced clock never
+  fires, and it replaces the whole text, so AvaloniaEdit keeps the pane's `CollapsedLineSection`s while
+  every line they covered has gone — `DiffPanePresenter.CollapsedSectionCount` still counts them with
+  the height tree holding nothing collapsed at all, which is why the count is no evidence that a fold
+  is in place. The folds come back from the re-diff's `RefreshFolds` and from nothing else. Test
+  `EditUnderFoldTests.A_revert_after_a_same_line_edit_leaves_each_fold_over_the_lines_it_covered`, which
+  holds its own build on a gate so that middle state can be read at all.
 - `InlineHost` under `tests/DiffView.Avalonia.Tests/Inline` is `CompositeHost`'s unified twin —
   the same hand-advanced clock, the same zero-time builder, the same syntax rule. A test that
   reads what a margin or a background renderer *drew* captures a frame (`Capture()`); a layout

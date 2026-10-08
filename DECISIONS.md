@@ -3796,7 +3796,7 @@ second parse beside the first.
 ## Plan 00031: folds follow their lines — what the work found beyond the plan
 
 The plan is built as written: `FoldPlaceholderGenerator` reads the pane's live sections, and each fold
-keeps the identity it was collapsed under. Four findings refine it, recorded here rather than in the
+keeps the identity it was collapsed under. Five findings refine it, recorded here rather than in the
 approved plan.
 
 - **On `main`, the layout's own exception rather than the collector.** Phase 1 expected each test that
@@ -3821,6 +3821,18 @@ approved plan.
   threw on the uncollapsed section, caught it as the fault boundary it is, reported it and disabled
   itself, and the frame still rendered. Every test now asserts both panes' `Faults` empty beside the
   dispatcher, and that mutation fails the deletion test.
+- **A revert's test was waiting on a pump, and macOS is where that came due.** The test edits, reverts
+  and asserts every fold back over the lines it covered. A revert replaces the whole text and re-diffs
+  at once, so the sections it leaves behind cover nothing and the folds can only come back from the
+  build — which runs on the thread pool. One `Layout()` lands it only if the pool won the race, so the
+  same commit passed one CI run and failed the next on `macos-latest` alone, reading a fold's nineteen
+  lines at full height (expected 17.554, actual 351.081). Reproduced here by sleeping 50 ms in
+  `CompositeHost.ZeroTimeBuilder`, which fails the old test with those exact numbers and leaves the
+  rewritten one green. It now asserts the three states apart — the folds standing through the same-line
+  edit on the sections alone, nothing collapsed the moment the revert returns, and the folds back once
+  the build has landed — and holds the revert's build on a gate for the middle one, because the
+  dispatcher cannot run between two statements but the test's own thread can be descheduled while the
+  worker finishes. `AGENTS.md` §5 carries the rule.
 
 A document swap now clears the generator's folds as well as the pane's, because the old sections still
 hold the old document's lines.
