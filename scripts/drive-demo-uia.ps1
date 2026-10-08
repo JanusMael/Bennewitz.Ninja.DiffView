@@ -52,7 +52,12 @@ catch {
     exit 4
 }
 
-$steps = $Path.Split('/') | Where-Object { $_.Length -gt 0 }
+# ⛔ @() at the ASSIGNMENT. A pipeline that yields one element yields it as a SCALAR, and under
+# Set-StrictMode the .Count below then fails with "The property 'Count' cannot be found on this
+# object" — so a one-step path like `ColourBlindPalette` crashed the reader while every two- and
+# three-step path worked. Every id this driver had ever been given was a path until a menu entry,
+# whose id stands alone, which is why it survived PR #16 and a by-hand pass before it fired.
+$steps = @($Path.Split('/') | Where-Object { $_.Length -gt 0 })
 if ($steps.Count -eq 0) {
     Fail 'the path names no ids'
     exit 4
