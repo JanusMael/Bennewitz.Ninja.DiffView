@@ -2,8 +2,10 @@
 
 ## Resume
 
-**`main` is `bb74827`, and CI is green on it** — all five jobs, PR #16's runs `37803413441` and
-`37803422481`, 2026-10-08. The suite is **741**, passing in `en-US` and in the `de-DE` culture leg
+**`main` carries everything through PR #17, and CI is green on it** — all five jobs, runs
+`37807787219` and `37807831329`, 2026-10-08. *A resume names the pull request it was written for and
+not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
+wrong the moment it is true.* The suite is **741**, passing in `en-US` and in the `de-DE` culture leg
 alike; Windows and macOS run **677**, the suite less the 64 frame cases that are Linux's baselines,
 and each lists by name the ones it left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
