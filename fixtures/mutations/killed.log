@@ -1,0 +1,21 @@
+Restore complete (0.4s)
+  DiffView.Core succeeded (0.2s) -> src/DiffView.Core/bin/Debug/net10.0/DiffView.Core.dll
+  DiffView.Avalonia succeeded (1.1s) -> src/DiffView.Avalonia/bin/Debug/net10.0/DiffView.Avalonia.dll
+  DiffView.Avalonia.Tests succeeded (1.4s) -> tests/DiffView.Avalonia.Tests/bin/Debug/net10.0/DiffView.Avalonia.Tests.dll
+Running tests from tests/DiffView.Avalonia.Tests/bin/Debug/net10.0/DiffView.Avalonia.Tests.dll (net10.0|x64)
+failed Bennewitz.Ninja.DiffView.Tests.Composite.EditUnderFoldTests.A_revert_after_a_same_line_edit_leaves_each_fold_over_the_lines_it_covered (52ms)
+  Assert.Equal() Failure: Values are not within tolerance 0.5
+  Expected: 17.554062499999997
+  Actual:   351.08124999999995
+    at Bennewitz.Ninja.DiffView.Tests.Composite.EditUnderFoldTests.AssertFolded(DiffPanePresenter pane, Int32 first, Int32 last) in /home/runner/work/Bennewitz.Ninja.DiffView/Bennewitz.Ninja.DiffView/tests/DiffView.Avalonia.Tests/Composite/EditUnderFoldTests.cs:346
+    at Bennewitz.Ninja.DiffView.Tests.Composite.EditUnderFoldTests.A_revert_after_a_same_line_edit_leaves_each_fold_over_the_lines_it_covered() in /home/runner/work/Bennewitz.Ninja.DiffView/Bennewitz.Ninja.DiffView/tests/DiffView.Avalonia.Tests/Composite/EditUnderFoldTests.cs:98
+tests/DiffView.Avalonia.Tests/bin/Debug/net10.0/DiffView.Avalonia.Tests.dll (net10.0|x64) failed with 1 error(s) (3s 118ms)
+
+Test run summary: Failed!
+  tests/DiffView.Avalonia.Tests/bin/Debug/net10.0/DiffView.Avalonia.Tests.dll (net10.0|x64) failed with 1 error(s) (3s 118ms)
+
+  total: 9
+  failed: 1
+  succeeded: 8
+  skipped: 0
+  duration: 3s 402ms
