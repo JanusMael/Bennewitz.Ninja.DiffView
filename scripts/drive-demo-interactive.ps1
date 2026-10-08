@@ -47,15 +47,16 @@ bounds: the connector gutter spans client x 531..547 (so 539 is its middle) and 
 x 1078..1100 (so 1089 is its middle). If the window is ever not 1100x720 these move, and the driver
 refuses a drag that would start or end outside the window rather than guessing.
 
-⛔ KNOWN, MEASURED 2026-10-08: THE SPLITTER DRAG REPORTS SUCCESS AND MOVES NOTHING. The press, the
-walk and the release all take, so the driver has nothing to refuse — and the panes stay where they
-were. The cause is the y, not the verb: the map drag below it moved 65% of the frame on the same
-run, and a before/after comparison of the splitter pair found 48 pixels moved, a 3x16 block that is
-the caret blinking. At y=364 the connector column holds a POLYGON, and AGENTS.md section 6 is
-explicit that a press on a polygon selects that block where a press on the empty column drags the
-splitter. So this step currently measures block selection. The empty column is scarce on a pair with
-429 changes, which is itself worth a look: pick a y the frame shows as empty, and verify the panes
-actually moved rather than trusting the `ok`.
+⛔ A DRAG THAT REPORTS SUCCESS HAS NOT NECESSARILY MOVED ANYTHING, and the splitter is where that
+bit. Measured 2026-10-08: the step reported ok while the panes stayed put, because at the scroll
+position F7 left behind, y=364 was inside a connector POLYGON -- and AGENTS.md section 6 is explicit
+that a press on a polygon selects that block where a press on the empty column drags the splitter.
+The press, the walk and the release each took, so the driver had nothing to refuse. The map drag
+moved 65% of the frame on the same run and a before/after comparison of the splitter pair found 48
+pixels, a 3x16 block that is the caret blinking, which is how the verb was cleared and the
+coordinate blamed. The step now scrolls to the top first, where the column is empty, and CHECKS THE
+PANE'S WIDTH either side rather than trusting the `ok`. ⚠ The empty column is scarce on a pair with
+429 changes, which is worth a judgement of its own.
 
 .EXAMPLE
 pwsh -NoProfile -File scripts/drive-demo-interactive.ps1 -Out ../scratch/item9-interactive
@@ -251,10 +252,33 @@ try {
     # plans by two stale spacer numbers that summed to the same total, which no headless test
     # caught. A frame after a drag is where it shows.
     Write-Host '=== splitter drag ==='
+    # ⛔ To the top first. The splitter is the connector column's EMPTY part, and a press on a
+    # polygon selects that block instead -- so where the drag starts depends on what is scrolled
+    # into view. Ctrl+Home puts the unchanged head of both files on screen, where the column is
+    # empty; at the position F7 left behind, y=364 was inside a polygon and the drag moved nothing.
+    Focus | Out-Null
+    Drive -Verbs @('key', 'ctrl+Home') -What 'Ctrl+Home, so the drag starts on empty connector column' | Out-Null
+    Start-Sleep -Milliseconds 600
     Shot 'split-before' | Out-Null
-    if (Drive -Verbs @('drag', 'left', '539', '364', 'to', '689', '364') -What 'drag the splitter 150px right') {
+
+    $paneBefore = ElementRect -Path 'SideBySide/LeftPane' -DemoPid $demoPid
+    if (Drive -Verbs @('drag', 'left', '539', '150', 'to', '689', '150') -What 'drag the splitter 150px right') {
         Start-Sleep -Milliseconds 800
         Shot 'split-after' | Out-Null
+    }
+
+    # ⛔ That `ok` says the press, the walk and the release all took. It does NOT say the splitter
+    # moved: nothing refuses a drag that lands on the wrong thing, which is exactly how this step
+    # passed while measuring block selection. The pane's own width is the evidence.
+    $paneAfter = ElementRect -Path 'SideBySide/LeftPane' -DemoPid $demoPid
+    if ($null -ne $paneBefore -and $null -ne $paneAfter) {
+        if ($paneBefore.W -eq $paneAfter.W) {
+            $failures.Add('splitter drag :: the left pane is still ' + $paneAfter.W + ' px wide, so nothing moved' +
+                ' -- the drag most likely began on a connector polygon, which selects a block')
+        }
+        else {
+            Write-Host ('       the left pane went from ' + $paneBefore.W + ' px to ' + $paneAfter.W + ' px')
+        }
     }
 
     # ---- the overview map's viewport box, where a press inside drags and a press outside jumps ----

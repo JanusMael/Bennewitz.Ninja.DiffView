@@ -1445,7 +1445,20 @@ internal sealed class Windows : IBackEnd
         {
             ElementInfo element = Element(id);
             Console.WriteLine($"element {element}");
-            return (element.X + (element.Width / 2), element.Y + (element.Height / 2), element.Window);
+            int centreX = element.X + (element.Width / 2);
+            int centreY = element.Y + (element.Height / 2);
+            long drawnIn = Drawn(element, centreX, centreY);
+
+            // Said out loud when it fires. A silent correction is the kind of thing that costs an
+            // afternoon the next time the answer is surprising.
+            if (drawnIn != element.Window)
+            {
+                Console.WriteLine(string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"drawn in {drawnIn}, not the {element.Window} it was found under: the same process, so a popup of its own"));
+            }
+
+            return (centreX, centreY, drawnIn);
         }
 
         PointTarget point = (PointTarget)target;
@@ -1633,6 +1646,42 @@ internal sealed class Windows : IBackEnd
     /// and in whatever application that is. This is the X11 back end's "refused rather than sent to
     /// whatever lies there" guard against a second way of arriving at the same place.
     /// </summary>
+    /// <summary>
+    /// The window a part is actually DRAWN in, which is not always the window UI Automation found it
+    /// under. A menu declared in the main window's XAML — the demo's menu bar, as against the
+    /// library's context menus, which are built at run time — stays a descendant of the main window
+    /// in the automation tree while being drawn in a popup of its own. The reader can only report
+    /// the window it searched under, so the correction belongs here, where the Win32 to ask the
+    /// question is.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ Getting this wrong is worse than a refusal, and both halves bite. <see cref="Beneath"/>
+    /// refuses a click whose pixel belongs to a window other than the one named — correct, but here
+    /// it refused the driver's own correct click. Worse, the caller raises the demo when the target
+    /// is the demo's window, and raising it light-dismisses the menu, so the click would have landed
+    /// on the pane underneath: a plausible-looking wrong result rather than a failure. Measured
+    /// 2026-10-08 on the colour-blind palette entry.
+    /// <para>
+    /// The obstruction guard is untouched: only a window of the SAME PROCESS can stand in, so
+    /// another application lying over the demo still fails <see cref="Beneath"/> at the pixel. A
+    /// window of the demo's own that is not the popup — its F12 log window — would stand in here,
+    /// and a frame is what would show it.
+    /// </para>
+    /// </remarks>
+    private static long Drawn(ElementInfo element, int x, int y)
+    {
+        nint under = Native.WindowFromPoint(new Native.Point { X = x, Y = y });
+        nint top = under == 0 ? 0 : Native.GetAncestor(under, Native.GaRoot);
+        if (top == 0 || top == (nint)element.Window)
+        {
+            return element.Window;
+        }
+
+        return Native.ProcessOf(top) == Native.ProcessOf((nint)element.Window)
+            ? (long)top
+            : element.Window;
+    }
+
     private static void Beneath(int x, int y, long expected, string verb)
     {
         nint under = Native.WindowFromPoint(new Native.Point { X = x, Y = y });
