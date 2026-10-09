@@ -84,7 +84,11 @@ Set-Location $Repo
 
 $left = Join-Path $Repo 'src/DiffView.Avalonia/SideBySideDiffView.cs'
 $right = Join-Path $Repo 'src/DiffView.Avalonia/InlineDiffView.cs'
-$uia = Join-Path $PSScriptRoot 'drive-demo-uia.ps1'
+# ⛔ From $Repo, not $PSScriptRoot. They agree for the copy that ships in scripts/ and disagree for
+# any copy run from elsewhere — a re-broken one in the temp directory looked for the reader beside
+# ITSELF, did not find it, and every bounds reading came back unread while the run reported success.
+# One source of truth for where the repository is, and it is the parameter.
+$uia = Join-Path $Repo 'scripts/drive-demo-uia.ps1'
 
 $failures = [System.Collections.Generic.List[string]]::new()
 $unread = [System.Collections.Generic.List[string]]::new()
@@ -622,8 +626,14 @@ finally {
         Write-Host '⛔ THE PASS DID NOT FINISH. It threw partway, so the lists below cover only the steps'
         Write-Host '   that ran and this run is NOT a baseline. The error is above, before this summary.'
     }
+    elseif ($failures.Count -eq 0 -and $unread.Count -eq 0) {
+        Write-Host 'every step took, and every assertion was taken and held'
+    }
     elseif ($failures.Count -eq 0) {
-        Write-Host 'every step took and every assertion held'
+        # ⛔ Nothing FAILED is not everything HELD. A run with unread readings announced "every step
+        # took and every assertion held" while the splitter's reading had not been taken at all —
+        # the third time in this plan that a summary counted silence as success.
+        Write-Host ('nothing failed, but ' + $unread.Count + ' reading(s) were never taken — see below')
     }
     else {
         Write-Host ('WHAT DID NOT HOLD (' + $failures.Count + '):')

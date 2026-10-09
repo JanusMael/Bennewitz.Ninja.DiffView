@@ -636,6 +636,23 @@ the work finds that the plan did not know goes here.
 | 3 | The demo logs where it landed | done | A navigation writes `Now at change N of M` after its command line, from both the keyboard and a pane menu. ⛔ **Unconditionally, not when the index changes**: *Next* at the last change moves nothing, and a reading that only spoke on a change would say nothing there — indistinguishable from a command that never fired, which is the confusion the plan exists to remove. The number is the status strip's, not `CurrentChangeIndex`'s, which is 0-based: a log and a window one apart gets read as a bug. `LoggedCommand` gained an after-callback because its existing one runs **before** the command on purpose — what a command was asked to do needs the selection as it was found, and where it landed does not exist until it has acted. ⚠ **It also settled an ordering question two comments disagreed about**: one says the key handler runs on the tunnel route before the bindings, the other that bindings run before the event is raised at all. The test says the command has run by the time the handler reads the index, so the second is right and it is now pinned rather than reasoned. Proven able to fail by the off-by-one it warns about. The suite is 701 |
 | 4 | The pass asserts | ⚠ **written; two thirds verified** | ✅ The **clean baseline** holds: 13 frames, all thirteen assertions ✓, the run completed. ✅ The **palette** re-break is conclusive: with `Drawn` reverted the click is refused exactly as it was for three runs — *would land on window 15408692, not on window 9313754* — exit 1, tree restored clean. ⛔ The **coordinate re-break is still owed**: its first two attempts never ran the pass at all, and the second told me so only because it now checks. Findings below | ✅ The **palette** re-break is conclusive: with `Drawn` reverted to its pre-fix behaviour the click is refused exactly as it was for three runs — *would land on window 15408692, not on window 9313754* — exit 1, and the working tree restored clean. ⛔ The **clean run and the coordinate re-break are still owed**, because the first attempt at them was invalid: the pass threw in its first assertion, died after one frame, and **its summary said "every step took and every assertion held"**. Two defects, both below, both fixed | Thirteen assertions over the twelve steps, each reading the state the step was supposed to change: which pane holds the keyboard, a menu's entries by id and their absence after a dismiss, the find bar present and absent either side of Ctrl+F, the pane width across the splitter drag, the scroll bar's `RangeValue` across the map drag, and from the log both that `NextChange` fired twice and that it left change 2 current. A reading that could not be taken is listed as **unread** and never counted as a pass. ⛔ **Phase 4 is not done**: the plan's verification is re-breaking the three known defects and confirming the step now fails, and that is owed. One clean run has happened — twelve assertions held and one failed, on focus — but it is not evidence either way, see below |
 
+⛔ **`ElementRect` resolved the UI Automation reader from `$PSScriptRoot` while everything else used
+`$Repo`**, so a copy run from elsewhere looked for the reader beside *itself*, did not find it, and
+every bounds reading came back **unread** — the splitter's among them. Two sources of truth for where
+the repository is, and they agree only for the copy that ships. It is `$Repo` for both now.
+
+⛔ **And "nothing failed" was still being printed as "every assertion held" — the third time.** That
+run took no reading at all for the splitter, said so correctly in its unread list, and announced *every
+step took and every assertion held* above it. A summary now distinguishes three outcomes: everything
+taken and held, nothing failed **but** readings were never taken, and failures.
+
+⚠ **The marker-tooltip re-break was simply wrong, and the assertion was right to hold.** Emptying the
+ladder does not reproduce that defect, because the fix was **ordering F7 before the step** so the
+margin's centre is a changed row; the ladder is only the fallback. It hovers the pane — which has no
+tooltip of its own — now. ⚠ The splitter re-break no longer tries to land on a polygon either, which
+depends on what is scrolled into view: it drags to where it began, because what the assertion must
+catch is *a gesture that moved nothing*, however it came to move nothing.
+
 ⛔ **A copy of the pass placed outside `scripts/` discovers the wrong repository.** Phase 1 made
 `$Repo` default to `$PSScriptRoot/..` — *discovered, never assumed*, which is right for the shipped
 script and wrong for a re-broken copy in the temp directory, where it resolves to
