@@ -448,10 +448,13 @@ try {
             }
         }
 
-        if (-not $markerShown) {
-            $failures.Add('change-marker tooltip :: no changed row under the pointer at the margin centre or eight rows either side')
-        }
     }
+
+    # Through Assert like every other step, so it prints its ✓ or ✗ and is counted the same way. The
+    # hover verb throws when no tooltip appears within three seconds, so a false here means the pointer
+    # was over no changed row — the margin's tooltip exists for a changed line and for nothing else.
+    Assert 'the change-marker tooltip appeared, so the pointer was on a changed row' $markerShown `
+        'no tooltip at the margin centre or at eight rows either side of it'
 
     # ---- the find bar, which is hidden until asked for ----
     Write-Host '=== the find bar ==='
@@ -559,6 +562,13 @@ try {
                     'no "→ on" line for the palette since the click'
             }
             else { Unread 'whether the palette was ticked' 'there is no demo log to read' }
+        }
+        else {
+            # The click itself was refused — by the driver's own guard, which is what happened for
+            # three runs before `Drawn` taught it which window a menu entry is drawn in. The refusal
+            # is already a recorded failure; this says the state it was going to assert went unread,
+            # so the two are not confused for one another.
+            Unread 'whether the palette was ticked' 'the click on its entry was refused'
         }
     }
     else {
