@@ -1,0 +1,1 @@
+SideBySide/LeftPane/PART_VerticalScrollBar	ControlType.ScrollBar	813	346	16	618	70387178	unfocused	41.375

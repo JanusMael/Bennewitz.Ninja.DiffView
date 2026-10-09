@@ -296,6 +296,15 @@ wording.
     collapsed under, so a click or the expand command still opens a fold that moved before the re-diff
     lands. *Plan 00031 phases* below has the record.
 
+16. **An automated end-to-end suite driving a real window — deferred 2026-10-09, deliberately.** Raised
+    by plan 00033, which hardens the *attended* pass and explicitly does not answer this. What exists is
+    695 headless tests over real controls and real peers, and a by-hand pass that judges rendering at
+    real size; the gap between them is narrow — defects that need a real window **and** injected input.
+    ⚠ **Whether a hosted Windows runner supports injected input at all is unestablished**: a search did
+    not settle it, so anyone picking this up starts with a timeboxed spike — one workflow, one UIA read,
+    one injected click — rather than a plan. The decision is to learn what plan 00033's assertions
+    actually catch first, on the grounds that a narrow gap is cheaper to measure than to speculate about.
+
 13. **The first CI run after 2026-10-19 runs on Ubuntu 26.** `ubuntu-latest` moves then, and the
     Linux leg renders the snapshot baselines. A frame the new image shifts fails as a snapshot with
     its received file uploaded beside it, and is fixed then rather than pinned against now —
@@ -614,6 +623,24 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00033 phases
+
+Making `scripts/drive-demo-interactive.ps1`'s steps able to fail. The plan is approved and frozen; what
+the work finds that the plan did not know goes here.
+
+| | Phase | State | What landed |
+|---|---|---|---|
+| 1 | The reader reports state | done | `scripts/drive-demo-uia.ps1` reports two fields more — whether the part holds the keyboard, and a `RangeValue` reading or `-` where it has none — the number written invariantly, because a double renders with a comma on a German machine and the parser on the other side expects a dot. `ElementInfo` and its parse carry both; the two fixtures gain the fields and `element-with-a-range-value.txt` joins them. **A part that is absent now exits 3 while a demo with no window exits 5**, which were one code: presence is an assertion for a harness, so *this part is not there* must not read the same as *the demo died*, and `Element` distinguishes all four codes rather than collapsing them into one message. Proven able to fail: reading `-` as `0` instead of absent trips the new test and the existing one. The suite is 696, healthy under `catch-crash --expect auto` |
+
+⛔ **Drift found in phase 1, recorded here because an approved plan is not edited.** The plan names *the
+left pane's* `PART_VerticalScrollBar` for the map-drag assertion. Measured against the running demo,
+**that path does not resolve and there is exactly one vertical scroll bar in the whole tree — the right
+pane's**, the panes being scroll-synced. The path that works is
+`SideBySide/RightPane/PART_VerticalScrollBar`, which reads `0` with the document at the top. The
+assertion is unaffected in substance: a map drag scrolls both panes, so the surviving bar moves either
+way. ⚠ `PART_ScrollViewer` is **not** a step that resolves on the way there — the reader skips unnamed
+ancestors, so the short path is the only one that works.
 
 ## Plan 00031 phases
 
