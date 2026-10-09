@@ -537,8 +537,11 @@ try {
     # passed while measuring block selection. The pane's own width is the evidence.
     $paneAfter = ElementRect -Path 'SideBySide/LeftPane' -DemoPid $demoPid
     if ($null -ne $paneBefore -and $null -ne $paneAfter) {
+        # The message states what was OBSERVED and offers the likely cause as likely. The earlier
+        # wording asserted the polygon outright, and a re-break that produced a no-op drag some other
+        # way was then told a confident story about a cause that was not its own.
         Assert 'the splitter drag moved the panes' ($paneBefore.W -ne $paneAfter.W) `
-            ('the left pane is still ' + $paneAfter.W + ' px wide, so the drag began on a connector polygon, which selects a block')
+            ('the left pane is still ' + $paneAfter.W + ' px wide; most likely the press began on a connector polygon, which selects a block rather than dragging')
         if ($paneBefore.W -ne $paneAfter.W) {
             Write-Host ('       the left pane went from ' + $paneBefore.W + ' px to ' + $paneAfter.W + ' px')
         }

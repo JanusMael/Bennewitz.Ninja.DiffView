@@ -603,6 +603,7 @@ holds how they read.
 | `mark` / `popup` | Remember the top-level windows there are, then name the one that appeared |
 | `capture <window> <out.png>` | The window's pixels |
 | `hover <x> <y>` / `hover --id <path>` | Park the pointer there and wait for a tooltip; it becomes the popup |
+| `probe <path>` | What the reader can say about that part — bounds, whether it holds the keyboard, a `RangeValue` where it has one — and **`absent` where it is not in the tree**, which is an answer rather than a failure. Windows only |
 
 Verbs chain with `then`, and what a chain learns — the mark, the popup, the pid — is kept for the
 next invocation. `--parse`, `--parse-children`, `--parse-info`, `--parse-chord` and `--parse-element`
@@ -627,6 +628,16 @@ run nothing and print what the driver read, which is what makes it testable with
   snapshot frames under `Snapshots/` with their pixel assertions stay the evidence, per §5. This is
   for the judgement a frame cannot give — whether a thing reads right at real size, in a real window,
   at the real DPI.
+- ⭐ **A step is judged by the state it changed, not by whether its verb threw** — plan 00033.
+  `scripts/drive-demo-interactive.ps1` asserts after every step, and the rule for where to read from
+  is: **UI Automation where the tree answers, the demo's log where it does not, a frame only where
+  neither can.** The tree answers focus, presence and geometry, and — through the stock scroll bars
+  inside AvaloniaEdit's template, not through any peer of ours — the scroll offset. It answers nothing
+  about values or toggle state, so a menu item's tick and the current change index come from the log.
+  ⛔ **A reading that could not be taken is listed as *unread*, never counted as a pass**: three
+  separate times in that plan a summary reported success because nothing had been *recorded* as a
+  failure, including for a run that died after one frame of thirteen. **Absence of recorded failure is
+  not success.**
 - ⛔ **Ask before running anything that borrows the desktop, when anyone is at the machine.** The
   driver's refusals stop it doing the *wrong* thing; nothing stops it doing the right thing to the
   wrong person. `scripts/drive-demo-interactive.ps1` launches a window, moves the pointer and presses
