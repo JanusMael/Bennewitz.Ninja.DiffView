@@ -8,6 +8,28 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00033 — the by-hand pass's steps can fail. `scripts/drive-demo-interactive.ps1` judged each of
+  its twelve steps by whether the driver verb threw, so a splitter drag that moved nothing and a click
+  that was refused both reported success. Every step now asserts the state it was supposed to change,
+  reading **UI Automation where the tree answers, the demo's log where it does not**: which pane holds
+  the keyboard, a menu's entries by id and their absence after a dismiss, the find bar absent and
+  present either side of Ctrl+F, pane width across the splitter drag, the scroll bar's `RangeValue`
+  across the map drag, and from the log both that a navigation command fired and where it landed. A
+  reading that could not be taken is reported **unread** and never counted as a pass. `drive-demo`
+  gains a `probe <path>` verb for this, which treats an absent part as an answer; its reader reports
+  whether a part holds the keyboard and a `RangeValue` where it has one, and distinguishes a part that
+  is absent from a demo that has gone. Proven by re-breaking the defects it was built for: a drag that
+  ends where it began and a hover over a part with no tooltip fail exactly those two assertions and no
+  others.
+
+- The demo logs where a navigation landed — `Now at change 2 of 429` — after the command that moved
+  it, from the keyboard and from a pane menu alike, and **unconditionally**, so a *Next* at the last
+  change says it moved nothing rather than saying nothing at all.
+
+- The demo takes `--palette colour-blind|default`, so the colour-blind palette can be reached without
+  driving a menu. It sets the same menu item the View menu sets, as `--edit` does, and the summary
+  line names it.
+
 - Plan 00026 — a UI Automation harness can find every part of the library. Each control it defines
   has an automation peer of its own, a control element of the type it is to a person — the three
   views `Group`, a pane `Edit`, a header `Header`, the find bar `ToolBar`, the status strip

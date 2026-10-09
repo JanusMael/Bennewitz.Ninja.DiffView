@@ -4014,3 +4014,72 @@ assert the state. The splitter step reads the left pane's own width either side 
 reading `colour-blind` rather than by its exit code. This is `AGENTS.md` §5's rule about frames and
 pixel assertions, arriving from the other direction: there, a frame is too coarse to prove a small
 drawing; here, an exit code is too coarse to prove anything at all.
+
+## Plan 00033: the no-pattern rule is ours, and it is not the tree's
+
+Plan 00033's first draft was built on a constraint that was half false, and the half that was false
+was the load-bearing half.
+
+**True**: every peer this library ships advertises no pattern, deliberately, with a test behind it —
+`AccessibilityCoverageTests` asserts it in as many words. `DiffPanePresenterAutomationPeer` overrides
+four things and no more.
+
+**False**: that this says anything about the tree a harness reads. The stock Avalonia controls inside
+our templates advertise patterns of their own. Surveyed against the running demo, **exactly fourteen
+elements advertise any pattern**, and one of them matters: `PART_VerticalScrollBar` is a `ScrollBar`
+carrying `RangeValue`, which is the only way a scroll offset is readable anywhere. The draft had
+declared the overview map's drag unassertable on the strength of the conflation, and it was the step
+most like the splitter — a gesture whose only effect is a scroll.
+
+⚠ **Nothing was relaxed to make the harness's life easier.** No peer gained a pattern; the no-pattern
+rule is a shipped decision about what consumers see, and a harness is not a reason to change it. What
+the tree could not answer — a menu item's tick, the current change index — moved to the **demo's own
+log**, which plan 00029 built for exactly that: the host reading its own public API and saying what it
+did. `CurrentChangeIndex` is public, so the demo logs where a navigation landed.
+
+⛔ **`PART_VerticalScrollBar` is AvaloniaEdit's template part, and nothing pins it.** It is not in
+`fixtures/automation-ids.txt` and an Avalonia upgrade may rename it. The failure is *part not found*
+rather than a wrong answer, which is the safe direction, and the pass names it in one place.
+
+## Absence of recorded failure is not success
+
+Plan 00033 exists because twelve of a pass's thirteen steps could not fail in any way that mattered.
+Writing it caught the same defect **three times in the instrument meant to enforce it**, which is
+worth recording as a shape rather than as three incidents:
+
+1. A run that **died after one frame of thirteen** reported *every step took and every assertion
+   held*, because the summary read `$failures.Count` and nothing had been recorded before the throw.
+   The pass sets `$script:finished` as the last statement of its `try` now, and says **THE PASS DID
+   NOT FINISH** when it is unset.
+2. A run whose splitter reading **was never taken** — the reader could not be found — reported the
+   same sentence, with the unread reading listed below it. The summary distinguishes three outcomes
+   now: taken and held, nothing failed *but* something was never read, and failures.
+3. A **re-break that never ran the pass at all** looked exactly like a passing re-break. It checks
+   that its own mutation ran before it reports anything, which is `scripts/mutate-gates.sh`'s `no-op`
+   rule arriving one level up.
+
+**The common shape: a reading that only ever says *nothing wrong was found* passes when it is blind.**
+`AGENTS.md` §5 already requires a positive control beside such a reading; these are the same rule in
+a harness rather than a test, and the scan that cleared `scripts/` of the shadowing trap below carries
+one for that reason.
+
+⚠ **Two of the three were found by running the thing, not by reading it**, and the third by a check
+written an hour earlier for a different reason. A pass whose steps cannot fail is not improved by
+inspection.
+
+## A local differing from a typed parameter only in case is one variable, and it coerces
+
+`AssertFocus` wrote `$holder = Probe $Holder`. PowerShell variable names are case-insensitive, so
+those are one variable — and because the parameter is `[string]`-typed, assigning a hashtable does not
+fail, it **stringifies** to `"System.Collections.Hashtable"`. The next property read throws, far from
+the assignment.
+
+This is the `param()`-clobbers-`$root` trap the global `CLAUDE.md` already records, with a second
+edge: a **typed** parameter turns a wrong assignment into *garbage rather than an error*. An AST scan
+with a positive control says no shipped script has another.
+
+⛔ **And one source of truth for where the repository is.** `$Repo` is discovered from `$PSScriptRoot`
+— right for the copy that ships in `scripts/`, wrong for any copy run from elsewhere, where it
+resolves to the temp directory and `dotnet run` answers *Couldn't find a project to run*. A second
+site, `ElementRect`, derived the reader's path from `$PSScriptRoot` independently and so disagreed
+with `$Repo` for exactly those copies. Both read `$Repo` now, and a re-break passes it explicitly.
