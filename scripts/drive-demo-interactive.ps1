@@ -312,11 +312,26 @@ function WaitForReady {
         the run, passed. A sleep tuned to a machine is a flake waiting for a slower one, and a flaky
         assertion is worse than none — an attended pass is abandoned the second time it cries wolf.  #>
     [OutputType([bool])]
-    param([Parameter(Mandatory = $true)][int] $Mark, [int] $TimeoutSeconds = 30)
+    param([int] $TimeoutSeconds = 30)
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
-        if (@(LogSince $Mark | Where-Object { $_ -like '*State*"Ready"*' }).Count -gt 0) { return $true }
+        # ⛔ Anchored on this run's own "Starting" line, NOT on a mark taken after launch. The driver
+        # BUILDS the demo before starting it, so `launch` can take ten seconds to return — by which
+        # time Ready is already in the log, a mark taken then is past it, and the wait times out
+        # against a view that has been ready the whole time. Measured 2026-10-09: it did exactly that
+        # and fell back to the sleep it was written to replace.
+        $lines = LogLines
+        $start = -1
+        for ($i = $lines.Count - 1; $i -ge 0; $i--) {
+            if ($lines[$i] -like '*Starting DiffView Demo*') { $start = $i ; break }
+        }
+
+        if ($start -ge 0) {
+            $after = @($lines | Select-Object -Skip ($start + 1))
+            if (@($after | Where-Object { $_ -like '*State*"Ready"*' }).Count -gt 0) { return $true }
+        }
+
         Start-Sleep -Milliseconds 250
     }
 
@@ -342,8 +357,7 @@ if ($script:logFile) { Write-Host ('reading the demo log at ' + $script:logFile)
 else { Write-Host 'WARNING: no demo log found, so every log-based assertion will be unread' }
 
 # Ready, not a stopwatch. See WaitForReady: three seconds was almost exactly the wrong number here.
-$launchMark = LogMark
-if (WaitForReady -Mark $launchMark) { Write-Host 'the view reached Ready; starting' }
+if (WaitForReady) { Write-Host 'the view reached Ready; starting' }
 else {
     Write-Host 'WARNING: no Ready transition was logged; starting anyway, and early steps may be racing a build'
     Start-Sleep -Seconds 3
