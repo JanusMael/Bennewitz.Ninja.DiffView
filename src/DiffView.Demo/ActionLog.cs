@@ -71,8 +71,12 @@ internal sealed class ActionLog
         // On the way down, before a view's key bindings handle the chord.
         window.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
 
-        diff.PaneContextMenuOpening += (_, e) => Watch(e.Items, e.Context);
-        unified.PaneContextMenuOpening += (_, e) => Watch(e.Items, e.Context);
+        // The landing callback goes to the two pane menus, which are the only menus carrying a
+        // navigation verb; the header menu has none, so it keeps the one line per entry it had.
+        diff.PaneContextMenuOpening += (_, e) =>
+            Watch(e.Items, e.Context, () => LogLanding(diff.CurrentChangeIndex, diff.ChangeCount));
+        unified.PaneContextMenuOpening += (_, e) =>
+            Watch(e.Items, e.Context, () => LogLanding(unified.CurrentChangeIndex, unified.ChangeCount));
         diff.HeaderContextMenuOpening += (_, e) => Watch(e.Items, $"{Lower(e.Context.Side)} header", acted: null);
 
         // The side-by-side view's two panes only. The unified pane offers no copy, and its document is
@@ -171,27 +175,62 @@ internal sealed class ActionLog
             return;
         }
 
-        // The one view on screen is the one whose bindings could have run it.
+        // The one view on screen is the one whose bindings could have run it. The index and the count
+        // are read HERE rather than inside, because by now the binding has run the command — that is
+        // what `e.Handled` means on this route — so they are where the command left them.
         if (_diff.IsVisible)
         {
-            LogChord(e, _diff.GestureFor);
+            LogChord(e, _diff.GestureFor, _diff.CurrentChangeIndex, _diff.ChangeCount);
         }
         else if (_unified.IsVisible)
         {
-            LogChord(e, _unified.GestureFor);
+            LogChord(e, _unified.GestureFor, _unified.CurrentChangeIndex, _unified.ChangeCount);
         }
     }
 
-    private void LogChord(KeyEventArgs e, Func<DiffCommand, KeyGesture?> gestureFor)
+    private void LogChord(KeyEventArgs e, Func<DiffCommand, KeyGesture?> gestureFor, int index, int count)
     {
         foreach (DiffCommand command in Enum.GetValues<DiffCommand>())
         {
             if (gestureFor(command) is { } gesture && gesture.Matches(e))
             {
                 Log.Information("Command {Name:l} from the keyboard{On:l}", command.ToString(), OnSelection(command, FocusedSelection()));
+                if (Navigates(command))
+                {
+                    LogLanding(index, count);
+                }
+
                 return;
             }
         }
+    }
+
+    /// <summary>The commands that move the current change, and so have somewhere to have landed.</summary>
+    private static bool Navigates(DiffCommand? command) =>
+        command is DiffCommand.NextChange or DiffCommand.PreviousChange or DiffCommand.GoToChange;
+
+    /// <summary>
+    /// Where a navigation left the view, logged as a line of its own after the command's.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ It is written **unconditionally** after a navigation, not when the index changes. A navigation
+    /// that moved nothing — Next at the last change — is the interesting case, and a subscription to the
+    /// property would say nothing at all there, which reads identically to a command that never fired.
+    /// Plan 00033's whole subject is steps that did nothing and did not say so.
+    /// <para>
+    /// The number is the one on screen: <c>CurrentChangeIndex</c> is 0-based and the status strip counts
+    /// from one, so a reader comparing the log with the window would otherwise find them one apart.
+    /// </para>
+    /// </remarks>
+    private static void LogLanding(int index, int count)
+    {
+        if (index < 0)
+        {
+            Log.Information("Now at no change, of {Count}", count);
+            return;
+        }
+
+        Log.Information("Now at change {Change} of {Count}", index + 1, count);
     }
 
     /// <summary>The side and the selection of the pane holding the keyboard, if one does and has a selection.</summary>
@@ -223,15 +262,19 @@ internal sealed class ActionLog
             : string.Create(CultureInfo.InvariantCulture, $"lines {range.Start + 1}–{range.Start + range.Count}");
 
     /// <summary>A menu over a pane, a gutter or the map: named by where it opened, with the selection a copy from it would act on.</summary>
-    private static void Watch(IList<DiffMenuItem> items, DiffPaneContext context) =>
-        Watch(items, MenuName(context), context.Side is { } side && context.SelectedLines is { } lines ? (side, lines) : null);
+    private static void Watch(IList<DiffMenuItem> items, DiffPaneContext context, Action? landed = null) =>
+        Watch(items, MenuName(context), context.Side is { } side && context.SelectedLines is { } lines ? (side, lines) : null, landed);
 
     /// <summary>
     /// Wraps each command of a menu about to open so that choosing it is logged — by its verb where it
     /// has one, by its header, quoted, where it has none: a host's own entry, or a save or a revert.
     /// The menu is built afresh each time it opens, so each wrap is its own.
     /// </summary>
-    private static void Watch(IList<DiffMenuItem> items, string menu, (DiffSide Side, LineRange Lines)? acted)
+    private static void Watch(
+        IList<DiffMenuItem> items,
+        string menu,
+        (DiffSide Side, LineRange Lines)? acted,
+        Action? landed = null)
     {
         foreach (DiffMenuItem item in items)
         {
@@ -239,10 +282,17 @@ internal sealed class ActionLog
             {
                 string name = item.Verb?.ToString() ?? $"\"{Unmarked(item.Header)}\"";
                 string on = OnSelection(item.Verb, acted);
-                item.Command = new LoggedCommand(command, () => Log.Information("Command {Name:l} from the {Menu:l} menu{On:l}", name, menu, on));
+                DiffCommand? verb = item.Verb;
+
+                // Only a navigation has a landing, so only a navigation is given the after-callback:
+                // every other entry keeps exactly the one line it had.
+                item.Command = new LoggedCommand(
+                    command,
+                    () => Log.Information("Command {Name:l} from the {Menu:l} menu{On:l}", name, menu, on),
+                    Navigates(verb) ? landed : null);
             }
 
-            Watch(item.Items, menu, acted);
+            Watch(item.Items, menu, acted, landed);
         }
     }
 
@@ -364,7 +414,13 @@ internal sealed class ActionLog
     }
 
     /// <summary>A menu entry's command, which logs the choice and then does what it always did.</summary>
-    private sealed class LoggedCommand(ICommand inner, Action logged) : ICommand
+    /// <remarks>
+    /// ⛔ <paramref name="logged"/> runs BEFORE the command and <paramref name="landed"/> after, and the
+    /// order of each is load-bearing. What a command was asked to do is reported with the selection as
+    /// it was found, which is gone once the command has acted; where a navigation landed does not exist
+    /// until it has.
+    /// </remarks>
+    private sealed class LoggedCommand(ICommand inner, Action logged, Action? landed = null) : ICommand
     {
         public event EventHandler? CanExecuteChanged
         {
@@ -378,6 +434,7 @@ internal sealed class ActionLog
         {
             logged();
             inner.Execute(parameter);
+            landed?.Invoke();
         }
     }
 }
