@@ -1,1 +1,1 @@
-SideBySide/LeftPane	ControlType.Edit	268	346	531	618	70387178
+SideBySide/LeftPane	ControlType.Edit	268	346	531	618	70387178	focused	-

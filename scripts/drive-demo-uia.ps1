@@ -17,8 +17,13 @@ finds DiffView's parts by `AutomationId`* lays down, and fixtures/automation-ids
     -Path SideBySide/LeftPane              a part, within the view
     -Path SideBySide/LeftPane/LineNumbers  a margin, within the pane
 
-It prints one tab-separated line — path, control type, x, y, width, height — in absolute physical
-pixels, so nothing the caller reads depends on a locale. Exit 0 found it, 3 did not, 4 could not look.
+It prints one tab-separated line — path, control type, x, y, width, height, window handle, whether the
+part holds the keyboard, and a RangeValue reading or `-` — the pixels absolute and physical and the
+number invariant, so nothing the caller reads depends on a locale.
+
+Exit 0 found it, 3 the part is ABSENT, 4 could not look, 5 the demo has no window at all. ⛔ 3 and 5
+were one code until plan 00033: presence is an assertion for a harness — a part switched off is
+genuinely gone from the tree — so "this part is not there" must not read the same as "the demo died".
 
 .NOTES
 Scoped to the demo's process and then down the path, never across the desktop: XamlQuality's
@@ -71,8 +76,10 @@ $byProcess = New-Object System.Windows.Automation.PropertyCondition(
 $windows = @($root.FindAll([System.Windows.Automation.TreeScope]::Children, $byProcess))
 
 if ($windows.Count -eq 0) {
+    # 5, not 3: the demo being gone is not the same answer as a part being absent, and a harness that
+    # asserts absence would read the two as one.
     Fail ('no window belongs to process ' + $DemoProcessId + ': is the demo still running?')
-    exit 3
+    exit 5
 }
 
 # Each step is searched for beneath every window of the process, because the first step may name a view
@@ -112,6 +119,25 @@ if ($rectangle.IsEmpty) {
 # The top-level window the part was found in, so the caller can check that a click at these
 # coordinates would land on it rather than on whatever is lying over the demo. A part's is the demo's
 # window; a menu entry's is the menu's own, a menu being a window of its own here.
+# Whether the part holds the keyboard. The pane's own peer answers this for its text area rather than
+# for itself, because AvaloniaEdit's TextEditor is not focusable and the stock peer would read the
+# wrong thing (AGENTS.md §1) — so this is the answer a harness wants, not a near miss.
+$focus = $current.HasKeyboardFocus ? 'focused' : 'unfocused'
+
+# A RangeValue reading where the element has one, and `-` where it has none. This is the only way the
+# scroll offset is readable: our own peers advertise no pattern by design, but the stock scroll bars
+# inside AvaloniaEdit's template advertise RangeValue, which plan 00033 measured.
+#
+# ⛔ TryGetCurrentPattern, never GetCurrentPattern, which THROWS for an element that does not support
+# the pattern — and most do not.
+# ⛔ InvariantCulture explicitly: a double renders as "0,5" on a German machine, and the parser on the
+# other side of this report expects a dot. The report is machine-read, so no part of it is localised.
+$range = '-'
+$rangePattern = $null
+if ($found.TryGetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern, [ref] $rangePattern)) {
+    $range = ([double] $rangePattern.Current.Value).ToString([System.Globalization.CultureInfo]::InvariantCulture)
+}
+
 $fields = @(
     $Path
     $current.ControlType.ProgrammaticName
@@ -120,6 +146,8 @@ $fields = @(
     [int] [Math]::Round([double] $rectangle.Width)
     [int] [Math]::Round([double] $rectangle.Height)
     [int64] $foundIn.Current.NativeWindowHandle
+    $focus
+    $range
 )
 
 Write-Output ($fields -join "`t")

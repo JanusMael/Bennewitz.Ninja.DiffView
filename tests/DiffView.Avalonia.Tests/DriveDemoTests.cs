@@ -182,11 +182,33 @@ public sealed class DriveDemoTests
         // Tab-separated fields and not prose, so no locale reaches the reading; and a window left of
         // the primary screen has negative coordinates, which a reader that forgot the sign drops.
         Assert.Equal(
-            "SideBySide/LeftPane ControlType.Edit 531x618+268+346 in 70387178",
+            "SideBySide/LeftPane ControlType.Edit 531x618+268+346 in 70387178 focused",
             Single(Run(["--parse-element", WindowsFixture("element-left-pane.txt")])));
         Assert.Equal(
-            "Unified/Pane ControlType.Edit 1024x768+-1612+-284 in 133182",
+            "Unified/Pane ControlType.Edit 1024x768+-1612+-284 in 133182 unfocused",
             Single(Run(["--parse-element", WindowsFixture("element-on-a-second-screen.txt")])));
+    }
+
+    [Fact]
+    public void A_range_value_is_read_where_a_part_has_one_and_is_absent_where_it_does_not()
+    {
+        // Plan 00033: the scroll offset is readable only because the stock scroll bars inside
+        // AvaloniaEdit's template advertise RangeValue — our own peers advertise no pattern, by
+        // design. It is the one reading that makes the map drag assertable, so it is read here
+        // rather than discovered to be unparsed on the day.
+        //
+        // ⛔ 41.375 and not 41: a scroll offset is fractional, and an invariant decimal point is what
+        // the reader writes precisely so a German machine's comma never reaches this parse.
+        Assert.Equal(
+            "SideBySide/LeftPane/PART_VerticalScrollBar ControlType.ScrollBar 16x618+813+346 in 70387178 unfocused range=41.375",
+            Single(Run(["--parse-element", WindowsFixture("element-with-a-range-value.txt")])));
+
+        // And `-` is a part with no RangeValue, which is most of them: absent, not zero. A reader
+        // that treated it as 0 would make every unscrollable part look scrolled to the top.
+        Assert.DoesNotContain(
+            "range=",
+            Single(Run(["--parse-element", WindowsFixture("element-left-pane.txt")])),
+            StringComparison.Ordinal);
     }
 
     [Fact]

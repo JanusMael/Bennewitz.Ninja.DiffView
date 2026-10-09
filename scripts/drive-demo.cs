@@ -1129,10 +1129,14 @@ internal sealed partial class X11 : IBackEnd
 /// the top-level window it was found in — which is the demo's for a part and a menu's own for an entry.
 /// </summary>
 internal readonly record struct ElementInfo(
-    string Path, string ControlType, int X, int Y, int Width, int Height, long Window)
+    string Path, string ControlType, int X, int Y, int Width, int Height, long Window,
+    bool Focused, double? Range)
 {
     public override string ToString() =>
-        string.Create(CultureInfo.InvariantCulture, $"{Path} {ControlType} {Width}x{Height}+{X}+{Y} in {Window}");
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"{Path} {ControlType} {Width}x{Height}+{X}+{Y} in {Window} {(Focused ? "focused" : "unfocused")}")
+        + (Range is { } value ? string.Create(CultureInfo.InvariantCulture, $" range={value}") : string.Empty);
 }
 
 /// <summary>One key of a chord: what to send, and whether Windows calls it an extended key.</summary>
@@ -1333,11 +1337,20 @@ internal sealed class Windows : IBackEnd
     public static ElementInfo ParseElement(string report)
     {
         string[] fields = report.Trim().Split('\t');
-        if (fields.Length != 7)
+        if (fields.Length != 9)
         {
             throw new DriveException(
-                $"the UI Automation reader answered {fields.Length} fields, not 7: {report.Trim()}");
+                $"the UI Automation reader answered {fields.Length} fields, not 9: {report.Trim()}");
         }
+
+        // `-` is "this element has no RangeValue", which most do not. Parsed invariantly, because the
+        // reader writes it invariantly for the same reason: a German machine would otherwise send a
+        // comma and this would read 0,5 as nothing at all.
+        double? range = fields[8] == "-"
+            ? null
+            : double.TryParse(fields[8], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
+                ? parsed
+                : throw new DriveException($"the reader answered `{fields[8]}` where a RangeValue or `-` belongs: {report.Trim()}");
 
         return new ElementInfo(
             fields[0],
@@ -1346,7 +1359,14 @@ internal sealed class Windows : IBackEnd
             Int(fields[3], report),
             Int(fields[4], report),
             Int(fields[5], report),
-            Int(fields[6], report));
+            Int(fields[6], report),
+            fields[7] switch
+            {
+                "focused" => true,
+                "unfocused" => false,
+                _ => throw new DriveException($"the reader answered `{fields[7]}` where focused/unfocused belongs: {report.Trim()}"),
+            },
+            range);
     }
 
     private static int Int(string field, string report) =>
@@ -1490,9 +1510,20 @@ internal sealed class Windows : IBackEnd
             "-Path", target.Path,
         ]);
 
-        return exit == 0
-            ? ParseElement(output)
-            : throw new DriveException($"the UI Automation reader could not find `{target.Path}`:\n{output.Trim()}");
+        // The reader's exit codes are distinguished rather than collapsed into one message: a part that
+        // is genuinely absent, a demo that has gone, and a machine where UI Automation cannot be
+        // reached are three different answers, and a harness asserting presence needs to tell the first
+        // from the other two. An exit code nothing reads is an exit code that may as well not exist.
+        return exit switch
+        {
+            0 => ParseElement(output),
+            3 => throw new DriveException(
+                $"no part at `{target.Path}` — it is absent from the tree, which for a part shown only on "
+                + $"request means switched off rather than missing:\n{output.Trim()}"),
+            5 => throw new DriveException($"the demo has no window: it has exited or never opened one:\n{output.Trim()}"),
+            4 => throw new DriveException($"UI Automation could not be reached on this machine:\n{output.Trim()}"),
+            _ => throw new DriveException($"the UI Automation reader failed for `{target.Path}`:\n{output.Trim()}"),
+        };
     }
 
     /// <summary>
