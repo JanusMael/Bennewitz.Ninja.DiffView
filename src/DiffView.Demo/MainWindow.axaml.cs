@@ -50,6 +50,12 @@ public sealed partial class MainWindow : Window
         Diff.LeftReadOnly = !DebugFlags.EditLeft;
         Diff.RightReadOnly = !DebugFlags.EditRight;
 
+        // --palette colour-blind, through that same menu item and for the same reason. The toggle
+        // underneath is App.UseColourBlindPalette, and setting it here instead would leave the menu
+        // showing one palette while the window drew the other.
+        ColourBlindPalette.IsChecked = DebugFlags.ColourBlindPalette;
+        App.UseColourBlindPalette(DebugFlags.ColourBlindPalette);
+
         RefreshGestureLabels();
 
         // A host's own entry, through the amend shape: inserted after the control's copy items so

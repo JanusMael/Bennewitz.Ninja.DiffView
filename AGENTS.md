@@ -693,8 +693,11 @@ from opposite directions:
 - **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
   section claimed the opposite for three plans; check before repeating it.
 - **The demo's flags** are `--theme`, `--variant`, `--left`, `--right`, `--unified`, `--viewer`,
-  `--edit left|right|both`, `--culture` and `--log-level`. `--edit` sets the same two menu items the
-  View menu does, so the flag and the menu cannot disagree.
+  `--edit left|right|both`, `--palette colour-blind|default`, `--culture` and `--log-level`. `--edit`
+  and `--palette` each set the same menu item the View menu does, so a flag and the menu cannot
+  disagree. `--palette` exists because the capture half drives nothing, so without it the
+  colour-blind palette — the one palette whose purpose is that some readers cannot use the other —
+  was reachable only by clicking through a menu.
 - **Driving a menu, a tooltip or an accelerator with `xdotool` is XamlQuality's to document** (§8),
   under *Linux platform integration*: how to find and grab a menu's popup, and why an accelerator
   does not arrive where a click does.
