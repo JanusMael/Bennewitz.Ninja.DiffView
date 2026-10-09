@@ -19,6 +19,12 @@ that the demo holds the keyboard before it types, so if another window steals th
 the steps stop with a reason instead of clicking into whatever is there. Nothing here raises the
 demo over your work -- AGENTS.md section 9 on why that rule cuts both ways.
 
+⛔ ASK BEFORE RUNNING THIS WHEN SOMEONE IS AT THE MACHINE. The refusals above stop it doing the wrong
+thing; they do not stop it taking the desktop you are using. This pass launches a window, moves your
+pointer and presses your keys, and on 2026-10-09 it did exactly that to someone mid-sentence. The
+capture half of a by-hand pass needs none of that -- PrintWindow draws a window that is behind
+others -- so if what you want is frames rather than gestures, do not run this.
+
 .NOTES
 ⛔ WINDOWS ONLY, and for the same reason scripts/drive-demo-uia.ps1 is a script of its own: this
 pass addresses parts by AutomationId -- the panes, the two margins and the palette entry -- and the
@@ -81,8 +87,10 @@ $right = Join-Path $Repo 'src/DiffView.Avalonia/InlineDiffView.cs'
 $uia = Join-Path $PSScriptRoot 'drive-demo-uia.ps1'
 
 $failures = [System.Collections.Generic.List[string]]::new()
+$unread = [System.Collections.Generic.List[string]]::new()
 $script:step = 0
 $script:lastOutput = @()
+$script:logFile = $null
 
 function Drive {
     <#  One driver invocation. Records a failure and returns false rather than throwing, so the
@@ -153,13 +161,181 @@ function ClientOrigin {
     return @{ X = [int] $Matches[1]; Y = [int] $Matches[2] }
 }
 
+function ReadProbe {
+    <#  One `probe` line, read into its parts. `absent` is an ANSWER: a part shown only on request is
+        genuinely gone from the automation tree while it is off.  #>
+    [OutputType([hashtable])]
+    param([Parameter(Mandatory = $true)][string] $Line)
+
+    if ($Line -like '* absent') { return @{ Found = $false; Focused = $false; Range = $null } }
+
+    # Tokens rather than a regex for `focused`: `unfocused` CONTAINS `focused`, and a pattern that
+    # gets that boundary subtly right is one the next reader has to verify before trusting.
+    $tokens = @($Line -split '\s+')
+
+    $range = $null
+    $rangeToken = @($tokens | Where-Object { $_ -like 'range=*' }) | Select-Object -First 1
+    if ($rangeToken) {
+        # ⛔ InvariantCulture. The driver writes the number with a dot whatever the machine's culture,
+        # and Parse without this reads 41.375 as 41375 on a German desk.
+        $range = [double]::Parse(
+            $rangeToken.Substring('range='.Length),
+            [System.Globalization.NumberStyles]::Float,
+            [System.Globalization.CultureInfo]::InvariantCulture)
+    }
+
+    return @{ Found = $true; Focused = ($tokens -contains 'focused'); Range = $range }
+}
+
+function Probe {
+    <#  What the driver can say about one part. A probe that could not run at all is not an answer,
+        so it reports Read = $false and the caller records the reading as unread rather than failed.  #>
+    [OutputType([hashtable])]
+    param([Parameter(Mandatory = $true)][string] $Path)
+
+    if (-not (Drive -Verbs @('probe', $Path) -What ('probe ' + $Path))) {
+        return @{ Read = $false; Found = $false; Focused = $false; Range = $null }
+    }
+
+    $line = $script:lastOutput | Where-Object { $_ -like 'probe *' } | Select-Object -First 1
+    if (-not $line) { return @{ Read = $false; Found = $false; Focused = $false; Range = $null } }
+
+    $parts = ReadProbe -Line $line
+    return @{ Read = $true; Found = $parts.Found; Focused = $parts.Focused; Range = $parts.Range }
+}
+
+function Assert {
+    <#  One assertion. ⛔ This is what the pass is FOR: before plan 00033 every step was judged by
+        whether the driver verb threw, so a splitter drag that moved nothing and a click that was
+        refused both reported ok.  #>
+    param([Parameter(Mandatory = $true)][string] $What, [Parameter(Mandatory = $true)][bool] $Holds, [string] $Detail)
+
+    if ($Holds) { Write-Host ('  ✓ ' + $What) ; return }
+    Write-Host ('  ✗ ' + $What + ' -- ' + $Detail)
+    $failures.Add('ASSERTION ' + $What + ' :: ' + $Detail)
+}
+
+function AssertFocus {
+    <#  That $Holder has the keyboard and $Other does not.
+
+        ⛔ NEITHER having it is a THIRD outcome and is not the application's fault. The keyboard
+        belongs to one window on the desktop, so a person coming back to their machine mid-pass takes
+        it — and a pass that called that a failed assertion would blame the control for something a
+        human did. It is reported unread instead, which is the honest answer and also the one that
+        says what to do about it. Measured 2026-10-09: this pass borrowed the desktop while its owner
+        was working, and the first focus assertion was the casualty.  #>
+    param(
+        [Parameter(Mandatory = $true)][string] $What,
+        [Parameter(Mandatory = $true)][string] $Holder,
+        [Parameter(Mandatory = $true)][string] $Other)
+
+    $holder = Probe $Holder
+    $other = Probe $Other
+
+    if (-not $holder.Read -or -not $other.Read) {
+        Unread $What 'a pane could not be probed'
+        return
+    }
+
+    if (-not $holder.Focused -and -not $other.Focused) {
+        Unread $What 'neither pane holds the keyboard, so something outside the demo has it — the pass was interrupted'
+        return
+    }
+
+    Assert $What ($holder.Focused -and -not $other.Focused) `
+        ($Holder + ' focused=' + $holder.Focused + ', ' + $Other + ' focused=' + $other.Focused)
+}
+
+function Unread {
+    <#  A reading that could not be taken at all — the probe failed, not the property. Named in the
+        summary rather than counted as a pass, because a run reporting twelve of twelve while some of
+        them read nothing is the same lie in a smaller font.  #>
+    param([Parameter(Mandatory = $true)][string] $What, [string] $Why)
+    Write-Host ('  ? ' + $What + ' -- could not be read: ' + $Why)
+    $unread.Add($What + ' :: ' + $Why)
+}
+
+function LogLines {
+    <#  The demo's log as it stands. Opened with FileShare.ReadWrite because the demo holds it open;
+        a plain Get-Content fails against a live Serilog file.  #>
+    [OutputType([string[]])]
+    param()
+
+    if (-not $script:logFile -or -not (Test-Path $script:logFile)) { return @() }
+
+    $stream = [System.IO.File]::Open(
+        $script:logFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+    try {
+        $reader = New-Object System.IO.StreamReader($stream)
+        $text = $reader.ReadToEnd()
+    }
+    finally { $stream.Dispose() }
+
+    return @($text -split "`r?`n" | Where-Object { $_.Length -gt 0 })
+}
+
+function LogMark {
+    <#  ⛔ A count, not a grep of the whole file. The log is a shared file that outlives the run, so
+        "a line appeared" has to mean "since this step began" or a previous run's lines are read as
+        this one's.  #>
+    [OutputType([int])]
+    param()
+
+    return (LogLines).Count
+}
+
+function LogSince {
+    [OutputType([string[]])]
+    param([Parameter(Mandatory = $true)][int] $Mark)
+    return @(LogLines | Select-Object -Skip $Mark)
+}
+
+function WaitForReady {
+    <#  Waits for the view to reach Ready, which the library logs as a state transition at Information.
+
+        ⛔ This replaced `Start-Sleep -Seconds 3`, and the three seconds were not merely arbitrary —
+        they were almost exactly wrong. Measured on this machine, the demo reaches Ready about 3.0 s
+        after launch, so the pass clicked the left pane at the moment the view became ready and
+        sometimes landed before it: the first focus assertion failed while the second, further into
+        the run, passed. A sleep tuned to a machine is a flake waiting for a slower one, and a flaky
+        assertion is worse than none — an attended pass is abandoned the second time it cries wolf.  #>
+    [OutputType([bool])]
+    param([Parameter(Mandatory = $true)][int] $Mark, [int] $TimeoutSeconds = 30)
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        if (@(LogSince $Mark | Where-Object { $_ -like '*State*"Ready"*' }).Count -gt 0) { return $true }
+        Start-Sleep -Milliseconds 250
+    }
+
+    return $false
+}
+
 Write-Host '=== launching; the demo takes the foreground from here until DONE ==='
 $report = @(& dotnet run scripts/drive-demo.cs -- launch --left $left --right $right --edit both 2>&1)
 Write-Host ($report -join "`n")
 $line = $report | Where-Object { $_ -match 'launched pid=(\d+)' } | Select-Object -First 1
 if (-not $line) { throw 'the demo did not launch; nothing else can run' }
 $demoPid = [int] ($line -replace '.*launched pid=(\d+).*', '$1')
-Start-Sleep -Seconds 3
+
+# The log this run writes to, taken once: the demo buckets its files, so the newest at launch is the
+# one this run appends to, and resolving it per step could cross a bucket boundary mid-pass.
+if ($line -match 'logs=(.+?)\s*$') {
+    $logDirectory = $Matches[1]
+    $script:logFile = (Get-ChildItem $logDirectory -Filter 'diffview*' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1)?.FullName
+}
+
+if ($script:logFile) { Write-Host ('reading the demo log at ' + $script:logFile) }
+else { Write-Host 'WARNING: no demo log found, so every log-based assertion will be unread' }
+
+# Ready, not a stopwatch. See WaitForReady: three seconds was almost exactly the wrong number here.
+$launchMark = LogMark
+if (WaitForReady -Mark $launchMark) { Write-Host 'the view reached Ready; starting' }
+else {
+    Write-Host 'WARNING: no Ready transition was logged; starting anyway, and early steps may be racing a build'
+    Start-Sleep -Seconds 3
+}
 
 try {
     # ---- the focus accent, which is a collapsed overlay in the header and must move no row ----
@@ -167,9 +343,16 @@ try {
     Focus 'SideBySide/LeftPane' | Out-Null
     Start-Sleep -Milliseconds 600
     Shot 'focus-left' | Out-Null
+
+    # Both panes are asked, not just the one clicked: "the left pane has the keyboard" is also true
+    # of a frame where BOTH somehow claim it, and the accent is about which one.
+    AssertFocus 'the left pane holds the keyboard' 'SideBySide/LeftPane' 'SideBySide/RightPane'
+
     Focus 'SideBySide/RightPane' | Out-Null
     Start-Sleep -Milliseconds 600
     Shot 'focus-right' | Out-Null
+
+    AssertFocus 'the keyboard moved to the right pane' 'SideBySide/RightPane' 'SideBySide/LeftPane'
 
     # ---- the pane's own context menu at real DPI, and light-dismiss ----
     Write-Host '=== pane context menu ==='
@@ -177,9 +360,21 @@ try {
         Shot 'pane-menu' 'popup' | Out-Null
     }
 
+    # A popup appearing says a window opened; it does not say the menu has anything in it. The entries
+    # carry ids, so reaching for one is stronger for free — `NextChange` is on every pane menu.
+    $entry = Probe 'NextChange'
+    if ($entry.Read) { Assert 'the pane menu has its entries' $entry.Found 'no NextChange entry is in the tree' }
+    else { Unread 'the pane menu entries' 'the probe could not run' }
+
     Drive -Verbs @('key', 'Escape') -What 'Escape to light-dismiss the menu' | Out-Null
     Start-Sleep -Milliseconds 800
     Shot 'after-light-dismiss' | Out-Null
+
+    # ⛔ The dismiss is the assertion, not the frame. A captured frame cannot show that a menu closed
+    # — it shows the window as drawn, and a menu drawn in its own popup is simply not in it.
+    $entry = Probe 'NextChange'
+    if ($entry.Read) { Assert 'the menu is gone after Escape' (-not $entry.Found) 'its NextChange entry is still in the tree' }
+    else { Unread 'whether the menu closed' 'the probe could not run' }
 
     # ---- the line-number margin's tooltip: dwell, placement, legibility at real size ----
     Write-Host '=== line-number tooltip ==='
@@ -195,6 +390,10 @@ try {
         Shot 'view-menu' 'popup' | Out-Null
     }
 
+    $palette = Probe 'ColourBlindPalette'
+    if ($palette.Read) { Assert 'the View menu is open and populated' $palette.Found 'its Colour-blind palette entry is not in the tree' }
+    else { Unread 'whether the View menu opened' 'the probe could not run' }
+
     # Closed explicitly, whether or not it opened: a popup left over the pane is what refused the
     # first run's next click, and every step after it cascaded.
     Drive -Verbs @('key', 'Escape') -What 'Escape to close the View menu' | Out-Null
@@ -203,10 +402,27 @@ try {
     # ---- navigation and the current-change border at real size ----
     Write-Host '=== F7 navigation ==='
     Focus | Out-Null
+    $mark = LogMark
     Drive -Verbs @('key', 'F7') -What 'F7 once' | Out-Null
     Drive -Verbs @('key', 'F7') -What 'F7 twice' | Out-Null
     Start-Sleep -Milliseconds 800
     Shot 'after-f7-twice' | Out-Null
+
+    # Two halves, because they fail differently: the command not firing at all, and the command firing
+    # and the view going nowhere. The second is what the demo's landing line was added for — nothing in
+    # the automation tree exposes the current change.
+    if ($script:logFile) {
+        $since = LogSince $mark
+        $fired = @($since | Where-Object { $_ -like '*Command NextChange from the keyboard*' })
+        $landed = @($since | Where-Object { $_ -match 'Now at change (\d+) of' })
+
+        Assert 'F7 ran NextChange twice' ($fired.Count -eq 2) ($fired.Count.ToString() + ' NextChange lines since the step began')
+        if ($landed.Count -gt 0 -and $landed[-1] -match 'Now at change (\d+) of') {
+            Assert 'two presses left the second change current' ($Matches[1] -eq '2') ('the log says change ' + $Matches[1])
+        }
+        else { Unread 'where F7 landed' 'no landing line was written' }
+    }
+    else { Unread 'F7 navigation' 'there is no demo log to read' }
 
     # ---- the change-marker margin's tooltip, which exists only for a CHANGED line ----
     Write-Host '=== change-marker tooltip, on a changed row ==='
@@ -240,11 +456,27 @@ try {
     # ---- the find bar, which is hidden until asked for ----
     Write-Host '=== the find bar ==='
     Focus | Out-Null
+
+    # Absent BEFORE as well as present after. Without the first reading, a find bar that had been open
+    # since some earlier step would satisfy the second and prove nothing about Ctrl+F.
+    $bar = Probe 'SideBySide/FindBar'
+    if ($bar.Read) { Assert 'the find bar starts closed' (-not $bar.Found) 'it is already in the tree before Ctrl+F' }
+    else { Unread 'whether the find bar starts closed' 'the probe could not run' }
+
     Drive -Verbs @('key', 'ctrl+f') -What 'Ctrl+F to open the find bar' | Out-Null
     Start-Sleep -Seconds 1
     Shot 'find-bar' | Out-Null
+
+    $bar = Probe 'SideBySide/FindBar'
+    if ($bar.Read) { Assert 'Ctrl+F opened the find bar' $bar.Found 'it is not in the tree after Ctrl+F' }
+    else { Unread 'whether Ctrl+F opened the find bar' 'the probe could not run' }
+
     Drive -Verbs @('key', 'Escape') -What 'Escape to close the find bar' | Out-Null
     Start-Sleep -Milliseconds 600
+
+    $bar = Probe 'SideBySide/FindBar'
+    if ($bar.Read) { Assert 'Escape closed the find bar' (-not $bar.Found) 'it is still in the tree after Escape' }
+    else { Unread 'whether Escape closed the find bar' 'the probe could not run' }
 
     # ---- the splitter, which is the connector gutter's empty column ----
     # AGENTS.md section 6: the headers and the panes share a column layout, so a header must stay
@@ -272,20 +504,39 @@ try {
     # passed while measuring block selection. The pane's own width is the evidence.
     $paneAfter = ElementRect -Path 'SideBySide/LeftPane' -DemoPid $demoPid
     if ($null -ne $paneBefore -and $null -ne $paneAfter) {
-        if ($paneBefore.W -eq $paneAfter.W) {
-            $failures.Add('splitter drag :: the left pane is still ' + $paneAfter.W + ' px wide, so nothing moved' +
-                ' -- the drag most likely began on a connector polygon, which selects a block')
-        }
-        else {
+        Assert 'the splitter drag moved the panes' ($paneBefore.W -ne $paneAfter.W) `
+            ('the left pane is still ' + $paneAfter.W + ' px wide, so the drag began on a connector polygon, which selects a block')
+        if ($paneBefore.W -ne $paneAfter.W) {
             Write-Host ('       the left pane went from ' + $paneBefore.W + ' px to ' + $paneAfter.W + ' px')
         }
     }
+    else { Unread 'whether the splitter moved' 'the left pane bounds could not be read either side of the drag' }
 
     # ---- the overview map's viewport box, where a press inside drags and a press outside jumps ----
+    # ⛔ Its start must land INSIDE the viewport box: a press inside drags, a press outside jumps. That
+    # depends on the scroll position, which is the splitter step's Ctrl+Home above — so these two steps
+    # are ordered, not merely adjacent. The reading below is what turns a wrong gesture into a failure.
     Write-Host '=== overview map drag ==='
+    $scrollBar = 'SideBySide/RightPane/PART_VerticalScrollBar'
+    $scrolledBefore = Probe $scrollBar
+
     if (Drive -Verbs @('drag', 'left', '1089', '90', 'to', '1089', '420') -What 'drag the map viewport down') {
         Start-Sleep -Milliseconds 800
         Shot 'map-dragged' | Out-Null
+    }
+
+    $scrolledAfter = Probe $scrollBar
+    if ($scrolledBefore.Read -and $scrolledAfter.Read -and $null -ne $scrolledBefore.Range -and $null -ne $scrolledAfter.Range) {
+        Assert 'the map drag scrolled the panes' ($scrolledBefore.Range -ne $scrolledAfter.Range) `
+            ('the scroll bar is still at ' + $scrolledAfter.Range + ', so the press missed the viewport box and jumped nowhere')
+        if ($scrolledBefore.Range -ne $scrolledAfter.Range) {
+            Write-Host ('       the scroll went from ' + $scrolledBefore.Range + ' to ' + $scrolledAfter.Range)
+        }
+    }
+    else {
+        # ⚠ PART_VerticalScrollBar is AvaloniaEdit's template part, not one of ours, and nothing pins
+        # it: an Avalonia upgrade may rename it, and this is where that shows.
+        Unread 'whether the map drag scrolled anything' ('no RangeValue at ' + $scrollBar)
     }
 
     # ---- the colour-blind palette, which the capture half cannot reach: there is no flag for it ----
@@ -294,9 +545,20 @@ try {
     # than by counting rows down a menu.
     Write-Host '=== colour-blind palette ==='
     if (Drive -Verbs @('mark', 'then', 'click', 'left', '96', '17', 'then', 'popup') -What 'open the View menu for the palette') {
+        $mark = LogMark
         if (Drive -Verbs @('click', 'left', '--id', 'ColourBlindPalette') -What 'tick Colour-blind palette') {
             Start-Sleep -Seconds 1
             Shot 'palette-colour-blind' | Out-Null
+
+            # The demo logs a checkable menu item with the state it left, which is the only readable
+            # answer: a MenuItem advertises ExpandCollapse and no Toggle, so UI Automation cannot say
+            # whether this one is ticked.
+            if ($script:logFile) {
+                $ticked = @(LogSince $mark | Where-Object { $_ -match 'Menu: .*(Colour|Color)-blind palette → on' })
+                Assert 'the palette is now the colour-blind one' ($ticked.Count -eq 1) `
+                    'no "→ on" line for the palette since the click'
+            }
+            else { Unread 'whether the palette was ticked' 'there is no demo log to read' }
         }
     }
     else {
@@ -315,16 +577,24 @@ finally {
     Write-Host ''
     Write-Host ('captured ' + (Get-ChildItem $Out -Filter *.png -ErrorAction SilentlyContinue).Count + ' frames into ' + $Out)
     if ($failures.Count -eq 0) {
-        Write-Host 'every step took'
+        Write-Host 'every step took and every assertion held'
     }
     else {
-        Write-Host ('STEPS THAT DID NOT TAKE (' + $failures.Count + '):')
+        Write-Host ('WHAT DID NOT HOLD (' + $failures.Count + '):')
         foreach ($f in $failures) { Write-Host ('  - ' + $f) }
     }
 
+    # ⛔ Named, never counted as a pass. A run reporting twelve of twelve while some of its readings
+    # could not be taken is the same lie this whole pass was rewritten to stop telling.
+    if ($unread.Count -gt 0) {
+        Write-Host ''
+        Write-Host ('READINGS THAT COULD NOT BE TAKEN (' + $unread.Count + ') — these steps proved NOTHING:')
+        foreach ($u in $unread) { Write-Host ('  ? ' + $u) }
+    }
+
     Write-Host ''
-    Write-Host 'Every frame is gated on its own step, so a frame that exists is one whose step'
-    Write-Host 'reported success. Judge them against the failure list above, not their names alone.'
+    Write-Host 'Every frame is gated on its own step, and every step that can be asserted is. A step'
+    Write-Host 'that did nothing now says so; the two above are the lists to read, not the frame names.'
     Write-Host ''
     Write-Host 'STILL NOT COVERED anywhere, and owed:'
     Write-Host '  macOS -- plan 00023 specifies that back end and deliberately does not write it,'
