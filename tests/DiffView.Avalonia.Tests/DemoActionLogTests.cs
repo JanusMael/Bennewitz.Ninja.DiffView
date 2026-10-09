@@ -211,6 +211,60 @@ public sealed class DemoActionLogTests
     }
 
     [AvaloniaFact]
+    public async Task A_navigation_says_where_it_landed_even_when_it_moved_nothing()
+    {
+        // Plan 00033 phase 3. The pass can prove a navigation command FIRED from the log; what it
+        // could not prove is that the view went anywhere, and nothing exposes the current change —
+        // no Toggle pattern, no Value pattern, and the status strip's text is unreachable. So the
+        // demo says where it landed, which is the host reading its own public API rather than a peer
+        // advertising anything.
+        TestLogSink.Instance.Clear();
+        using DemoLog log = new();
+        MainWindow window = await OpenAsync(new FakeTimeProvider());
+        try
+        {
+            DiffPanePresenter left = Left(window);
+            left.TextArea.Focus();
+            Layout();
+
+            int count = window.Diff.ChangeCount;
+            Assert.True(count >= 2, $"this pair has {count} changes, so walking two of them proves nothing");
+            Assert.Equal(-1, window.Diff.CurrentChangeIndex);
+
+            Press(window, Key.F7, PhysicalKey.F7);
+            Press(window, Key.F7, PhysicalKey.F7);
+
+            // ⛔ The number is the one the status strip shows. CurrentChangeIndex is 0-based and the
+            // strip counts from one, so a reader comparing the log with the window would otherwise
+            // find them one apart — which is the kind of discrepancy that gets read as a bug.
+            Assert.Equal(1, window.Diff.CurrentChangeIndex);
+            Assert.Equal(
+                [$"Now at change 1 of {count}", $"Now at change 2 of {count}"],
+                log.Lines("Now at"));
+
+            // And the case the whole line exists for. Next at the last change moves nothing, and a
+            // reading that only spoke when the index CHANGED would say nothing here — indistinguishable
+            // from a command that never ran, which is the confusion plan 00033 is about.
+            window.Diff.CurrentChangeIndex = count - 1;
+            Layout();
+            int before = log.Lines("Now at").Count;
+
+            Press(window, Key.F7, PhysicalKey.F7);
+
+            Assert.Equal(count - 1, window.Diff.CurrentChangeIndex);
+            Assert.Equal(
+                [$"Now at change {count} of {count}"],
+                log.Lines("Now at").Skip(before).ToArray());
+        }
+        finally
+        {
+            window.Close();
+        }
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
     public async Task A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header()
     {
         TestLogSink.Instance.Clear();
