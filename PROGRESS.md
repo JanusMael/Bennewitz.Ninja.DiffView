@@ -50,12 +50,17 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-**Next: open item 10, the `Bennewitz.Ninja.AppServices.Avalonia` migration.** Open item 9's **Windows
-half is discharged** — the capture pass and the interactive pass both ran, and what they found is in
-that item and in `DECISIONS.md` — leaving **macOS**, which no instrument covers and for which plan
-00023 deliberately writes no back end. An instrument is not a run, and the run is what pays: it found
-a half-localized surface no gate in the suite can see, and two driver steps that reported success and
-did nothing.
+**Next: the macOS by-hand run, which is all that is left of open item 9** — and it needs a Mac, so it
+is scheduled rather than picked up. The **Windows half is discharged**: the capture pass and the
+interactive pass both ran, and what they found is in that item and in `DECISIONS.md`. An instrument is
+not a run, and the run is what pays — it found a half-localized surface no gate in the suite can see,
+two driver steps that reported success and did nothing, and a palette the capture half could not
+photograph at all.
+
+⛔ **Both of the other candidates are parked on something outside this repository**, so neither is
+work that can be picked up: **open item 10** waits for ClaudeForge's live-log window to be published
+as a package (`plans/00032-…md` is researched to the point of execution and must not be started before
+then), and **item 14** waits for XamlQuality's per-control `BNXQ1003` reading.
 
 ### What ships
 
@@ -216,16 +221,21 @@ wording.
      its pixels belonged to a popup. Both fixed, and the second would have gone on to produce a
      *wrong* result rather than a refusal had only the guard been repaired. `DECISIONS.md`, *A step
      that reports success is not a step that did anything*.
-   - ⚠ **A copy arrow hides the line number it is drawn over**, for the first line of every block —
-     the line a reader is most likely to want to cite. `AGENTS.md` §6 says *drawn over*, so this is
-     intended and tested, and the number is not dimmed or shifted but gone. **Whether that trade is
-     right at real size is a judgement, and Brian's.** The one-sided block's arrow in the padding row
-     reads well.
-   - ⚠ **The demo has no `--palette` flag**, so the colour-blind palette is reachable only through
-     the View menu and the capture half structurally cannot reach the one palette whose purpose is
-     that some readers cannot use the other. This is the argument that added `--edit` (`AGENTS.md`
-     §9): a flag setting the same toggle the menu sets, so the two cannot disagree. Small, and not
-     yet done.
+   - ✅ **A copy arrow hides the line number it is drawn over**, for the first line of every block —
+     **looked at and kept, 2026-10-09.** The compensation is designed in rather than missing:
+     `DiffLineNumberMargin.TooltipFor` returns the line's own tooltip, which carries the number,
+     *plus* what the arrow standing in its place would do. It costs one row per block, and a
+     one-sided block's arrow sits in padding, costing no number at all. The two alternatives were
+     priced and declined: hover-reveal buys back a number the tooltip already gives and spends
+     discoverability, which is what the arrows are *for*; and widening the gutter makes every row in
+     both panes pay to fix one row per block — 43 px holds four digits for a 2,880-line file with
+     nothing to spare beside them. **The finding is closed, not deferred.**
+   - ✅ **The demo had no `--palette` flag** — **added 2026-10-09.** The colour-blind palette was
+     reachable only by driving a menu, so the capture half structurally could not reach the one
+     palette whose purpose is that some readers cannot use the other. The flag sets the same menu
+     item the View menu sets, so the two cannot disagree — the rule `AGENTS.md` §9 records for
+     `--edit`. It also makes that palette capturable with no driving at all, which is what will make
+     it reachable in the owed macOS run.
 
 10. **`LayeredEditors.Avalonia.Diagnostics` → `Bennewitz.Ninja.AppServices.Avalonia`: deferred
     2026-09-23, deliberately.** The demo keeps its hand-packed `1.0.1` from `../nuget-local`, and
@@ -253,6 +263,26 @@ wording.
     The cost of deferring is that the local feed is a hand-packed artifact no other machine can
     restore, so CI and any fresh checkout stay dependent on a folder here, and the gap widens with
     each AppServices release.
+
+    ⛔ **Deferred again on 2026-10-09, now with a trigger: the migration waits for ClaudeForge's
+    live-log window to be published as a NuGet package.** `AvaloniaDiagnostics.ToggleLiveLogWindow()`
+    is gone from the published package because that window is app code in ClaudeForge, not a library
+    feature; publishing it is intended, and AppServices' contribution to it is settled. Migrating
+    before then would force the demo either to retire F12 or to carry a **774-line copy** of
+    `LiveLogWindow`, `HeaderLink` and `LiveLogWindowSink` — a second maintenance site for exactly as
+    long as the package took to ship. **The decision is that F12 keeps working and the local-feed cost
+    keeps being paid.** `plans/00032-the-demo-restores-from-nuget.md` is the parked plan; it is
+    researched to the point of execution and is not to be started until that package exists.
+
+    What that plan already establishes, so it is not re-derived: the latest published version is
+    `2026.4.1001`; the assembly and namespace take `.AvaloniaUI` while the package id keeps
+    `.Avalonia`; all four surviving entry points and every option the demo sets exist unchanged; the
+    **only** `PackageReference` in the repository is the demo's, so `release.yml`'s comment blaming
+    `DiffView.Avalonia` is wrong; and — measured against the cached package rather than assumed —
+    `AvaloniaDiagnosticsOptions.ConfigureLogger` lets a source-level Serilog override reach the file
+    sink, a sibling category's `Debug` line proving the override is what admits it. That last one is
+    what would delete `DemoLogging.InteractionAtInformation`, whose own docstring says it exists only
+    because the package offered no per-source minimum to lower.
 
 11. ~~The unified view keeps its old folds across a rebuild~~ — **fixed 2026-09-28.**
     `InlineDiffView.ApplyModel` now does for every new model what `DiffBuildController.ApplyModel`

@@ -68,6 +68,20 @@ internal static class DebugFlags
     public static bool EditRight { get; private set; }
 
     /// <summary>
+    /// Whether to start on the colour-blind-safe palette: <c>--palette colour-blind</c>
+    /// (<c>color-blind</c> too), against <c>--palette default</c>.
+    /// </summary>
+    /// <remarks>
+    /// The capture half of a by-hand pass takes a window's pixels without the foreground and drives
+    /// nothing, so before this flag it could not reach the colour-blind palette at all — the one
+    /// palette whose whole purpose is that some readers cannot use the other was reachable only by
+    /// clicking through the View menu. Found by open item 9's Windows run. Like <c>--edit</c>, this
+    /// is applied by setting the menu item the View menu sets, never the toggle underneath it, so
+    /// the flag and the menu cannot disagree about what is on.
+    /// </remarks>
+    public static bool ColourBlindPalette { get; private set; }
+
+    /// <summary>
     /// The UI culture to resolve the library's text in: <c>--culture &lt;name&gt;</c>, e.g.
     /// <c>pt-BR</c>. Null follows the machine's.
     /// </summary>
@@ -90,6 +104,9 @@ internal static class DebugFlags
         (false, true) => "right",
         _ => "(none)",
     };
+
+    /// <summary>What <c>--palette</c> resolved to, for the summary line. <inheritdoc cref="EditSummary"/></summary>
+    public static string PaletteSummary => ColourBlindPalette ? "colour-blind" : "default";
 
     /// <summary>Minimum Serilog level. <c>--log-level &lt;verbose|debug|information|warning|error|fatal&gt;</c>.</summary>
     public static LogEventLevel MinimumLevel { get; private set; } = LogEventLevel.Information;
@@ -176,6 +193,27 @@ internal static class DebugFlags
                     }
 
                     break;
+                case "--palette":
+                    if (TryTakeValue(args, ref i, flag, out string? palette))
+                    {
+                        // Both spellings, because the demo's own menu says "Colour-blind" and half
+                        // the estate types the other one.
+                        switch (palette.ToLowerInvariant())
+                        {
+                            case "colour-blind":
+                            case "color-blind":
+                                ColourBlindPalette = true;
+                                break;
+                            case "default":
+                                ColourBlindPalette = false;
+                                break;
+                            default:
+                                Deferred.Add($"Unknown palette '{palette}'; expected colour-blind or default. The default palette is used.");
+                                break;
+                        }
+                    }
+
+                    break;
                 case "--culture":
                     if (TryTakeValue(args, ref i, flag, out string? culture))
                     {
@@ -221,8 +259,8 @@ internal static class DebugFlags
 
         Deferred.Clear();
         Log.Information(
-            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} view={View} edit={Edit} culture={Culture} level={Level}",
-            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", View, EditSummary, Culture?.Name ?? "(machine)", MinimumLevel);
+            "[DebugFlags] active: theme={Theme} variant={Variant} left={Left} right={Right} view={View} edit={Edit} palette={Palette} culture={Culture} level={Level}",
+            Theme, Variant, LeftPath ?? "(none)", RightPath ?? "(none)", View, EditSummary, PaletteSummary, Culture?.Name ?? "(machine)", MinimumLevel);
     }
 
     /// <summary>Restores every flag to its default. Test cleanup hook.</summary>
@@ -235,6 +273,7 @@ internal static class DebugFlags
         View = DemoView.SideBySide;
         EditLeft = false;
         EditRight = false;
+        ColourBlindPalette = false;
         Culture = null;
         MinimumLevel = LogEventLevel.Information;
         Deferred.Clear();
