@@ -92,6 +92,13 @@ $script:step = 0
 $script:lastOutput = @()
 $script:logFile = $null
 
+# ⛔ Whether the pass REACHED THE END, which is not the same question as whether anything failed.
+# Measured 2026-10-09: a throw in the first assertion killed the run after one frame, the finally
+# reported "every step took and every assertion held" because nothing had been recorded as a failure
+# yet, and the run looked like its own baseline. A summary that counts only what it was told about
+# calls silence success — which is the exact defect this whole pass was rewritten to stop.
+$script:finished = $false
+
 function Drive {
     <#  One driver invocation. Records a failure and returns false rather than throwing, so the
         pass continues; the driver's own stderr is what says why. The driver's output is handed
@@ -229,21 +236,26 @@ function AssertFocus {
         [Parameter(Mandatory = $true)][string] $Holder,
         [Parameter(Mandatory = $true)][string] $Other)
 
-    $holder = Probe $Holder
-    $other = Probe $Other
+    # ⛔ NOT $holder and $other. PowerShell variable names are case-INSENSITIVE, so those ARE the
+    # parameters $Holder and $Other — and because the parameters are [string]-typed, assigning a
+    # hashtable to them does not fail, it STRINGIFIES it to "System.Collections.Hashtable". The
+    # reading is then garbage and the next property access throws. Measured 2026-10-09: it threw on
+    # the first call, the pass died after one frame, and the summary still said every assertion held.
+    $holderProbe = Probe $Holder
+    $otherProbe = Probe $Other
 
-    if (-not $holder.Read -or -not $other.Read) {
+    if (-not $holderProbe.Read -or -not $otherProbe.Read) {
         Unread $What 'a pane could not be probed'
         return
     }
 
-    if (-not $holder.Focused -and -not $other.Focused) {
+    if (-not $holderProbe.Focused -and -not $otherProbe.Focused) {
         Unread $What 'neither pane holds the keyboard, so something outside the demo has it — the pass was interrupted'
         return
     }
 
-    Assert $What ($holder.Focused -and -not $other.Focused) `
-        ($Holder + ' focused=' + $holder.Focused + ', ' + $Other + ' focused=' + $other.Focused)
+    Assert $What ($holderProbe.Focused -and -not $otherProbe.Focused) `
+        ($Holder + ' focused=' + $holderProbe.Focused + ', ' + $Other + ' focused=' + $otherProbe.Focused)
 }
 
 function Unread {
@@ -574,6 +586,10 @@ try {
     else {
         $failures.Add('colour-blind palette :: the View menu never opened, so its entry was unreachable')
     }
+
+    # The last statement of the try: anything that throws above leaves this unset, and the summary
+    # says so instead of reporting a baseline it never reached.
+    $script:finished = $true
 }
 finally {
     $p = Get-Process -Id $demoPid -ErrorAction SilentlyContinue
@@ -586,7 +602,13 @@ finally {
 
     Write-Host ''
     Write-Host ('captured ' + (Get-ChildItem $Out -Filter *.png -ErrorAction SilentlyContinue).Count + ' frames into ' + $Out)
-    if ($failures.Count -eq 0) {
+
+    if (-not $script:finished) {
+        Write-Host ''
+        Write-Host '⛔ THE PASS DID NOT FINISH. It threw partway, so the lists below cover only the steps'
+        Write-Host '   that ran and this run is NOT a baseline. The error is above, before this summary.'
+    }
+    elseif ($failures.Count -eq 0) {
         Write-Host 'every step took and every assertion held'
     }
     else {
