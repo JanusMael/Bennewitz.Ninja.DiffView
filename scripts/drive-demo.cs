@@ -297,6 +297,22 @@ internal sealed record CaptureVerb(WindowRef Window, string OutPath) : Verb
     public override IReadOnlyList<string> Canonical() => ["capture", Window.Canonical, OutPath];
 }
 
+/// <summary>
+/// What the reader can say about one part, printed and not judged. The driver reports; the caller
+/// decides — a driver that knew about expectations would be a test framework, and this one is used by
+/// hand as much as by a script.
+/// </summary>
+/// <remarks>
+/// ⛔ A part that is ABSENT is an answer here, not a failure: a part shown only on request is genuinely
+/// gone from the automation tree while it is off, so <c>absent</c> is exactly what a caller asserting
+/// the find bar is closed needs to read. A demo with no window and a machine where UI Automation cannot
+/// be reached stay failures, because neither is an answer about the part.
+/// </remarks>
+internal sealed record ProbeVerb(string Path) : Verb
+{
+    public override IReadOnlyList<string> Canonical() => ["probe", Path];
+}
+
 internal sealed record HoverVerb(Target Target) : Verb
 {
     public override IReadOnlyList<string> Canonical() => ["hover", .. Target.Canonical()];
@@ -370,6 +386,9 @@ internal static class VerbParser
             "capture" when rest.Length == 2 && rest[1].Length > 0 => new CaptureVerb(WindowOf(rest[0]), rest[1]),
             "capture" => throw new UsageException("capture takes a window and an output path"),
             "hover" => new HoverVerb(TargetOf(rest, "hover")),
+            "probe" when rest.Length == 1 && Steps(rest[0]) => new ProbeVerb(rest[0]),
+            "probe" => throw new UsageException(
+                "probe takes one AutomationId path: ids from the window down, e.g. SideBySide/LeftPane"),
             "drag" when rest.Length >= 1 => Drag(Button(rest[0]), rest[1..]),
             "drag" => throw new UsageException("drag takes a button and two points"),
             _ => throw new UsageException($"unknown verb `{tokens[0]}`"),
@@ -659,6 +678,13 @@ internal sealed partial class X11 : IBackEnd
             case HoverVerb hover:
                 Hover(hover.Target, state);
                 break;
+            case ProbeVerb probe:
+                // Said explicitly rather than left to the default arm, which would read as an
+                // oversight. There is no coordinate form to fall back on here as there is for a click:
+                // probing IS asking the accessibility tree, and this back end has none.
+                throw new DriveException(
+                    $"the X11 back end cannot probe `{probe.Path}`: it has no accessibility bridge "
+                    + "(plan 00023 leaves AT-SPI out), and a probe has no coordinate form to fall back on");
             default:
                 throw new DriveException($"the X11 back end has no implementation of `{verb.Canonical()[0]}`");
         }
@@ -1325,6 +1351,9 @@ internal sealed class Windows : IBackEnd
             case HoverVerb hover:
                 Hover(hover.Target, state);
                 break;
+            case ProbeVerb probe:
+                Probe(probe.Path);
+                break;
             default:
                 throw new DriveException($"the Windows back end has no implementation of `{verb.Canonical()[0]}`");
         }
@@ -1499,16 +1528,52 @@ internal sealed class Windows : IBackEnd
     /// process because UI Automation's managed client lives in the Windows Desktop framework, which a
     /// portable file-based app cannot reference without becoming a Windows-only one.
     /// </summary>
-    private ElementInfo Element(IdTarget target)
-    {
-        string reader = Path.Combine(Repo.Root(), "scripts", "drive-demo-uia.ps1");
-        (int exit, string output) = Run("pwsh", [
+    /// <summary>
+    /// The reader, run once for one path. Shared so that <see cref="Element"/> and <see cref="Probe"/>
+    /// cannot drift in how they invoke it — they differ only in what they do with an absent part.
+    /// </summary>
+    private (int Exit, string Output) Read(string path) =>
+        Run("pwsh", [
             "-NoProfile",
             "-NonInteractive",
-            "-File", reader,
+            "-File", Path.Combine(Repo.Root(), "scripts", "drive-demo-uia.ps1"),
             "-DemoProcessId", DemoProcess().ToString(CultureInfo.InvariantCulture),
-            "-Path", target.Path,
+            "-Path", path,
         ]);
+
+    /// <summary>
+    /// Prints what the reader can say about one part, and treats an absent part as an ANSWER. A caller
+    /// asserting that the find bar is closed needs to read <c>absent</c> rather than catch a failure,
+    /// because a part shown only on request is genuinely gone from the tree while it is off.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ A demo with no window and an unreachable UI Automation stay failures. Neither is an answer
+    /// about the part, and a probe that reported <c>absent</c> for a demo that had exited would make
+    /// every presence assertion pass at exactly the moment nothing was running.
+    /// </remarks>
+    private void Probe(string path)
+    {
+        (int exit, string output) = Read(path);
+        switch (exit)
+        {
+            case 0:
+                Console.WriteLine($"probe {ParseElement(output)}");
+                break;
+            case 3:
+                Console.WriteLine($"probe {path} absent");
+                break;
+            case 5:
+                throw new DriveException($"the demo has no window: it has exited or never opened one:\n{output.Trim()}");
+            case 4:
+                throw new DriveException($"UI Automation could not be reached on this machine:\n{output.Trim()}");
+            default:
+                throw new DriveException($"the UI Automation reader failed for `{path}`:\n{output.Trim()}");
+        }
+    }
+
+    private ElementInfo Element(IdTarget target)
+    {
+        (int exit, string output) = Read(target.Path);
 
         // The reader's exit codes are distinguished rather than collapsed into one message: a part that
         // is genuinely absent, a demo that has gone, and a machine where UI Automation cannot be

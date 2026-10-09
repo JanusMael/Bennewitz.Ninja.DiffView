@@ -46,6 +46,7 @@ public sealed class DriveDemoTests
             "then", "geometry", "0x1200017",
             "then", "capture", "popup", "menu.png",
             "then", "hover", "300", "200",
+            "then", "probe", "SideBySide/FindBar",
             "then", "drag", "left", "539", "364", "to", "639", "364",
             "then", "drag", "3", "1089", "100", "to", "1089", "400", "in", "popup",
         ];
@@ -66,6 +67,7 @@ public sealed class DriveDemoTests
                 "geometry\t18874391",
                 "capture\tpopup\tmenu.png",
                 "hover\t300\t200\tin\tdemo",
+                "probe\tSideBySide/FindBar",
                 "drag\tleft\t539\t364\tto\t639\t364\tin\tdemo",
                 "drag\tright\t1089\t100\tto\t1089\t400\tin\tpopup",
             ],
@@ -97,6 +99,13 @@ public sealed class DriveDemoTests
     [InlineData("drag left 1 2 at 3 4", "drag takes <x> <y> to <x> <y>")]
     [InlineData("drag left 1 2 to 3 4 near popup", "drag takes <x> <y> to <x> <y>")]
     [InlineData("drag sideways 1 2 to 3 4", "`sideways` is not a button")]
+
+    // probe takes a path and only a path. A probe given a coordinate pair is the mistake worth
+    // catching, because the two verbs that read a part — hover and click — do take one.
+    [InlineData("probe", "probe takes one AutomationId path")]
+    [InlineData("probe SideBySide/LeftPane extra", "probe takes one AutomationId path")]
+    [InlineData("probe 300 200", "probe takes one AutomationId path")]
+    [InlineData("probe SideBySide//LeftPane", "probe takes one AutomationId path")]
     public void A_malformed_chain_is_refused_as_usage_and_says_what_is_wrong(string chain, string expected)
     {
         (int exitCode, string output) = Run(["--parse", .. chain.Split(' ')]);
