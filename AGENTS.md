@@ -627,6 +627,13 @@ run nothing and print what the driver read, which is what makes it testable with
   snapshot frames under `Snapshots/` with their pixel assertions stay the evidence, per §5. This is
   for the judgement a frame cannot give — whether a thing reads right at real size, in a real window,
   at the real DPI.
+- ⛔ **Ask before running anything that borrows the desktop, when anyone is at the machine.** The
+  driver's refusals stop it doing the *wrong* thing; nothing stops it doing the right thing to the
+  wrong person. `scripts/drive-demo-interactive.ps1` launches a window, moves the pointer and presses
+  keys, and on 2026-10-09 it did that to someone mid-sentence — four times, because each diagnosis of
+  the previous run launched another one. **`capture` needs none of this**: `PrintWindow` draws a
+  window that is behind others, so frames can be taken without touching the foreground. Reach for the
+  capture half unless the thing under judgement is a gesture.
 
 ### What both back ends refuse, and why it is the whole safety story
 
