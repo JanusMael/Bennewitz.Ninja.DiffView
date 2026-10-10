@@ -1929,6 +1929,29 @@ than deleted, so a reader who remembers them finds out where they went — the s
 | `theme-audit inventory` on Semi Light | 624 keys in 44 files; the tool packs into the local feed |
 | Deliberate throw → dialog, F12 live log | **pass** at the window, Debug build and trimmed publish (user, 2026-09-04): the dialog shows with a working copy button and F12 opens the live log. Found: F12 pressed inside the live-log window did not close it, because the toggle lived on the main window's key handler only; fixed upstream in the diagnostics package (see *Upstreamed*) and consumed as 1.0.1 |
 
+## Sent to XamlQuality
+
+Lessons about driving or verifying a desktop UI by agent, and Avalonia foot-guns, go to
+`Bennewitz.Ninja.XamlQuality` by message (`AGENTS.md` §8), which keeps the one living copy of
+`docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md`.
+
+⛔ **Nothing has landed there yet, so `docs/ui-automation-notes.md` does NOT reduce to a pointer.**
+That reduction is conditional on landing, and plan 00023's phase 5 record says so. XamlQuality
+confirmed on **2026-10-10** that every batch is recorded and **not yet checked**, queued behind
+`BNXQ1010` which ships first; Brian sets the order after it, and each comes back as **landed, changed
+or declined**.
+
+| Sent | What |
+|---|---|
+| 2026-09-28 | Five lessons |
+| 2026-09-30 | A frame is drawn before a hit-test — Avalonia hit-tests the scene the compositor last rendered, not the layout |
+| 2026-10-08 | Twelve Windows driving findings — what `docs/ui-automation-notes.md` stages |
+| 2026-10-09 | Two: a drag verb reporting success while the control did nothing; an element's UI Automation parent not being the window it is drawn in |
+| 2026-10-10 | Three: silence counted as success three times over; stock template parts advertise patterns our own peers do not; ask before borrowing the desktop |
+
+⚠ **Until a batch comes back as landed, this repository's copy is the only checked record of it** —
+so a lesson is removed from here when XamlQuality says it landed, never when it was sent.
+
 ## Upstreamed to ClaudeForge
 
 | Change | Reference | State |
