@@ -732,11 +732,22 @@ List<Mutation> mutations =
         () => Sub(SbsTheme, @" AutomationProperties\.AutomationId=""Minimap""", ""),
         "Every_id_a_harness_searches_for_is_the_one_the_fixture_pins"),
 
-    // ---- BNXQ1004. ⚠ The rule is about a child asking for more room than its FIXED slot gives it, not
-    // about an out-of-range index: a column index past a five-column grid SURVIVES this gate, measured.
-    // The library's fixed slots are the 16-pixel spacers of the two-sided views' header and pane grids and
-    // the unified view's 1-pixel header divider, and none of their children declares a size — so the
-    // side-by-side view's header spacer is given one, the only way this can be shown.
+    // ---- BNXQ1004. ⚠ The rule asks about a child that declares a size against the slot the Grid PLACES
+    // it in, and both halves matter. ⛔ An earlier note here said it was "not about an out-of-range index"
+    // because a column past a five-column grid survived — WRONG, and wrong about the reason: at
+    // 2026.3.924 that survived through a defect which skipped such a control while still counting it
+    // inspected, and XamlQuality PR #7 fixed it in 925 along with a false positive that reported a control
+    // spanning several columns against the first of them alone. From 925 the control is measured where
+    // Avalonia puts it, so column 9 of five is measured against the LAST column: an out-of-range index is
+    // no way past this gate.
+    //
+    // What stays true is the other half: only a FIXED row or column is decidable, and only for a child
+    // that declares a size. The library's fixed slots are the 16-pixel spacers of the two-sided views'
+    // header and pane grids and the unified view's 1-pixel header divider, and none of their children
+    // declares a size — so the side-by-side view's header spacer is given one, the only way this can be
+    // shown. ⚠ Measured by XamlQuality at our 2026.3.928 pin, against this very markup: that spacer moved
+    // to column 9 with MinWidth="40" reads 0 inspected and 0 findings, because the last column of an
+    // Auto,*,16,*,Auto grid is Auto; with that last column fixed at 16 it reads 1 inspected and 1 finding.
     new("a control asks for more room than its fixed grid slot", GridClass,
         () => Sub(SbsTheme,
             @"<Border Grid\.Column=""2"" Background=""\{DynamicResource DiffView\.HeaderBackgroundBrush\}"" />",
