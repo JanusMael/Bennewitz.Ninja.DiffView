@@ -135,6 +135,51 @@ public sealed class PackagingTests
     }
 
     /// <summary>
+    /// A preflight publishes nothing: the two steps that reach outside the job are guarded, and the
+    /// two dispatch modes are refused in each other's clothing.
+    /// </summary>
+    /// <remarks>
+    /// <c>PROGRESS.md</c> open item 3 described the credential check as "a dispatch with the version
+    /// blank" for three weeks while no such thing existed — no guard, no conditional, nothing. That
+    /// dispatch would have run every step with <c>VERSION</c> empty, and an empty
+    /// <c>/p:Version=</c> is how MSBuild arrives at <c>1.0.0</c>: the documented-safe operation was
+    /// the one irreversible one. So what is asserted here is not that the inputs exist but that
+    /// each publishing step carries the guard — an input nothing reads is the same defect wearing
+    /// the fix's clothes.
+    /// </remarks>
+    [Fact]
+    public void A_preflight_dispatch_reaches_the_credentials_and_no_further()
+    {
+        string path = Path.Combine(RepoPaths.Root, ".github", "workflows", "release.yml");
+        string[] lines = [.. File.ReadLines(path).Where(line => !line.TrimStart().StartsWith('#'))];
+
+        Assert.Contains("preflight:", lines.Select(line => line.Trim()));
+
+        // Every step that leaves the job is guarded, and the credential exchange is not — the whole
+        // point is that it runs. Indices rather than a substring search: the guard has to sit on
+        // those steps, not merely appear in the file.
+        int login = Array.FindIndex(lines, line => line.Contains("name: NuGet Login", StringComparison.Ordinal));
+        int push = Array.FindIndex(lines, line => line.Contains("name: Push to NuGet.org", StringComparison.Ordinal));
+        int release = Array.FindIndex(lines, line => line.Contains("name: Create GitHub Release", StringComparison.Ordinal));
+
+        Assert.True(login >= 0 && push > login && release > push, "The release workflow's steps are not in the order this test reads.");
+
+        foreach ((string step, int at) in new[] { ("Push to NuGet.org", push), ("Create GitHub Release", release) })
+        {
+            string[] body = [.. lines.Skip(at + 1).TakeWhile(line => !line.TrimStart().StartsWith("- name:", StringComparison.Ordinal))];
+            Assert.True(
+                body.Any(line => line.Contains("if:", StringComparison.Ordinal) && line.Contains("inputs.preflight", StringComparison.Ordinal)),
+                $"'{step}' is not guarded on the preflight input, so a preflight dispatch would publish.");
+        }
+
+        // Neither mode is inferred from the other's absence: a versionless release and a versioned
+        // preflight each stop the run rather than guessing which was meant.
+        string instructions = string.Join('\n', lines);
+        Assert.Contains("A preflight takes no version", instructions, StringComparison.Ordinal);
+        Assert.Contains("A release needs a version", instructions, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Plan 00019 §Phase 3: the two published packages carry the hosting guide as their readme.
     /// </summary>
     /// <remarks>

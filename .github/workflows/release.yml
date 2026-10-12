@@ -13,7 +13,11 @@
 # workflow filename*. Renaming it breaks publishing with an authentication failure that never
 # mentions filenames.
 #
-# Not yet run: this repository has no remote. Written dormant on purpose — plan 00018.
+# Not yet run, and still dormant on purpose — plan 00018. What has changed since it was written is
+# that the remote now exists: the one precondition left is a nuget.org Trusted Publishing policy
+# naming owner, repository and this workflow's filename, which only the account holder can create.
+# Until then the preflight below is the way to exercise the credential exchange, and it publishes
+# nothing.
 
 name: Release
 
@@ -24,8 +28,17 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'NuGet version (e.g. 2026.3.914)'
-        required: true
+        description: 'NuGet version (e.g. 2026.3.914) — omit it for a preflight'
+        required: false
+      preflight:
+        # The credential check this file used to be described as having and did not. A dispatch
+        # with no version used to run every step, so the documented "safe" way to test the OIDC
+        # exchange would in fact have packed 1.0.0 — MSBuild's default for an empty /p:Version= —
+        # and pushed it, permanently, at a version that can never be reused. The guard is on the
+        # two steps that reach outside this job; everything before them is a build and a test run.
+        description: 'Exchange credentials and stop. Publishes nothing and tags nothing.'
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -43,10 +56,30 @@ jobs:
       - name: Resolve version and tag
         # Tag push: strip leading 'v' from the tag (e.g. v2026.3.914 → 2026.3.914)
         # Manual run: use the version input; derive tag by prepending 'v'
+        #
+        # The two dispatch modes are refused in each other's clothing, because both confusions are
+        # expensive in the same direction: a version passed to a preflight reads as a release that
+        # will publish and does not, and a release with no version is the empty /p:Version= that
+        # packs 1.0.0. Neither is inferred from the other's absence.
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-            echo "TAG=v${{ inputs.version }}" >> $GITHUB_ENV
+            if [ "${{ inputs.preflight }}" = "true" ]; then
+              if [ -n "${{ inputs.version }}" ]; then
+                echo "::error::A preflight takes no version: it publishes nothing. Omit the version, or clear the preflight box to release ${{ inputs.version }}."
+                exit 1
+              fi
+              # Named so it is unmistakable in a pack log, and never pushed: the two steps that
+              # would publish it are guarded on this same input.
+              echo "VERSION=0.0.0-preflight" >> $GITHUB_ENV
+              echo "TAG=" >> $GITHUB_ENV
+            else
+              if [ -z "${{ inputs.version }}" ]; then
+                echo "::error::A release needs a version. To test the NuGet credentials instead, dispatch with the preflight box ticked and no version."
+                exit 1
+              fi
+              echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+              echo "TAG=v${{ inputs.version }}" >> $GITHUB_ENV
+            fi
           else
             echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
             echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
@@ -101,6 +134,9 @@ jobs:
       # local-feed-only, and a glob would have published it.
       # PackagingTests.The_release_workflow_names_the_packages_it_pushes fails if the glob returns.
       - name: Push to NuGet.org
+        # On a tag push `inputs` is empty, so this reads false and the step runs — a release by tag
+        # is unchanged. Only a dispatch can set it.
+        if: ${{ !inputs.preflight }}
         run: |
           dotnet nuget push \
             ./packages/Release/Bennewitz.Ninja.DiffView.Core.${{ env.VERSION }}.nupkg \
@@ -112,6 +148,7 @@ jobs:
       # --skip-duplicate above makes a re-run safe; it also means a green job is not proof that this
       # version was published by *this* run.
       - name: Create GitHub Release
+        if: ${{ !inputs.preflight }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

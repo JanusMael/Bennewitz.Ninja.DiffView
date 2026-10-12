@@ -149,8 +149,19 @@ wording.
    because a variable and a secret that disagree fail as "NUGET_USER is not set" while
    `gh secret list` shows it present — which sends you looking anywhere but at the
    `vars.`/`secrets.` prefix, and cost a round on `Bennewitz.Ninja.AssemblyQuality` on 2026-09-22.
-   The end-to-end check is the release workflow's credential preflight, a dispatch with the version
-   blank, and it has not been run.
+   The end-to-end check is the release workflow's credential preflight, and **it has not been run.**
+
+   ⛔ **Until 2026-10-12 this item described that preflight as "a dispatch with the version blank",
+   and no such thing existed.** `release.yml` had no guard and no conditional: a versionless dispatch
+   would have run every step — `Pack`, then `NuGet Login`, then `Push to NuGet.org`, then
+   `Create GitHub Release` — with `VERSION` empty, and an empty `/p:Version=` is exactly how MSBuild
+   arrives at `1.0.0`. The operation this document called the safe one was the single irreversible
+   one, a published id being unlistable but never withdrawable. **The preflight now exists**: a
+   `preflight` boolean input, `version` optional, `if: ${{ !inputs.preflight }}` on the two steps
+   that reach outside the job, and each dispatch mode refused in the other's clothing rather than
+   inferred from the other's absence. `PackagingTests.A_preflight_dispatch_reaches_the_credentials_and_no_further`
+   asserts the guard sits on those steps, because an input nothing reads is the same defect wearing
+   the fix's clothes. It is **not dispatched** — Brian, 2026-10-12: *"there should be no nuget yet."*
 
    ⚠ **`Bennewitz.Ninja.XamlQuality`'s own tag is not this repository's to cut** — another session
    manages that release. DiffView's publish being on hold does not hold XamlQuality's.
