@@ -1,0 +1,148 @@
+# Spike: does a hosted Windows runner support injected input at all?
+#
+# Open item 16's timeboxed spike and nothing more — one UI Automation read and one injected click,
+# through the driver this repository already commits. It is NOT a gate: dispatch only, never on
+# push, and it is meant to be deleted once it has answered.
+#
+# ⛔ A VERDICT IS THE DELIVERABLE, AND "unknown" IS ONE. The Windows back end refuses a click that
+# would land anywhere but the demo's own window, and refuses to raise the demo to satisfy that —
+# both deliberate, per AGENTS.md §9. So a refusal here is an *answer* ("injected input is not usable
+# on a hosted runner"), not a failure, and the job does not fail for it.
+#
+# ⛔ ABSENCE OF A RECORDED FAILURE IS NOT SUCCESS. The click is therefore confirmed from the demo's
+# OWN LOG, which records where each click in a pane landed, and never from the verb's exit code: a
+# driver that silently did nothing exits 0, which is the defect this estate has produced repeatedly.
+#
+# No PowerShell here-strings below. A here-string's closing "@ must sit at column 0, and inside a
+# YAML block scalar a line indented less than the block's base ends the block — so the two cannot
+# both be satisfied. Summary lines are concatenated, which the global notes recommend anyway.
+
+name: Spike (injected input)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spike:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # Same prerequisites the solution needs in ci.yml: the reference fetch clones ClaudeForge at
+      # its pin, and the pack script builds the diagnostics package the demo resolves.
+      - name: Fetch reference sources
+        run: dotnet run scripts/fetch-reference.cs
+
+      - name: Pack ClaudeForge diagnostics into the local feed
+        run: dotnet run scripts/pack-diagnostics.cs
+
+      # None of the four driving steps fails the job. The verdict step judges, and a step that died
+      # still leaves its outcome readable there.
+      - name: Launch the demo
+        id: launch
+        continue-on-error: true
+        run: pwsh -NoProfile -File scripts/drive-demo.ps1 launch
+
+      - name: Read a part through UI Automation
+        id: read
+        continue-on-error: true
+        run: pwsh -NoProfile -File scripts/drive-demo.ps1 probe SideBySide/LeftPane
+
+      - name: Inject one click
+        id: click
+        continue-on-error: true
+        run: pwsh -NoProfile -File scripts/drive-demo.ps1 click left --id SideBySide/LeftPane
+
+      - name: Capture the window, if there is one
+        continue-on-error: true
+        run: pwsh -NoProfile -File scripts/drive-demo.ps1 capture demo spike-window.png
+
+      # The demo's log is the oracle, not the exit codes above. It writes where each click in a pane
+      # landed, at Information, so a line naming a pane click is the click having actually arrived.
+      - name: Ask the demo's log whether the click arrived
+        id: oracle
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $landed = 'unknown'
+          # Mirrors LogPaths.LogsDirectory for Windows in src/DiffView.Demo/LogPaths.cs. A second
+          # source of truth, and deliberately a loud one: if it drifts, the directory is absent and
+          # this step says so and reports 'unknown' rather than reporting that nothing arrived.
+          $logs = Join-Path $env:LOCALAPPDATA 'DiffView/logs'
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          if (Test-Path $logs) {
+              Copy-Item $logs -Destination artifacts/logs -Recurse -Force
+              $file = @(Get-ChildItem $logs -Filter *.log | Sort-Object LastWriteTime) | Select-Object -Last 1
+              if ($file) {
+                  Write-Host ('--- ' + $file.FullName + ' ---')
+                  Get-Content $file.FullName -Tail 60
+                  # Pattern passed as a parameter, never through a shell, and wrapped at the
+                  # assignment because a pipeline of one element is a scalar under StrictMode.
+                  $hit = @(Select-String -Path $file.FullName -Pattern 'click' -SimpleMatch)
+                  Write-Host ('lines naming a click: ' + $hit.Count)
+                  # An empty log after a driven step means the step did not arrive: AGENTS.md §9
+                  # measured the log readable within a second, so a log that has not moved is the
+                  # signal and it is the correct one.
+                  $landed = if ($hit.Count -gt 0) { 'yes' } else { 'no' }
+              } else {
+                  Write-Host ('no log file in ' + $logs)
+              }
+          } else {
+              Write-Host ('no logs directory at ' + $logs)
+          }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value ('arrived=' + $landed)
+
+      - name: Upload what it saw
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spike-injected-input
+          path: |
+            spike-window.png
+            artifacts/logs
+          if-no-files-found: ignore
+
+      # The one step that fails, and only when the spike produced no answer at all.
+      - name: Verdict
+        shell: pwsh
+        run: |
+          $launch = '${{ steps.launch.outcome }}'
+          $read = '${{ steps.read.outcome }}'
+          $click = '${{ steps.click.outcome }}'
+          $landed = '${{ steps.oracle.outputs.arrived }}'
+          if (-not $landed) { $landed = 'unknown' }
+
+          $lines = @(
+              '## Spike: injected input on a hosted Windows runner',
+              '',
+              '| Question | Answer |',
+              '|---|---|',
+              '| The demo launches and shows a window | **' + $launch + '** |',
+              '| UI Automation can read a part by AutomationId | **' + $read + '** |',
+              '| The driver accepted an injected click | **' + $click + '** |',
+              '| The click reached the pane, per the demo own log | **' + $landed + '** |',
+              '',
+              'A refused click is an answer rather than a failure: the Windows back end will not',
+              'click where the demo does not hold the foreground, and will not raise it to qualify.',
+              'The last row is the only one that says the input actually arrived.')
+
+          $lines | ForEach-Object { Write-Host $_ }
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $lines
+
+          if ($launch -ne 'success') {
+              Write-Host '::error::The demo did not launch, so the spike never ran and answers nothing about injected input. This is the one outcome that is a failure rather than a finding.'
+              exit 1
+          }
+          if ($landed -eq 'unknown') {
+              Write-Host '::warning::The demo launched but its log could not be read, so this run does not answer whether the click arrived.'
+          }
