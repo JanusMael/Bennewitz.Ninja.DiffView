@@ -78,9 +78,11 @@ A test that fails only there either wants `[EnglishChrome]` — the claim that i
 words — or wants its assertion repaired. `AGENTS.md` §5 says which, and why the attribute is not an
 excuse to reach for first.
 
-The eight shipped locales are machine-generated and have **not** been read by a native speaker, which
-gates the first release. `docs/locale-review/` holds one document per locale for exactly that
-review — every string beside what it is, what each placeholder holds, and the English it came from.
+The eight shipped locales are machine-generated and have **not** been read by a native speaker. That
+does not gate the first release: blocking a publish on eight volunteers has no end date, and
+`DiffViewStrings.Localization` lets a host outrank the library with a resolver of its own.
+`docs/locale-review/` holds one document per locale for exactly that review — every string beside
+what it is, what each placeholder holds, and the English it came from.
 Those documents are generated and must not be edited; a correction belongs in the matching
 `src/DiffView.Avalonia/Localization/Strings.<culture>.resx`, after which:
 
