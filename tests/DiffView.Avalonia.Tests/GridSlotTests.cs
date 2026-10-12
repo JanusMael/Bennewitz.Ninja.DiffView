@@ -36,8 +36,17 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// <c>BNXQ1001</c> has nothing here to read at all, where this one has a fixed slot and its children.
 /// </para>
 /// <para>
-/// ⛔ <b>The rule asks about SIZE, not about indices</b> — a child placed in a column its grid does not
-/// define is not its concern. Measured: <c>Grid.Column="9"</c> on a five-column grid survives this gate.
+/// ⛔ <b>The rule asks about size AND about where the Grid places a control.</b> An earlier note here
+/// said it was "not about indices", on the strength of <c>Grid.Column="9"</c> surviving a five-column
+/// grid — wrong, and wrong about the reason. At <c>2026.3.924</c> that survived through a defect which
+/// skipped such a control while still counting it inspected; XamlQuality PR #7 fixed it in
+/// <c>2026.3.925</c>, with a false positive that had reported a control spanning several columns against
+/// the first of them alone. From 925 a control is measured where Avalonia <em>places</em> it, so column 9
+/// of five is measured against the <b>last</b> column, and an out-of-range index is no way past this gate.
+/// It still survives here for the other reason: that last column is <c>Auto</c>, and only a fixed slot is
+/// decidable. Measured by XamlQuality at the <c>2026.3.928</c> pin against this repository's own markup —
+/// 0 inspected and 0 findings with the last column <c>Auto</c>, and 1 inspected and 1 finding with it
+/// fixed at 16.
 /// A gate adopted on a description of a defect it cannot see is precisely what plan 00025 exists to
 /// refuse, and only a mutation separates the two.
 /// </para>
