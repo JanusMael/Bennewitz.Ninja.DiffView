@@ -4090,3 +4090,57 @@ with a positive control says no shipped script has another.
 resolves to the temp directory and `dotnet run` answers *Couldn't find a project to run*. A second
 site, `ElementRect`, derived the reader's path from `$PSScriptRoot` independently and so disagreed
 with `$Repo` for exactly those copies. Both read `$Repo` now, and a re-break passes it explicitly.
+
+## A documented safe operation is not safe until something reads the guard
+
+`PROGRESS.md` open item 3 said the credential check was "a dispatch with the version blank" from
+2026-09-24 until 2026-10-12, and `release.yml` had no guard, no conditional and no preflight step at
+all. A versionless dispatch would have run every step: `Pack`, `NuGet Login`, `Push to NuGet.org`,
+`Create GitHub Release`. An empty `/p:Version=` is how MSBuild arrives at `1.0.0`, so **the operation
+the record called safe was the only irreversible one in the repository** — a published id can be
+unlisted and never withdrawn, as the push step's own comment says.
+
+It was caught by reading the workflow before dispatching it, which is the only reason it was caught:
+the claim had survived three weeks and a verification pass, and nothing in the suite could see it,
+because what it asserted was about prose and not about YAML.
+
+The preflight exists now (Brian, 2026-10-12): a `preflight` boolean input, `version` made optional,
+`if: ${{ !inputs.preflight }}` on the two steps that reach outside the job, and the two dispatch
+modes **refused in each other's clothing** rather than inferred from each other's absence — a version
+passed to a preflight reads as a release that will publish and does not, and a release with no
+version is the empty `/p:Version=` again. On a tag push `inputs` is empty, so the guard reads false
+and a release by tag is unchanged.
+
+⚠ **What is asserted is that the guard sits on those steps, not that the input exists.**
+`PackagingTests.A_preflight_dispatch_reaches_the_credentials_and_no_further` finds the steps by name
+and reads each step's own body, because an input nothing reads is the same defect wearing the fix's
+clothes — and that is the shape this very item had.
+
+⛔ **It is built and not dispatched** (Brian, 2026-10-12: *"there should be no nuget yet"*). Building
+the guard is what keeps that true by construction; firing it reaches nuget.org's OIDC endpoint, and
+the Trusted Publishing policy that would answer does not exist yet. The dispatch waits for his word.
+
+## Plan 00027 carries a gate, not just the caveat
+
+The locale caveat reaches a consumer in two places and they can disagree. The README said native
+review *gates the first release* for three and a half weeks after 2026-09-18 lifted it, in public,
+and nothing noticed — while the package `Description`, which is where a consumer meets it who never
+opens the repository, carries no caveat at all.
+
+So plan 00027 is the `Description` **and** a test holding the two statements in agreement (Brian,
+2026-10-12). The precedent is `DocumentationCitationTests`, which exists because `PROGRESS.md` once
+recorded a passing verification for a deleted test and nothing noticed for six plans: a claim in two
+places with no gate between them is a drift that reports clean.
+
+## Open item 16's spike goes now, ahead of its own condition
+
+The deferral of 2026-10-09 said to learn what plan 00033's assertions catch before planning an
+automated window suite, a narrow gap being cheaper to measure than to speculate about. Plan 00033
+landed in PR #24 the same day this was re-decided, so that condition is unmet and the recommendation
+was to leave it deferred.
+
+Overruled deliberately (Brian, 2026-10-12): the spike's own question — whether a hosted Windows
+runner supports injected input at all — is **independent** of what 00033 catches, a search failed to
+settle it once already, and a false start on a plan costs more than one workflow, one UI Automation
+read and one injected click. The timebox is the point: it answers the runner question and nothing
+else.
