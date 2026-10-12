@@ -10,9 +10,10 @@ alike; Windows and macOS run **677**, the suite less the 64 frame cases that are
 and each lists by name the ones it left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **112** mutations and derives **81** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — PR #14's, owed because that change made a gate file's member internal
-— had all 112 behave as declared, 108 killed by the test each names, 2 by the build and 2 green by
-design, with all 81 guards tripped first by one of them and no `inert-at-pin` marker standing.
+Linux, and the last full run — over this branch's `0e8abbd`, owed because that commit edits a gate
+file — had all 112 behave as declared, 108 killed by the test each names, 2 by the build and 2 green
+by design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 81 guards
+tripped first by one of them, no `inert-at-pin` marker standing, and the tree clean after it.
 
 **Every change of DiffView's own is merged**, and the instrument work that followed plan 00023's
 record is a run of small ones carrying no plan of their own — so their record is the commit and, where
