@@ -1212,6 +1212,10 @@ DPI — against the demo, running.
 
 ## Plan 00016 verification
 
+> **The last row's final clause is superseded**: native review stopped gating the first release on
+> 2026-09-18 (open item 6). The row's substance holds — nobody has read a locale, and the eight stay
+> marked machine-generated — and it is left standing as what was true at plan 00016.
+
 | Done-when item | Result |
 |---|---|
 | Every summary accounts for its string's placeholders | pass: `StringCatalogueTests.Every_summary_accounts_for_the_placeholders_its_string_takes`. **Failed on 9 of 143 when written** — measured before the plan was drafted, which is why phase 1 exists at all |

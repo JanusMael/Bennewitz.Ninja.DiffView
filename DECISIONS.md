@@ -2089,6 +2089,13 @@ match, ask what a bug affecting both of them would look like.**
 
 ## The eight locales, and what they are and are not evidence of
 
+> **The last sentence's conclusion is superseded**: native review stopped gating the first release on
+> 2026-09-18, because blocking a publish on eight volunteers has no end date and
+> `DiffViewStrings.Localization` lets a host outrank the library with a resolver of its own. What is
+> owed in its place is the caveat where a consumer reads it — `PROGRESS.md` open item 6, and plan
+> 00027. Left standing as what was believed at plan 00014. Everything else here holds, the first
+> sentence most of all: they are still unread.
+
 Plan 00014 phase 3 ships `de-DE`, `es-ES`, `fr-FR`, `ja-JP`, `ko-KR`, `pt-BR`, `ru-RU`, `zh-CN` —
 ClaudeForge's set, so a host localised for one is localised for both. 143 keys each.
 
