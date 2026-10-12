@@ -171,9 +171,26 @@ wording.
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
    `DiffViewStrings.Localization` lets a host outrank the library with its own resolver. What is
    owed is the caveat where a consumer reads it — the README and the package description, not the
-   `.resx` headers alone. **Unstarted. It gets a plan of its own, 00027** — decided 2026-09-25 — on
+   `.resx` headers alone. **It gets a plan of its own, 00027** — decided 2026-09-25 — on
    its own branch and pull request, so plan 00021's stays about the viewer. The README is public now,
    so the caveat is owed to its readers already, not only to the package's.
+
+   ✅ **The README's stale half is corrected, 2026-10-12**, ahead of that plan and on this branch
+   (Brian's call, asked when a resume found it): it had gone on telling its public readers that
+   native review *gates the first release*, three and a half weeks after 2026-09-18 lifted it. That
+   is a factual correction of a lifted decision rather than the caveat work, which is why it did not
+   wait for a branch of its own. The caveat itself stays, being true and owed; only the consequence
+   went.
+
+   ⛔ **Plan 00027's own half is untouched and still owed**: the package `Description` in
+   `src/DiffView.Avalonia/DiffView.Avalonia.csproj` reads *"Side-by-side diff control for Avalonia 12,
+   built on AvaloniaEdit."* and carries **no caveat at all** — and that is the place it is met by a
+   consumer who never opens the repository. Nothing holds the two statements in agreement, either.
+
+   The same claim stands in this document's plan verification table below, in `DECISIONS.md`'s plan
+   00014 block (wrapped across a line break, so a one-line grep misses it) and in plans 00014 and
+   00015. All four are history and stay as written; an approved plan is never edited. `DECISIONS.md`
+   marks superseded blocks with a pointer by its own convention, and that block carries none.
 
 7. ~~The `925` pin bumps~~ — **closed by plan 00028.** Both packages went to `2026.3.928` rather
    than 925, in one plan and one branch (`DECISIONS.md`), and every rule was re-read there to plan
