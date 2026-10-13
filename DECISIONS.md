@@ -4311,3 +4311,38 @@ to a `1100x720` window.
 So a by-hand pass at a scaling other than 100% exercises less than it appears to, and the frames it
 does capture are still a look at that scaling, which is worth having. The popup case was read through
 the **pane context menu** instead, which does not scroll.
+
+## The pass's exit code now carries its verdict, with the distinctions intact
+
+Open item 18, fixed the day it was found. The choice was between one line — non-zero when either
+list is non-empty — and four that mirror the summary's own outcomes, and Brian took the four:
+flattening them would discard exactly what plan 00033 built the summary around, which is that **a
+reading that was never taken is a different answer from an assertion that failed.** A caller told
+only "something was wrong" has to go and read the prose, which is the position that produced the
+defect in the first place.
+
+```
+0  every step took, and every assertion was taken and held
+1  something did not hold
+2  nothing failed, but a reading was never taken, so some step proved nothing
+3  the pass did not finish, so the lists cover only the steps that ran
+```
+
+Ordered so the **weakest claim wins** — a run that did not finish is never reported as a pass, and a
+failure outranks an unread reading — and placed inside the `finally`, so it is the last word whether
+the try completed or threw. Informative codes rather than a bare 0/1 follow
+`scripts/drive-demo-uia.ps1`, which already distinguishes 3 absent, 4 unavailable and 5 demo-gone for
+the same reason.
+
+Two facts made this safe to change in the same branch as item 17, both checked rather than assumed:
+**nothing in the repository invokes this script**, so no caller depends on the old 0; and the only
+test over it reads its *source* for `Write-Output`, which an `exit` does not add. The global rule
+against a bare `exit` is about a script surviving `.`-sourcing under an editor host; these wrappers
+are `pwsh -File` entry points and the siblings beside this one already exit this way.
+
+⭐ **Proven at no cost to anyone's desktop, by running it where it cannot possibly work.** From a
+non-interactive SSH session there is no desktop to drive, so every step fails or goes unread — and
+the pass now exits **1** where it previously exited **0**. The absence of a desktop is what makes the
+run fail, so the proof needs nothing but a shell. A verification that would otherwise have cost an
+attended pass cost a single SSH command, which is worth remembering the next time something looks
+like it needs a window.

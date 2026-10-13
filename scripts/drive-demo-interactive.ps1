@@ -14,6 +14,12 @@ Run it, look away, and take the desktop back when it prints DONE. It closes the 
 step fails it records the failure and carries on, so one bad step does not cost the whole pass, and
 every failure is listed at the end rather than buried.
 
+It exits 0 only when every step took and every assertion was taken and held; 1 when something did
+not hold, 2 when nothing failed but a reading was never taken, and 3 when the pass did not finish.
+⛔ A CALLER MUST READ THAT CODE AND NOT THE PROSE. There was no exit statement here until
+2026-10-13, so the pass returned 0 with a failure list, and a wrapper read that 0 as a pass over
+four failed assertions.
+
 ⛔ It will refuse rather than misfire: the driver checks that each click would land on the demo and
 that the demo holds the keyboard before it types, so if another window steals the foreground mid-run
 the steps stop with a reason instead of clicking into whatever is there. Nothing here raises the
@@ -660,4 +666,25 @@ finally {
     Write-Host '  because its Accessibility and Screen Recording grants are interactive.'
     Write-Host ''
     Write-Host 'DONE -- the desktop is yours again.'
+
+    # ⛔ THE EXIT CODE CARRIES THE SAME THREE OUTCOMES THE SUMMARY ABOVE DISTINGUISHES. For the person
+    # this pass is written for the summary is the report; for a CALLER this integer is the whole of it.
+    # Until 2026-10-13 there was no `exit` here at all, so the pass returned 0 with a failure list --
+    # and a wrapper around it read that 0 and announced a pass over FOUR failed assertions and one
+    # unread reading, which is this script's own lesson told back to it from outside. Open item 18.
+    #
+    # ⚠ Continuing past a bad step and exiting 0 are different decisions: the first is deliberate and
+    # documented above, the second was an accident of there being no statement.
+    #
+    #   0  every step took, and every assertion was taken and held
+    #   1  something did not hold -- see WHAT DID NOT HOLD
+    #   2  nothing failed, but a reading was never taken, so some step proved NOTHING
+    #   3  the pass did not finish, so the lists cover only the steps that ran
+    #
+    # Inside the finally deliberately, so it is the last word whether the try completed or threw, and
+    # ordered so the weakest claim wins: a run that did not finish is never reported as a pass.
+    if (-not $script:finished) { exit 3 }
+    if ($failures.Count -gt 0) { exit 1 }
+    if ($unread.Count -gt 0) { exit 2 }
+    exit 0
 }

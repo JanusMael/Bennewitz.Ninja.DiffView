@@ -53,6 +53,14 @@ All notable changes to DiffView are recorded here. The format follows
   at the click pixel and names it, allows the same click once it is gone, and reads a pane-menu entry
   as drawn in a popup of its own while found under the main window's element — the one case the new
   field changes an answer in.
+- **`scripts/drive-demo-interactive.ps1` exits with its verdict instead of always 0.** It had no
+  `exit` statement at all, so it returned 0 with a failure list — and the harness that wrapped it for
+  the verification above read that 0 and announced a pass over four failed assertions and one unread
+  reading, which is this script's own lesson told back to it from outside. The code now carries the
+  same three outcomes its summary already distinguished: `0` everything held, `1` something did not
+  hold, `2` nothing failed but a reading was never taken, `3` the pass did not finish — ordered so the
+  weakest claim wins. Continuing past a bad step stays the design; exiting 0 was an accident of there
+  being no statement. Proven by running the pass from a session with no desktop, where it now exits 1.
 - The three affected claims and the inverted menu-tree finding are recorded in `DECISIONS.md`.
   the instruction *"Do not ship a release on these without a speaker of the language reading them"* —
   a decision lifted on 2026-09-18 that was still standing, as an imperative, in all eight files.
