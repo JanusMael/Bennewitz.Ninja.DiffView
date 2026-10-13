@@ -4184,6 +4184,13 @@ colour-blind palette entry.
 
 ## A disagreement that was a missing qualifier
 
+> **The mechanism here is superseded** by §*"An open menu lasts only while its window holds the
+> foreground"* below, measured by XamlQuality on 2026-10-13 and landed the same day. The reconciliation
+> this block reaches is right about the **outcome** and wrong about the **cause**: the dividing line is
+> the foreground, not the raise, and a raise dismisses nothing. Left standing because the reasoning —
+> that a non-reproduction under one precondition does not refute a claim made under the other — is
+> what prompted the measurement that settled it.
+
 XamlQuality could not reproduce *raising a window light-dismisses the menu it opened* and left the
 entry out: four ways of raising it left the menu open, and a click on an item afterwards ran it.
 
@@ -4346,3 +4353,47 @@ the pass now exits **1** where it previously exited **0**. The absence of a desk
 run fail, so the proof needs nothing but a shell. A verification that would otherwise have cost an
 attended pass cost a single SSH command, which is worth remembering the next time something looks
 like it needs a window.
+
+## An open menu lasts only while its window holds the foreground
+
+XamlQuality measured this in a third Windows Sandbox session on Avalonia 12.1.3 with Fluent and landed
+it on 2026-10-13 in `docs/ai-drivable-ui.md` §5 and its drivable-ui skill, pull request #73. It
+settles the one disagreement left over from the 10-08 batch, and **it replaces both positions rather
+than choosing between them.**
+
+- ⛔ **This repository's mechanism was wrong.** A window that *held* the foreground kept its menu open
+  through `BringWindowToTop`, `SetForegroundWindow`, `SetWindowPos(HWND_TOP)` and `AttachThreadInput`
+  followed by both, whether a click or the access key had opened the menu. A raise dismisses nothing.
+- ⛔ **Their first reading was too strong.** When another application took the foreground, by a call or
+  by a click, the window was deactivated and its menu closed **within 15 ms** — before any raise. So
+  raising the window back finds the menu already gone, which is the behaviour this repository saw and
+  attributed to the raise.
+- ⚠ **And the reconciliation recorded here earlier that day was right about the outcome and wrong
+  about the cause.** It drew the line at "already active" versus "not in front", which tracks the
+  foreground closely enough to predict every case correctly, and for the wrong reason. No way was
+  found to leave a menu open on a window that does not hold the foreground, so the two framings cannot
+  be told apart by outcome — only by mechanism, which is why it took a measurement aimed at the
+  mechanism to separate them.
+
+The practice is unchanged, and now rests on the real cause: **open a menu once its window holds the
+foreground, and click the item without raising or clicking the window in between.**
+
+Two consequences are new here:
+
+- ⛔ **A click on the window's own title bar closes the menu**, with no change of foreground at all. A
+  driver must not touch the title bar between opening a menu and clicking an item of it.
+- ⭐ **A window behind another needs no raise.** A click on its menu header — where the obstruction
+  guard finds that header uncovered — activates the window and opens the menu in one click. That is a
+  *positive* argument for the refuse-rather-than-raise rule, which until now rested on politeness and
+  on a mechanism that turns out not to exist: the raise was not merely rude, it was never required.
+
+⚠ **Not measured by either repository**: a window covered by an **always-on-top** window, which keeps
+the foreground. A driver's obstruction guard refuses such a click, so the case is guarded without
+being understood.
+
+The lesson worth keeping is about how the two wrong answers survived: both were **consistent with
+every outcome anyone had observed**, because the foreground changes in exactly the situations a raise
+is wanted. A rule that predicts correctly can still name the wrong cause, and nothing but a
+measurement aimed at the cause will show it — which is what UI Automation's `SetFocus` on the window
+throwing *"Target element cannot receive focus"* during that run is a reminder of: the obvious
+instrument is not always the one that answers.

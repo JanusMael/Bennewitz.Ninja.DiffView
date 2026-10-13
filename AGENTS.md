@@ -666,12 +666,16 @@ from opposite directions:
   file's earlier "refused for a process that does not already hold the foreground". Either way the
   back end checks `GetForegroundWindow` rather than trusting the call.
 - ⛔ **Neither raises the demo to satisfy those checks, and neither should.** Raising it over the
-  person's work takes *their* clicks instead — the same defect pointed the other way — and raising
-  before clicking a menu entry light-dismisses the menu, so the click lands on what was underneath.
-  ⚠ **That second half is narrower than it reads, and it still holds here**: XamlQuality could not
-  reproduce it *with the window already active*, where a raise changes no foreground, but measured
-  that another application taking the foreground does close the menu — and the only reason to raise
-  is that the window is not in front. `docs/ui-automation-notes.md` has both readings.
+  person's work takes *their* clicks instead — the same defect pointed the other way. ⭐ **And a raise
+  is not even useful**: an open menu lasts only while its window holds the **foreground**, so a raise
+  that changes the foreground finds the menu already closed, while a window that holds it keeps its
+  menu open through every raise there is. A window behind another needs no raise at all — a click on
+  its menu header, where the guard above finds that header uncovered, activates it and opens the menu
+  in one click. ⚠ **This file said for four plans that the raise light-dismissed the menu, which is
+  the wrong mechanism**: XamlQuality measured it (Avalonia 12.1.3) and the entry is theirs, §8.
+  Practice: open a menu once its window holds the foreground, then click the item **without raising
+  or clicking the window in between** — a click on its own **title bar** closes the menu with no
+  change of foreground.
   The TailBlazer port, which runs about thirty of these harnesses on this estate, sends no synthetic
   input on a shared desktop at all for this reason. A by-hand pass here is attended, so the input
   verbs stay and an unobstructed, focused window is a **precondition the driver checks**.

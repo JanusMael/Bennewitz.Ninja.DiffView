@@ -36,6 +36,7 @@ them and causes read in Avalonia's source at the tag.
 | A click must be guarded, because it goes to whatever is topmost at that pixel | landed, **changed** — see *The guard this repository should adopt* below | `ai-drivable-ui.md` |
 | `SetForegroundWindow` is unreliable, so asking is not evidence of getting | landed, **changed**: it was refused to a process that had sent **no input**, and granted to one that just had. Not, as recorded here, refused for any process that does not already hold the foreground | `ai-drivable-ui.md` |
 | Holding the foreground is not having something focused inside | landed, **narrowed**: with nothing focused, keys reach the **window's own key bindings** and not a view's; one click on the view fixes it. Not "nothing at all" | `ai-drivable-ui.md` |
+| Raising a window light-dismisses the menu it opened | landed **as a different claim**, after a third session aimed at the mechanism: *an open menu lasts only while its window holds the foreground*. A raise dismisses nothing; losing the foreground closes the menu within 15 ms, before any raise. See *The one disagreement, settled* below | `ai-drivable-ui.md` §5 |
 | A part hidden with `IsVisible=false` is genuinely absent from the tree | landed, and **absent from the raw view too** | `ai-drivable-ui.md` §8 |
 | A gesture's success is not its effect (the `drag` verb) | landed as written | `ai-drivable-ui.md` |
 | An Avalonia popup is its own top-level window | landed, **changed** — see *Where a menu entry lives* below | `ai-drivable-ui.md` |
@@ -137,24 +138,33 @@ stands unchanged until X11 is measured on their side. This repository's two read
 | What appeared | The change marker's *Change 3 of 5 · +0 −0 ~1* and the line number's *Line 9 · right line 11*; in `pt-BR`, *Linha 9 · linha 11 à direita* |
 | Cross-check | The old scratch script's capture and the driver's are identical **pixel for pixel**, so the driver is not the variable |
 
-## One disagreement, and it is narrower than it looks
+## The one disagreement, settled — and neither of us had it right
 
-**Raising a window before clicking an entry of a menu it opened.** This repository recorded that the
-raise light-dismisses the menu, so the click lands on the pane underneath — a plausible-looking wrong
-result rather than a failure. XamlQuality **did not reproduce it** and left the entry out: four ways
-of raising the window left the menu open, and a click on an item afterwards ran it.
+**Resolved 2026-10-13 by XamlQuality, in a third Windows Sandbox session on Avalonia 12.1.3, landed
+in `ai-drivable-ui.md` §5** ([PR #73](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/pull/73)).
+The entry reads *"An open menu lasts only while its window holds the foreground"*, and it replaces
+both earlier positions rather than choosing between them.
 
-⚠ **The two readings are compatible, and the qualifier is the whole of it.** Theirs was measured
-*with the window already active*, where a raise changes no foreground; and their own note that
-**another application taking the foreground closed the menu** is this repository's case, because the
-only reason to raise is that the window is *not* in front. So:
+| Claim | Who | Verdict |
+|---|---|---|
+| Raising a window **light-dismisses** the menu it opened | this repository | ⛔ **Wrong mechanism.** A window that held the foreground kept its menu open through `BringWindowToTop`, `SetForegroundWindow`, `SetWindowPos(HWND_TOP)` and `AttachThreadInput` followed by both — however the menu was opened |
+| A raise is **harmless**, so the entry can be left out | XamlQuality's first reading | ⛔ **Too strong.** When another application took the foreground, the window was deactivated and its menu closed **at once** — so a raise afterwards finds the menu already gone |
+| The qualifier is "already active" versus "not in front" | this repository's reconciliation | ⚠ **Right outcome, wrong cause.** The dividing line is the **foreground**, not the raise: the raise never dismisses anything, and no way was found to leave a menu open on a window that does not hold the foreground |
 
-- **Raising an already-active window is harmless** — theirs, and new here.
-- **Taking the foreground closes the menu** — both, and it is the case the driver's rule is about.
+So the driver's practice is unchanged and now rests on the real mechanism: **open a menu once its
+window holds the foreground, and click the item without raising or clicking the window in between.**
 
-The rule `AGENTS.md` §9 and `DECISIONS.md` state therefore **stands as written**, and the gap worth
-telling XamlQuality is that leaving the entry out drops the inactive-window case their own
-measurement confirms.
+Two things that fall out of it, both new here:
+
+- ⛔ **A click on the window's own title bar closes the menu**, with no change of foreground at all.
+  A driver must not touch the title bar between opening a menu and clicking its item.
+- ⭐ **A window behind another needs no raise.** A click on its menu header — where the obstruction
+  guard finds that header uncovered — activates the window and opens the menu in one click. Which is
+  a positive argument for *refuse rather than raise*: the raise was not merely rude, it was never
+  required.
+
+⚠ Not measured by either of us: a window covered by an **always-on-top** window, which keeps the
+foreground.
 
 ## Specific to DiffView or to these machines, so it stays here
 
@@ -226,8 +236,13 @@ drawn from the `LoggerConfiguration` alone, without reading the `Emit` twenty li
 
 ## Still owed
 
-- **The X11 batch of 2026-09-28**, above, which has not landed. The tooltip environment and method
-  went to XamlQuality on 2026-10-13 at their request; their entry stands until they measure X11.
+- **The X11 batch of 2026-09-28**, above, which has not landed, and **the X11 tooltip reading**, which
+  XamlQuality had not checked as of 2026-10-13. The environment and method went to them that day at
+  their request; their `xdotool` entry stands until they measure X11. ⚠ Their lane is **not** WSLg as
+  first feared but GNOME Shell 50.1 with mutter, headless on a virtual monitor inside WSL, the
+  application under Xwayland — closer to this session than WSLg would be, and still not it: 48.7
+  against 50.1, a real desktop against a headless virtual monitor, physical input against XTEST. They
+  will carry the environment on whatever lands.
 - **The macOS back end** is specified in plan 00023 and not written; its permission grants are
   interactive and cannot be scripted. Open item 9.
 - **The interactive pass's exit code**, open item 18: it has no `exit` path, so it returns 0 with a

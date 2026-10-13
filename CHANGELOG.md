@@ -61,6 +61,16 @@ All notable changes to DiffView are recorded here. The format follows
   hold, `2` nothing failed but a reading was never taken, `3` the pass did not finish — ordered so the
   weakest claim wins. Continuing past a bad step stays the design; exiting 0 was an accident of there
   being no statement. Proven by running the pass from a session with no desktop, where it now exits 1.
+- **A menu is not dismissed by raising its window — it lasts only while that window holds the
+  foreground.** `AGENTS.md` §9 had said for four plans that raising the demo before clicking a menu
+  entry light-dismisses the menu, and that is the wrong mechanism: XamlQuality measured that a window
+  *holding* the foreground keeps its menu open through every raise there is, while losing the
+  foreground closes it within 15 ms, before any raise — so a raise finds the menu already gone. The
+  practice is unchanged and now rests on the cause: open a menu once its window holds the foreground
+  and click the item without raising **or clicking the window** in between, a click on its own title
+  bar closing the menu with no change of foreground. ⭐ And a window behind another needs no raise at
+  all: a click on its uncovered menu header activates it and opens the menu in one click, which makes
+  *refuse rather than raise* a positive rule rather than a polite one.
 - The three affected claims and the inverted menu-tree finding are recorded in `DECISIONS.md`.
   the instruction *"Do not ship a release on these without a speaker of the language reading them"* —
   a decision lifted on 2026-09-18 that was still standing, as an imperative, in all eight files.
