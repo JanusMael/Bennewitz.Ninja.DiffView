@@ -8,6 +8,24 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- Plan 00027 — the locale caveat reaches the consumer. `Bennewitz.Ninja.DiffView.Avalonia`'s package
+  description now says it **ships eight machine-generated locales, which apply without
+  configuration**: the blurb is what nuget search results and the package sidebar show, and it had
+  said nothing about localization, so a package could be chosen without ever learning that installing
+  it localizes the control with nothing asked of the host. The full caveat stays in the readme
+  rendered beneath it, which already carried it.
+- `LocaleCaveatTests` holds the caveat's eleven places in agreement — the blurb, `README.md`,
+  `docs/hosting-diffview.md` and the eight locale files' headers — asserting that each states the
+  translations are machine-generated and unreviewed, and that **none** of them claims native review
+  gates the release, which it stopped doing on 2026-09-18. The README had told its public readers
+  otherwise for three and a half weeks and nothing caught it.
+
+### Changed
+
+- The eight `Strings.<culture>.resx` headers keep *MACHINE-GENERATED, PENDING NATIVE REVIEW* and lose
+  the instruction *"Do not ship a release on these without a speaker of the language reading them"* —
+  a decision lifted on 2026-09-18 that was still standing, as an imperative, in all eight files.
+
 - Plan 00033 — the by-hand pass's steps can fail. `scripts/drive-demo-interactive.ps1` judged each of
   its twelve steps by whether the driver verb threw, so a splitter drag that moved nothing and a click
   that was refused both reported success. Every step now asserts the state it was supposed to change,
