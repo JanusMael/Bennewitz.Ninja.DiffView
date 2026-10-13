@@ -334,6 +334,14 @@ wording.
     one injected click — rather than a plan. The decision is to learn what plan 00033's assertions
     actually catch first, on the grounds that a narrow gap is cheaper to measure than to speculate about.
 
+    ⛔ **The spike was built and is now SHELVED INDEFINITELY — Brian, 2026-10-13 — and it never ran.**
+    `.github/workflows/spike-injected-input.yml` is on `main`, dispatch-only, and has **zero runs**, so
+    the runner question stays exactly as open as the paragraph above says. It was authorised on
+    2026-10-12, ahead of its own condition, and shelved before it was dispatched; the workflow is kept
+    rather than deleted so that reviving it costs nothing, and its header says so. ⚠ **Do not read
+    "the spike exists" as "the spike answered"** — that confusion is this item's whole subject matter
+    in miniature, and the shelving is a decision about runner minutes, not a finding.
+
 13. **The first CI run after 2026-10-19 runs on Ubuntu 26.** `ubuntu-latest` moves then, and the
     Linux leg renders the snapshot baselines. A frame the new image shifts fails as a snapshot with
     its received file uploaded beside it, and is fixed then rather than pinned against now —

@@ -1,5 +1,13 @@
 # Spike: does a hosted Windows runner support injected input at all?
 #
+# ⛔ SHELVED INDEFINITELY, 2026-10-13 (Brian). THIS HAS NEVER BEEN RUN, so the question in the line
+# above is still open and nothing below is evidence about anything. It is kept rather than deleted
+# for the reason this whole file exists dormant: writing it cost three corrections that a rewrite
+# would have to pay again — the demo's log directory, both inline scripts' syntax, and the
+# here-string that cannot survive a YAML block scalar — all recorded in the commit that added it.
+# Do not dispatch it to "see what happens": a run costs the user's runner minutes and answers only
+# the one question, and reviving this is their call, not a passing convenience.
+#
 # Open item 16's timeboxed spike and nothing more — one UI Automation read and one injected click,
 # through the driver this repository already commits. It is NOT a gate: dispatch only, never on
 # push, and it is meant to be deleted once it has answered.
