@@ -178,7 +178,27 @@ wording.
    back end stays specified and unwritten, because its permission grants are interactive
    (`DECISIONS.md`).
 
-6. **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
+6. ~~**The eight locales ship unread, with the caveat owed to the consumer**~~ — **closed by plan
+   00027, 2026-10-13.** The survey is the part worth keeping, because **four of the five places were
+   already right and neither defect was the one this item named**:
+   `docs/hosting-diffview.md` is the `PackageReadmeFile` of *both* packages, so it is what nuget.org
+   renders on the package page, and it already carried the caveat properly — the "package
+   description" this item called for was never the gap it sounded like. The gaps were the
+   `<Description>` blurb, which said nothing about localization at all, and the **eight
+   `Strings.<culture>.resx` headers**, which nobody had looked at and which each ordered *"Do not
+   ship a release on these without a speaker of the language reading them"* — the gate lifted on
+   2026-09-18, as a standing instruction, eight times over. The blurb gains a short clause and not
+   the caveat, the readme rendering directly beneath it; the headers keep the caveat and lose the
+   imperative; and `LocaleCaveatTests` now holds all eleven places in agreement, asserting the two
+   facts present and the lifted claim absent, proven able to fail three ways. ⚠ Two things the gate
+   had to be built around, each of which would have made it fail on the commit that fixed the drift:
+   the corrections read *"does not **gate** the release"* where the claim reads *"review **gates**
+   it"*, so it matches the affirmative inflection and carries a positive control; and the README
+   reads *"have `**`not`**` been read by a native speaker"*, markdown emphasis **inside** the phrase,
+   which failed the gate's first run and is why normalization strips emphasis as well as whitespace.
+   The original item, for the record:
+
+   **The eight locales ship unread, with the caveat owed to the consumer.** Decided 2026-09-18:
    this **no longer gates the release**. Blocking a publish on eight volunteers has no end date, and
    `DiffViewStrings.Localization` lets a host outrank the library with its own resolver. What is
    owed is the caveat where a consumer reads it — the README and the package description, not the

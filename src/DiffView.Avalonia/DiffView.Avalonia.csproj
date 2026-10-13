@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Side-by-side diff control for Avalonia 12, built on AvaloniaEdit.</Description>
+    <!-- The locale clause is the blurb's share of the caveat, and deliberately only that: this is
+         the line nuget search results and the package sidebar show, and the readme rendered
+         directly beneath it on the package page carries the whole of it. What a blurb owes is the
+         surprise — that installing this localizes the control with nothing asked of the host —
+         which docs/hosting-diffview.md says arrives in bug reports. Plan 00027.
+         LocaleCaveatTests holds this clause and the README's and the guide's wording in agreement. -->
+    <Description>Side-by-side diff control for Avalonia 12, built on AvaloniaEdit. Ships eight machine-generated locales, which apply without configuration.</Description>
     <IsPackable>true</IsPackable>
     <!-- Named rather than defaulted: PackageId falls back to AssemblyName, which would publish this
          as the unprefixed DiffView.Avalonia where every other package of this author's is
