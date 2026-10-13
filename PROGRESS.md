@@ -2,18 +2,28 @@
 
 ## Resume
 
-**`main` carries everything through PR #23, and CI is green on it** — all five jobs, run
-`37857329501`, 2026-10-08. *A resume names the pull request it was written for and
+**`main` carries everything through PR #28, and CI is green on it** — all five jobs, 2026-10-13.
+*A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* The suite is **741**, passing in `en-US` and in the `de-DE` culture leg
-alike; Windows and macOS run **677**, the suite less the 64 frame cases that are Linux's baselines,
-and each lists by name the ones it left out. The trimmed publish carries no `IL` warning.
+wrong the moment it is true.* The suite is **769**, passing in `en-US` and in the `de-DE` culture leg
+alike; Windows and macOS run **705**, the suite less the 64 frame cases that are Linux's baselines,
+and each lists by name the ones it left out. Both figures are read off PR #28's run — the Linux leg's
+own summary and a local `catch-crash --expect auto` — rather than carried forward. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **112** mutations and derives **81** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — over this branch's `0e8abbd`, owed because that commit edits a gate
+Linux, and the last full run — over `0e8abbd`, owed because that commit edits a gate
 file — had all 112 behave as declared, 108 killed by the test each names, 2 by the build and 2 green
 by design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 81 guards
 tripped first by one of them, no `inert-at-pin` marker standing, and the tree clean after it.
+**No full run is owed at PR #28**: it moved no gate file, no gated subject and no pin, and `--guards`
+exits 0 at 81 either side of it.
+
+⛔ **PR #28's Windows leg failed once on a network flake and passed on a re-run** — `git fetch` of the
+DiffPlex reference source could not reach `github.com:443` after 21 s, which killed *Fetch reference
+sources* and cascaded. ⚠ **The downstream error is misleading**: the next step reports *"global.json
+defines test runner to be Microsoft.Testing.Platform … projects are using VSTest test runner"*, which
+is `--no-build` finding no build rather than a runner misconfiguration. Re-run the job; do not go
+editing `global.json`.
 
 **Every change of DiffView's own is merged**, and the instrument work that followed plan 00023's
 record is a run of small ones carrying no plan of their own — so their record is the commit and, where
@@ -21,6 +31,11 @@ they settled a rule, `DECISIONS.md`. Newest first:
 
 | Change | What it did | Record |
 |---|---|---|
+| **PR #28** | Plan 00027 — the locale caveat reaches the consumer. The package blurb says it ships eight machine-generated locales applying without configuration; the eight `.resx` headers keep the caveat and lose the lifted *"Do not ship a release"*; `LocaleCaveatTests` holds eleven places in agreement. Open item 6 closes | *Plan 00027*, open item 6 |
+| **PR #27** | The injected-input spike is shelved, and the workflow and item 16 both say it never ran | the commit |
+| **PR #26** | Open item 16's spike workflow — one UI Automation read and one injected click on a hosted Windows runner. Dispatch-only; **never dispatched** | open item 16 |
+| **PR #25** | `release.yml` had no preflight and no guard while `PROGRESS.md` called a versionless dispatch the safe credential check — it would have packed and pushed `1.0.0`, permanently. The guard exists now and is proven able to fail | *A documented safe operation is not safe until something reads the guard* |
+| **PR #24** | Plan 00033 and open item 9's Windows half, plus the README's lifted release gate | *Plan 00033 phases*, open item 9 |
 | **PR #23** | `scripts/drive-demo` gains a `drag` verb — press, travel in steps, release from a `finally`, because a press and a jump are two positions and not a gesture; and a one-step `AutomationId` path stops crashing the reader, a pipeline of one element being a scalar under `Set-StrictMode` | the commits |
 | **PR #22** | Three facts the `AGENTS.md` §9 rewrite dropped, restored | the commit |
 | **PR #21** | A behaviour test proven able to fail from a committed harness, `scripts/mutate-behaviour` | the commit |
@@ -51,8 +66,18 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-**Next: the macOS by-hand run, which is all that is left of open item 9** — and it needs a Mac, so it
-is scheduled rather than picked up. The **Windows half is discharged**: the capture pass and the
+⛔ **Next: nothing in this repository, which is a state worth naming rather than a gap.** As of
+2026-10-13 every open item is blocked on someone or something outside it: **item 3** needs a
+nuget.org Trusted Publishing policy only Brian can create (the preflight exists and is deliberately
+not dispatched — *"there should be no nuget yet"*); **item 9** is skipped by his instruction;
+**items 10 and 14** wait on ClaudeForge and XamlQuality; **item 13** is a date, 2026-10-19; **item
+16** is shelved with its spike built and never run. Item 6 closed with PR #28. ⚠ **Do not read an
+empty actionable list as a finished project** — it means the next move is Brian's, not that there is
+nothing left to build.
+
+**The macOS by-hand run is all that is left of open item 9** — and it needs a Mac, so it
+is scheduled rather than picked up, and **skipped by instruction on 2026-10-13**. The **Windows half
+is discharged**: the capture pass and the
 interactive pass both ran, and what they found is in that item and in `DECISIONS.md`. An instrument is
 not a run, and the run is what pays — it found a half-localized surface no gate in the suite can see,
 two driver steps that reported success and did nothing, and a palette the capture half could not
