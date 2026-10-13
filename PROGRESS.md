@@ -69,14 +69,20 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-**Next: item 18, a one-line decision.** The actionable list was empty earlier on 2026-10-13 and
-stopped being so later the same day, when XamlQuality reported that the Windows driving batches had
-landed and that **three of them changed under its own measurement**. The consequences are taken:
-`docs/ui-automation-notes.md` is the pointer it was always going to become, `AGENTS.md` §9's three
-affected claims are corrected, and the finding with teeth — **item 17**, a click guard that asked the
-pixel what the pixel was and so could not fail — is fixed and **verified by an attended run on
-JANUSWAX2**. Item 18 is what that run turned up on the way: the pass's exit code reflects none of its
-verdict, which is how its own harness came to report a pass over four failed assertions.
+⛔ **Next: nothing in this repository again — and the list emptied, refilled and emptied once more
+inside 2026-10-13, which is the thing to take from it rather than the state.** It was empty that
+morning; XamlQuality then reported that the Windows driving batches had landed and that **three of
+them changed under its own measurement**, which put two items on it. Both closed the same day:
+
+- **Item 17**, the finding with teeth — a click guard that asked the pixel what the pixel was, so it
+  agreed with itself and *could not fail* for a window of this process. Fixed from the tree instead,
+  and **verified by an attended run on JANUSWAX2** in three readings.
+- **Item 18**, which that run turned up on the way: the interactive pass had no `exit` statement, so
+  its code reflected none of its verdict — which is how item 17's own harness reported a pass over
+  four failed assertions. Fixed, and proven from a session with no desktop at all.
+
+The documentary half is taken too: `docs/ui-automation-notes.md` is the pointer it was always going to
+become, and `AGENTS.md` §9's three affected claims are corrected.
 
 Everything else remains blocked outside this repository: **item 3** needs a nuget.org Trusted
 Publishing policy only Brian can create (the preflight exists and is deliberately not dispatched —
@@ -467,20 +473,32 @@ wording.
     failed on coordinates rather than on anything this change touched. The pane context menu does not
     scroll, which is why the popup case was read through that instead.
 
-18. **The interactive pass's exit code carries nothing, so a caller reads silence as success.**
-    Found 2026-10-13 by walking into it. `scripts/drive-demo-interactive.ps1` has **no `exit` path at
-    all**: it exits 0 whether `$failures` and `$unread` are empty or not. Its summary is careful — three
-    distinguished outcomes, every unread reading named — and for the human it is written for that is
-    correct. But item 17's harness wrapped it, read `exit = 0`, and announced a pass over a run with
-    **four failed assertions and one unread reading**. ⚠ **Continuing past a bad step and exiting 0 are
-    different decisions**: the first is the design (one bad step must not cost the whole pass) and the
-    second is an accident of there being no `exit`. The fix is one line — non-zero when either list is
-    non-empty — and it would have caught this. ⛔ Not taken unasked: it changes an attended script's
-    contract, and the change that found it was about a different guard.
+18. ~~The interactive pass's exit code carries nothing, so a caller reads silence as success~~ —
+    **fixed 2026-10-13, the same day it was found by walking into it.**
+    `scripts/drive-demo-interactive.ps1` had **no `exit` statement at all**, so it returned 0 whether
+    `$failures` and `$unread` were empty or not. Its summary was already careful — three distinguished
+    outcomes, every unread reading named — and for the human it is written for that was correct. But
+    item 17's harness wrapped it, read `exit = 0`, and announced a pass over a run with **four failed
+    assertions and one unread reading**. ⚠ **Continuing past a bad step and exiting 0 are different
+    decisions**: the first is the design and is documented, the second was an accident of there being
+    no statement.
+
+    The exit code now carries the **same three outcomes the summary distinguishes**, on Brian's call
+    over the one-line version, because flattening them would lose exactly what plan 00033 built the
+    summary around: `0` everything held, `1` something did not hold, `2` nothing failed but a reading
+    was never taken, `3` the pass did not finish. Ordered so the weakest claim wins, and inside the
+    `finally` so it is the last word whether the try completed or threw. Informative codes follow
+    `drive-demo-uia.ps1`'s own convention; nothing in the repository reads this code, and the only
+    test over this file scans its source for `Write-Output`.
+
+    ✅ **Proven, and for free**: run from a **non-interactive SSH session**, where it cannot drive a
+    desktop at all, the pass now exits **1** with a populated failure list where it previously exited
+    **0**. No desktop was borrowed to establish it — the absence of one is what makes the run fail.
 
 Items 3, 9 and 10 are Brian's own, item 14 waits on XamlQuality, item 13 is a date (2026-10-19) and
-item 16 is shelved. **Item 18 is the one actionable thing left here**, and it is a one-line decision.
-Item 17 is verified and closed in substance. Items 5, 6, 12 and 15 are closed.
+item 16 is shelved. **Nothing here is actionable again**, items 17 and 18 having both closed on
+2026-10-13; items 5, 6, 12 and 15 were already closed. ⚠ The empty list lasted part of one day last
+time — a peer repository's measurement refilled it — so read it as a state, not a finish.
 
 ### Running it
 
