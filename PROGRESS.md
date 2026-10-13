@@ -52,10 +52,13 @@ they settled a rule, `DECISIONS.md`. Newest first:
 `.github/repository.json` from `Bennewitz.Ninja.Templates`' own plan 00003. `DECISIONS.md` has it as
 another session's pull request, which is half of why the Linux jobs were left unpinned.
 
-**Plans 00001, 00003–00022, 00024–00026, 00028, 00029 and 00031 are complete and closed**, and plan
-00002 was rejected on its own review before any code was written. Of what is left: **plan 00027 is
-unstarted** (item 6) and **plan 00030 is parked on XamlQuality** (item 14), waiting on a public
-per-control reading of `BNXQ1003`. *History — plan by plan*
+**Plans 00001, 00003–00029, 00031 and 00033 are complete and closed**, and plan
+00002 was rejected on its own review before any code was written. Of what is left, **neither is
+startable**: **plan 00030 is parked on XamlQuality** (item 14), waiting on a public per-control
+reading of `BNXQ1003`, and **plan 00032 is parked on ClaudeForge** (item 10), waiting for the
+live-log window to be published as a package. ⛔ **Both stay untracked drafts — Brian,
+2026-10-13**, asked after a resume found them and told they are 27 KB of research with no copy
+anywhere; do not commit them and do not re-raise it. *History — plan by plan*
 below is each plan's account as it closed, and the per-plan tables under it are the verifications.
 
 **The three CI defects are history**, and the section of that name below is their record. The first
@@ -66,14 +69,23 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⛔ **Next: nothing in this repository, which is a state worth naming rather than a gap.** As of
-2026-10-13 every open item is blocked on someone or something outside it: **item 3** needs a
-nuget.org Trusted Publishing policy only Brian can create (the preflight exists and is deliberately
-not dispatched — *"there should be no nuget yet"*); **item 9** is skipped by his instruction;
-**items 10 and 14** wait on ClaudeForge and XamlQuality; **item 13** is a date, 2026-10-19; **item
-16** is shelved with its spike built and never run. Item 6 closed with PR #28. ⚠ **Do not read an
-empty actionable list as a finished project** — it means the next move is Brian's, not that there is
-nothing left to build.
+**Next: item 18, a one-line decision.** The actionable list was empty earlier on 2026-10-13 and
+stopped being so later the same day, when XamlQuality reported that the Windows driving batches had
+landed and that **three of them changed under its own measurement**. The consequences are taken:
+`docs/ui-automation-notes.md` is the pointer it was always going to become, `AGENTS.md` §9's three
+affected claims are corrected, and the finding with teeth — **item 17**, a click guard that asked the
+pixel what the pixel was and so could not fail — is fixed and **verified by an attended run on
+JANUSWAX2**. Item 18 is what that run turned up on the way: the pass's exit code reflects none of its
+verdict, which is how its own harness came to report a pass over four failed assertions.
+
+Everything else remains blocked outside this repository: **item 3** needs a nuget.org Trusted
+Publishing policy only Brian can create (the preflight exists and is deliberately not dispatched —
+*"there should be no nuget yet"*); **item 9** is skipped by his instruction; **items 10 and 14** wait
+on ClaudeForge and XamlQuality — 14's plan is approved *there* now, but what this repository needs is
+a release carrying the reading; **item 13** is a date, 2026-10-19; **item 16** is shelved with its
+spike built and never run. Item 6 closed with PR #28. ⚠ **Do not read a short actionable list as a
+finished project**, and ⛔ **do not read the empty one that preceded it as a settled state** — a peer
+repository's measurement refilled it within the day, without a line of this repository changing.
 
 **The macOS by-hand run is all that is left of open item 9** — and it needs a Mac, so it
 is scheduled rather than picked up, and **skipped by instruction on 2026-10-13**. The **Windows half
@@ -281,6 +293,12 @@ wording.
    colour-blind palette. The frames are a look and not a test (`AGENTS.md` §9), so they stay on the
    Windows box; what is durable is below and in `DECISIONS.md`.
 
+   ⚠ **Item 17 re-opens the interactive half, 2026-10-13.** That pass is what proved the driver's
+   guards, and item 17 changes one of them — so this discharge stands for everything the pass
+   *looked at* and no longer stands as evidence that the **click guard** behaves. A guard is only as
+   good as the pass that proved it, which is why item 17's code and its verification are recorded
+   apart rather than together.
+
    ⛔ **macOS is still owed and no instrument covers it.** Plan 00023 specifies that back end and
    deliberately does not write it, because Accessibility and Screen Recording are per-application
    grants that cannot be scripted; `DECISIONS.md`, *Plan 00023 phase 5*, has why, and whoever does
@@ -398,14 +416,71 @@ wording.
     once Brian confirms it there and places it in that repository's order. The draft is parked until a
     release carries the reading, and returns then to the five tables it was asked for.
 
+    ✅ **Confirmed and planned there, 2026-10-13** (XamlQuality, by message): the plan is approved — two
+    steps, the public reading and then a parts report the theme audit writes and checks — and **the
+    reading is next in that repository's code lane**. ⚠ **Still parked here, and the trigger is
+    unchanged**: what this plan needs is a *release* carrying the reading, not an approved plan to
+    produce one. Do not start plan 00030 until a pin can move to it.
+
 15. ~~The hosting guide's id table is written by hand and checked by nothing~~ — **closed.**
     `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds
     `docs/hosting-diffview.md`'s `AutomationId` table to `fixtures/automation-ids.txt` both ways, and its
     menu row to the rule the row states: its four ids are exactly the fixture's menu ids that name no
     `DiffCommand`. *The hosting guide's id table, held to the fixture* below has the record.
 
-Items 3, 6, 9 and 10 are Brian's own, and item 14 waits on XamlQuality. Next: item 5's Windows phase, in a
-session on a Windows machine, which covers items 12 and 15 now that both have landed.
+17. **The click guard asked the pixel what the pixel was — code adopted 2026-10-13, attended pass
+    owed.** Raised by XamlQuality's measurement of the batches this repository sent, and the defect is
+    worse than the "missing check" it was first reported as: `Drawn` derived the expected window from
+    `WindowFromPoint` on the very pixel it was about to click and accepted it for any window of the
+    demo's process, after which `Beneath` checked that same pixel against it. ⛔ **Circular, so
+    `Beneath` could not fail for a window of this process** — it caught other applications, the case it
+    was written for, which is why the hole survived review. It let the demo's **own F12 live-log
+    window** stand in for a popup: the click went into the log and the driver reported success.
+
+    ✅ **Adopted on Brian's call.** `scripts/drive-demo-uia.ps1` walks `TreeWalker.RawViewWalker` to
+    the element's nearest ancestor carrying a window handle and reports it as a tenth field; `Drawn`
+    reads that field and **refuses `0`** rather than falling back. The raw view is load-bearing: a menu's
+    items sit under the main window's element in both views, so a control-view walk passes the popup and
+    would reintroduce plan 00033's false refusal. XamlQuality's second check — UIA's element at the point
+    being the element itself — is **declined with a reason**, `OverlayPopups` being unset so every popup
+    here is a top-level window; `DECISIONS.md` has it.
+
+    ✅ **Verified by an attended run on JANUSWAX2, 2026-10-13**, in three readings, each of which
+    had to be taken against a real window because no headless test reaches `RawViewWalker`:
+
+    | Reading | Result |
+    |---|---|
+    | The guard **refuses** an obstructed click | The demo's own log window was parked over the left pane and **proven topmost at the click pixel** — `WindowFromPoint`'s root equalled the log window's handle — and the click was refused naming it: *"would land on \"Live Debug Logs — F12 to hide\" (window 591026), not on window 984896"* |
+    | The guard **allows** an unobstructed one | Obstruction moved away, root back to the main window, same click allowed. So the refusal is not the guard refusing everything |
+    | The raw-view walk names the **popup** | `probe NextChange … 764x66+750+342 in 1048780 drawn in 1049142` — a pane-menu entry found under the **main** window's element and drawn in a window of its own, and the click on it **allowed**. This is the only case the new field changes an answer in, and the one plan 00033's false refusal would come back in |
+
+    ⛔ **The first attempt at the first of those reported FAIL and was wrong**, which is the part worth
+    keeping: the harness around the pass was **DPI-unaware** on a console at 200% — it read `1113x756`
+    for a `2200x1440` window, the trap `AGENTS.md` §9 already records — and it never checked that the
+    obstruction it built was topmost at the pixel it was about to click, so "allowed" was a conclusion
+    drawn from an unproven premise. ⚠ **And its summary called a run with four failed assertions a
+    pass**, by reading the pass's exit code instead of the pass's own two lists. See item 18: the pass
+    has no `exit` path, so that code is always 0.
+
+    ⚠ The run also showed that **the demo's View menu is unreachable at 200% scaling** — it already
+    scrolls, and at 2× the palette entry falls outside the popup, so four of phase A's assertions
+    failed on coordinates rather than on anything this change touched. The pane context menu does not
+    scroll, which is why the popup case was read through that instead.
+
+18. **The interactive pass's exit code carries nothing, so a caller reads silence as success.**
+    Found 2026-10-13 by walking into it. `scripts/drive-demo-interactive.ps1` has **no `exit` path at
+    all**: it exits 0 whether `$failures` and `$unread` are empty or not. Its summary is careful — three
+    distinguished outcomes, every unread reading named — and for the human it is written for that is
+    correct. But item 17's harness wrapped it, read `exit = 0`, and announced a pass over a run with
+    **four failed assertions and one unread reading**. ⚠ **Continuing past a bad step and exiting 0 are
+    different decisions**: the first is the design (one bad step must not cost the whole pass) and the
+    second is an accident of there being no `exit`. The fix is one line — non-zero when either list is
+    non-empty — and it would have caught this. ⛔ Not taken unasked: it changes an attended script's
+    contract, and the change that found it was about a different guard.
+
+Items 3, 9 and 10 are Brian's own, item 14 waits on XamlQuality, item 13 is a date (2026-10-19) and
+item 16 is shelved. **Item 18 is the one actionable thing left here**, and it is a one-line decision.
+Item 17 is verified and closed in substance. Items 5, 6, 12 and 15 are closed.
 
 ### Running it
 

@@ -22,7 +22,38 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
-- The eight `Strings.<culture>.resx` headers keep *MACHINE-GENERATED, PENDING NATIVE REVIEW* and lose
+- `docs/ui-automation-notes.md` is the pointer it was written to become. The Windows driving batches
+  this repository measured landed in `Bennewitz.Ninja.XamlQuality`'s `docs/avalonia-gotchas.md` and
+  `docs/ai-drivable-ui.md` on 2026-10-13, so the staged copy of each is replaced by a row naming where
+  it lives and what XamlQuality's own measurement changed about it. ⛔ The **X11 batch has not
+  landed**, so that section is not a pointer and the copy here is still the only one — the reduction
+  is conditional on landing, never on sending, and each row was checked against the merged documents
+  rather than against the report of them.
+- `AGENTS.md` §9 corrects three claims that came back narrower: `SetForegroundWindow` turns on having
+  **sent input** rather than on already holding the foreground; a chord into an unfocused window
+  reaches the **window's own** key bindings rather than nothing at all; and *raising light-dismisses a
+  menu*, which XamlQuality could not reproduce, is kept with its missing qualifier — their trial raised
+  an **already-active** window, where a raise changes no foreground, and the only reason to raise is
+  that the window is not in front. §9 also gains the `drag` verb, which the driver has had since the
+  verb table was last written.
+- **`scripts/drive-demo` stops asking the pixel what the pixel is.** Its click guard derived the
+  expected window from `WindowFromPoint` on the very pixel it was about to click and accepted it for
+  any window of the demo's process, after which the obstruction check tested that same pixel against
+  it — circular, so the check **could not fail** for a window of this process. It caught other
+  applications, the case it was written for, which is why the hole survived review; what it let
+  through was the demo's **own F12 live-log window** standing in for a menu popup, with the click
+  going into the log and the driver reporting success. The expected window now comes from the tree:
+  `scripts/drive-demo-uia.ps1` walks `TreeWalker.RawViewWalker` to the element's nearest ancestor
+  carrying a window handle and reports it as a tenth field, which the driver reads and which it
+  **refuses when the reader answers `0`** rather than falling back. The raw view is load-bearing — a
+  menu's items sit under the main window's element in both tree views, so a control-view walk passes
+  the popup and would reintroduce the false refusal plan 00033 fixed. XamlQuality's correction, open
+  item 17; their second check is declined with a reason in `DECISIONS.md`. **Verified by an attended
+  run on a real Windows desktop**, in three readings: the guard refuses an obstruction proven topmost
+  at the click pixel and names it, allows the same click once it is gone, and reads a pane-menu entry
+  as drawn in a popup of its own while found under the main window's element — the one case the new
+  field changes an answer in.
+- The three affected claims and the inverted menu-tree finding are recorded in `DECISIONS.md`.
   the instruction *"Do not ship a release on these without a speaker of the language reading them"* —
   a decision lifted on 2026-09-18 that was still standing, as an imperative, in all eight files.
 

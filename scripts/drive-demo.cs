@@ -1156,12 +1156,25 @@ internal sealed partial class X11 : IBackEnd
 /// </summary>
 internal readonly record struct ElementInfo(
     string Path, string ControlType, int X, int Y, int Width, int Height, long Window,
-    bool Focused, double? Range)
+    bool Focused, double? Range, long DrawnIn)
 {
+    /// <summary>
+    /// The window a click on this part must land in: the one it is drawn in, which for a menu entry
+    /// is the popup rather than the main window it was found under. 0 is the reader saying it could
+    /// not tell, which is a refusal and never a fallback.
+    /// </summary>
+    public long ClickWindow => DrawnIn;
+
+    /// <summary>
+    /// `drawn in` is printed only when it differs from the window the path resolved under, which is
+    /// to say only for something drawn in a popup. Equal is the ordinary case and says nothing.
+    /// </summary>
     public override string ToString() =>
         string.Create(
             CultureInfo.InvariantCulture,
-            $"{Path} {ControlType} {Width}x{Height}+{X}+{Y} in {Window} {(Focused ? "focused" : "unfocused")}")
+            $"{Path} {ControlType} {Width}x{Height}+{X}+{Y} in {Window}")
+        + (DrawnIn != Window ? string.Create(CultureInfo.InvariantCulture, $" drawn in {DrawnIn}") : string.Empty)
+        + (Focused ? " focused" : " unfocused")
         + (Range is { } value ? string.Create(CultureInfo.InvariantCulture, $" range={value}") : string.Empty);
 }
 
@@ -1366,10 +1379,10 @@ internal sealed class Windows : IBackEnd
     public static ElementInfo ParseElement(string report)
     {
         string[] fields = report.Trim().Split('\t');
-        if (fields.Length != 9)
+        if (fields.Length != 10)
         {
             throw new DriveException(
-                $"the UI Automation reader answered {fields.Length} fields, not 9: {report.Trim()}");
+                $"the UI Automation reader answered {fields.Length} fields, not 10: {report.Trim()}");
         }
 
         // `-` is "this element has no RangeValue", which most do not. Parsed invariantly, because the
@@ -1395,7 +1408,8 @@ internal sealed class Windows : IBackEnd
                 "unfocused" => false,
                 _ => throw new DriveException($"the reader answered `{fields[7]}` where focused/unfocused belongs: {report.Trim()}"),
             },
-            range);
+            range,
+            Int(fields[9], report));
     }
 
     private static int Int(string field, string report) =>
@@ -1496,15 +1510,16 @@ internal sealed class Windows : IBackEnd
             Console.WriteLine($"element {element}");
             int centreX = element.X + (element.Width / 2);
             int centreY = element.Y + (element.Height / 2);
-            long drawnIn = Drawn(element, centreX, centreY);
+            long drawnIn = Drawn(element);
 
             // Said out loud when it fires. A silent correction is the kind of thing that costs an
-            // afternoon the next time the answer is surprising.
+            // afternoon the next time the answer is surprising. It now reports what the TREE says
+            // rather than what the pixel said, so it is a fact about the part and not a deduction.
             if (drawnIn != element.Window)
             {
                 Console.WriteLine(string.Create(
                     CultureInfo.InvariantCulture,
-                    $"drawn in {drawnIn}, not the {element.Window} it was found under: the same process, so a popup of its own"));
+                    $"drawn in {drawnIn}, not the {element.Window} it was found under: a popup of its own, per the raw view"));
             }
 
             return (centreX, centreY, drawnIn);
@@ -1737,47 +1752,52 @@ internal sealed class Windows : IBackEnd
     }
 
     /// <summary>
+    /// The window a part is actually DRAWN in, which is not always the window UI Automation found it
+    /// under. A menu's items sit under the main window's element in BOTH tree views, while each
+    /// submenu and context menu is drawn in a popup window of its own — so the popup is an item's
+    /// nearest window in the RAW view, and a control-view walk passes straight over it. The reader
+    /// walks that for us and reports it; this only reads the field and refuses what it cannot use.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ This used to ask <see cref="Native.WindowFromPoint"/> what window the pixel belonged to and
+    /// accept it whenever it was the same process — which is CIRCULAR, because the answer is then
+    /// checked against the very pixel it came from. It agreed with itself for every window of this
+    /// process, so <see cref="Beneath"/> could not fail for one, and the demo's own F12 log window
+    /// lying over the target was accepted: the click went into the log window and the driver reported
+    /// success. Breaking the circle means taking the expected window from the TREE, which is what the
+    /// reader's raw-view field is. XamlQuality's correction, measured on Avalonia 12.1.3 against
+    /// Avalonia's source; `docs/ui-automation-notes.md` and open item 17 have the account.
+    /// <para>
+    /// The original defect this replaced is still worth knowing, because it is what a wrong answer
+    /// here costs: <see cref="Beneath"/> refused the driver's own correct click on a menu entry, and
+    /// the caller then raised the demo — which light-dismisses the menu, so the click would have
+    /// landed on the pane underneath. A plausible-looking wrong result rather than a failure.
+    /// Measured 2026-10-08 on the colour-blind palette entry.
+    /// </para>
+    /// <para>
+    /// 0 is the reader saying it could not name the window, and it is refused rather than fallen back
+    /// on: a guess here is the one thing this method exists to stop. No reading has produced it.
+    /// </para>
+    /// </remarks>
+    private static long Drawn(ElementInfo element)
+    {
+        if (element.ClickWindow == 0)
+        {
+            throw new DriveException(
+                $"the reader could not name the window `{element.Path}` is drawn in, so a click on it "
+                + "cannot be aimed. Refusing rather than guessing: a click aimed at the wrong window "
+                + "lands in whatever is there and reports success");
+        }
+
+        return element.ClickWindow;
+    }
+
+    /// <summary>
     /// Refuses a click that would land on some other window. An injected click goes to whatever is
     /// topmost at that pixel, so a window of the person's own lying over the demo takes it — silently,
     /// and in whatever application that is. This is the X11 back end's "refused rather than sent to
     /// whatever lies there" guard against a second way of arriving at the same place.
     /// </summary>
-    /// <summary>
-    /// The window a part is actually DRAWN in, which is not always the window UI Automation found it
-    /// under. A menu declared in the main window's XAML — the demo's menu bar, as against the
-    /// library's context menus, which are built at run time — stays a descendant of the main window
-    /// in the automation tree while being drawn in a popup of its own. The reader can only report
-    /// the window it searched under, so the correction belongs here, where the Win32 to ask the
-    /// question is.
-    /// </summary>
-    /// <remarks>
-    /// ⛔ Getting this wrong is worse than a refusal, and both halves bite. <see cref="Beneath"/>
-    /// refuses a click whose pixel belongs to a window other than the one named — correct, but here
-    /// it refused the driver's own correct click. Worse, the caller raises the demo when the target
-    /// is the demo's window, and raising it light-dismisses the menu, so the click would have landed
-    /// on the pane underneath: a plausible-looking wrong result rather than a failure. Measured
-    /// 2026-10-08 on the colour-blind palette entry.
-    /// <para>
-    /// The obstruction guard is untouched: only a window of the SAME PROCESS can stand in, so
-    /// another application lying over the demo still fails <see cref="Beneath"/> at the pixel. A
-    /// window of the demo's own that is not the popup — its F12 log window — would stand in here,
-    /// and a frame is what would show it.
-    /// </para>
-    /// </remarks>
-    private static long Drawn(ElementInfo element, int x, int y)
-    {
-        nint under = Native.WindowFromPoint(new Native.Point { X = x, Y = y });
-        nint top = under == 0 ? 0 : Native.GetAncestor(under, Native.GaRoot);
-        if (top == 0 || top == (nint)element.Window)
-        {
-            return element.Window;
-        }
-
-        return Native.ProcessOf(top) == Native.ProcessOf((nint)element.Window)
-            ? (long)top
-            : element.Window;
-    }
-
     private static void Beneath(int x, int y, long expected, string verb)
     {
         nint under = Native.WindowFromPoint(new Native.Point { X = x, Y = y });

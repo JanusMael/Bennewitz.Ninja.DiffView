@@ -138,6 +138,34 @@ if ($found.TryGetCurrentPattern([System.Windows.Automation.RangeValuePattern]::P
     $range = ([double] $rangePattern.Current.Value).ToString([System.Globalization.CultureInfo]::InvariantCulture)
 }
 
+# The window the part is actually DRAWN in, which is not always the one it was found under. A menu's
+# items sit under the main window's element in BOTH views, while each submenu and context menu is
+# drawn in a popup window of its own — so the popup is the items' nearest window in the RAW view, and
+# a control-view walk passes straight over it (XamlQuality, measured on Avalonia 12.1.3 against
+# Avalonia's source; `docs/ui-automation-notes.md`).
+#
+# ⛔ This field exists because the caller cannot infer it from the pixel. Asking WindowFromPoint what
+# window a pixel belongs to and then checking the pixel against that answer is CIRCULAR: it agrees
+# with itself for every window of this process, so the demo's own F12 log window lying over the
+# target was accepted and the click went into it, reported as success. The expected window has to
+# come from the tree, which is here.
+#
+# RawViewWalker, and from the element itself rather than its parent: a top-level window's own element
+# carries its handle. The walk stops at the desktop, whose handle would otherwise be returned for an
+# element with no window ancestor at all — 0 says "could not tell", and the caller refuses on it
+# rather than guessing.
+$rawWalker = [System.Windows.Automation.TreeWalker]::RawViewWalker
+$drawnIn = 0
+$ancestor = $found
+while ($null -ne $ancestor) {
+    if ([System.Windows.Automation.Automation]::Compare($ancestor, $root)) { break }
+
+    $handle = [int64] $ancestor.Current.NativeWindowHandle
+    if ($handle -ne 0) { $drawnIn = $handle ; break }
+
+    $ancestor = $rawWalker.GetParent($ancestor)
+}
+
 $fields = @(
     $Path
     $current.ControlType.ProgrammaticName
@@ -148,6 +176,7 @@ $fields = @(
     [int64] $foundIn.Current.NativeWindowHandle
     $focus
     $range
+    $drawnIn
 )
 
 Write-Output ($fields -join "`t")

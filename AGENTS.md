@@ -601,6 +601,7 @@ holds how they read.
 | `key <chord>` | A key chord into the demo, in `xdotool`'s spelling (`ctrl+Down`, `shift+F7`) on both back ends |
 | `click <button> <x> <y> [in <window>]` | A click, in window-relative coordinates |
 | `click <button> --id <path>` | A click on the part a path of `AutomationId`s names — Windows only |
+| `drag <button> <x> <y> to <x> <y> [in <window>]` | Press, travel in steps, release from a `finally` — because a press and a jump are two positions and not a gesture. Both ends are read against the same window |
 | `mark` / `popup` | Remember the top-level windows there are, then name the one that appeared |
 | `capture <window> <out.png>` | The window's pixels |
 | `hover <x> <y>` / `hover --id <path>` | Park the pointer there and wait for a tooltip; it becomes the popup |
@@ -659,11 +660,18 @@ from opposite directions:
   application and the driver reported success.
 - **The Windows back end will not type unless the demo actually holds the keyboard**, because an
   injected chord goes to whatever does: `ctrl+f` or `ctrl+s` into the person's own window does
-  something real. `SetForegroundWindow` is refused outright for a process that does not already hold
-  the foreground, so asking is not evidence of getting.
+  something real. `SetForegroundWindow` is unreliable, so asking is not evidence of getting — and the
+  rule is **input, not incumbency**: XamlQuality measured it refused to a process that had sent no
+  input and *granted* to one that just had (2026-10-13, Avalonia 12.1.3), which is narrower than this
+  file's earlier "refused for a process that does not already hold the foreground". Either way the
+  back end checks `GetForegroundWindow` rather than trusting the call.
 - ⛔ **Neither raises the demo to satisfy those checks, and neither should.** Raising it over the
   person's work takes *their* clicks instead — the same defect pointed the other way — and raising
   before clicking a menu entry light-dismisses the menu, so the click lands on what was underneath.
+  ⚠ **That second half is narrower than it reads, and it still holds here**: XamlQuality could not
+  reproduce it *with the window already active*, where a raise changes no foreground, but measured
+  that another application taking the foreground does close the menu — and the only reason to raise
+  is that the window is not in front. `docs/ui-automation-notes.md` has both readings.
   The TailBlazer port, which runs about thirty of these harnesses on this estate, sends no synthetic
   input on a shared desktop at all for this reason. A by-hand pass here is attended, so the input
   verbs stay and an unobstructed, focused window is a **precondition the driver checks**.
@@ -677,8 +685,10 @@ from opposite directions:
   lives in the Windows Desktop framework and referencing it would make a portable driver a
   Windows-only one.
 - ⛔ **`key` needs a `click` before it on a window nobody has touched.** Holding the foreground is not
-  the same as having something focused inside, and a chord sent into that gap does nothing at all —
-  which reads as "synthetic input does not work here" and is the expensive wrong conclusion.
+  the same as having something focused inside, and a chord sent into that gap reaches **the window's
+  own key bindings and not a view's** — XamlQuality's narrowing of what was recorded here as "nothing
+  at all" (2026-10-13). For this demo that is the same outcome, every chord worth driving being the
+  view's: it reads as "synthetic input does not work here", which is the expensive wrong conclusion.
   `click left --id SideBySide/LeftPane then key ctrl+f` opens the find bar; the chord alone does not.
 - ⛔ **A running demo locks its own assemblies**, so the solution cannot rebuild while it is up —
   `dotnet test` fails with MSB3027 naming the process. No Linux equivalent. Close it by the pid the
