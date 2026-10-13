@@ -4144,3 +4144,170 @@ runner supports injected input at all — is **independent** of what 00033 catch
 settle it once already, and a false start on a plan costs more than one workflow, one UI Automation
 read and one injected click. The timebox is the point: it answers the runner question and nothing
 else.
+
+## The Windows driving lessons landed, and three of them came back changed
+
+XamlQuality reported on 2026-10-13, by message, that the batches of 2026-09-30, 10-08, 10-09 and
+10-10 had landed in `docs/avalonia-gotchas.md` (pull request #59) and `docs/ai-drivable-ui.md` (#60),
+with the attended-driver position this repository proposed landing as a fifth layer of its own (#67).
+All three merges were confirmed here against `gh` before anything was reduced, because `AGENTS.md` §8
+makes the pointer **conditional on landing and never on sending**, and each row of the reduced
+`docs/ui-automation-notes.md` was then checked against the merged documents rather than against the
+report of them. That check earned its keep twice: it found the X11 batch of 2026-09-28 still open, so
+that section is **not** a pointer and the copy here is still the only one; and it found the DPI lesson
+living in `ai-drivable-ui/SharedDesktopHarnessJournal.md` rather than in either of the two documents
+§9 names, which is why that pointer now says so.
+
+Three claims this file and `AGENTS.md` §9 stated came back **narrower**, each measured in two Windows
+Sandbox sessions at Avalonia 12.1.3 with Fluent, one with the host's GPU shared and one without:
+
+- **`SetForegroundWindow` turns on input, not incumbency.** It was refused to a process that had sent
+  no input and *granted* to one that just had — not, as recorded here, refused to any process that
+  does not already hold the foreground. The back end checked `GetForegroundWindow` rather than
+  trusting the call either way, so nothing behaves differently; the reason it gives was wrong.
+- **A chord into an unfocused window reaches the window's own key bindings, not nothing.** Recorded
+  here as doing "nothing at all". For this demo the outcome is the same, every chord worth driving
+  being a view's, which is why the trap survived being stated too strongly.
+- **Avalonia's `MenuItem` has no `ExpandCollapse` at 12.1.2 either**, the peer being the same file at
+  both pins. The one `MenuItem` carrying it in their survey was the window's **System** menu item, in
+  the title bar, which is Windows' and not Avalonia's.
+
+And one came back **inverted**, which is the entry worth reading twice:
+
+⚠ **A menu's items sit under the main window's element in both views, while the popup they are drawn
+in is their nearest window only in the raw view.** A control-view walk passes the popup, by Avalonia's
+source. The XAML/run-time asymmetry this repository once recorded did not reproduce.
+`scripts/drive-demo-uia.ps1` is unaffected because it never walks upward — it enumerates the process's
+top-level windows and resolves each id path downward — but that is also exactly why it can report the
+*main* window for an entry whose pixels are in the popup, which was plan 00033's false refusal on the
+colour-blind palette entry.
+
+## A disagreement that was a missing qualifier
+
+XamlQuality could not reproduce *raising a window light-dismisses the menu it opened* and left the
+entry out: four ways of raising it left the menu open, and a click on an item afterwards ran it.
+
+**The two readings are compatible, and the qualifier carries all of it.** Theirs was measured with the
+window **already active**, where a raise changes no foreground. Their own note that *another
+application taking the foreground closed it* is this repository's case, because the only reason to
+raise is that the window is not in front. So raising an already-active window is harmless — new, and
+theirs — while taking the foreground does close the menu, which is the case the driver's rule is about.
+
+The rule in `AGENTS.md` §9 therefore **stands as written** and now carries the narrowing. This was sent
+back to XamlQuality with the observation that leaving the entry out drops the inactive-window case
+their own measurement confirms: a non-reproduction under one precondition is not a refutation of a
+claim made under the other, and the cheapest place to lose that distinction is a changelog.
+
+## The click guard asked the pixel what the pixel was, which is why it could not fail
+
+Adopted on Brian's call, 2026-10-13, from XamlQuality's correction. Open item 17.
+
+`drive-demo.cs`'s `Drawn` resolved `WindowFromPoint` then `GetAncestor(GA_ROOT)` for the pixel it was
+about to click, and **accepted that window whenever it belonged to the demo's process**. `Beneath`
+then checked the same pixel against the answer. ⛔ **That is circular**: the expected window was
+derived from the very pixel being tested, so for any window of this process it agreed with itself and
+`Beneath` **could not fail**. The obstruction guard worked only against other applications, which is
+the case it was written for and the reason the hole went unseen — a guard that catches the thing you
+were thinking about looks like a guard that works.
+
+What it let through: the demo's **own F12 live-log window** lying over the target. The click went into
+the log window and the driver reported success. `Drawn`'s own remarks named this and left it.
+
+The correction is to take the expected window from the **tree** rather than from the pixel, which is
+the half of XamlQuality's method that matters here: `scripts/drive-demo-uia.ps1` walks
+`TreeWalker.RawViewWalker` from the element to its nearest ancestor carrying a window handle and
+reports it as a tenth field, and `Drawn` reads that field. A menu's items sit under the main window's
+element in *both* views while the popup is their nearest window only in the **raw** view, so a
+control-view walk would pass the popup and reintroduce plan 00033's false refusal.
+
+⚠ **The second half of their method — also checking that UI Automation's element at the point is the
+element itself — is declined here, with a reason.** It catches "right window, wrong element", and in
+this demo that state does not arise: `OverlayPopups` stays unset (§1), so every menu, tooltip and
+context menu is a top-level window of its own rather than an in-window overlay, and Avalonia lays the
+rest out without overlap. It would also cost a second reader round-trip per click, the coordinates not
+existing until after the first read. Worth revisiting if `OverlayPopups` is ever set.
+
+`0` from the reader means it could not name the window, and `Drawn` **refuses** rather than falling
+back on the window the path resolved under — a guess there is the one thing the method exists to
+prevent. No reading has produced it, and the path is reachable only through `Absolute`, so it is
+exercised by the attended pass and by no headless test. Said in the test, rather than left as a gap
+someone later mistakes for coverage.
+
+**What proves it, and what does not.** `DriveDemoTests.The_window_a_part_is_drawn_in_is_read_and_differs_only_for_a_popup`
+holds both halves — the popup fixture reports `drawn in`, the three ordinary fixtures do not — and was
+blinded both ways before it was committed: with the clause removed it is the named failure, and with
+the clause forced on every report it fails *and* trips the two older report tests, which guard the
+same contract. ⛔ **None of that touches the PowerShell**, which needs a real window: the reader's
+raw-view walk is proven by the attended Windows pass and by nothing else, which is why adopting this
+re-opens the pass that discharged item 9's Windows half.
+
+## Open item 17's verification, and the two ways its own harness lied first
+
+Verified by an attended run on JANUSWAX2 on 2026-10-13, over SSH-staged code run by a person in the
+console session — synthetic input cannot cross Windows session isolation, and SSH never joins an
+existing interactive session, so the run itself is a person's and only the staging was remote.
+
+Three readings, all of which need a real window because no headless test reaches `RawViewWalker`:
+
+- **The guard refuses.** The demo's own live-log window was parked over the left pane and the click
+  was refused naming it. ⭐ What makes this a reading rather than an anecdote is that the obstruction
+  was **proven topmost at the click pixel** first — `WindowFromPoint`'s root equalled the log window's
+  handle — and the driver's own refusal message named the same window independently.
+- **The guard allows.** Obstruction moved away, root back to the main window, same click allowed. A
+  refusal is worth nothing without this half: a guard that refuses everything also refuses the case
+  you are testing.
+- **The raw-view walk names the popup.** A pane-menu entry read as
+  `NextChange … 764x66+750+342 in 1048780 drawn in 1049142` — found under the **main** window's
+  element, drawn in a window of its own — and the click on it allowed. This is the only case the new
+  field changes an answer in, and it is XamlQuality's inverted finding confirmed on our own demo.
+
+⛔ **The first attempt reported FAIL, and the fix was not what was wrong.** Two defects in the
+harness, not in the guard:
+
+1. **It was DPI-unaware on a console at 200%**, so `GetWindowRect` handed it virtualised coordinates
+   — `1113x756` for a `2200x1440` window — and it fed those numbers back to `SetWindowPos`.
+   `AGENTS.md` §9 and XamlQuality's shared-desktop journal both already record this trap, and the
+   harness walked into it anyway, which is the argument for the trap being in the driver's own
+   refusals rather than only in prose.
+2. **It never checked that the obstruction it built was there.** It moved a window, assumed the move
+   landed, clicked, and read "allowed" as "the hole is open". ⚠ **That is a conclusion from an
+   unproven premise, which is the same error as counting silence as success** — and the second one
+   it committed in the same run, below. The repaired harness measures the pixel and reports
+   **UNREAD** when the premise fails, never FAIL.
+
+⚠ **An unexplained difference, recorded rather than resolved**: the repaired harness printed
+`per-monitor DPI aware: False` — `SetProcessDpiAwarenessContext` refused — and yet read *physical*
+coordinates, where the first harness, launched the same way in the same session, read virtualised
+ones. What differed was not established. The verdict does not rest on it: the driver, which is
+per-monitor aware, named the obstructing window itself.
+
+## The pass tells the truth and its exit code does not
+
+`scripts/drive-demo-interactive.ps1` has no `exit` path, so it returns 0 whether its failure and
+unread lists are empty or not. For the human it is written for this is harmless — the summary
+distinguishes three outcomes and names every unread reading, which is plan 00033's whole subject.
+For a **caller** it is a trap, and item 17's harness fell in it: it read `exit = 0` and announced a
+pass over a run with four failed assertions and one unread reading.
+
+⛔ **Continuing past a bad step and exiting 0 are different decisions.** The first is deliberate and
+documented — one bad step must not cost the whole pass. The second is an accident of there being no
+`exit` statement, and nothing records it as a choice. Open item 18.
+
+The wider lesson is the one this repository keeps paying for, arriving this time from outside the
+script that was hardened against it: **a harness is not trustworthy because the thing it wraps is.**
+Plan 00033 made every step of the pass judge the state it changed, and a forty-line wrapper around it
+reintroduced exactly the defect by reading one integer.
+
+## The demo's View menu is out of reach at 200% scaling
+
+Measured on JANUSWAX2's console at 200%, where the demo is `2200x1440`. The View menu already scrolls
+at 100% — `AGENTS.md` §9 says new demo items belong in a submenu for that reason — and at 2× the
+colour-blind palette entry falls outside the popup entirely, so it is **absent from the automation
+tree** and the driver correctly reports it as a part that is switched off or out of view rather than
+missing. Four of the attended pass's assertions failed there, none of them about the guard under test:
+the palette tick, its reading, and the splitter and map drags, whose coordinates are client-relative
+to a `1100x720` window.
+
+So a by-hand pass at a scaling other than 100% exercises less than it appears to, and the frames it
+does capture are still a look at that scaling, which is worth having. The popup case was read through
+the **pane context menu** instead, which does not scroll.

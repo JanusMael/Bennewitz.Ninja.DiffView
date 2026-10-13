@@ -221,6 +221,41 @@ public sealed class DriveDemoTests
     }
 
     [Fact]
+    public void The_window_a_part_is_drawn_in_is_read_and_differs_only_for_a_popup()
+    {
+        // Open item 17, XamlQuality's correction. A menu's items sit under the main window's element
+        // in BOTH tree views while each popup is drawn in a window of its own, so the popup is an
+        // item's nearest window in the RAW view — and the reader walks that, because the driver
+        // cannot infer it. Asking WindowFromPoint what window a pixel belongs to and then checking
+        // the pixel against that answer is circular: it agreed with itself for every window of the
+        // demo's process, so the demo's own F12 log window lying over the target was accepted and
+        // the click went into it, reported as success.
+        //
+        // `ColourBlindPalette` is the entry that produced the original defect, which is why it is
+        // the fixture: found under the main window, drawn in a popup of its own.
+        Assert.Equal(
+            "ColourBlindPalette ControlType.MenuItem 214x24+312+432 in 70387178 drawn in 99887766 unfocused",
+            Single(Run(["--parse-element", WindowsFixture("element-in-a-popup.txt")])));
+
+        // The positive control's other half: `drawn in` is said only when there is something to say.
+        // A part drawn in the window it was found under is the ordinary case, and a report that
+        // announced it every time would train a reader to skip the one line that matters.
+        foreach (string ordinary in (string[])
+            ["element-left-pane.txt", "element-on-a-second-screen.txt", "element-with-a-range-value.txt"])
+        {
+            Assert.DoesNotContain(
+                "drawn in",
+                Single(Run(["--parse-element", WindowsFixture(ordinary)])),
+                StringComparison.Ordinal);
+        }
+
+        // ⚠ Not covered here, and deliberately: the reader answering 0 — "I could not name the
+        // window" — is refused by `Drawn` rather than fallen back on, and that path is reachable
+        // only through `Absolute`, which needs a live window. No reading has ever produced 0. The
+        // attended Windows pass is what would exercise it.
+    }
+
+    [Fact]
     public void The_interactive_pass_prints_through_the_host_so_a_functions_return_value_is_its_own()
     {
         // ⛔ A PowerShell function returns everything written to its OUTPUT stream, not just the

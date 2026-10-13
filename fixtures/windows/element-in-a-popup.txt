@@ -1,0 +1,1 @@
+ColourBlindPalette	ControlType.MenuItem	312	432	214	24	70387178	unfocused	-	99887766
