@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/AgentBaseline/AgentBaseline.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Linked rather than copied: the repository-root walk is one source of truth, and a second
+         copy of it is the defect `fix(scripts): two sources of truth for the repository` records. -->
+    <Compile Include="../DiffView.Avalonia.Tests/RepoPaths.cs" Link="RepoPaths.cs" />
+  </ItemGroup>
+</Project>
