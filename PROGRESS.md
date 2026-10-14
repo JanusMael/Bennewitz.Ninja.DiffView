@@ -73,14 +73,27 @@ green is evidence about one machine, and CI judges the claim.
 ⭐ **Next: `plans/00034` — a new tool, not an open item.** `AgentBaseline` consolidates many
 `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator against a cycling queue
 of candidates, section-shaped take / leave / drop / defer, decisions persisted across runs. ⛔ **It is
-at draft 2, unapproved and untracked, and nothing is implemented from a draft.** Fourteen decisions are
-costed in the plan; **one is Brian's and blocks approval** — decision 9c's depth, whether an edited
-take stores its resulting text or only the fact that it was edited.
+at draft 2 and untracked, and nothing is implemented from a draft** — but as of 2026-10-14 **nothing
+blocks approval**: the three decisions that were open are settled and recorded in it. Decision 9c now
+stores an edited take's **resulting text and the source section's hash at take time**, because
+verifying an edit against its source needs the source *then*, the result and the source *now*, and
+the edit is gone when the session ends. New **decision 15** excludes worktree, vendored `reference/`
+and `bundles/` copies on ingest, reports what it skipped, and lets a manifest re-admit one.
 
-⚠ The open-item list below is otherwise empty, and **it emptied, refilled and emptied once more inside
-2026-10-13**, which is the thing to take from it rather than the state. It was empty that
-morning; XamlQuality then reported that the Windows driving batches had landed and that **three of
-them changed under its own measurement**, which put two items on it. Both closed the same day:
+⭐ **And the plan's own corpus measurement was 4.5× short, which a local scan settled rather than a
+census.** §2 recorded 14 project files over 5KB in `C:\c\cl`; the whole of `C:\c` carries **63** —
+42 `AGENTS.md`, 21 `CLAUDE.md` — out of 246 once copies are excluded, the largest **243 KB**. So
+decision 14's claim that the project corpus is where N actually is no longer rests on the machines
+that refused SSH, and §8's warning that the N-way *sizing* might not survive a wider count is
+discharged. What produced decision 15 is the other half of that scan: **18 of 264 matches are copies**,
+and the three ClaudeForge `AGENTS.md` copies measure 166,795 / 166,668 / 166,667 — one document
+drifting, so three hashes for one rule set and nothing a content-equality rule can collapse.
+
+⚠ The open-item list below holds **one** actionable entry, item 19, and **it emptied, refilled and
+emptied once more inside 2026-10-13** before gaining that one — which is the thing to take from it
+rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
+batches had landed and that **three of them changed under its own measurement**, which put two items
+on it. Both closed the same day:
 
 - **Item 17**, the finding with teeth — a click guard that asked the pixel what the pixel was, so it
   agreed with itself and *could not fail* for a window of this process. Fixed from the tree instead,
@@ -88,6 +101,11 @@ them changed under its own measurement**, which put two items on it. Both closed
 - **Item 18**, which that run turned up on the way: the interactive pass had no `exit` statement, so
   its code reflected none of its verdict — which is how item 17's own harness reported a pass over
   four failed assertions. Fixed, and proven from a session with no desktop at all.
+
+Item 19 was added on 2026-10-14, from the same attended run: the demo's View menu is unreachable at
+200% scaling, where four of that pass's assertions failed on coordinates rather than on anything the
+fix touched. It is decided — reorganise into submenus, per `AGENTS.md` §9's existing rule — and
+blocked only on an attended run at 200% to prove those four.
 
 The documentary half is taken too: `docs/ui-automation-notes.md` is the pointer it was always going to
 become, and `AGENTS.md` §9's three affected claims are corrected.
@@ -442,8 +460,9 @@ wording.
     menu row to the rule the row states: its four ids are exactly the fixture's menu ids that name no
     `DiffCommand`. *The hosting guide's id table, held to the fixture* below has the record.
 
-17. **The click guard asked the pixel what the pixel was — code adopted 2026-10-13, attended pass
-    owed.** Raised by XamlQuality's measurement of the batches this repository sent, and the defect is
+17. ~~The click guard asked the pixel what the pixel was~~ — **closed 2026-10-13: adopted, then
+    verified by an attended run on JANUSWAX2 in the three readings below.** Raised by XamlQuality's
+    measurement of the batches this repository sent, and the defect is
     worse than the "missing check" it was first reported as: `Drawn` derived the expected window from
     `WindowFromPoint` on the very pixel it was about to click and accepted it for any window of the
     demo's process, after which `Beneath` checked that same pixel against it. ⛔ **Circular, so
@@ -502,11 +521,39 @@ wording.
     ✅ **Proven, and for free**: run from a **non-interactive SSH session**, where it cannot drive a
     desktop at all, the pass now exits **1** with a populated failure list where it previously exited
     **0**. No desktop was borrowed to establish it — the absence of one is what makes the run fail.
+19. **The demo's View menu is unreachable at 200% scaling — decided 2026-10-14, reorganise into
+    submenus.** Found by item 17's attended run on JANUSWAX2, where it cost four of that pass's
+    assertions: the menu is already taller than its popup and scrolls at 100%, and at 2× the
+    colour-blind palette entry scrolls out of the popup and is therefore **absent from the automation
+    tree**. The driver's `absent` is correct about the tree and wrong about the world, a person being
+    able to scroll to it — but the demo is what gets fixed, because the menu scrolls on the primary
+    box too and that is a defect a reader of the demo meets without driving anything.
+
+    `AGENTS.md` §9 already carries the rule this applies — *"New demo items belong in a submenu. The
+    demo's View menu is already taller than its popup and scrolls"* — so this is that rule reaching
+    the menu that provoked it rather than new policy. ⭐ **While in that file, the entries take
+    explicit `AutomationId`s.** Measured 2026-10-14: `MainWindow.axaml`'s `ColourBlindPalette` carries
+    an `x:Name` and an `AutomationProperties.Name` and **no `AutomationId`**, so the driver is
+    addressing an id Avalonia *derived* from the name — the silent-rename gap `AGENTS.md` §5 records,
+    live in the demo. ⚠ `fixtures/automation-ids.txt` pins the **library's** ids and none of the
+    demo's, so the fixture does not change; what does change is the `--id` paths in
+    `scripts/drive-demo-interactive.ps1`.
+
+    ⛔ **Proving it needs an attended run at 200%**, which is JANUSWAX2's console and a person's time
+    — the four assertions are the measurement, so a local green here says nothing about them.
+
+    ⚠ **Not adopted, and recorded as the alternative**: teaching `drive-demo-uia.ps1` to scroll a
+    popup before reporting a part absent. It fixes a false-absence class rather than one menu, and it
+    generalises to the library's own pane menu if that grows — but per `AGENTS.md` §8 a lesson about
+    driving a desktop UI is XamlQuality's to hold first, so it goes there as a lesson and may come
+    back as a driver change.
 
 Items 3, 9 and 10 are Brian's own, item 14 waits on XamlQuality, item 13 is a date (2026-10-19) and
-item 16 is shelved. **Nothing here is actionable again**, items 17 and 18 having both closed on
-2026-10-13; items 5, 6, 12 and 15 were already closed. ⚠ The empty list lasted part of one day last
-time — a peer repository's measurement refilled it — so read it as a state, not a finish.
+item 16 is shelved. **Item 19 is the one actionable entry**, added 2026-10-14 and blocked only on an
+attended run at 200%; items 17 and 18 both closed on 2026-10-13, and items 5, 6, 12 and 15 were
+already closed. ⚠ The list was empty twice inside 2026-10-13 and refilled both times from a
+measurement rather than from a decision — the second one its own attended run — so read an empty list
+as a state and never as a finish.
 
 ### Running it
 
