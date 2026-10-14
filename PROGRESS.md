@@ -77,17 +77,29 @@ at draft 2 and untracked, and nothing is implemented from a draft** — but as o
 blocks approval**: the three decisions that were open are settled and recorded in it. Decision 9c now
 stores an edited take's **resulting text and the source section's hash at take time**, because
 verifying an edit against its source needs the source *then*, the result and the source *now*, and
-the edit is gone when the session ends. New **decision 15** excludes worktree, vendored `reference/`
-and `bundles/` copies on ingest, reports what it skipped, and lets a manifest re-admit one.
+the edit is gone when the session ends. New **decisions 15 and 15b** govern ingest: build and tool
+output is pruned during traversal and counted, a directory holding a copy of one of our own documents
+is walked and each skip named, a pointer file is no candidate at all, and a drop is judged safe by
+document identity rather than by body hash.
 
 ⭐ **And the plan's own corpus measurement was 4.5× short, which a local scan settled rather than a
 census.** §2 recorded 14 project files over 5KB in `C:\c\cl`; the whole of `C:\c` carries **63** —
 42 `AGENTS.md`, 21 `CLAUDE.md` — out of 246 once copies are excluded, the largest **243 KB**. So
 decision 14's claim that the project corpus is where N actually is no longer rests on the machines
 that refused SSH, and §8's warning that the N-way *sizing* might not survive a wider count is
-discharged. What produced decision 15 is the other half of that scan: **18 of 264 matches are copies**,
-and the three ClaudeForge `AGENTS.md` copies measure 166,795 / 166,668 / 166,667 — one document
-drifting, so three hashes for one rule set and nothing a content-equality rule can collapse.
+discharged.
+
+⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
+worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with
+no depth limit the rule as first written admitted **684** candidates where the corpus is **236**, and
+**56** substantive. It missed `artifacts/` — the mutation harnesses' working repo copies, **448 of
+those 684**. It had no room for the `@AGENTS.md` pointer, **90 of 236** and **314 of 684**, which also
+makes content-hash dedupe actively wrong: 314 identical pointers would collapse into one entry and
+take 314 repositories' presence with them. And its own safety test was the wrong question — **32 of
+66** dropped files matched no kept file byte for byte, every one an *older version* of a document held
+current, so identity and not bytes is what says a drop was safe. ⭐ **None of it came from re-reading
+the plan**; it came from a scratch script that burned **1,174 s of CPU** proving the first wording's
+cost defect by walking into it.
 
 ⚠ The open-item list below holds **one** actionable entry, item 19, and **it emptied, refilled and
 emptied once more inside 2026-10-13** before gaining that one — which is the thing to take from it
