@@ -533,9 +533,23 @@ wording.
 
     ✅ **Confirmed and planned there, 2026-10-13** (XamlQuality, by message): the plan is approved — two
     steps, the public reading and then a parts report the theme audit writes and checks — and **the
-    reading is next in that repository's code lane**. ⚠ **Still parked here, and the trigger is
-    unchanged**: what this plan needs is a *release* carrying the reading, not an approved plan to
-    produce one. Do not start plan 00030 until a pin can move to it.
+    reading is next in that repository's code lane**.
+
+    ⭐ **UNBLOCKED 2026-10-14: `Bennewitz.Ninja.XamlQuality` `2026.4.1014` is on nuget.org** and carries
+    it — `TemplatePartRule.ReadParts` and its records public, `TemplatePartReading.ToMarkdown`, and
+    `theme-audit parts [--check]` driven by an optional `parts` section of `theme-audit.json`. Verified
+    against nuget.org's own version index rather than taken from the message. Over `bf6b734` with
+    AvaloniaEdit's assembly it wrote a report of **11 controls and 59 lookups**. The release also adds
+    **`Bennewitz.Ninja.XamlQuality.ThemeRuntime`** (`2026.4.1014`, source-only): an Avalonia test project
+    compiles `ThemeRuntimeCheck` against its own Avalonia and asks `Application.TryGetResource` for every
+    key the audit plans, under each theme and variant — over `bf6b734` that was 16 setups, **10354
+    lookups, no difference and no skip**. ⚠ A file importing both `Avalonia.Styling` and the audit's
+    namespace must alias `ThemeVariant`, as ours already do.
+
+    ⚠ **So the trigger is met and the plan is startable — but the pin has NOT moved**, and moving it is
+    what this item now means. ⭐ **Pay it with step 2 of plan 00034**: both touch
+    `Directory.Packages.props`, which AGENTS.md §5 names as "a pin", so a full `mutate-gates` run may be
+    owed — once for both rather than twice.
 
 15. ~~The hosting guide's id table is written by hand and checked by nothing~~ — **closed.**
     `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds
@@ -631,12 +645,40 @@ wording.
     driving a desktop UI is XamlQuality's to hold first, so it goes there as a lesson and may come
     back as a driver change.
 
-Items 3, 9 and 10 are Brian's own, item 14 waits on XamlQuality, item 13 is a date (2026-10-19) and
-item 16 is shelved. **Item 19 is the one actionable entry**, added 2026-10-14 and blocked only on an
-attended run at 200%; items 17 and 18 both closed on 2026-10-13, and items 5, 6, 12 and 15 were
-already closed. ⚠ The list was empty twice inside 2026-10-13 and refilled both times from a
-measurement rather than from a decision — the second one its own attended run — so read an empty list
-as a state and never as a finish.
+20. **A stray `*.received.axaml` is compiled into the library and shipped — measured 2026-10-14.**
+    `ReferenceAuditTests` writes `<name>.received.axaml` beside a stale compat dictionary when the check
+    drifts, which lands it in `src/DiffView.Avalonia/Themes/Compat/`. `.gitignore` keeps it out of a
+    commit (`*.received.*`, and that half has always been right), but **nothing keeps it out of the
+    build**: the Avalonia SDK globs `**/*.axaml` and `DiffView.Avalonia.csproj` carries no `Remove`.
+
+    ⛔ **Proven rather than argued.** A received dictionary holding one marker key was written into that
+    directory, the project built, and the built assembly read back:
+
+    | Reading | Result |
+    |---|---|
+    | `dotnet build` exit code | **0** |
+    | the build output naming the file | **never** |
+    | the marker key present in `DiffView.Avalonia.dll` | **yes** |
+
+    So it is compiled **and embedded**, silently — and `DiffView.Avalonia` is `IsPackable=true`, so a
+    stray left behind by one failed test run would ship a foreign resource dictionary inside the
+    published package. ⚠ The hazard predates the release that surfaced it: XamlQuality `2026.4.1014`
+    makes `report --check` and `compat --check` write `name.received.ext` on drift too, which adds a
+    second source of strays, but our own suite has always been the first.
+
+    The fix is to exclude `*.received.*` from the Avalonia item globs, with a test that proves the
+    exclusion holds — a stray written into the tree must leave the built assembly unchanged, which is
+    the assertion the measurement above already has the shape of. ⚠ `src/DiffView.Demo` globs markup
+    too, and `src/AgentBaseline` will once plan 00034 reaches step 5, so the exclusion belongs wherever
+    markup is globbed rather than in one project.
+
+Items 3, 9 and 10 are Brian's own, item 13 is a date (2026-10-19) and item 16 is shelved. **Items 19 and
+20 are actionable, and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped
+the reading it waits on — what that item now means is moving the pin, which step 2 of plan 00034 wants
+to do anyway. Items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already closed.
+⚠ The list was empty twice inside 2026-10-13 and refilled both times from a measurement rather than from
+a decision — the second time its own attended run, and item 20 the same way a day later — so read an
+empty list as a state and never as a finish.
 
 ### Running it
 
