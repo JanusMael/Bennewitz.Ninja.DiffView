@@ -70,17 +70,41 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **Next: `plans/00034` — a new tool, not an open item.** `AgentBaseline` consolidates many
-`CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator against a cycling queue
-of candidates, section-shaped take / leave / drop / defer, decisions persisted across runs. ⛔ **It is
-at draft 2 and untracked, and nothing is implemented from a draft** — but as of 2026-10-14 **nothing
-blocks approval**: the three decisions that were open are settled and recorded in it. Decision 9c now
-stores an edited take's **resulting text and the source section's hash at take time**, because
+⭐ **`plans/00034` is approved, committed and frozen, and step 1 is done.** `AgentBaseline`
+consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator
+against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
+persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
+is never edited again** — drift comes here, and superseding it means a new number. **Step 2, the
+parse, is next.**
+
+The three decisions that had been open were settled first. Decision 9c stores an edited take's
+**resulting text and a hash of the source section over normalised text**, per decision 6, because
 verifying an edit against its source needs the source *then*, the result and the source *now*, and
-the edit is gone when the session ends. New **decisions 15 and 15b** govern ingest: build and tool
-output is pruned during traversal and counted, a directory holding a copy of one of our own documents
-is walked and each skip named, a pointer file is no candidate at all, and a drop is judged safe by
+the edit is gone when the session ends. **Decisions 15 and 15b** govern ingest: build and tool output
+is pruned during traversal and counted, a directory holding a copy of one of our own documents is
+walked and each skip named, a pointer file is no candidate at all, and a drop is judged safe by
 document identity rather than by body hash.
+
+**Step 1 is the project and the proof that something builds it.** `src/AgentBaseline` and
+`tests/AgentBaseline.Tests` join `DiffView.slnx` as `IsPackable=false`; the build is clean at 0
+warnings under `TreatWarningsAsErrors`, and the suite measured **709** here against 706 before it,
+judged `healthy` by `catch-crash --check --expect auto` rather than by reading a summary. All three
+new tests were proven able to fail before the commit, each by the test it names rather than by a
+different one. ⛔ **No Avalonia and no Markdig reference yet**, deliberately: a Markdig pin touches
+`Directory.Packages.props`, which AGENTS.md §5 names as a pin and which may owe a mutation run of
+its own.
+
+⛔ **And step 1 found a step-order hazard in the plan, which is recorded here because the plan is
+frozen.** `AccessibilityCoverageTests` asserts that the library's and the demo's two subjects account
+for every element its scan of `src` finds, so **the first `.axaml` under `src/AgentBaseline` makes
+that equality false** — and the failure names neither this project nor this plan. The plan puts the
+window at **step 5** and the `src` gates at **step 11**, so steps 5 to 10 would run red. ⭐ What step 1
+left instead of an edit to the plan is a tripwire with its instructions attached:
+`ProjectShapeTests.No_markup_lives_here_yet_and_the_first_file_that_does_owes_a_gate` fails on that
+first markup file, says to pay step 11 in the same change — this project's own subject, its own
+measured floor, `AutomationProperties.Name` on every interactive control, `BNXQ1004` clean — and says
+to delete itself once that is done. A plan's step order is not a contract the suite enforces; this
+is how one gets enforced anyway.
 
 ⭐ **And the plan's own corpus measurement was 4.5× short, which a local scan settled rather than a
 census.** §2 recorded 14 project files over 5KB in `C:\c\cl`; the whole of `C:\c` carries **63** —
