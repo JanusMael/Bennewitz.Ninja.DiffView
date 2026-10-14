@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- ⛔ No Avalonia and no Markdig reference yet, on purpose. The window arrives at plan 00034's
+       step 5 and the parse at step 2; a Markdig pin touches Directory.Packages.props, which
+       AGENTS.md §5 names as "a pin" and which may owe a full mutation run of its own (§7 of the
+       plan). Step 1 buys none of that. -->
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>AgentBaseline.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>
