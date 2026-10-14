@@ -2,13 +2,14 @@
 
 ## Resume
 
-**`main` carries everything through PR #28, and CI is green on it** — all five jobs, 2026-10-13.
-*A resume names the pull request it was written for and
+**`main` carries everything through PR #31, and CI is green on it** — PR #31 merged on a full
+10-of-10, 2026-10-14. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* The suite is **769**, passing in `en-US` and in the `de-DE` culture leg
-alike; Windows and macOS run **705**, the suite less the 64 frame cases that are Linux's baselines,
-and each lists by name the ones it left out. Both figures are read off PR #28's run — the Linux leg's
-own summary and a local `catch-crash --expect auto` — rather than carried forward. The trimmed publish carries no `IL` warning.
+wrong the moment it is true.* **Windows measured 706** here, `Passed!`, by a local run — one test more
+than at PR #28, added by item 17. ⛔ **The Linux total is deliberately not written down**: it is read
+off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
+**745** once reached this document against a measured **769**. Each leg lists by name the baselines it
+left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **112** mutations and derives **81** guards from the gate files; CI runs its `--guards` half on
 Linux, and the last full run — over `0e8abbd`, owed because that commit edits a gate
@@ -69,8 +70,15 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⛔ **Next: nothing in this repository again — and the list emptied, refilled and emptied once more
-inside 2026-10-13, which is the thing to take from it rather than the state.** It was empty that
+⭐ **Next: `plans/00034` — a new tool, not an open item.** `AgentBaseline` consolidates many
+`CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator against a cycling queue
+of candidates, section-shaped take / leave / drop / defer, decisions persisted across runs. ⛔ **It is
+at draft 2, unapproved and untracked, and nothing is implemented from a draft.** Fourteen decisions are
+costed in the plan; **one is Brian's and blocks approval** — decision 9c's depth, whether an edited
+take stores its resulting text or only the fact that it was edited.
+
+⚠ The open-item list below is otherwise empty, and **it emptied, refilled and emptied once more inside
+2026-10-13**, which is the thing to take from it rather than the state. It was empty that
 morning; XamlQuality then reported that the Windows driving batches had landed and that **three of
 them changed under its own measurement**, which put two items on it. Both closed the same day:
 
