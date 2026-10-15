@@ -672,13 +672,44 @@ wording.
     too, and `src/AgentBaseline` will once plan 00034 reaches step 5, so the exclusion belongs wherever
     markup is globbed rather than in one project.
 
-Items 3, 9 and 10 are Brian's own, item 13 is a date (2026-10-19) and item 16 is shelved. **Items 19 and
-20 are actionable, and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped
-the reading it waits on — what that item now means is moving the pin, which step 2 of plan 00034 wants
-to do anyway. Items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already closed.
-⚠ The list was empty twice inside 2026-10-13 and refilled both times from a measurement rather than from
-a decision — the second time its own attended run, and item 20 the same way a day later — so read an
-empty list as a state and never as a finish.
+21. **`AGENTS.md` §9's X11 half is now the second copy of lessons that live in XamlQuality — reduce it
+    to a pointer. Unblocked 2026-10-15.** §8's rule is that `docs/avalonia-gotchas.md` and
+    `docs/ai-drivable-ui.md` are the one living copy of each, and that **once a lesson lands there,
+    what stays here is a pointer** plus whatever is specific to DiffView or to this machine. The X11
+    batch of 2026-09-28, the tooltip re-measure of 2026-10-13 and the two §5 lessons were the reason
+    §9's Linux sections were still full copies.
+
+    ✅ **They landed in `JanusMael/Bennewitz.Ninja.XamlQuality` PR #83, merged 2026-10-15T13:33:53Z**,
+    and ⛔ **each was checked against the merged documents on `main` rather than against the message
+    that reported them** — which is §8's rule and is what caught the gap on 2026-10-13. Confirmed
+    present: the retitled *"a popup is its own X window, and accelerators do not arrive"* with the old
+    *"a tooltip never appears"* gone; the tooltip raised in **ten trials of ten** on 2026-09-28 against
+    the attempt of 2026-09-13 that raised none; a popup laying out on the *next* pass; mutter's guard
+    window, its 1 × 1 and the X keyboard focus a context menu leaves there; *"a grab cannot say
+    whether an action took"*; `getwindowgeometry` counting a frame twice and `xwininfo`'s free-text
+    list; key bindings running before `KeyDown`; and that raising `MenuItem.ClickEvent` does not toggle
+    a checkable item. In `ai-drivable-ui.md`, §5 step 7 gains the guard's own premise with
+    **INCONCLUSIVE** for a run whose premise failed, and step 11 the aware driver's unaware one-off at
+    200% with our unexplained difference left as *not established*. Each entry says it was not
+    reproduced there and names this environment.
+
+    **What becomes a pointer**: the tooltip section, mutter's override-redirect windows, and the
+    black-grab and geometry-reading bullets. ⛔ **What stays, because it is this machine's or this
+    repository's**: the session being Wayland with XWayland at `DISPLAY=:0` and the demo's `1100x720`;
+    Beyond Compare at `/usr/bin/bcompare` as the by-hand reference; `ffmpeg`'s `x11grab` by window id
+    working where ImageMagick's `import` does not, and `XAUTHORITY` mattering; the unmapped first
+    result of `xdotool search --class DiffView`; ⛔ `pkill -f 'DiffView.Demo'` killing the turn rather
+    than the app; the demo's own flags; and the GPU-hang section, which is this host's hardware.
+    ⚠ Items 4, 9, 10 and 12 of the 2026-10-08 batch were **never measured there** — 4 and 9 stay ours,
+    12 was left out, 10 was already in that guide's journal — so none of them became a pointer either.
+
+Items 3, 9 and 10 are Brian's own, item 13 is a date (2026-10-19) and item 16 is shelved. **Items 19,
+20 and 21 are actionable, and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014`
+shipped the reading it waits on — what that item now means is moving the pin, which step 2 of plan
+00034 wants to do anyway. Items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already
+closed. ⚠ The list was empty twice inside 2026-10-13 and has refilled four times since from a
+measurement rather than from a decision — its own attended run, then item 20 a day later, then item 21
+from a peer's release — so read an empty list as a state and never as a finish.
 
 ### Running it
 
