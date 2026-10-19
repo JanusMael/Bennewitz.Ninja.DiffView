@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #31, and CI is green on it** — PR #31 merged on a full
-10-of-10, 2026-10-14. *A resume names the pull request it was written for and
+**`main` carries everything through PR #33, and CI is green on it** — PR #33 merged on a full
+10-of-10, 2026-10-19. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 706** here, `Passed!`, by a local run — one test more
-than at PR #28, added by item 17. ⛔ **The Linux total is deliberately not written down**: it is read
+wrong the moment it is true.* **Windows measured 726** here, `Passed!`, by a local run — seventeen
+more than at PR #32, all step 2's. ⛔ **The Linux total is deliberately not written down**: it is read
 off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -53,11 +53,13 @@ they settled a rule, `DECISIONS.md`. Newest first:
 `.github/repository.json` from `Bennewitz.Ninja.Templates`' own plan 00003. `DECISIONS.md` has it as
 another session's pull request, which is half of why the Linux jobs were left unpinned.
 
-**Plans 00001, 00003–00029, 00031 and 00033 are complete and closed**, and plan
-00002 was rejected on its own review before any code was written. Of what is left, **neither is
-startable**: **plan 00030 is parked on XamlQuality** (item 14), waiting on a public per-control
-reading of `BNXQ1003`, and **plan 00032 is parked on ClaudeForge** (item 10), waiting for the
-live-log window to be published as a package. ⛔ **Both stay untracked drafts — Brian,
+**Plans 00001, 00003–00029, 00031 and 00033 are complete and closed**, plan 00034 is in progress
+(below), and plan 00002 was rejected on its own review before any code was written. Of the two
+parked drafts, **plan 00030 is no longer blocked, and not started**: the public per-control reading
+of `BNXQ1003` it waited on shipped in XamlQuality `2026.4.1014`, so what stands between it and a
+start is item 14 — moving the pin, which is not the small change it looks like — and a decision to
+start it. **Plan 00032 is parked on ClaudeForge** (item 10), waiting for the live-log window to be
+published as a package. ⛔ **Both stay untracked drafts — Brian,
 2026-10-13**, asked after a resume found them and told they are 27 KB of research with no copy
 anywhere; do not commit them and do not re-raise it. *History — plan by plan*
 below is each plan's account as it closed, and the per-plan tables under it are the verifications.
@@ -172,9 +174,9 @@ current, so identity and not bytes is what says a drop was safe. ⭐ **None of i
 the plan**; it came from a scratch script that burned **1,174 s of CPU** proving the first wording's
 cost defect by walking into it.
 
-⚠ The open-item list below holds **one** actionable entry, item 19, and **it emptied, refilled and
-emptied once more inside 2026-10-13** before gaining that one — which is the thing to take from it
-rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
+⚠ The open-item list below holds **three** actionable entries — items 19, 20 and 21 — with item 14
+startable beside them, and **it emptied, refilled and emptied once more inside 2026-10-13** before
+gaining them — which is the thing to take from it rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
 batches had landed and that **three of them changed under its own measurement**, which put two items
 on it. Both closed the same day:
 
@@ -190,15 +192,20 @@ Item 19 was added on 2026-10-14, from the same attended run: the demo's View men
 fix touched. It is decided — reorganise into submenus, per `AGENTS.md` §9's existing rule — and
 blocked only on an attended run at 200% to prove those four.
 
+Items 20 and 21 came the same way, from measurements rather than from decisions: on 2026-10-14 a
+stray `*.received.axaml` that the build compiles into the library and would ship, and on 2026-10-15
+`AGENTS.md` §9's X11 half becoming a second copy once XamlQuality PR #83 merged the lessons it
+holds. Both are recorded under *Open*, with what each fix must prove.
+
 The documentary half is taken too: `docs/ui-automation-notes.md` is the pointer it was always going to
 become, and `AGENTS.md` §9's three affected claims are corrected.
 
 Everything else remains blocked outside this repository: **item 3** needs a nuget.org Trusted
 Publishing policy only Brian can create (the preflight exists and is deliberately not dispatched —
-*"there should be no nuget yet"*); **item 9** is skipped by his instruction; **items 10 and 14** wait
-on ClaudeForge and XamlQuality — 14's plan is approved *there* now, but what this repository needs is
-a release carrying the reading; **item 13** is a date, 2026-10-19; **item 16** is shelved with its
-spike built and never run. Item 6 closed with PR #28. ⚠ **Do not read a short actionable list as a
+*"there should be no nuget yet"*); **item 9** is skipped by his instruction; **item 10** waits on
+ClaudeForge; **item 13** waits on GitHub rather than on its date — measured on 2026-10-19 itself,
+both of PR #33's Linux legs still ran on `ubuntu-24.04`; **item 16** is shelved with its spike built
+and never run. Item 6 closed with PR #28. ⚠ **Do not read a short actionable list as a
 finished project**, and ⛔ **do not read the empty one that preceded it as a settled state** — a peer
 repository's measurement refilled it within the day, without a line of this repository changing.
 
@@ -210,10 +217,10 @@ not a run, and the run is what pays — it found a half-localized surface no gat
 two driver steps that reported success and did nothing, and a palette the capture half could not
 photograph at all.
 
-⛔ **Both of the other candidates are parked on something outside this repository**, so neither is
-work that can be picked up: **open item 10** waits for ClaudeForge's live-log window to be published
-as a package (`plans/00032-…md` is researched to the point of execution and must not be started before
-then), and **item 14** waits for XamlQuality's per-control `BNXQ1003` reading.
+⛔ **Open item 10 is still parked on something outside this repository**: it waits for ClaudeForge's
+live-log window to be published as a package (`plans/00032-…md` is researched to the point of
+execution and must not be started before then). **Item 14 is no longer parked** — its release
+shipped on 2026-10-14 — but it is not the small change it looks like, and that item says why.
 
 ### What ships
 
@@ -525,6 +532,13 @@ wording.
     its received file uploaded beside it, and is fixed then rather than pinned against now —
     `DECISIONS.md`, *CI's actions run on Node.js 24, and the Linux runner is not pinned*.
 
+    ⚠ **The date is not the event — measured on the date itself.** Both of PR #33's Linux legs ran
+    at about 19:40Z on 2026-10-19 and both report `Image: ubuntu-24.04` (`20261012.334.1`), green, so
+    `ubuntu-latest` had not moved by then: the move is GitHub's rollout, not a calendar day. The item
+    stays open until a run's own *Set up job* names Ubuntu 26, and ⛔ **that log line, not the date, is
+    what says a shifted frame is this item arriving** rather than a regression in whatever PR runs
+    first.
+
 14. **Plan 00030 — a reference of the controls' template parts, generated from the code — waits on
     XamlQuality.** Its *looked up* column is to come from BNXQ1003's own reading, which is private at
     `2026.3.928`; XamlQuality was asked on 2026-10-03 to make it public (`DECISIONS.md`), and starts on it
@@ -547,9 +561,18 @@ wording.
     namespace must alias `ThemeVariant`, as ours already do.
 
     ⚠ **So the trigger is met and the plan is startable — but the pin has NOT moved**, and moving it is
-    what this item now means. ⭐ **Pay it with step 2 of plan 00034**: both touch
-    `Directory.Packages.props`, which AGENTS.md §5 names as "a pin", so a full `mutate-gates` run may be
-    owed — once for both rather than twice.
+    what this item now means.
+
+    ⛔ **It was not paid with plan 00034's step 2, as this item proposed, and it is larger than moving
+    a pin.** The proposal was to share one `mutate-gates` run between the two, since both touch
+    `Directory.Packages.props`. Checking it is what undid it: that file's own comment records that
+    each of these releases **renamed every rule id and changed what a rule counts as inspected, so a
+    move re-opens every rule's reading** — which is what plan 00028 was, for both packages. Step 2
+    landed alone in PR #33, and its own pin owed no run: `--guards` reported 81 guards, exit 0 and no
+    `inert-at-pin` marker standing at `2026.3.928`, and Markdig reaches neither shipped assembly nor
+    the model package. **This item does owe a full run**, once the readings are re-taken. ⚠ And
+    `Bennewitz.Ninja.AssemblyQuality` `2026.3.929` has been on nuget.org since 2026-09-29 without this
+    document mentioning it, so whether it moves beside XamlQuality is part of this item's decision.
 
 15. ~~The hosting guide's id table is written by hand and checked by nothing~~ — **closed.**
     `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds
@@ -703,11 +726,13 @@ wording.
     ⚠ Items 4, 9, 10 and 12 of the 2026-10-08 batch were **never measured there** — 4 and 9 stay ours,
     12 was left out, 10 was already in that guide's journal — so none of them became a pointer either.
 
-Items 3, 9 and 10 are Brian's own, item 13 is a date (2026-10-19) and item 16 is shelved. **Items 19,
-20 and 21 are actionable, and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014`
-shipped the reading it waits on — what that item now means is moving the pin, which step 2 of plan
-00034 wants to do anyway. Items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already
-closed. ⚠ The list was empty twice inside 2026-10-13 and has refilled four times since from a
+Items 3, 9 and 10 are Brian's own, item 13 waits on GitHub's image rather than on its date (still
+`ubuntu-24.04` on 2026-10-19, measured) and item 16 is shelved. **Items 19, 20 and 21 are actionable,
+and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped the reading it
+waits on — what that item now means is moving the pin, which re-opens every rule's reading and so is
+a change of its own rather than a rider on plan 00034's step 2. Items 17 and 18 closed on 2026-10-13,
+and items 5, 6, 12 and 15 were already closed. ⚠ The list was empty twice inside 2026-10-13 and has
+refilled four times since from a
 measurement rather than from a decision — its own attended run, then item 20 a day later, then item 21
 from a peer's release — so read an empty list as a state and never as a finish.
 
