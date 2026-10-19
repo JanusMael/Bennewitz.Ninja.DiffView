@@ -4,10 +4,14 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <!-- ⛔ No Avalonia and no Markdig reference yet, on purpose. The window arrives at plan 00034's
-       step 5 and the parse at step 2; a Markdig pin touches Directory.Packages.props, which
-       AGENTS.md §5 names as "a pin" and which may owe a full mutation run of its own (§7 of the
-       plan). Step 1 buys none of that. -->
+  <!-- ⛔ Still no Avalonia: the window arrives at plan 00034's step 5, and the first .axaml under
+       src makes AccessibilityCoverageTests' library-plus-demo equality false, which step 11 pays.
+       ProjectShapeTests holds the tripwire that says so. -->
+
+  <ItemGroup>
+    <!-- Step 2's parse. A locator only — see Directory.Packages.props and MarkdownOutline. -->
+    <PackageReference Include="Markdig" />
+  </ItemGroup>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
