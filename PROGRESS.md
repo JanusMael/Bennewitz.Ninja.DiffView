@@ -12,8 +12,8 @@ off CI's own summary, never derived by adding the 64 frame baselines back, which
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **112** mutations and derives **81** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — over plan 00034 step 4, made on 2026-10-19 to time the harness rather
-than because one was owed — took **27.8 minutes** on the Windows box and had all 112 behave as
+Linux, and the last full runs — over the change that added `--parallel`, on 2026-10-19, in one
+worktree, in four and in eight — agreed verdict for verdict and trip for trip: all 112 behaved as
 declared, 108 killed by the test each names, 2 by the build and 2 green
 by design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 81 guards
 tripped first by one of them, no `inert-at-pin` marker standing, and the tree clean after it.
@@ -795,9 +795,11 @@ as success. **`--expect auto`** makes a short total a failure too: it reads the 
 is wrong in both directions the moment a test is added.
 
 **`scripts/mutate-gates.sh` proves the static-analysis gates able to fail.** A full run took **27.8
-minutes** on the Windows box, measured on 2026-10-19 where this had said about five; it is owed after
-any change to a gate file, a gated subject or a pin, and CI runs only its `--guards` half. `AGENTS.md`
-§5 records what it refuses to do and why.
+minutes** on the Windows box, measured on 2026-10-19 where this had said about five, and
+`--parallel 4` takes **11.5** in four worktrees cut from `HEAD` and `--parallel 8` **9.9** in eight,
+leaving this checkout free to edit while it runs. A full run is owed after any change to a gate file, a
+gated subject or a pin, and CI runs only its `--guards` half. `AGENTS.md` §5 records what it refuses to
+do and why.
 
 The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:

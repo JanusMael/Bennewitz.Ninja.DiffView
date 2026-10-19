@@ -223,6 +223,20 @@ no dates, no counts.
   reverted scope is put back and stops the run — it would otherwise be reported as a no-op, survive the
   revert, and contaminate every mutation after it. ⚠ **Edit nothing in the worktree while a run is in
   progress**: an edit outside `src` and `tests` reads as a mutation's stray, and is put back.
+- ⭐ **`--parallel <n>` runs the whole set in `n` worktrees at once, and judges it as one run.** It cuts `n`
+  detached worktrees from `HEAD` under the temp directory, runs a shard in each — every `n`th mutation,
+  dealt round so the slow accessibility ones at the head of the list spread — has each write its verdicts
+  and the guard lines it tripped first (`--emit`), and merges them into the judgement a sequential run
+  makes. ⛔ **The merge refuses anything but every declared mutation exactly once**, from shards `k/n` of
+  one `n` over one commit: a partial set proves only the guards it reached, so a lost shard fails the run
+  rather than shrinking it, and a `--merge` run by hand refuses unless this checkout is the commit the
+  shards ran over. **It never edits this checkout**, so the rule above does not bind it — edit while it
+  runs. It refuses uncommitted changes under `src`, `tests` or the root build files, which a worktree cut
+  from `HEAD` would silently leave out, and its shards skip `fetch-reference`, which no gate reads.
+  Measured on the Windows box over 112 mutations: **27.8 min** sequential in this checkout, **26.6** in
+  one worktree, **11.5** in four and **9.9** in eight, so four is where most of the gain is — and the
+  four- and eight-worktree runs identical to the one-worktree run over the same commit in every verdict
+  and every trip. `--shard k/n`, `--emit <file>` and `--merge <file>` are its parts, and each runs alone.
 - **A `no-op` means the mutation matched nothing, and it fails the run.** It is *not* a surviving
   mutation and not a pass: the gate was never exercised. The code moved and the mutation needs
   re-pointing. When a construct is deliberately designed out of existence, its mutation is **deleted**

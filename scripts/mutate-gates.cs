@@ -21,6 +21,21 @@
 //                                                          on an expired marker or a throw — CI runs it
 //   dotnet run scripts/mutate-gates.cs -- --only exclusion substring match on the name
 //   dotnet run scripts/mutate-gates.cs -- --force          run over a dirty tree (see below)
+//   dotnet run scripts/mutate-gates.cs -- --parallel 4     every mutation in 4 worktrees at once, judged
+//                                                          as one run (see below)
+//   dotnet run scripts/mutate-gates.cs -- --shard 2/4      every 4th mutation from the 2nd: one shard
+//   dotnet run scripts/mutate-gates.cs -- --emit <file>    also write each verdict and trip, for --merge
+//   dotnet run scripts/mutate-gates.cs -- --merge <file>   judge shards' results as one run; repeat it
+//
+// ⭐ --parallel cuts N detached worktrees from HEAD under the temp directory, runs one shard in each, and
+// judges the shards' results exactly as one run: every mutation as declared, and every guard tripped
+// first by some mutation in some shard. A shard is every Nth mutation, so the slow accessibility ones at
+// the head of the list spread rather than all landing in the first. ⛔ It refuses a merge that is not
+// every mutation exactly once — a partial set proves only the guards it reached, so a lost shard must
+// fail the run rather than shrink it. It never edits this checkout: its src, tests and bin/ stay as they
+// were, so the rule against editing while a run is in progress does not apply to it. It tests HEAD, so
+// it refuses while src or tests has uncommitted changes, which would otherwise be silently left out. The
+// shards skip fetch-reference, which no gate reads.
 //
 // ⛔ THIS TOOL REVERTS `src` AND `tests` BEFORE EVERY MUTATION. That is how it guarantees each
 // mutation is measured alone, and it is also how an earlier generation of these harnesses destroyed
@@ -91,6 +106,10 @@ bool list = false;
 bool force = false;
 bool guardsOnly = false;
 string? only = null;
+string? shardText = null;
+string? parallelText = null;
+string? emit = null;
+List<string> merge = [];
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -108,10 +127,67 @@ for (int i = 0; i < args.Length; i++)
         case "--only" when i + 1 < args.Length:
             only = args[++i];
             break;
+        case "--shard" when i + 1 < args.Length:
+            shardText = args[++i];
+            break;
+        case "--parallel" when i + 1 < args.Length:
+            parallelText = args[++i];
+            break;
+        case "--emit" when i + 1 < args.Length:
+            emit = Path.GetFullPath(args[++i]);
+            break;
+        case "--merge" when i + 1 < args.Length:
+            merge.Add(Path.GetFullPath(args[++i]));
+            break;
         default:
             Console.Error.WriteLine($"mutate-gates: unrecognised argument '{args[i]}'.");
             return 2;
     }
+}
+
+// --shard k/n: every nth mutation from the kth, k counted from 1.
+(int Index, int Count)? shard = null;
+if (shardText is not null)
+{
+    string[] parts = shardText.Split('/');
+    if (parts.Length != 2
+        || !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int index)
+        || !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out int count)
+        || count < 1 || index < 1 || index > count)
+    {
+        Console.Error.WriteLine($"mutate-gates: --shard takes k/n with 1 <= k <= n, not '{shardText}'.");
+        return 2;
+    }
+
+    shard = (index, count);
+}
+
+int? parallel = null;
+if (parallelText is not null)
+{
+    if (!int.TryParse(parallelText, NumberStyles.None, CultureInfo.InvariantCulture, out int count) || count < 1)
+    {
+        Console.Error.WriteLine($"mutate-gates: --parallel takes a number of worktrees, at least 1, not '{parallelText}'.");
+        return 2;
+    }
+
+    parallel = count;
+}
+
+// Each of these chooses or judges the set in a way the others contradict, so a combination is refused
+// rather than resolved by a precedence nobody would guess.
+string? clash =
+    parallel is not null && (shard is not null || merge.Count > 0 || only is not null || force || list || guardsOnly)
+        ? "--parallel runs every mutation and judges them together; it combines with --emit alone"
+    : merge.Count > 0 && (shard is not null || only is not null || force || list || guardsOnly)
+        ? "--merge judges what shards wrote; it combines with --emit alone"
+    : shard is not null && only is not null
+        ? "--shard and --only each choose a subset, and a merge needs shards of the whole set"
+    : null;
+if (clash is not null)
+{
+    Console.Error.WriteLine($"mutate-gates: {clash}.");
+    return 2;
 }
 
 // ---------------------------------------------------------------- process helpers
@@ -149,6 +225,10 @@ static (int Code, string Output) Run(string file, params string[] arguments)
 // every later mutation — a confounded result reported as a non-result. Checked after every edit, from
 // the repository's own status rather than from a list of the paths mutations were written to touch.
 string[] Scope = ["src", "tests"];
+
+// What else shapes a build besides Scope. A worktree cut from HEAD carries none of their uncommitted
+// changes, so --parallel and --merge refuse while any is dirty, as they do for Scope.
+string[] BuildInputs = ["Directory.Build.props", "Directory.Packages.props", "global.json", "NuGet.config", Solution];
 
 // --untracked-files=all rather than the default: `status.showUntrackedFiles=no` in a user's git config
 // would otherwise hide a new untracked file under src from the guard below, while `git clean -qfd`
@@ -995,6 +1075,9 @@ List<Mutation> mutations =
         "No_shipped_namespace_shadows_a_referenced_root"),
 ];
 
+// The whole declared set: what a shard is cut from, and what a merge checks its shards against.
+List<Mutation> every = mutations;
+
 if (only is not null)
 {
     mutations = [.. mutations.Where(m => m.Name.Contains(only, StringComparison.OrdinalIgnoreCase))];
@@ -1003,6 +1086,11 @@ if (only is not null)
         Console.Error.WriteLine($"mutate-gates: --only '{only}' matched no mutation. Try --list.");
         return 2;
     }
+}
+
+if (shard is { } part)
+{
+    mutations = [.. ShardOf(every, part.Index, part.Count)];
 }
 
 if (list)
@@ -1028,6 +1116,10 @@ if (!File.Exists(Solution))
     Console.Error.WriteLine("use the .sh / .ps1 wrapper beside it, which changes directory for you.");
     return 2;
 }
+
+// Read once, at the start: a judgement made after a long run reads the pins the run began with, and
+// under --parallel the checkout may be edited while the shards work.
+string pins = File.ReadAllText("Directory.Packages.props");
 
 // The guards: every line of a gate file that makes an assertion. Derived, not listed, so a guard added
 // to a gate test is owed a mutation from the moment it exists.
@@ -1092,6 +1184,29 @@ if (guardsOnly)
     }
 
     return 0;
+}
+
+// --merge: results other runs wrote, judged exactly as one run judges its own.
+if (merge.Count > 0)
+{
+    return MergeAndJudge(merge);
+}
+
+// --parallel tests HEAD in worktrees cut from it, so anything uncommitted that shapes the build would be
+// silently left out of the run it reports on. Refused rather than reported.
+if (parallel is { } shardCount)
+{
+    string unsaved = Unsaved();
+    if (unsaved.Length > 0)
+    {
+        Console.Error.WriteLine("mutate-gates: --parallel tests HEAD in worktrees cut from it, and these uncommitted");
+        Console.Error.WriteLine("changes would be silently left out of the run it reports on. Commit them first:");
+        Console.Error.WriteLine();
+        Console.Error.WriteLine(unsaved);
+        return 2;
+    }
+
+    return RunInWorktrees(shardCount, Head());
 }
 
 string dirty = Dirty();
@@ -1341,144 +1456,569 @@ if (rebuildFailed)
     return 2;
 }
 
-Console.WriteLine();
-Console.WriteLine("=== summary ===");
-foreach ((string name, string verdict) in results)
+if (emit is not null)
 {
-    Console.WriteLine($"  {verdict,-20} {name}");
+    Emit(emit, shard is { } ran ? $"{ran.Index}/{ran.Count}" : only is null ? "1/1" : "only",
+        Head() + (dirty.Length > 0 ? "+uncommitted" : ""), results, trippedBy);
 }
 
-int killed = results.Values.Count(v => v == "killed");
-int byBuild = results.Values.Count(v => v == "build");
-int greenByDesign = results.Values.Count(v => v == "green");
-int survived = results.Values.Count(v => v == "survived");
-int noop = results.Values.Count(v => v == "no-op");
-int unexpectedRed = results.Values.Count(v => v == "unexpected-red");
-int wrongKiller = results.Values.Count(v => v == "wrong-killer");
-int killedByBuild = results.Values.Count(v => v == "killed-by-the-build");
-int aborted = results.Values.Count(v => v == "aborted");
+return Judge(results, trippedBy, wholeSet: only is null && shard is null);
 
-Console.WriteLine();
-Console.WriteLine($"as expected — killed by a test: {killed}   by the build: {byBuild}   green by design: {greenByDesign}");
-Console.WriteLine($"not as expected — survived: {survived}   no-op: {noop}   unexpectedly red: {unexpectedRed}"
-    + $"   wrong killer: {wrongKiller}   killed by the build: {killedByBuild}   aborted: {aborted}");
-
-// ⭐ Completeness, judged over the whole set only: a partial run proves only the guards it reached.
-// An inert-at-pin guard is excused only while its package is still pinned where it was measured; one a
-// mutation trips anyway was never inert, and its marker is the defect.
-List<Guard> untripped = [];
-List<Guard> inertAtPin = [];
-List<string> markerDefects = [];
-if (only is null)
+// ⭐ The one judgement, however its results arrived — this run's own, or shards' merged — so a sharded
+// run fails exactly where a sequential one would. Completeness is judged over the whole set only.
+int Judge(Dictionary<string, string> verdicts, Dictionary<(string File, int Line), List<string>> trips, bool wholeSet)
 {
-    foreach (Guard g in guards)
+    Console.WriteLine();
+    Console.WriteLine("=== summary ===");
+    foreach ((string name, string verdict) in verdicts)
     {
-        bool wasTripped = trippedBy.ContainsKey((g.File, g.Line));
-        if (g.InertPin is not { } pin)
+        Console.WriteLine($"  {verdict,-20} {name}");
+    }
+
+    int killed = verdicts.Values.Count(v => v == "killed");
+    int byBuild = verdicts.Values.Count(v => v == "build");
+    int greenByDesign = verdicts.Values.Count(v => v == "green");
+    int survived = verdicts.Values.Count(v => v == "survived");
+    int noop = verdicts.Values.Count(v => v == "no-op");
+    int unexpectedRed = verdicts.Values.Count(v => v == "unexpected-red");
+    int wrongKiller = verdicts.Values.Count(v => v == "wrong-killer");
+    int killedByBuild = verdicts.Values.Count(v => v == "killed-by-the-build");
+    int aborted = verdicts.Values.Count(v => v == "aborted");
+
+    Console.WriteLine();
+    Console.WriteLine($"as expected — killed by a test: {killed}   by the build: {byBuild}   green by design: {greenByDesign}");
+    Console.WriteLine($"not as expected — survived: {survived}   no-op: {noop}   unexpectedly red: {unexpectedRed}"
+        + $"   wrong killer: {wrongKiller}   killed by the build: {killedByBuild}   aborted: {aborted}");
+
+    // ⭐ Completeness, judged over the whole set only: a partial run proves only the guards it reached.
+    // An inert-at-pin guard is excused only while its package is still pinned where it was measured; one a
+    // mutation trips anyway was never inert, and its marker is the defect.
+    List<Guard> untripped = [];
+    List<Guard> inertAtPin = [];
+    List<string> markerDefects = [];
+    if (wholeSet)
+    {
+        foreach (Guard g in guards)
         {
-            if (!wasTripped)
+            bool wasTripped = trips.ContainsKey((g.File, g.Line));
+            if (g.InertPin is not { } pin)
             {
-                untripped.Add(g);
+                if (!wasTripped)
+                {
+                    untripped.Add(g);
+                }
+
+                continue;
             }
 
-            continue;
+            string? pinned = PinnedVersion(pin.Package);
+            if (wasTripped)
+            {
+                markerDefects.Add($"{Path.GetFileName(g.File)}:{g.Line} is marked inert at {pin.Package} {pin.Version}, "
+                    + $"but '{trips[(g.File, g.Line)][0]}' tripped it — remove the marker");
+            }
+            else if (pinned != pin.Version)
+            {
+                markerDefects.Add($"{Path.GetFileName(g.File)}:{g.Line} was measured inert at {pin.Package} {pin.Version}, "
+                    + $"and the pin is now {pinned ?? "absent"} — re-measure, then trip it or re-mark it");
+            }
+            else
+            {
+                inertAtPin.Add(g);
+            }
+        }
+    }
+
+    Console.WriteLine();
+    if (wholeSet)
+    {
+        Console.WriteLine($"guards — {guards.Count} assertions in the gate files: "
+            + $"{guards.Count - untripped.Count - inertAtPin.Count - markerDefects.Count} tripped first by a mutation, "
+            + $"{inertAtPin.Count} inert at the current pin, {untripped.Count} untripped, {markerDefects.Count} with a bad marker");
+        foreach (Guard g in inertAtPin)
+        {
+            Console.WriteLine($"  inert at {g.InertPin!.Value.Package} {g.InertPin.Value.Version}  {Path.GetFileName(g.File)}:{g.Line}");
         }
 
-        string? pinned = PinnedVersion(pin.Package);
-        if (wasTripped)
+        foreach (Guard g in untripped)
         {
-            markerDefects.Add($"{Path.GetFileName(g.File)}:{g.Line} is marked inert at {pin.Package} {pin.Version}, "
-                + $"but '{trippedBy[(g.File, g.Line)][0]}' tripped it — remove the marker");
+            Console.WriteLine($"  UNTRIPPED  {Path.GetFileName(g.File)}:{g.Line}  {g.Text}");
         }
-        else if (pinned != pin.Version)
+
+        foreach (string defect in markerDefects)
         {
-            markerDefects.Add($"{Path.GetFileName(g.File)}:{g.Line} was measured inert at {pin.Package} {pin.Version}, "
-                + $"and the pin is now {pinned ?? "absent"} — re-measure, then trip it or re-mark it");
+            Console.WriteLine($"  BAD MARKER  {defect}");
+        }
+    }
+    else
+    {
+        Console.WriteLine("guards — not judged: --only or --shard ran a subset, which proves only the guards it reached.");
+    }
+
+    if (untripped.Count > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine("AN UNTRIPPED GUARD is an assertion no mutation has made fail first. Its test may be proven,");
+        Console.WriteLine("but that assertion is not: add a mutation that trips it, or take the assertion out.");
+    }
+
+    if (survived > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine("A SURVIVING MUTATION means that gate reports clean over a codebase that is not.");
+    }
+
+    if (wrongKiller > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine("A MUTATION KILLED BY THE WRONG TEST proves nothing about the gate it names: the");
+        Console.WriteLine("gate stayed green while something else failed.");
+    }
+
+    if (killedByBuild > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine("A MUTATION KILLED BY THE BUILD never reached its gate, so the gate was not exercised.");
+        Console.WriteLine("Rewrite the edit so it compiles — see AddPublicMember on why an insert does not.");
+    }
+
+    if (aborted > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine("AN ABORTED RUN is not a kill. The host died — it printed no summary outcome, or printed");
+        Console.WriteLine("Failed! with no failing test; re-run, and judge a captured log with scripts/catch-crash.sh --check.");
+    }
+
+    if (unexpectedRed > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine("A MUTATION MEANT TO STAY GREEN went red: the complementarity claim has moved.");
+    }
+
+    return survived + noop + unexpectedRed + wrongKiller + killedByBuild + aborted + untripped.Count + markerDefects.Count > 0
+        ? 1
+        : 0;
+}
+
+// The version Directory.Packages.props pinned a package at when the run began, or null when it pins none.
+string? PinnedVersion(string package)
+{
+    Match m = Regex.Match(
+        pins,
+        $@"<PackageVersion\s+Include=""{Regex.Escape(package)}""\s+Version=""(?<version>[^""]+)""");
+    return m.Success ? m.Groups["version"].Value : null;
+}
+
+// ---------------------------------------------------------------- shards
+
+// The kth of n shards: every nth mutation from the kth. Dealt round rather than cut into runs, so the
+// slow accessibility mutations at the head of the list spread across the shards.
+static IEnumerable<Mutation> ShardOf(IReadOnlyList<Mutation> all, int index, int count) =>
+    all.Where((_, position) => position % count == index - 1);
+
+// The commit checked out here.
+static string Head() => Run("git", "rev-parse", "HEAD").Output.Trim();
+
+// Uncommitted changes to anything a worktree cut from HEAD would leave out: Scope and the build inputs.
+string Unsaved() =>
+    Run("git", ["status", "--porcelain", "--untracked-files=all", "--", .. Scope, .. BuildInputs]).Output.Trim();
+
+static string Minutes(TimeSpan elapsed) =>
+    elapsed.TotalMinutes.ToString("0.0", CultureInfo.InvariantCulture) + " min";
+
+// One run's verdicts and trips as tab-separated lines — a shard record first, then a line per verdict and
+// per trip. Plain text, because two runs are compared by sorting these files and diffing them.
+static void Emit(
+    string path,
+    string shardLabel,
+    string head,
+    Dictionary<string, string> verdicts,
+    Dictionary<(string File, int Line), List<string>> trips)
+{
+    List<string> lines = [$"shard\t{shardLabel}\t{head}"];
+    lines.AddRange(verdicts.Select(v => $"mutation\t{v.Key}\t{v.Value}"));
+    lines.AddRange(trips.SelectMany(t => t.Value.Select(name =>
+        $"trip\t{t.Key.File}\t{t.Key.Line.ToString(CultureInfo.InvariantCulture)}\t{name}")));
+    File.WriteAllLines(path, lines);
+}
+
+// Shards' results as one run's verdicts and trips, the verdicts in the declared order. ⛔ Returns why it
+// refuses unless the files are shards k/n for every k of one n, over one commit, naming every declared
+// mutation exactly once between them: a merge over a partial set would judge only the guards it reached
+// and present that as the whole, so a lost shard must fail the run rather than shrink it.
+static string? ReadShards(
+    IReadOnlyList<string> files,
+    IReadOnlyList<Mutation> declared,
+    Dictionary<string, string> verdicts,
+    Dictionary<(string File, int Line), List<string>> trips,
+    out string head)
+{
+    head = "";
+    int? total = null;
+    HashSet<int> shards = [];
+    Dictionary<string, string> found = new(StringComparer.Ordinal);
+    foreach (string file in files)
+    {
+        if (!File.Exists(file))
+        {
+            return $"no shard result at {file}";
+        }
+
+        string[] lines = File.ReadAllLines(file);
+        string[] header = lines.Length > 0 ? lines[0].Split('\t') : [];
+        string[] place = header.Length == 3 && header[0] == "shard" ? header[1].Split('/') : [];
+        if (place.Length != 2
+            || !int.TryParse(place[0], NumberStyles.None, CultureInfo.InvariantCulture, out int index)
+            || !int.TryParse(place[1], NumberStyles.None, CultureInfo.InvariantCulture, out int count))
+        {
+            return $"{file} is not a shard's result: its first line names no shard k/n";
+        }
+
+        if (total is { } n && n != count)
+        {
+            return $"{file} is a shard of {count}, where the others are shards of {n}";
+        }
+
+        if (head.Length > 0 && header[2] != head)
+        {
+            return $"{file} ran over {header[2]}, where the others ran over {head}";
+        }
+
+        if (!shards.Add(index))
+        {
+            return $"shard {index}/{count} is given twice";
+        }
+
+        total = count;
+        head = header[2];
+        foreach (string line in lines.Skip(1))
+        {
+            string[] fields = line.Split('\t');
+            if (fields is ["mutation", string name, string verdict])
+            {
+                if (!found.TryAdd(name, verdict))
+                {
+                    return $"'{name}' is reported by two shards";
+                }
+            }
+            else if (fields is ["trip", string gateFile, string number, string by]
+                && int.TryParse(number, NumberStyles.None, CultureInfo.InvariantCulture, out int at))
+            {
+                if (!trips.TryGetValue((gateFile, at), out List<string>? names))
+                {
+                    trips[(gateFile, at)] = names = [];
+                }
+
+                names.Add(by);
+            }
+            else
+            {
+                return $"{file} holds a line no run writes: '{line}'";
+            }
+        }
+    }
+
+    if (total is not { } whole || shards.Count != whole || shards.Any(s => s < 1 || s > whole))
+    {
+        return $"the results are {shards.Count} shard(s) of {total?.ToString(CultureInfo.InvariantCulture) ?? "none"}, "
+            + "and every shard must report";
+    }
+
+    string[] missing = [.. declared.Select(m => m.Name).Where(name => !found.ContainsKey(name))];
+    string[] unknown = [.. found.Keys.Where(name => declared.All(m => m.Name != name))];
+    if (missing.Length > 0 || unknown.Length > 0)
+    {
+        return $"the shards report {found.Count} mutation(s) where {declared.Count} are declared"
+            + (missing.Length > 0 ? $"; missing: {string.Join(", ", missing)}" : "")
+            + (unknown.Length > 0 ? $"; not declared: {string.Join(", ", unknown)}" : "");
+    }
+
+    string[] strangers = [.. trips.Values.SelectMany(names => names).Where(name => !found.ContainsKey(name)).Distinct()];
+    if (strangers.Length > 0)
+    {
+        return $"trips are credited to mutations no shard reports: {string.Join(", ", strangers)}";
+    }
+
+    foreach (Mutation m in declared)
+    {
+        verdicts[m.Name] = found[m.Name];
+    }
+
+    return null;
+}
+
+// --merge: shards' results judged as one run, against this checkout's gate files and pins — so only when
+// this checkout is the commit the shards ran over, with nothing it builds from uncommitted. Otherwise an
+// attribution would land on lines that now say something else.
+int MergeAndJudge(IReadOnlyList<string> files)
+{
+    Dictionary<string, string> verdicts = [];
+    Dictionary<(string File, int Line), List<string>> trips = [];
+    if (ReadShards(files, every, verdicts, trips, out string ranOver) is { } refusal)
+    {
+        Console.Error.WriteLine($"mutate-gates: {refusal}.");
+        return 2;
+    }
+
+    string here = Head();
+    bool unsaved = Unsaved().Length > 0;
+    if (ranOver != here || unsaved)
+    {
+        Console.Error.WriteLine($"mutate-gates: the shards ran over {ranOver}, and this checkout is at {here}"
+            + (unsaved ? " with uncommitted changes to what the build reads" : "")
+            + ". Its gate files are not the ones the shards' trips were attributed against.");
+        return 2;
+    }
+
+    Console.WriteLine($"merged {files.Count} shard result(s) over {ranOver}");
+    if (emit is not null)
+    {
+        Emit(emit, "1/1", ranOver, verdicts, trips);
+    }
+
+    return Judge(verdicts, trips, wholeSet: true);
+}
+
+// --parallel: `count` shards at once, each in a detached worktree cut from `head` under the temp
+// directory, then one judgement over everything they report. This checkout is never edited.
+int RunInWorktrees(int count, string head)
+{
+    string root = Path.Combine(Path.GetTempPath(), $"mutate-gates-{Environment.ProcessId}");
+    string[] trees = new string[count];
+    string[] outcomes = new string[count];
+    string[] logs = new string[count];
+    int[] sizes = new int[count];
+    for (int k = 0; k < count; k++)
+    {
+        string number = (k + 1).ToString(CultureInfo.InvariantCulture);
+        trees[k] = Path.Combine(root, number);
+        outcomes[k] = Path.Combine(root, $"shard-{number}.tsv");
+        logs[k] = Path.Combine(root, $"shard-{number}.log");
+        sizes[k] = ShardOf(every, k + 1, count).Count();
+    }
+
+    // The binary running now, so that no shard rebuilds this script while another one is running it. Under
+    // the dotnet host that is the entry assembly beside AppContext.BaseDirectory: Assembly.Location is
+    // empty for a single-file app, and IL3000 rejects it here.
+    string self = Environment.ProcessPath ?? "dotnet";
+    string[] launcher = string.Equals(Path.GetFileNameWithoutExtension(self), "dotnet", StringComparison.OrdinalIgnoreCase)
+        ? [Path.Combine(AppContext.BaseDirectory, System.Reflection.Assembly.GetEntryAssembly()!.GetName().Name + ".dll")]
+        : [];
+
+    Console.WriteLine($"--parallel {count}: {every.Count} mutations over {head}, in worktrees under {root}");
+    Console.WriteLine($"  each shard runs {string.Join(' ', [self, .. launcher])} --shard k/{count} --emit <file>");
+    Console.WriteLine("  if this is killed, remove what it leaves with git worktree remove --force <dir>, then git worktree prune");
+
+    Process?[] running = new Process?[count];
+    StreamWriter?[] writers = new StreamWriter?[count];
+    int[] started = new int[count];
+    bool interrupted = false;
+    void Stop(object? sender, ConsoleCancelEventArgs e)
+    {
+        e.Cancel = true;
+        Volatile.Write(ref interrupted, true);
+    }
+
+    Console.CancelKeyPress += Stop;
+    Stopwatch clock = Stopwatch.StartNew();
+    try
+    {
+        Directory.CreateDirectory(root);
+        for (int k = 0; k < count; k++)
+        {
+            (int cut, string why) = Run("git", "worktree", "add", "--detach", trees[k], head);
+            if (cut != 0)
+            {
+                Console.Error.WriteLine($"mutate-gates: could not cut worktree {k + 1}: {why.Trim()}");
+                return 2;
+            }
+        }
+
+        for (int k = 0; k < count; k++)
+        {
+            int shardIndex = k;
+            ProcessStartInfo info = new()
+            {
+                FileName = self,
+                WorkingDirectory = trees[k],
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+
+            foreach (string argument in (string[])[.. launcher, "--shard", $"{k + 1}/{count}", "--emit", outcomes[k]])
+            {
+                info.ArgumentList.Add(argument);
+            }
+
+            // No gate reads the reference checkouts, and fetching them into a worktree clones every one.
+            info.Environment["SkipReferenceSources"] = "true";
+
+            StreamWriter writer = new(logs[k]) { AutoFlush = true };
+            writers[k] = writer;
+            Process process = new() { StartInfo = info };
+            DataReceivedEventHandler record = (_, e) =>
+            {
+                if (e.Data is not { } line)
+                {
+                    return;
+                }
+
+                lock (writer)
+                {
+                    writer.WriteLine(line);
+                }
+
+                if (line.StartsWith("--- ", StringComparison.Ordinal))
+                {
+                    Interlocked.Increment(ref started[shardIndex]);
+                }
+            };
+            process.OutputDataReceived += record;
+            process.ErrorDataReceived += record;
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            running[k] = process;
+        }
+
+        // ⭐ Prints as it goes, a line every half minute, so a long run reads as moving or stopped — and says
+        // so outright when a shard starts nothing for a quarter of an hour, which no mutation takes: the
+        // slowest measured, a cold worktree's first build and an accessibility walk, is a few minutes.
+        TimeSpan printed = TimeSpan.Zero;
+        int[] seen = new int[count];
+        TimeSpan[] movedAt = new TimeSpan[count];
+        bool[] warned = new bool[count];
+        while (running.Any(p => p is { HasExited: false }))
+        {
+            if (Volatile.Read(ref interrupted))
+            {
+                Console.Error.WriteLine("mutate-gates: interrupted, so the shards are stopped and their worktrees removed.");
+                return 2;
+            }
+
+            Thread.Sleep(2000);
+            for (int k = 0; k < count; k++)
+            {
+                int now = Volatile.Read(ref started[k]);
+                if (now != seen[k])
+                {
+                    (seen[k], movedAt[k], warned[k]) = (now, clock.Elapsed, false);
+                }
+                else if (!warned[k] && !running[k]!.HasExited && clock.Elapsed - movedAt[k] >= TimeSpan.FromMinutes(15))
+                {
+                    warned[k] = true;
+                    Console.Error.WriteLine($"mutate-gates: shard {k + 1} has started no mutation in 15 minutes, which none "
+                        + $"takes, so it may be wedged; its log is {logs[k]}");
+                }
+            }
+
+            if (clock.Elapsed - printed >= TimeSpan.FromSeconds(30))
+            {
+                printed = clock.Elapsed;
+                Console.WriteLine($"  {Minutes(clock.Elapsed)}   " + string.Join("   ", Enumerable.Range(0, count).Select(k =>
+                    $"shard {k + 1}: " + (running[k]!.HasExited ? "done" : $"{Volatile.Read(ref started[k])}/{sizes[k]}"))));
+            }
+        }
+
+        bool failed = false;
+        for (int k = 0; k < count; k++)
+        {
+            Process process = running[k]!;
+            process.WaitForExit();
+
+            // 0 and 1 are both results — a shard judges its own subset's verdicts and never its guards — and
+            // the merge reads either. Anything else is the harness refusing or failing, which is no result.
+            bool usable = process.ExitCode is 0 or 1 && File.Exists(outcomes[k]);
+            failed |= !usable;
+            Console.WriteLine($"shard {k + 1}/{count}: exit {process.ExitCode}, {sizes[k]} mutation(s)"
+                + (usable ? "" : ", NO RESULT") + $"; its log is {logs[k]}");
+        }
+
+        if (failed)
+        {
+            Console.Error.WriteLine("mutate-gates: a shard left no result, so there is no whole set to judge. Its log says why.");
+            return 2;
+        }
+
+        Console.WriteLine($"all {count} shards finished in {Minutes(clock.Elapsed)}");
+
+        Dictionary<string, string> verdicts = [];
+        Dictionary<(string File, int Line), List<string>> trips = [];
+        if (ReadShards(outcomes, every, verdicts, trips, out string ranOver) is { } refusal)
+        {
+            Console.Error.WriteLine($"mutate-gates: {refusal}.");
+            return 2;
+        }
+
+        if (emit is not null)
+        {
+            Emit(emit, "1/1", ranOver, verdicts, trips);
+        }
+
+        return Judge(verdicts, trips, wholeSet: true);
+    }
+    finally
+    {
+        Console.CancelKeyPress -= Stop;
+        foreach (Process? process in running)
+        {
+            if (process is { HasExited: false })
+            {
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit();
+            }
+        }
+
+        foreach (StreamWriter? writer in writers)
+        {
+            writer?.Dispose();
+        }
+
+        string[] left = [.. trees.Where(Directory.Exists).Where(tree => !RemoveWorktree(tree))];
+        Run("git", "worktree", "prune");
+        if (left.Length == 0)
+        {
+            Console.WriteLine($"worktrees removed; each shard's log and results are kept in {root}");
         }
         else
         {
-            inertAtPin.Add(g);
+            Console.Error.WriteLine($"mutate-gates: {left.Length} of {count} worktree(s) would not delete, and are left:");
+            foreach (string tree in left)
+            {
+                Console.Error.WriteLine("  " + tree);
+            }
+
+            Console.Error.WriteLine("Something still holds a file in each. Delete them once it lets go, then run git worktree prune.");
         }
     }
 }
 
-Console.WriteLine();
-if (only is null)
+// A build that has just finished can hold a file in its worktree a little longer — measured, one worktree
+// of four refused deletion as its shard exited and deleted cleanly minutes later — so this retries for
+// about a minute before it reports a worktree left behind. After git's own attempt fails the retries
+// delete the directory directly: measured, git had stopped listing that worktree while it was still on disk.
+static bool RemoveWorktree(string tree)
 {
-    Console.WriteLine($"guards — {guards.Count} assertions in the gate files: "
-        + $"{guards.Count - untripped.Count - inertAtPin.Count - markerDefects.Count} tripped first by a mutation, "
-        + $"{inertAtPin.Count} inert at the current pin, {untripped.Count} untripped, {markerDefects.Count} with a bad marker");
-    foreach (Guard g in inertAtPin)
+    Run("git", "worktree", "remove", "--force", tree);
+    foreach (int seconds in (int[])[2, 5, 10, 20, 30])
     {
-        Console.WriteLine($"  inert at {g.InertPin!.Value.Package} {g.InertPin.Value.Version}  {Path.GetFileName(g.File)}:{g.Line}");
+        if (!Directory.Exists(tree))
+        {
+            return true;
+        }
+
+        Thread.Sleep(TimeSpan.FromSeconds(seconds));
+        try
+        {
+            Directory.Delete(tree, recursive: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Still held; the next pass waits longer.
+        }
     }
 
-    foreach (Guard g in untripped)
-    {
-        Console.WriteLine($"  UNTRIPPED  {Path.GetFileName(g.File)}:{g.Line}  {g.Text}");
-    }
-
-    foreach (string defect in markerDefects)
-    {
-        Console.WriteLine($"  BAD MARKER  {defect}");
-    }
-}
-else
-{
-    Console.WriteLine("guards — not judged: --only ran a subset, which proves only the guards it reached.");
-}
-
-if (untripped.Count > 0)
-{
-    Console.WriteLine();
-    Console.WriteLine("AN UNTRIPPED GUARD is an assertion no mutation has made fail first. Its test may be proven,");
-    Console.WriteLine("but that assertion is not: add a mutation that trips it, or take the assertion out.");
-}
-
-if (survived > 0)
-{
-    Console.WriteLine();
-    Console.WriteLine("A SURVIVING MUTATION means that gate reports clean over a codebase that is not.");
-}
-
-if (wrongKiller > 0)
-{
-    Console.WriteLine();
-    Console.WriteLine("A MUTATION KILLED BY THE WRONG TEST proves nothing about the gate it names: the");
-    Console.WriteLine("gate stayed green while something else failed.");
-}
-
-if (killedByBuild > 0)
-{
-    Console.WriteLine();
-    Console.WriteLine("A MUTATION KILLED BY THE BUILD never reached its gate, so the gate was not exercised.");
-    Console.WriteLine("Rewrite the edit so it compiles — see AddPublicMember on why an insert does not.");
-}
-
-if (aborted > 0)
-{
-    Console.WriteLine();
-    Console.WriteLine("AN ABORTED RUN is not a kill. The host died — it printed no summary outcome, or printed");
-    Console.WriteLine("Failed! with no failing test; re-run, and judge a captured log with scripts/catch-crash.sh --check.");
-}
-
-if (unexpectedRed > 0)
-{
-    Console.WriteLine();
-    Console.WriteLine("A MUTATION MEANT TO STAY GREEN went red: the complementarity claim has moved.");
-}
-
-return survived + noop + unexpectedRed + wrongKiller + killedByBuild + aborted + untripped.Count + markerDefects.Count > 0
-    ? 1
-    : 0;
-
-// The version Directory.Packages.props pins a package at, or null when it pins none.
-static string? PinnedVersion(string package)
-{
-    Match m = Regex.Match(
-        File.ReadAllText("Directory.Packages.props"),
-        $@"<PackageVersion\s+Include=""{Regex.Escape(package)}""\s+Version=""(?<version>[^""]+)""");
-    return m.Success ? m.Groups["version"].Value : null;
+    return !Directory.Exists(tree);
 }
 
 // ---------------------------------------------------------------- guard and scope helpers
