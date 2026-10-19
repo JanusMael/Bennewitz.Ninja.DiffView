@@ -163,6 +163,9 @@ All notable changes to DiffView are recorded here. The format follows
   `DiffView.Core`'s package declares.
 - `scripts/mutate-gates.{cs,sh,ps1}`, the committed mutation harness that proves every assertion in
   those gates able to fail first. CI runs the harness's `--guards` check on Linux.
+- `mutate-gates --parallel <n>`, which runs every mutation in `n` worktrees cut from `HEAD` at once and
+  judges them as one run, refusing a merge that is not every mutation exactly once; it never edits the
+  checkout. Four worktrees took 11.5 minutes on the Windows box, against 27.8 sequential.
 - `catch-crash --expect auto`, which takes the suite's size from `dotnet test --list-tests` instead
   of a number someone wrote down.
 - `LeftHeaderName` and `RightHeaderName` on both views, so each pane header carries an automation
