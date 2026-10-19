@@ -5,8 +5,8 @@
 **`main` carries everything through PR #35, and CI is green on it** — PR #35 merged on a full
 10-of-10, 2026-10-19. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 754** here, `Passed!`, by a local run — twenty-eight
-more than at PR #34, all step 3's. ⛔ **The Linux total is deliberately not written down**: it is read
+wrong the moment it is true.* **Windows measured 807** here, `Passed!`, by a local run — fifty-three
+more than at PR #35, all step 4's. ⛔ **The Linux total is deliberately not written down**: it is read
 off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -73,12 +73,12 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen, and step 1 is done.** `AgentBaseline`
+⭐ **`plans/00034` is approved, committed and frozen, and steps 1 to 4 are done.** `AgentBaseline`
 consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator
 against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Steps 1 to 3
-are done; step 4, the corpus, is next.**
+is never edited again** — drift comes here, and superseding it means a new number. **Step 5, cycling
+with the accumulator intact, is next.**
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -194,6 +194,65 @@ rather than an accident of the code.
 killed by the test they name; none of the step's twenty-two tests went unkilled.** The one worth
 having is the mutation that restores the tab check's first draft: the two-column tab is invisible
 to every assertion about characters, and only the heading set sees it.
+
+**Step 4 is the corpus, and the real disk set three of its rules where the plan's words did not.**
+`Corpus` gathers every candidate for one target at once — named in a path list or a manifest, or found
+by a manifest's walk — ingests each through step 3, labels it, and reports everything it left out.
+`Queue` then diffs each against a named seed through the public `DiffDocumentBuilder.Build`, the N−1
+diffs §5 says the control does not do, and orders them. A mixed set is refused before a byte is read,
+a missing candidate is reported by the label it was given, and the corpus never picks its own seed —
+decision 9b's *never implied by ordering* is a refusal, not a default. The suite measured **807**
+here against 754 before it, judged `healthy` by `catch-crash --check --expect auto`.
+
+⛔ **A worktree is not where the plan's word puts it.** Measured under `C:\c\cl` to five levels, every
+worktree directory is Claude Code's own `<repository>/.claude/worktrees/<name>` — thirteen of them, none bare —
+while `reference/<name>` and `bundles/<name>` hold checkouts named after the repository they copy
+(`C:\c\cl\bundles\ClaudeForge`). So a copy's document identity is read per kind: a worktree is a copy
+of the repository holding it, the parent of `.claude`, and a reference or a bundle is a copy of the
+repository it is named after. ⛔ A copy under `Beta/reference/Alpha/` is **Alpha's** document, which a
+rule reading the holding directory gets wrong. Where copies nest — all eleven `GraphVizDotNet`
+worktrees carry their own `reference/` — the innermost says what the file is. Each copy is named with
+the candidate holding the same document, whatever version either is, or with nobody, and that is the
+line to read before re-admitting one by `include`. ⚠ Two `graphviz` test-data directories are named
+`reference` as well, so tier 2 will name what they hold as copies: §7's residual, and the reason every
+one is named.
+
+⛔ **And `new EnumerationOptions()` skips hidden entries, which on Linux is every dot-directory.**
+Measured on Ubuntu 26.04 under WSL: it dropped `.dotdir` and `.dotfile`, where the overload taking no
+options kept both. So a listing taken with that default never sees `.claude` and finds no worktree
+there, and on Windows it misses `.git`, which Git marks hidden — a pruned directory counted on one
+platform and not another. The listing passes `AttributesToSkip = 0`, the tier-1 test marks its `.git`
+hidden, and a mutation restoring the default is killed by it. The same probe found a link to a
+directory enumerating as a directory carrying `ReparsePoint` on Linux as on Windows, so one check
+refuses to follow both.
+
+⚠ **Five readings the plan leaves open, made rather than assumed.** *Tier 1's membership*: decision 15
+names five and "their kind", so it is the global prune list less `worktrees`, which the plan makes
+tier 2 — and measured, of 253 instruction files within seven levels of `C:\c` none sits under a name
+that adds, so the class costs no candidate here; `build` and `packages` are its likeliest false prunes,
+and a named path is the way back. *Divergence order*: most changes first, a change being one of the diff's blocks,
+because decision 11 makes a take stale every candidate reviewed before it, so the candidates likeliest
+to give the most go while the fewest lie behind them; a tie keeps the input's order. *A path list walks
+nothing*: a walk must know which file it is looking for and a path list names no target, so a
+directory in one is refused with the reason. *A pointer inside a copy is the copy's line*, not one
+repository more, since the plan's 90 of 236 counts pointers outside copies. *A walk root is never
+tiered*: pruning governs what a walk meets below the path written down. Beyond those, links are not
+followed, a directory that cannot be read is named and the walk goes on, and an `include` that
+re-admits nothing is reported, so a mistyped one shows.
+
+**69 mutations, each declaring the test that must fail under it, all killed by the test they
+name, and none of the step's 37 tests went unkilled.** A first proof of 56 passed clean, and a judge
+pass over it still found nine branches nothing asserted — the per-name count of pruned directories, a
+seed that is a pointer, a file that exists and cannot be read, malformed manifests among them — so
+"every test can fail" is not "every branch is tested", and each of the nine has its own test and
+mutation now. The two worth having are the step's own. A walk
+that descends into build output is killed by the traversal assertion, which comes first and whose
+message the harness checks is the one that fired: it is the assertion a walk that filtered afterwards
+cannot pass, where every assertion about candidates can. A copy judged held only when its text matches
+— the hash rule — is killed because the fixture's copies are older versions, never byte-identical
+ones. Every subject was restored and hash-verified after each mutation, and rebuilt from the restored
+source.
+
 ⭐ **And the plan's own corpus measurement was 4.5× short, which a local scan settled rather than a
 census.** §2 recorded 14 project files over 5KB in `C:\c\cl`; the whole of `C:\c` carries **63** —
 42 `AGENTS.md`, 21 `CLAUDE.md` — out of 246 once copies are excluded, the largest **243 KB**. So
