@@ -74,8 +74,8 @@ green is evidence about one machine, and CI judges the claim.
 consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator
 against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 2, the
-parse, is next.**
+is never edited again** — drift comes here, and superseding it means a new number. **Steps 1 and 2
+are done; step 3, ingest normalisation, is next.**
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -106,6 +106,53 @@ measured floor, `AutomationProperties.Name` on every interactive control, `BNXQ1
 to delete itself once that is done. A plan's step order is not a contract the suite enforces; this
 is how one gets enforced anyway.
 
+**Step 2 is the parse, and three of the plan's own notes about Markdig were measured sharper.**
+`MarkdownOutline` takes Markdig as a locator only — levels and line spans from the tree, every line
+of text from our own array — and is the one place Markdig's 0-based lines meet the 1-based numbers
+everything downstream uses, as `PaneMetadata` is on the library side. Markdig **1.4.1** is pinned,
+app-only: `AgentBaseline` is `IsPackable=false`, so it reaches no package, neither shipped assembly
+and none of the gates. The build is clean at 0 warnings and the suite measured **726** here against
+709 before it, judged `healthy` by `catch-crash --check --expect auto`.
+
+⛔ **The plan's instruction to read a heading's line from `Line` is wrong for a setext heading**, and
+the fixture it names would have found that only after the fact. Measured against 1.4.1:
+`HeadingBlock.Line` is the **underline** row, not the text row — and the text may run **several**
+lines above it, so `Line - 1` is wrong as well. `Span.Start` resolves to the true first line in every
+shape measured, so the span is what the parse reads; a section built from `Line` would begin at
+`=====` and silently drop its own heading text. Two further corrections of the same kind:
+`HeadingBlock.Lines.Count` is **-1** rather than the empty the plan expected, and — the one with the
+widest reach — **without `UseYamlFrontMatter` a document's front matter parses as a level-2 setext
+heading whose title is the YAML body**, the closing `---` reading as an underline. Every
+memory-shaped file would gain a heading nobody wrote, and it would look like real data. One pipeline
+call is the whole fix, and §4's *"front matter is detected so it is never mistaken for a setext
+heading"* is what it buys.
+
+⚠ **And a namespace one word from a collision was avoided rather than diagnosed.** A `Markdown`
+segment under this project would shadow Markdig's own `Markdown` entry point — C# walks enclosing
+namespaces before global, so `Markdown.Parse` would not compile — which is AGENTS.md §1's shadowing
+rule met from the other direction, by a dependency rather than by Avalonia. The parse carries no
+sub-namespace.
+
+⭐ **The harness that proved the tests also found one that nothing could break**, which is the part
+worth keeping. Twelve mutations, each declaring the test that must fail under it, all twelve killed
+by the test they name — and the run reports which tests **no** mutation killed, because a test
+nothing can break proves nothing. It named three. `Line_endings_do_not_move_a_heading` compared
+**positions** across LF and CRLF, and positions agree even with normalisation removed: Markdig counts
+`\n` natively, so what a CRLF source leaves behind is a stray `\r` in each section's *text* and
+nowhere else. It compares whole sections now, and the mutation kills it. The other two ask about
+**Markdig's** CommonMark compliance rather than about our code — `#NoSpace`, and a `#` at column 0
+inside a fence — so no mutation of ours can reach them: they carry `// inert-at-pin: Markdig 1.4.1`,
+which is §5's own idiom for an assertion that cannot fail being marked rather than claimed.
+
+**On whether the new pin owed a full mutation run, which the plan left to be confirmed rather than
+assumed: it does not, and the mechanism is the reason.** A pin change invalidates the gates' proof
+through an `inert-at-pin` marker, and `--guards` reports **81 guards, exit 0, no marker standing** at
+`2026.3.928`; the gates read the two shipped assemblies and the model package, and `AgentBaseline` is
+none of those. ⚠ **Item 14's XamlQuality move is a different matter, and is larger than "move the
+pin"**: `Directory.Packages.props` records that each release renamed every rule id and changed what a
+rule counts as inspected, so **a move re-opens every rule's reading** — which is what plan 00028 was.
+The handoff's advice to pay one mutation run for both therefore buys less than it looks, and step 2
+is landed on its own.
 ⭐ **And the plan's own corpus measurement was 4.5× short, which a local scan settled rather than a
 census.** §2 recorded 14 project files over 5KB in `C:\c\cl`; the whole of `C:\c` carries **63** —
 42 `AGENTS.md`, 21 `CLAUDE.md` — out of 246 once copies are excluded, the largest **243 KB**. So
