@@ -14,6 +14,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Step 3's ingest decodes through PaneSource.FromBytes and probes through TextProbe rather than
+         a second implementation of either: the text this tool parses is the text it hands the diff
+         control at step 5, and two decoders would put the outline on different lines. -->
+    <ProjectReference Include="../DiffView.Core/DiffView.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>AgentBaseline.Tests</_Parameter1>
     </AssemblyAttribute>

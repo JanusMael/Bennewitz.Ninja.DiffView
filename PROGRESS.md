@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #33, and CI is green on it** — PR #33 merged on a full
+**`main` carries everything through PR #34, and CI is green on it** — PR #34 merged on a full
 10-of-10, 2026-10-19. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 726** here, `Passed!`, by a local run — seventeen
-more than at PR #32, all step 2's. ⛔ **The Linux total is deliberately not written down**: it is read
+wrong the moment it is true.* **Windows measured 754** here, `Passed!`, by a local run — twenty-eight
+more than at PR #34, all step 3's. ⛔ **The Linux total is deliberately not written down**: it is read
 off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -76,8 +76,8 @@ green is evidence about one machine, and CI judges the claim.
 consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator
 against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Steps 1 and 2
-are done; step 3, ingest normalisation, is next.**
+is never edited again** — drift comes here, and superseding it means a new number. **Steps 1 to 3
+are done; step 4, the corpus, is next.**
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -155,6 +155,44 @@ pin"**: `Directory.Packages.props` records that each release renamed every rule 
 rule counts as inspected, so **a move re-opens every rule's reading** — which is what plan 00028 was.
 The handoff's advice to pay one mutation run for both therefore buys less than it looks, and step 2
 is landed on its own.
+
+**Step 3 is ingest normalisation, and it was measured against JanusHalo's real file rather than
+against a recollection of it.** `IngestedDocument` keeps the raw bytes as an immutable copy and
+decodes through `PaneSource.FromBytes` — the library's own decoder rather than a second one, since
+this text is what the app hands the diff control at step 5 — then normalises line endings and
+unwraps. `ListUnwrap` does the unwrap, detected structurally as decision 8 requires: setting front
+matter aside, the only block is a list whose only item contains a heading. The app now references
+`DiffView.Core`, which reaches no gate for the reason Markdig does not. The suite measured
+**754** here against 726 before it, judged `healthy` by `catch-crash --check --expect auto`.
+
+⭐ **The round trip was run against the real file itself**, read over Tailscale SSH and not committed:
+unwrapped one level with no refusal, the same eighteen headings before and after, the raw bytes
+untouched — and **re-wrapping the unwrapped text reproduced all 18,196 bytes**, so the unwrap is
+lossless on the one real document it exists for. The committed fixture reproduces the shape that
+measurement found, including the detail step 2's fixture lacked: the real file's blank lines are not
+empty but two spaces, the indent itself.
+
+⛔ **Markdig's `Column` and `ColumnWidth` are tab-expanded columns, not character indices** — measured,
+`-\t` reports a width of 4 — while the unwrap removes characters. The two agree only while no tab is
+involved, so the unwrap's safety is two guards: the marker on the first line is verified character
+by character, and a tab anywhere in a line's indent is refused. ⚠ **The first draft of the tab check
+read only the characters it was about to remove, and was wrong in a way nothing that counts
+characters can see.** A tab stop is absolute: in `  \t### Deeper` the tab spans columns 2 to 4, and
+stripping the two spaces moves it to column 0, where it spans 0 to 4 — the heading becomes an
+indented code block with every character intact, so even the test that every non-whitespace
+character survives passes. The check reads the whole indent now, a test asserts the heading
+survives, and a mutation restoring the first draft is killed by it.
+
+⚠ **One reading of decision 8 the plan leaves open, made here rather than assumed.** A one-item list
+with no heading — `- See README.md` — is structurally wholly nested in a list item too, and is left
+alone: the heading is what separates a wrapped document from a list somebody wrote, and unwrapping
+that one would delete its bullet and gain no outline. A test pins it, so the reading is visible
+rather than an accident of the code.
+
+**Twenty-one mutations, each declaring the test that must fail under it, and all twenty-one were
+killed by the test they name; none of the step's twenty-two tests went unkilled.** The one worth
+having is the mutation that restores the tab check's first draft: the two-column tab is invisible
+to every assertion about characters, and only the heading set sees it.
 ⭐ **And the plan's own corpus measurement was 4.5× short, which a local scan settled rather than a
 census.** §2 recorded 14 project files over 5KB in `C:\c\cl`; the whole of `C:\c` carries **63** —
 42 `AGENTS.md`, 21 `CLAUDE.md` — out of 246 once copies are excluded, the largest **243 KB**. So

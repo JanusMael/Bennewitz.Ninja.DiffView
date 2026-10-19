@@ -95,9 +95,12 @@ internal sealed record MarkdownSection(
 internal sealed class MarkdownOutline
 {
     /// <summary>
-    /// Shared because a pipeline is immutable once built and building one per document is pure cost.
+    /// The one pipeline this tool parses with. Shared because a pipeline is immutable once built and
+    /// building one per document is pure cost; internal because ingest's unwrap reads the same tree,
+    /// and two pipelines that disagree about front matter would disagree about whether a document is
+    /// nested at all.
     /// </summary>
-    private static readonly MarkdownPipeline Pipeline =
+    internal static readonly MarkdownPipeline Pipeline =
         new MarkdownPipelineBuilder().UseYamlFrontMatter().Build();
 
     private MarkdownOutline(
@@ -205,10 +208,12 @@ internal sealed class MarkdownOutline
     private static int EditorLine(int markdigLine) => markdigLine + 1;
 
     /// <summary>
-    /// Collapses every line ending to <c>\n</c>, lone carriage returns included. ⚠ The order
-    /// matters: replacing <c>\r</c> first would turn each <c>\r\n</c> into two line breaks.
+    /// Collapses every line ending to <c>\n</c>, lone carriage returns included — the same three
+    /// terminators <c>LineSplitter</c> recognises, so this tool and the diff control count the same
+    /// lines. ⚠ The order matters: replacing <c>\r</c> first would turn each <c>\r\n</c> into two
+    /// line breaks.
     /// </summary>
-    private static string NormaliseLineEndings(string text) =>
+    internal static string NormaliseLineEndings(string text) =>
         text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
 
     /// <summary>The character offset each line begins at, for mapping a span back to a line.</summary>
