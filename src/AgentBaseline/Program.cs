@@ -6,10 +6,10 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// </summary>
 /// <remarks>
 /// Plan 00034 step 1 puts the project in the solution and deliberately nothing else in it. The
-/// parse arrives at step 2, ingest normalisation at step 3, the corpus at step 4, and the window
-/// that hosts the diff control at step 5.
+/// parse arrives at step 2, ingest normalisation at step 3, the corpus at step 4, and at step 5
+/// <see cref="ReviewSession"/>, which drives the diff control a window will host.
 /// <para>
-/// ⛔ Markup stays out until that step, and not merely because it is unneeded:
+/// ⛔ Markup stays out until that window arrives, and not merely because it is unneeded:
 /// <c>AccessibilityCoverageTests</c> asserts that the library's and the demo's subjects together
 /// account for every element its scan of <c>src</c> finds, so a third markup-bearing project under
 /// <c>src</c> makes that equality false the moment one exists. Step 11 is where this project's own

@@ -5,8 +5,9 @@
 **`main` carries everything through PR #36, and CI is green on it** — PR #36 merged on a full
 10-of-10, 2026-10-20. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 807** here, `Passed!`, by a local run — fifty-three
-more than at PR #36, all step 4's. ⛔ **The Linux total is deliberately not written down**: it is read
+wrong the moment it is true.* **Windows measured 816** here, `Passed!`, by a local run — sixty-two
+more than at PR #36, fifty-three of them step 4's and nine step 5's. ⛔ **The Linux total is
+deliberately not written down**: it is read
 off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -73,12 +74,12 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen, and steps 1 to 4 are done.** `AgentBaseline`
+⭐ **`plans/00034` is approved, committed and frozen, and steps 1 to 5 are done.** `AgentBaseline`
 consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator
 against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 5, cycling
-with the accumulator intact, is next.**
+is never edited again** — drift comes here, and superseding it means a new number. **Step 6 — take, leave,
+drop and defer, and the session store they write to — is next.**
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -100,8 +101,10 @@ its own.
 ⛔ **And step 1 found a step-order hazard in the plan, which is recorded here because the plan is
 frozen.** `AccessibilityCoverageTests` asserts that the library's and the demo's two subjects account
 for every element its scan of `src` finds, so **the first `.axaml` under `src/AgentBaseline` makes
-that equality false** — and the failure names neither this project nor this plan. The plan puts the
-window at **step 5** and the `src` gates at **step 11**, so steps 5 to 10 would run red. ⭐ What step 1
+that equality false** — and the failure names neither this project nor this plan. Step 1 read the plan
+as putting the window at **step 5** and the `src` gates at **step 11**, so steps 5 to 10 would run
+red — and step 5 turned out to need no window, so the step that brings the first markup is the one
+that pays. ⭐ What step 1
 left instead of an edit to the plan is a tripwire with its instructions attached:
 `ProjectShapeTests.No_markup_lives_here_yet_and_the_first_file_that_does_owes_a_gate` fails on that
 first markup file, says to pay step 11 in the same change — this project's own subject, its own
@@ -259,6 +262,63 @@ census.** §2 recorded 14 project files over 5KB in `C:\c\cl`; the whole of `C:\
 decision 14's claim that the project corpus is where N actually is no longer rests on the machines
 that refused SSH, and §8's warning that the N-way *sizing* might not survive a wider count is
 discharged.
+
+**Step 5 is cycling, and it needed no window.** `ReviewSession` seeds the view's left once, with the
+seed's normalised text, as the accumulator — editable, because merging two phrasings is typing in
+it — and moves through the queue by assigning the right alone, which is read-only. Next and previous
+stop at the ends rather than wrapping, as F7 stops at the last change; a jump outside the queue is
+refused with nothing moved; and a queue holding only the seed is refused before the view is touched,
+since a file has nothing to offer against itself. The verification asks for a host on a
+hand-advanced clock that this project writes, `CompositeHost` being internal to the library's tests,
+and `ReviewHost` is it: a real `SideBySideDiffView` in a headless window, driven through the public
+surface alone — it awaits `BuildCompleted` where `CompositeHost` awaits the internal `CurrentBuild`,
+and finds each pane by the part name the view publishes. The fake clock and the log sink are linked
+from the library's tests rather than copied, as `RepoPaths` already was. ⛔ **Every edit is typed**,
+because an edit made on the document directly is never refused: a session that forgot to open the
+left passes a test that edits the document, and stops the person at the keyboard. The suite measured
+**816** here against 807, judged `healthy` by `catch-crash --check --expect auto`.
+
+⛔ **There is no markup, so the tripwire still stands — decided, not drifted into.** Step 1 read the
+plan as putting the window here; the plan's step 5 asks only for a host this project writes and an
+assertion about the view, and neither needs a window. The window arrives with the first step that
+needs a UI affordance —
+step 7's *cycle with the next command* at the latest — and pays step 11 in that change, as
+`ProjectShapeTests` says. ⚠ **And paying step 11 will touch `scripts/`, which decision 13 and §4
+rule out.** A guard is proven only when a mutation makes it the first assertion to fail, every
+mutation lives in `scripts/mutate-gates.cs`, and a full run fails on any guard no mutation trips
+first — so the app's subject and its floor each need a mutation there, and step 11's full run cannot
+pass without them. Decision 13's reason, no synthetic driver, is untouched by that; its wording is
+what cannot hold.
+
+⛔ **A source equal to the one a side holds is not assigned at all** — measured, then read in Avalonia
+12.1.2's `EffectiveValue<T>.SetAndRaiseCore`, which raises a change only when
+`EqualityComparer<T>.Default` says the value differs. `PaneSource` is a record, so re-seeding the left
+from the identical seed is harmless, and the first assignment that differs in any member — the text,
+the title, the path — replaces the document and takes every edit and the undo stack with it. The
+proof's first mutation re-seeded the left with the seed's bare text on every cycle and **survived the
+cycling test**: it replaced the left once, at construction, before anything was typed, and every cycle
+after that assigned an equal source. It was re-pointed at the plausible version of the defect, a left
+title that counts the candidates, which the cycling test kills. AGENTS.md §6's *assigning
+`LeftSource` / `RightSource` replaces that side's `TextDocument`* holds of a different source only.
+
+⚠ **Neither source carries a path, which is decision 9 arriving five steps early.** `Save` writes a
+side to its source's path, and the header's menu offers it the moment the side is dirty, so a left
+built with `PaneSource.FromFile` — the obvious way to write it — would have offered to save the
+accumulator over the seed machine's live file from this step on. A test edits the left and asserts
+that the view cannot save it and that the seed's bytes are unchanged.
+
+⚠ **One reading the plan leaves open, made rather than assumed**: every title ends in its candidate's
+file name — `baseline from <seed> — AGENTS.md`, `<label> — AGENTS.md` — because the control chooses a
+pane's grammar from the title's extension when there is no path, and a title of the label alone would
+highlight one candidate and not the next, as a label happened to end in `.md` or not.
+
+**Twenty-three mutations, each declaring the test that must fail under it, all killed by the test
+they name, and none of the step's nine tests went unkilled.** Four of the mutations and two of the
+tests came from asking what the first proof could not see. Every fixture was plain LF,
+so a session showing a candidate's bytes instead of its normalised text passed — and the queue counts
+changes over normalised text, so the review would be a different diff from the one the queue was
+ordered by; a test now feeds it the CRLF and list-nested shapes §2 measured. And nothing asserted the
+two null guards.
 
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with

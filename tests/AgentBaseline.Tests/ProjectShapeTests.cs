@@ -64,10 +64,11 @@ public sealed class ProjectShapeTests
                 .ToArray()
             : [];
 
-        // ⭐ A tripwire with its instructions attached, and it is MEANT to fire at plan 00034 step 5.
-        // AccessibilityCoverageTests asserts library + demo == its whole scan of src, so the first
-        // .axaml here makes that equality false and the suite goes red for a reason that names
-        // neither this project nor this plan. Deleting this test is the wrong fix.
+        // ⭐ A tripwire with its instructions attached, and it is MEANT to fire when the window's first
+        // markup lands — not at plan 00034 step 5, which drives the view from code and needs none
+        // (PROGRESS.md). AccessibilityCoverageTests asserts library + demo == its whole scan of src,
+        // so the first .axaml here makes that equality false and the suite goes red for a reason that
+        // names neither this project nor this plan. Deleting this test is the wrong fix.
         Assert.True(
             markup.Length == 0,
             $"Markup has appeared under src/AgentBaseline ({string.Join(", ", markup)}), so this "

@@ -4,9 +4,10 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <!-- ⛔ Still no Avalonia: the window arrives at plan 00034's step 5, and the first .axaml under
-       src makes AccessibilityCoverageTests' library-plus-demo equality false, which step 11 pays.
-       ProjectShapeTests holds the tripwire that says so. -->
+  <!-- ⛔ Still no markup. Avalonia arrives at plan 00034's step 5 through the library, for the view
+       ReviewSession drives, but the first .axaml under src makes AccessibilityCoverageTests'
+       library-plus-demo equality false, which step 11 pays. ProjectShapeTests holds the tripwire
+       that says so. -->
 
   <ItemGroup>
     <!-- Step 2's parse. A locator only — see Directory.Packages.props and MarkdownOutline. -->
@@ -18,6 +19,9 @@
          a second implementation of either: the text this tool parses is the text it hands the diff
          control at step 5, and two decoders would put the outline on different lines. -->
     <ProjectReference Include="../DiffView.Core/DiffView.Core.csproj" />
+    <!-- Step 5's review drives the library's own SideBySideDiffView: decision 1 makes this tool an app
+         that hosts the control, never a second control. -->
+    <ProjectReference Include="../DiffView.Avalonia/DiffView.Avalonia.csproj" />
   </ItemGroup>
 
   <ItemGroup>

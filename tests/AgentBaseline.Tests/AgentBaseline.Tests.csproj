@@ -1,5 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <!-- Step 5's review drives a real SideBySideDiffView in a headless window, as the library's own
+         tests do: Skia so text is laid out, and Semi as the base theme, the intended host's. -->
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Avalonia.Skia" />
+    <PackageReference Include="Semi.Avalonia" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../../src/AgentBaseline/AgentBaseline.csproj" />
   </ItemGroup>
 
@@ -7,5 +15,17 @@
     <!-- Linked rather than copied: the repository-root walk is one source of truth, and a second
          copy of it is the defect `fix(scripts): two sources of truth for the repository` records. -->
     <Compile Include="../DiffView.Avalonia.Tests/RepoPaths.cs" Link="RepoPaths.cs" />
+    <!-- Linked for the same reason. The hand-advanced clock is what makes a re-diff's debounce fire
+         only when a test says so, and the sink is what turns a binding warning into a failure. -->
+    <Compile Include="../DiffView.Avalonia.Tests/Composite/FakeTimeProvider.cs" Link="FakeTimeProvider.cs" />
+    <Compile Include="../DiffView.Avalonia.Tests/TestLogSink.cs" Link="TestLogSink.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The library tests' bundled font, so laying out a pane never depends on what a runner has
+         installed. -->
+    <AvaloniaResource Include="../../fixtures/fonts/DejaVuSansMono.ttf" Link="Fonts/DejaVuSansMono.ttf" />
+    <!-- Serial execution: every Avalonia test shares the one headless dispatcher. -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
