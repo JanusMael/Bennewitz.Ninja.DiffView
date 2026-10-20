@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #35, and CI is green on it** — PR #35 merged on a full
-10-of-10, 2026-10-19. *A resume names the pull request it was written for and
+**`main` carries everything through PR #36, and CI is green on it** — PR #36 merged on a full
+10-of-10, 2026-10-20. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
 wrong the moment it is true.* **Windows measured 807** here, `Passed!`, by a local run — fifty-three
-more than at PR #35, all step 4's. ⛔ **The Linux total is deliberately not written down**: it is read
+more than at PR #36, all step 4's. ⛔ **The Linux total is deliberately not written down**: it is read
 off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
