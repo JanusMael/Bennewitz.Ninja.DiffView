@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dv="using:Bennewitz.Ninja.DiffView"
+        x:Class="Bennewitz.Ninja.AgentBaseline.ReviewWindow"
+        x:ClassModifier="internal"
+        Title="Agent baseline"
+        Width="1280" Height="800">
+  <DockPanel>
+    <!-- The review's commands. Each verb acts on the section at its own pane's caret: take, leave and
+         defer read the candidate on the right, drop reads the accumulator on the left. -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="8,4">
+      <Button x:Name="PreviousButton" Content="Previous candidate"
+              AutomationProperties.AutomationId="PreviousCandidate"
+              AutomationProperties.Name="Show the previous candidate on the right" />
+      <Button x:Name="NextButton" Content="Next candidate"
+              AutomationProperties.AutomationId="NextCandidate"
+              AutomationProperties.Name="Show the next candidate on the right" />
+      <Button x:Name="TakeButton" Content="Take"
+              AutomationProperties.AutomationId="Take"
+              AutomationProperties.Name="Take the section at the right pane's caret into the baseline" />
+      <Button x:Name="LeaveButton" Content="Leave"
+              AutomationProperties.AutomationId="Leave"
+              AutomationProperties.Name="Leave the section at the right pane's caret out of the baseline" />
+      <Button x:Name="DeferButton" Content="Defer"
+              AutomationProperties.AutomationId="Defer"
+              AutomationProperties.Name="Put the section at the right pane's caret off for this session" />
+      <Button x:Name="DropButton" Content="Drop"
+              AutomationProperties.AutomationId="Drop"
+              AutomationProperties.Name="Drop the section at the left pane's caret from the baseline" />
+      <Button x:Name="SaveButton" Content="Save baseline…"
+              AutomationProperties.AutomationId="SaveBaseline"
+              AutomationProperties.Name="Write the baseline and its provenance to a new file" />
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Bottom" Margin="8,4" Spacing="2">
+      <TextBlock x:Name="PositionText" AutomationProperties.AutomationId="Position" />
+      <TextBlock x:Name="OutcomeText" AutomationProperties.AutomationId="Outcome" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <dv:SideBySideDiffView x:Name="View" AutomationProperties.AutomationId="Review"
+                           AutomationProperties.Name="The baseline on the left and a candidate on the right" />
+  </DockPanel>
+</Window>

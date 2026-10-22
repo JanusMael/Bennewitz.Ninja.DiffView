@@ -13,6 +13,18 @@ internal enum DecisionKind
     Dropped,
 }
 
+/// <summary>The word for each decision, in one place: a refusal, the window and the report all say it.</summary>
+internal static class DecisionKinds
+{
+    /// <summary><paramref name="kind"/> as it is said: taken, left or dropped.</summary>
+    internal static string Spoken(this DecisionKind kind) => kind switch
+    {
+        DecisionKind.Taken => "taken",
+        DecisionKind.Rejected => "left",
+        _ => "dropped",
+    };
+}
+
 /// <summary>One decision about one version of one section.</summary>
 /// <param name="Kind">Taken, rejected or dropped.</param>
 /// <param name="Section">Which rule, and which version of it, the decision was about.</param>

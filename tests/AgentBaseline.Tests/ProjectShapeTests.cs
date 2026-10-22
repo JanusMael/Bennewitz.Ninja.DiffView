@@ -4,8 +4,7 @@ using Bennewitz.Ninja.DiffView.Tests;
 namespace Bennewitz.Ninja.AgentBaseline.Tests;
 
 /// <summary>
-/// Plan 00034 step 1: the project exists, the solution knows about it, it can never be published,
-/// and it carries no markup yet.
+/// Plan 00034 step 1: the project exists, the solution knows about it, and it can never be published.
 /// </summary>
 /// <remarks>
 /// ⛔ These are not ceremony. Step 1's own verification says *"a project absent from the solution is
@@ -50,33 +49,5 @@ public sealed class ProjectShapeTests
         // packable only when IsPackable says true, so an absent property passes that gate while
         // saying nothing. The release names the packages it pushes, and this project is not one.
         Assert.Equal(["false"], packable);
-    }
-
-    [Fact]
-    public void No_markup_lives_here_yet_and_the_first_file_that_does_owes_a_gate()
-    {
-        string root = Path.Combine(RepoPaths.Root, "src", "AgentBaseline");
-        string[] markup = Directory.Exists(root)
-            ? Directory.GetFiles(root, "*.axaml", SearchOption.AllDirectories)
-                .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                         && !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-                .Select(p => Path.GetRelativePath(root, p))
-                .ToArray()
-            : [];
-
-        // ⭐ A tripwire with its instructions attached, and it is MEANT to fire when the window's first
-        // markup lands — not at plan 00034 step 5, which drives the view from code and needs none
-        // (PROGRESS.md). AccessibilityCoverageTests asserts library + demo == its whole scan of src,
-        // so the first .axaml here makes that equality false and the suite goes red for a reason that
-        // names neither this project nor this plan. Deleting this test is the wrong fix.
-        Assert.True(
-            markup.Length == 0,
-            $"Markup has appeared under src/AgentBaseline ({string.Join(", ", markup)}), so this "
-            + "project is now the THIRD markup-bearing project under src. AccessibilityCoverageTests "
-            + "accounts for every element its scan of src finds against the library's and the demo's "
-            + "two subjects, and that equality is now false. Pay plan 00034 step 11 in this same "
-            + "change — this project's own subject and its own measured floor, AutomationProperties."
-            + "Name on every interactive control, BNXQ1004 clean — and then delete this test, which "
-            + "exists only to say so.");
     }
 }

@@ -1,0 +1,399 @@
+// Plan 00034 step 7: the loop end to end, as the operator drives it — the window's commands, cycling by
+// the next command, the caret each verb reads, and the save with its provenance report.
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/ReviewWindowTests.cs",
+    "tests/AgentBaseline.Tests/BaselineOutputTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the next command is bound to another key",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "NextGesture = new(Key.F8);",
+      "new": "NextGesture = new(Key.F9);",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing",
+      "says": "No build landed"
+    },
+    {
+      "name": "the previous command takes F8 without its Shift",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "new(Key.F8, KeyModifiers.Shift);",
+      "new": "new(Key.F8);",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing"
+    },
+    {
+      "name": "the next command is never bound to a key",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "KeyBindings.Add(new KeyBinding { Gesture = NextGesture, Command = next });",
+      "new": "",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves",
+      "says": "No build landed"
+    },
+    {
+      "name": "the next button runs the previous command",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "NextButton.Command = next;",
+      "new": "NextButton.Command = previous;",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing",
+      "says": "No build landed"
+    },
+    {
+      "name": "the previous button runs the next command",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "PreviousButton.Command = previous;",
+      "new": "PreviousButton.Command = next;",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing",
+      "says": "No build landed"
+    },
+    {
+      "name": "the take button leaves",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "TakeButton.Command = take;",
+      "new": "TakeButton.Command = leave;",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
+    },
+    {
+      "name": "the leave button defers",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "LeaveButton.Command = leave;",
+      "new": "LeaveButton.Command = defer;",
+      "killer": "Leave_and_defer_from_the_window_reach_the_store_each_belongs_to_and_touch_no_text"
+    },
+    {
+      "name": "the defer button leaves",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "DeferButton.Command = defer;",
+      "new": "DeferButton.Command = leave;",
+      "killer": "Leave_and_defer_from_the_window_reach_the_store_each_belongs_to_and_touch_no_text"
+    },
+    {
+      "name": "the drop button takes",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "DropButton.Command = drop;",
+      "new": "DropButton.Command = take;",
+      "killer": "Each_verb_reads_the_section_at_its_own_panes_caret"
+    },
+    {
+      "name": "the save button is wired to nothing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "SaveButton.Command = save;",
+      "new": "",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
+    },
+    {
+      "name": "a drop reads the right pane's caret",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "CaretLine(SideBySideDiffView.LeftPanePart)",
+      "new": "CaretLine(SideBySideDiffView.RightPanePart)",
+      "killer": "Each_verb_reads_the_section_at_its_own_panes_caret"
+    },
+    {
+      "name": "take, leave and defer read the left pane's caret",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "CaretLine(SideBySideDiffView.RightPanePart)",
+      "new": "CaretLine(SideBySideDiffView.LeftPanePart)",
+      "killer": "Each_verb_reads_the_section_at_its_own_panes_caret"
+    },
+    {
+      "name": "a move leaves the position line where it was",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "ShowPosition();\n            Say(string.Empty);",
+      "new": "Say(string.Empty);",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing",
+      "says": "Candidate 1 of 2"
+    },
+    {
+      "name": "a move leaves the last outcome standing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say(string.Empty);",
+      "new": "",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing",
+      "says": "A move left the last outcome standing"
+    },
+    {
+      "name": "the last candidate is called the first, and the first the last",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "(forward ? \"last\" : \"first\")",
+      "new": "(forward ? \"first\" : \"last\")",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing"
+    },
+    {
+      "name": "one change is counted as changes",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "(current.Changes == 1 ? \"change\" : \"changes\")",
+      "new": "\"changes\"",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing"
+    },
+    {
+      "name": "two changes are counted as one change",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "(current.Changes == 1 ? \"change\" : \"changes\")",
+      "new": "\"change\"",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing"
+    },
+    {
+      "name": "the position counts candidates from nought",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "{review.Position + 1} of",
+      "new": "{review.Position} of",
+      "killer": "The_next_command_moves_the_right_from_either_pane_and_at_either_end_says_so_and_moves_nothing"
+    },
+    {
+      "name": "a refused decision escapes the window",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "catch (DecisionRefusedException refused)",
+      "new": "catch (SaveRefusedException refused)",
+      "killer": "A_refused_decision_is_said_in_the_window_and_writes_nothing"
+    },
+    {
+      "name": "a decision is made and not said",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say(decision());",
+      "new": "decision();",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
+    },
+    {
+      "name": "a take that changed nothing is said as one that took",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "TakeResult.Unchanged => $\"Nothing changed: ",
+      "new": "TakeResult.Unchanged => $\"Took ",
+      "killer": "Each_verb_reads_the_section_at_its_own_panes_caret"
+    },
+    {
+      "name": "a drop with no section blames the right pane's caret",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say(\"Nothing to drop: the caret in the left pane",
+      "new": "Say(\"Nothing to drop: the caret in the right pane",
+      "killer": "A_caret_above_a_panes_first_heading_decides_nothing_and_says_why"
+    },
+    {
+      "name": "a verb with no section blames the left pane's caret",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Nothing to {verb}: the caret in the right pane",
+      "new": "Nothing to {verb}: the caret in the left pane",
+      "killer": "A_caret_above_a_panes_first_heading_decides_nothing_and_says_why"
+    },
+    {
+      "name": "a leave with no section says it had nothing to take",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "CandidateSectionAtCaret(review, \"leave\")",
+      "new": "CandidateSectionAtCaret(review, \"take\")",
+      "killer": "A_caret_above_a_panes_first_heading_decides_nothing_and_says_why"
+    },
+    {
+      "name": "a caret above the first heading is read as in the first section",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "s.FirstLine <= line && line <= s.LastLine",
+      "new": "line <= s.LastLine",
+      "killer": "A_caret_above_a_panes_first_heading_decides_nothing_and_says_why"
+    },
+    {
+      "name": "a section ends a line before its last",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "line <= s.LastLine)",
+      "new": "line < s.LastLine)",
+      "killer": "Each_verb_reads_the_section_at_its_own_panes_caret"
+    },
+    {
+      "name": "a section begins a line after its heading",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "s.FirstLine <= line",
+      "new": "s.FirstLine < line",
+      "killer": "Each_verb_reads_the_section_at_its_own_panes_caret"
+    },
+    {
+      "name": "the left pane's caret is read in the candidate's outline",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "SectionAt(MarkdownOutline.Read(view.LeftDocument.Text), line)",
+      "new": "SectionAt(Current.Candidate.Document.Outline, line)",
+      "killer": "Each_verb_reads_the_section_at_its_own_panes_caret"
+    },
+    {
+      "name": "a second review replaces the first",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "if (session is not null)",
+      "new": "if (session is not null && session.Position < 0)",
+      "killer": "Before_a_review_every_command_is_disabled_and_a_window_holds_one_review"
+    },
+    {
+      "name": "every command is enabled before there is a review",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "private bool HasReview() => session is not null;",
+      "new": "private bool HasReview() => true;",
+      "killer": "Before_a_review_every_command_is_disabled_and_a_window_holds_one_review",
+      "says": "is enabled with no review to act on"
+    },
+    {
+      "name": "the commands are never told the review began",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "command.RaiseCanExecuteChanged();",
+      "new": "",
+      "killer": "Before_a_review_every_command_is_disabled_and_a_window_holds_one_review",
+      "says": "stayed disabled once the review began"
+    },
+    {
+      "name": "a save with no file chosen says nothing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say(\"Not saved: no file was chosen.\");",
+      "new": "Say(string.Empty);",
+      "killer": "A_save_that_chooses_nothing_or_cannot_write_says_so_and_writes_nothing"
+    },
+    {
+      "name": "a platform with no file dialog escapes the window",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "when (ex is InvalidOperationException or PlatformNotSupportedException)",
+      "new": "when (ex is InvalidOperationException)",
+      "killer": "A_save_that_chooses_nothing_or_cannot_write_says_so_and_writes_nothing"
+    },
+    {
+      "name": "a write that fails escapes the window",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "when (ex is SaveRefusedException or IOException or UnauthorizedAccessException)",
+      "new": "when (ex is SaveRefusedException)",
+      "killer": "A_save_that_chooses_nothing_or_cannot_write_says_so_and_writes_nothing"
+    },
+    {
+      "name": "a save does not say where it wrote",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say($\"Saved the baseline to {saved.BaselinePath}, and its provenance to {saved.ReportPath}.\");",
+      "new": "Say(\"Saved.\");",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
+    },
+    {
+      "name": "the baseline keeps whatever line endings the accumulator holds",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "session.Accumulator, encoding: null, LineEnding.Lf);",
+      "new": "session.Accumulator, encoding: null, LineEnding.None);",
+      "killer": "The_baseline_is_written_LF_and_without_a_byte_order_mark_whatever_the_left_holds"
+    },
+    {
+      "name": "the baseline is written behind a byte-order mark",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "session.Accumulator, encoding: null,",
+      "new": "session.Accumulator, encoding: Encoding.UTF8,",
+      "killer": "The_baseline_is_written_LF_and_without_a_byte_order_mark_whatever_the_left_holds"
+    },
+    {
+      "name": "the baseline is the seed's text rather than the accumulator's",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "PaneWriter.Write(baseline, session.Accumulator,",
+      "new": "PaneWriter.Write(baseline, session.Queue.Seed.Document.Text,",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
+    },
+    {
+      "name": "the baseline may be written over a file the corpus read",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "RefuseAnyFileRead(session.Queue, baseline, \"the baseline\");",
+      "new": "",
+      "killer": "A_save_never_writes_the_baseline_over_a_file_the_corpus_read",
+      "says": "Saved the baseline to"
+    },
+    {
+      "name": "the report may be written over a file the corpus read",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "RefuseAnyFileRead(session.Queue, report, \"its provenance report\");",
+      "new": "",
+      "killer": "A_save_never_puts_its_report_over_a_file_the_corpus_read"
+    },
+    {
+      "name": "a path differing only in case is taken for another file",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "StringComparison.OrdinalIgnoreCase",
+      "new": "StringComparison.Ordinal",
+      "killer": "A_save_never_writes_the_baseline_over_a_file_the_corpus_read"
+    },
+    {
+      "name": "only the seed's file is refused",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "(Candidate[])[queue.Seed, .. queue.Items.Select(i => i.Candidate)]",
+      "new": "(Candidate[])[queue.Seed]",
+      "killer": "A_save_never_puts_its_report_over_a_file_the_corpus_read"
+    },
+    {
+      "name": "only the candidates' files are refused",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "(Candidate[])[queue.Seed, .. queue.Items.Select(i => i.Candidate)]",
+      "new": "(Candidate[])[.. queue.Items.Select(i => i.Candidate)]",
+      "killer": "A_save_never_writes_the_baseline_over_a_file_the_corpus_read"
+    },
+    {
+      "name": "a refusal calls every file it refuses the seed's",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "ReferenceEquals(read, queue.Seed) ? \"the seed\" : \"the candidate\"",
+      "new": "\"the seed\"",
+      "killer": "A_save_never_writes_the_baseline_over_a_file_the_corpus_read"
+    },
+    {
+      "name": "the report is named for the baseline's whole file name",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "Path.ChangeExtension(baselinePath, \".provenance.md\")",
+      "new": "baselinePath + \".provenance.md\"",
+      "killer": "A_save_before_any_decision_writes_the_seeds_text_and_says_nothing_was_decided"
+    },
+    {
+      "name": "the report credits the first candidate with seeding",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "Candidate seed = session.Queue.Seed;",
+      "new": "Candidate seed = session.Queue.Items[0].Candidate;",
+      "killer": "The_report_logs_every_durable_decision_in_the_order_made_the_title_and_a_pipe_included"
+    },
+    {
+      "name": "the queue's table gives every candidate the seed's file",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": ".Append(Cell(item.Candidate.Path))",
+      "new": ".Append(Cell(seed.Path))",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
+    },
+    {
+      "name": "decisions are numbered from nought",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": ".Append(i + 1)",
+      "new": ".Append(i)",
+      "killer": "The_report_logs_every_durable_decision_in_the_order_made_the_title_and_a_pipe_included"
+    },
+    {
+      "name": "a pipe in a label ends its cell",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "text.Replace(\"|\", \"\\\\|\", StringComparison.Ordinal)",
+      "new": "text",
+      "killer": "The_report_logs_every_durable_decision_in_the_order_made_the_title_and_a_pipe_included"
+    },
+    {
+      "name": "the title is reported as an empty cell",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "headingPath.Length == 0 ? \"*the title*\" : Cell(headingPath)",
+      "new": "Cell(headingPath)",
+      "killer": "The_report_logs_every_durable_decision_in_the_order_made_the_title_and_a_pipe_included"
+    },
+    {
+      "name": "a drop is credited to the seed",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "decision.Source is { } source ? Cell(source) : \"—\"",
+      "new": "decision.Source is { } source ? Cell(source) : Cell(seed.Label)",
+      "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
+    },
+    {
+      "name": "a report with no decision leaves an empty table",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "if (decisions.Count == 0)",
+      "new": "if (decisions.Count < 0)",
+      "killer": "A_save_before_any_decision_writes_the_seeds_text_and_says_nothing_was_decided"
+    },
+    {
+      "name": "a leave is reported as rejected rather than left",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "DecisionKind.Rejected => \"left\",",
+      "new": "DecisionKind.Rejected => \"rejected\",",
+      "killer": "The_report_logs_every_durable_decision_in_the_order_made_the_title_and_a_pipe_included"
+    },
+    {
+      "name": "a drop's outcome is concatenated rather than interpolated",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "return $\"Dropped {MarkdownOutline.Spoken(path)} from the baseline.\";",
+      "new": "return \"Dropped \" + MarkdownOutline.Spoken(path) + \" from the baseline.\";",
+      "expect": "green",
+      "because": "a control: interpolating strings with no format is concatenating them, so every drop says the same words — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

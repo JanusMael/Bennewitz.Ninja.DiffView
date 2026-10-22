@@ -20,8 +20,8 @@ using Bennewitz.Ninja.XamlQuality.Rules;
 namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
-/// Every interactive control in the library's templates and the demo's views carries
-/// <c>AutomationProperties.Name</c>, so screen readers announce it.
+/// Every interactive control in the library's templates, the demo's views and the baseline tool's window
+/// carries <c>AutomationProperties.Name</c>, so screen readers announce it.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -155,6 +155,17 @@ public sealed class AccessibilityCoverageTests
     private const int DemoInspectedFloor = 41;
 
     /// <summary>
+    /// A floor on the baseline tool's share of the findings scan, half the 8 its review window carries —
+    /// seven buttons and the view.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Asserted against the tool's own subject, as the demo's floor is against the demo's</b>, and for
+    /// the same reason. Plan 00034 step 11 added it in the change that brought the tool's first markup,
+    /// which left the accounting below a term short until it had one.
+    /// </remarks>
+    private const int BaselineInspectedFloor = 4;
+
+    /// <summary>
     /// A floor on what <c>BNXQ1006</c> inspects over the library's markup: 3, against the 7 controls the
     /// library themes today.
     /// </summary>
@@ -203,16 +214,20 @@ public sealed class AccessibilityCoverageTests
     /// </remarks>
     private static string AllRoot => RepoPaths.Source("src");
 
-    /// <summary>Everything the findings assertion covers: the library and the demo.</summary>
+    /// <summary>Everything the findings assertion covers: the library, the demo and the baseline tool.</summary>
     private static XamlScanContext ScanAll() => XamlScanContext.Load(AllRoot);
 
     /// <summary>The markup this repository ships, as a subject of the scan above.</summary>
     private static XamlScanContext LibraryWithin(XamlScanContext all) =>
         XamlScanContext.Load(Path.Combine(all.Root, typeof(SideBySideDiffView).Assembly.GetName().Name!));
 
-    /// <summary>The demo's markup, the other subject, derived the same way.</summary>
+    /// <summary>The demo's markup, the second subject, derived the same way.</summary>
     private static XamlScanContext DemoWithin(XamlScanContext all) =>
         XamlScanContext.Load(Path.Combine(all.Root, "DiffView.Demo"));
+
+    /// <summary>The baseline tool's markup — plan 00034's review window — the third subject, derived the same way.</summary>
+    private static XamlScanContext BaselineWithin(XamlScanContext all) =>
+        XamlScanContext.Load(Path.Combine(all.Root, "AgentBaseline"));
 
     /// <summary>Every public control this library ships, minus the reasoned exclusions.</summary>
     private static string[] DerivedControls() =>
@@ -238,14 +253,15 @@ public sealed class AccessibilityCoverageTests
     [Fact]
     public void Every_interactive_control_has_an_automation_name()
     {
-        // ⛔ Every count below reads one of these three subjects, each derived ONCE. A floor guards its
-        // subject against narrowing and is satisfied by any larger population, so each floor's own
-        // reading also sits in an equality — the library and the demo account for the whole scan. Floors
-        // in one test and an equality in another, each deriving its own subject, leave every floor open
-        // to widening one call at a time; here no count reaches an assertion without passing through one.
+        // ⛔ Every count below reads one of these four scans, each derived ONCE. A floor guards its subject
+        // against narrowing and is satisfied by any larger population, so each floor's own reading also
+        // sits in an equality — the library, the demo and the baseline tool account for the whole scan.
+        // Floors in one test and an equality in another, each deriving its own subject, leave every floor
+        // open to widening one call at a time; here no count reaches an assertion without passing through one.
         XamlScanContext allScan = ScanAll();
         XamlScanContext librarySubject = LibraryWithin(allScan);
         XamlScanContext demoSubject = DemoWithin(allScan);
+        XamlScanContext baselineSubject = BaselineWithin(allScan);
 
         // ⛔ ONE element set and ONE adopted instance, and every reading below is taken from them — the
         // floors, both accountings, the per-name coverage and the findings. Per-name coverage in a test
@@ -271,6 +287,13 @@ public sealed class AccessibilityCoverageTests
             + "Either the demo subject has narrowed onto ground with less markup, or that markup lost most "
             + "of its interactive elements.");
 
+        int baseline = rule.Analyze(baselineSubject).Inspected;
+        Assert.True(
+            baseline >= BaselineInspectedFloor,
+            $"The baseline tool's own scan inspected {baseline} elements, below its floor of {BaselineInspectedFloor}. "
+            + "Either its subject has narrowed onto ground with less markup, or its review window lost most of its "
+            + "interactive elements.");
+
         // ⛔ This is what a derived root does not give you. Replace LibraryWithin's body with
         // Load(all.Root) and the root is still derived, still resolves, and the library subject becomes
         // the whole scan — measured green on every floor, because a superset clears any floor its subset
@@ -278,26 +301,27 @@ public sealed class AccessibilityCoverageTests
         // of the mismatch says which cause it is.
         int library = rule.Analyze(librarySubject).Inspected;
         XamlRuleResult result = rule.Analyze(allScan);
-        int sum = library + demo;
+        int sum = library + demo + baseline;
         Assert.True(
             result.Inspected == sum,
             sum > result.Inspected
-                ? $"The two subjects over-count the findings scan: library {library} + demo {demo} = {sum}, "
-                  + $"against the scan's {result.Inspected}. A subject has WIDENED until it overlaps the "
-                  + "other — which is what Load(all.Root) does, and the failure this assertion exists for."
-                : $"The two subjects under-count the findings scan: library {library} + demo {demo} = {sum}, "
-                  + $"against the scan's {result.Inspected}. Either a subject has NARROWED onto ground with "
-                  + "less markup, or a THIRD markup-bearing project has appeared under src — which then "
-                  + "needs its own subject and its own floor, exactly as the demo has.");
+                ? $"The three subjects over-count the findings scan: library {library} + demo {demo} + baseline "
+                  + $"tool {baseline} = {sum}, against the scan's {result.Inspected}. A subject has WIDENED until it "
+                  + "overlaps another — which is what Load(all.Root) does, and the failure this assertion exists for."
+                : $"The three subjects under-count the findings scan: library {library} + demo {demo} + baseline "
+                  + $"tool {baseline} = {sum}, against the scan's {result.Inspected}. Either a subject has NARROWED "
+                  + "onto ground with less markup, or a FOURTH markup-bearing project has appeared under src — which "
+                  + "then needs its own subject and its own floor, exactly as the demo and the baseline tool have.");
 
         // The same accounting for the stock names, because the stock floor reads its own count.
-        int stockSum = stock + stockRule.Analyze(demoSubject).Inspected;
+        int stockDemo = stockRule.Analyze(demoSubject).Inspected;
+        int stockSum = stock + stockDemo + stockRule.Analyze(baselineSubject).Inspected;
         int stockAll = stockRule.Analyze(allScan).Inspected;
         Assert.True(
             stockAll == stockSum,
-            $"The stock names' readings do not account for the scan: library {stock} + demo "
-            + $"{stockSum - stock} = {stockSum}, against the scan's {stockAll}. The stock floor's reading "
-            + "has left the library subject, and a floor cannot see a subject that widened.");
+            $"The stock names' readings do not account for the scan: library {stock} + demo {stockDemo} + "
+            + $"baseline tool {stockSum - stock - stockDemo} = {stockSum}, against the scan's {stockAll}. The stock "
+            + "floor's reading has left the library subject, and a floor cannot see a subject that widened.");
 
         // ⛔ The derivation itself, checked against the markup. Every reading in this gate derives from
         // ElementNames(), so one edit narrowing DerivedControls() narrows all of them together: measured,
