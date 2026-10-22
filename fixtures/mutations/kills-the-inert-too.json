@@ -1,0 +1,5 @@
+{
+  // Kills as a run records them, by mutation, for set-marked.json: the test marked inert killed as well,
+  // so its marker was wrong, and the judgement fails naming the mutation that showed it.
+  "the one place changes": ["A_test_with_no_marker", "A_test_inert_at_its_pin"]
+}

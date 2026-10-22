@@ -1,0 +1,38 @@
+// The shape of a test file, for the reader of a set's declared tests: a test under each attribute
+// it may carry, attributes stacked beside one, data holding a bracket of its own, and a public
+// method that is no test at all.
+
+public sealed class SampleTests
+{
+    [Fact]
+    public void A_plain_fact()
+    {
+    }
+
+    [AvaloniaFact]
+    public async Task An_avalonia_fact_that_awaits()
+    {
+    }
+
+    [Theory]
+    [InlineData(1)]
+    public void A_theory_with_its_data(int value)
+    {
+    }
+
+    [AvaloniaFact]
+    [EnglishChrome]
+    public void A_fact_carrying_another_attribute()
+    {
+    }
+
+    [Theory]
+    [InlineData("""{ "list": [ 3 ] }""")]
+    public void A_theory_whose_data_holds_a_bracket(string json)
+    {
+    }
+
+    public void Not_a_test()
+    {
+    }
+}

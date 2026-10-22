@@ -1,0 +1,12 @@
+{
+  // Five mutations in a known order, for the dealing of shards and for merges of them: shard 2 of 2 is
+  // the second and the fourth. Each applies once to the subject, which nothing compiles or runs.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "mutations": [
+    { "name": "one", "file": "fixtures/mutations/subject.txt", "old": "A file the set fixtures", "new": "A file", "expect": "green", "because": "the subject is read by no test" },
+    { "name": "two", "file": "fixtures/mutations/subject.txt", "old": "Nothing compiles it", "new": "Nothing builds it", "expect": "green", "because": "the subject is read by no test" },
+    { "name": "three", "file": "fixtures/mutations/subject.txt", "old": "nothing runs it", "new": "nothing reads it", "expect": "green", "because": "the subject is read by no test" },
+    { "name": "four", "file": "fixtures/mutations/subject.txt", "old": "The one place an edit applies.", "new": "Somewhere else.", "expect": "green", "because": "the subject is read by no test" },
+    { "name": "five", "file": "fixtures/mutations/subject.txt", "old": "A word said", "new": "A word written", "expect": "green", "because": "the subject is read by no test" }
+  ]
+}

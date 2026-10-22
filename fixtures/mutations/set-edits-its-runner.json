@@ -1,0 +1,27 @@
+{
+  // A set whose one red edit is to scripts/mutate-behaviour.cs, the script MutateBehaviourTests runs: the
+  // shape of the harness's own set without that set's edits, which stop applying while one of them is in
+  // place — a check of that set fails under every mutation of it, so a test reading one is killed by
+  // all of them. The edit is the script's title line, which no mutation of the harness touches. The
+  // project does not exist, so a run that got past the refusal fails its first build, having edited
+  // nothing. Read by MutateBehaviourTests under --check, and by a run it expects to be refused.
+  "project": "fixtures/mutations/no-such-project.csproj",
+  "tests": ["fixtures/mutations/declared-tests.txt"],
+  "mutations": [
+    {
+      "name": "the script's title loses its version",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "a .NET 10 file-based app.",
+      "new": "a file-based app.",
+      "killer": "A_plain_fact"
+    },
+    {
+      "name": "a change that should not matter",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  // A set holding a red mutation and no green one, which --check must refuse: a green run is the only one
+  // in which a test that fails under every mutation shows. Read by MutateBehaviourTests under --check.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/declared-tests.txt"],
+  "mutations": [
+    {
+      "name": "the one place changes",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Somewhere else.",
+      "killer": "A_plain_fact"
+    }
+  ]
+}

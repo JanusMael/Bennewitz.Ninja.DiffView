@@ -1,0 +1,36 @@
+{
+  // Three ways a set can be wrong before anything runs, each of which --check must name.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/declared-tests.txt"],
+  "mutations": [
+    {
+      "name": "an edit that applies twice",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "twice",
+      "new": "once",
+      "killer": "A_plain_fact"
+    },
+    {
+      "name": "an edit that applies nowhere",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "words this file never held",
+      "new": "anything",
+      "killer": "A_plain_fact"
+    },
+    {
+      "name": "a killer nobody declared",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Somewhere else.",
+      "killer": "Not_a_test"
+    },
+    {
+      "name": "a change that should not matter",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    }
+  ]
+}

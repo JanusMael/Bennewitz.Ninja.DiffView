@@ -1,0 +1,23 @@
+{
+  // A set every edit of which applies exactly once, against a subject nothing compiles, and whose
+  // killers its test file declares. Read by MutateBehaviourTests under --check and --list only.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/declared-tests.txt"],
+  "mutations": [
+    {
+      "name": "the one place changes",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Somewhere else.",
+      "killer": "A_plain_fact"
+    },
+    {
+      "name": "a change that should not matter",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    }
+  ]
+}

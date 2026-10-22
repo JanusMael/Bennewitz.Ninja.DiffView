@@ -1,0 +1,5 @@
+A file the set fixtures point their edits at. Nothing compiles it and nothing runs it: `--check`
+reads it and edits nothing.
+
+The one place an edit applies.
+A word said twice: twice.

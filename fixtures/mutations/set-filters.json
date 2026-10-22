@@ -1,0 +1,37 @@
+{
+  // One mutation for each way a run is filtered and built. Read by MutateBehaviourTests under --list
+  // only, which applies nothing, so the props file the last one edits need not exist.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/declared-tests.txt"],
+  "mutations": [
+    {
+      "name": "a red mutation naming its killer",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Somewhere else.",
+      "killer": "A_plain_fact"
+    },
+    {
+      "name": "a green mutation",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    },
+    {
+      "name": "a red mutation naming no killer",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Nowhere.",
+      "because": "any failure meets a red that names no test"
+    },
+    {
+      "name": "an edit to what restore reads",
+      "file": "fixtures/mutations/no-such.props",
+      "old": "Version=\"1.0.0\"",
+      "new": "Version=\"2.0.0\"",
+      "killer": "A_plain_fact"
+    }
+  ]
+}

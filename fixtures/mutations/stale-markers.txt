@@ -1,0 +1,17 @@
+// Two ways a marker is wrong before anything runs: the pin it was measured at has moved, and it
+// sits in a method that is no test — after one that is, so a body read to the file's end takes it.
+
+public sealed class StaleMarkerTests
+{
+    [Fact]
+    public void A_test_whose_pin_moved()
+    {
+        // inert-at-pin: Fixture.Package 0.9.0
+        Assert.True(true);
+    }
+
+    public void Not_a_test()
+    {
+        // inert-at-pin: Fixture.Package 1.0.0
+    }
+}

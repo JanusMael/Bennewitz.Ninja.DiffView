@@ -1,0 +1,15 @@
+{
+  // A key misspelt: "kiler" read as nothing would leave the killer unchecked, so the set is refused.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/declared-tests.txt"],
+  "mutations": [
+    {
+      "name": "a mutation whose killer is misspelt away",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Somewhere else.",
+      "kiler": "A_plain_fact",
+      "because": "the killer above was meant to be checked"
+    }
+  ]
+}

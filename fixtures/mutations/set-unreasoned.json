@@ -1,0 +1,12 @@
+{
+  // A mutation that names neither the test that must kill it nor why it expects what it does.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "mutations": [
+    {
+      "name": "a mutation that says nothing about itself",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place",
+      "new": "Some place"
+    }
+  ]
+}
