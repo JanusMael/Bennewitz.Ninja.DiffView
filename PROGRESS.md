@@ -511,12 +511,12 @@ inspects — seven buttons and the view, read by setting the floor past them —
 stock names' accounting gained the same third term, the buttons being stock names. Every interactive
 control in the window carries `AutomationProperties.Name`, and an `AutomationId` besides, and `BNXQ1004`
 reads it clean, there being no grid in it. `scripts/mutate-gates.cs` gained four mutations — the subject
-widened and narrowed, the stock term dropped, a button's name removed — so **116** mutations derive **82**
-guards, the new floor among them. The full run the gate file owed, in four worktrees over the step's
-commit: **all 116 as declared** — 112 killed by the test each names, 2 by the build and 2 green by design,
-nothing unexpected — and all 82 guards tripped first, in 15.7 minutes. ⚠ **This is the drift from
-decision 13 that step 5 foresaw**: `DECISIONS.md` records it beside step 6's, each for a proof harness and
-neither for the synthetic driver that is the decision's reason.
+widened and narrowed, the stock term dropped, a button's name removed — so it carries **116**, and the
+gate files hold **82** guards, the new floor among them. The full run the gate file owed, in four
+worktrees over the step's commit: **all 116 as declared** — 112 killed by the test each names, 2 by the
+build and 2 green by design, nothing unexpected — and all 82 guards tripped first, in 15.7 minutes. ⚠
+**This is the drift from decision 13 that step 5 foresaw**: `DECISIONS.md` records it beside step 6's,
+each for a proof harness and neither for the synthetic driver that is the decision's reason.
 
 **Fifty-four mutations, each declaring the test that must fail under it, all as declared, and none of
 the step's thirteen tests went unkilled** — `review-window`, with a green control. Run in four worktrees
