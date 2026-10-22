@@ -5,8 +5,8 @@
 **`main` carries everything through PR #40, and CI is green on it** — PR #40 merged on a full
 10-of-10, 2026-10-22. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 892** here, `Passed!`, by a local run — twelve
-more than at PR #39: plan 00034 step 7's thirteen, less step 1's tripwire. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 928** here, `Passed!`, by a local run — thirty-six
+more than at PR #40, all of them plan 00034 step 8's. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -70,14 +70,14 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 7 are done, and step 11 with step 7.**
+⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 8 are done, and step 11 with step 7.**
 `AgentBaseline` consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left
 accumulator against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 8 — the two
-stores across a restart — is next.** ⚠ And one thing none of the twelve steps names stands between the
-tool and the real consolidation the plan is done by: a start-up that is told a corpus and a seed and
-opens the review window on them. Nothing launches the window yet.
+is never edited again** — drift comes here, and superseding it means a new number. **Step 9 — narrow
+staleness — is next.** ⚠ And one thing none of the twelve steps names stands between the tool and the
+real consolidation the plan is done by: a start-up that is told a corpus, a seed and the decision file
+an earlier save wrote, and opens the review window on them. Nothing launches the window yet.
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -524,6 +524,56 @@ beside the two sets the change to `ReviewSession` owed, `review-session` and `se
 mutations, all as declared**, every declared test killed, in 15.6 minutes. ⚠ Five of them are killed by a
 wait: a key bound to nothing, or a button wired to the command that cannot move, starts no build, and the
 host waits its 30 seconds for one before it says so.
+
+⭐ **Step 8 is the two stores across a restart — and the durable one is a file now.** A save writes it
+beside the baseline and its report, `<name>.decisions.json`: every decision every run has made, in the
+order made, each take this run made read against the text being saved for decision 9c. A later run is
+handed what that file holds — `DecisionFile.Read` into the review's `earlier`, through
+`ReviewWindow.Review` or `ReviewSession` — and begins from it, its own decisions going after. The file is
+JSON, read as strictly as the manifest: a key, a kind, a shape or a version it does not know is refused
+rather than skipped, and so is a take whose hash is not its text's. ⛔ **Its kinds are closed at decision
+10's three, so a deferral cannot reach it even by hand**, and the session store is never written at all:
+a later run begins at the first candidate with nothing put off. The report beside a save lists the
+decisions this run made and counts the earlier ones, which the file keeps.
+
+The step's verification is four tests of `RestartTests`, each run deciding, saving and being disposed
+before the next is built from the files on disk.
+`RestartTests.Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them`
+leaves, defers, takes and drops, and a new run finds each decision but the deferral, whose version is in
+the file neither as a hash nor as words, and is offered again.
+`RestartTests.A_reworded_version_of_a_rejected_section_is_presented_again_and_an_identical_one_is_not`
+asks of the same words on the machine they were left on and on another — not offered — and of the rule
+reworded — offered. ⭐ Decision 9c's three points are the other two.
+`RestartTests.An_edited_take_is_saved_with_its_result_and_the_hash_its_source_had_over_normalised_text`
+takes JanusHalo's section from a file nested in a list item and in CRLF, edits it by hand and saves: the
+file holds the text taken, the result typed and the source's hash, restated in the test as SHA-256 of
+the normalised text and not of the bytes the machine holds.
+`RestartTests.An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review`
+then reads JanusHalo again — unwrapped and LF now, but saying the same — as *your edit stands*, and
+rewritten as *re-review*, with the result to review it against. Five more hold the save's reading of each
+take, its refusals and the window's part, and twenty-seven the file's own format, twenty-five of them
+refusals. The suite measured **928** here against 892, judged `healthy` by
+`catch-crash --check --expect auto`.
+
+⚠ **Readings the plan leaves open, made rather than assumed** — `DECISIONS.md` has each with its reason.
+*When*: the file is written at save and never as a decision is made, so it describes the baseline beside
+it, and a review abandoned before its save loses its decisions with its accumulator. *Edited*: a take is
+read while it is the last take or drop at its heading path — the same text, and it stays taken;
+different, and it is edited, with that text as its result; gone, and it is edited with none — while a
+take a later one replaced is history, kept as taken, and two sections at a take's path refuse the save,
+as they refuse a take. *Presented*: a version is offered while the store has decided nothing about that
+exact identity, and an edited take of that very candidate, still governing its path, is asked of its
+source, the hash taken against the hash now. *The source* is a label, so a candidate relabelled in a
+later run is answered by identity alone. ⚠ **And nothing in the window reads a standing yet**: the right
+still shows every section, decided before or not, and how a later run is pointed at the file is the
+start-up's, which the plan does not name.
+
+**Fifty-six mutations, each declaring the test that must fail under it, all as declared, and none of the
+step's twelve tests went unkilled** — `stores`, whose green control compares two hashes the other way
+round. Three of `section-decisions`' mutations were re-pointed at `SectionIdentity.HashOf`, now the one
+hash function a review and a decision file share. Run in four worktrees beside the three sets the change
+owed — `review-session`, `review-window` and `section-decisions`: **191 mutations, all as declared**,
+every declared test killed, in 12.9 minutes.
 
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with
