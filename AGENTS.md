@@ -203,8 +203,9 @@ no dates, no counts.
 - **An assertion that cannot fail at the current pin is marked, not claimed.** The line above it reads
   `// inert-at-pin: <package> <version>`, which excuses that one guard only while
   `Directory.Packages.props` pins the package at that version. A moved pin, or a mutation that trips the
-  guard anyway, fails the run. No marker stands at the current pins: the last one, on `BNXQ1004`'s
-  `Skipped` guard, came off when `2026.3.925` made that guard able to fail and a mutation proved it.
+  guard anyway, fails the run. No marker stands in the gate files at the current pins: the last one, on
+  `BNXQ1004`'s `Skipped` guard, came off when `2026.3.925` made that guard able to fail and a mutation
+  proved it.
 - **The proof is point-in-time: a full run is owed after any change to a gate file, a gated subject or
   a pin.** A full run takes minutes and CI does not make one. What CI runs is `--guards`, on Linux in
   `build-and-test` — the standing half, in seconds: it lists the derived guards, judges each marker
@@ -247,6 +248,70 @@ no dates, no counts.
   `bin/` while the source is reverted, so the run tests mutated code against clean markup — measured,
   `GridSlotTests` reported **nothing inspected** where it inspects its whole population, and the gate
   was briefly suspected of the harness's defect. Rebuild first.
+- ⭐ **A behaviour test is proven by `scripts/mutate-behaviour.cs`, from a set committed beside it** —
+  `tests/<project>/Mutations/<subject>.json`, read with `--set`; `docs/mutation-proofs.md` describes the
+  method. A set names its test project, the test files it holds to account, and for each mutation the
+  edit, the test that must fail under it (`killer`) and the words that failure must carry (`says`) — or
+  `expect: green` and why it should not matter. A full run fails while any declared test was killed by
+  no mutation; a kill by another test is `wrong-killer`, the declared test failing on other words
+  `wrong-assertion`, a host that died with no test failed `aborted`, and a key the set's types do not
+  know is refused rather than skipped, `"kiler"` read as nothing being a check silently dropped. Each
+  edit is reverted from a snapshot of the file's bytes, so a set runs over uncommitted work, and
+  `--check` proves every edit applies once and every killer is declared while running nothing. **A test
+  no mutation of ours can reach carries the gates' marker**, `// inert-at-pin: <package> <version>`, in
+  its body — `MarkdownOutlineTests` asks two questions of Markdig's CommonMark compliance rather than of
+  our code — and is excused while the set's pins hold that version: `Directory.Packages.props`, or the
+  `pins` file a set names, which is how the harness's own fixtures stay off the real pins. A moved pin,
+  a marker in no test the reader found and a test file in which it finds no test are setup faults, and a
+  marked test a mutation killed anyway fails the run and names the mutation; `--kills` judges recorded
+  kills in place of runs, which is how that judgement is proven. ⛔ **The harness's own set,
+  `tests/DiffView.Avalonia.Tests/Mutations/mutate-behaviour.json`, never runs from
+  `scripts/mutate-behaviour.cs` itself**: the tests it judges run `dotnet run` on that file, which
+  rebuilds the binary a harness started from it is running from — locked on Windows — so every test
+  would go red and every mutation read as killed. A dry run notes it and a run refuses it; run that set
+  with `--parallel` or from a copy of the script. ⛔ **And no test of the harness reads that set**: while
+  one of its mutations is in place that mutation's own edit no longer applies, so a check of the set
+  fails and a test reading it is killed by every mutation of it, its declared kill proving nothing.
+  `MutateBehaviourTests` reads no committed set, only `fixtures/mutations/` and the script's built-in
+  one — `set-edits-its-runner.json` is the shape of the harness's own set without its edits — and it was
+  the set's one green mutation, going red, that found the test which did not. ⭐ **Every committed set
+  carries a green mutation**, an edit equivalent by a stated law — addition or `Math.Max` commuting, an
+  interpolation as the concatenation it is — in the file most of the set's mutations edit, because a
+  green run is the only one in which a test failing under every mutation shows — **and the harness
+  refuses a set holding red mutations and no green one**, a setup fault judged on the whole set, never
+  on the part `--only` or `--shard` chose
+  (`MutateBehaviourTests.A_set_with_red_mutations_and_no_green_one_is_refused_before_anything_runs`,
+  `MutateBehaviourTests.A_shard_dealt_no_green_mutation_is_not_refused_for_it`). A check for a test
+  killed by every mutation was weighed and left out: as a fault it misfires on a small set aimed at one
+  test, which every mutation kills legitimately, and beside a green control a warning would say nothing
+  the control does not.
+- ⭐ **`--parallel <n>` runs every mutation of the sets it is given in `n` worktrees at once, uncommitted
+  work included.** It writes this checkout's state as a git tree through a temporary index — no commit
+  and no ref moved — cuts `n` detached worktrees from `HEAD`, loads that tree into each and checks each
+  holds it before anything builds; every worktree runs every `n`th mutation of each set (`--shard k/n
+  --emit <file>`) from the binary that started the run, so the harness's own set needs no copy there;
+  and `--merge` judges each set exactly as a sequential run does, refusing anything but every declared
+  mutation exactly once from shards of one `n` over that one tree. It never edits this checkout. Every
+  build and test run the harness starts is given `AVALONIA_TELEMETRY_OPTOUT=1`
+  (`Dotnet.BuildEnvironment`,
+  `MutateBehaviourTests.Every_build_and_test_run_the_harness_starts_has_Avalonias_telemetry_off`): the
+  collector Avalonia's build task starts before each compile once kept a worktree for three quarters of
+  an hour after its build. Anything else a build starts that holds a worktree, the harness names, with
+  how to remove it. **`--owed <ref>` runs only the sets a change owes** — one whose own file, pins, test
+  files or a file one of its mutations edits changed since the ref, committed or not — among those
+  named, or else every `tests/*/Mutations/*.json`; ⚠ it reads files rather than dependencies, so a
+  change to code no mutation edits can still owe a set a run it does not name, and it narrows the runs
+  between full ones without replacing any. Two trims, each measured before it was made: a mutation's
+  build skips the restore (6.4 s to 4.5), and a mutation naming its killer runs only the classes of the
+  set's test files (6.0 s to 1.7 for one class), a green one and a red one naming no killer keeping the
+  set's whole filter so that narrowing can relabel a failure and never pass one; `--list` prints what
+  each run filters to and whether its build restores, which is how both rules are held
+  (`MutateBehaviourTests.A_listed_mutation_says_what_its_run_filters_to_and_whether_its_build_restores`).
+  Measured on the Windows box over the five AgentBaseline sets, the same 176 mutations each time: **40.2
+  min** one at a time in this checkout before the trims, **32.8** in one worktree with them and **16.5**
+  in four, every run's verdicts the sequential run's mutation for mutation — the trims worth about a
+  fifth, and four worktrees about twice as fast as one rather than four times, each shard's builds
+  sharing the CPU with the other three's.
 - `PresenterHost` under `tests/DiffView.Avalonia.Tests/Presenter` is the fixture for presenter
   tests; `ThemeSwap` and `ThemeTargets` cover the ten theme targets.
 - **A test-host abort reads as a pass to any grep, so judge the whole summary.** When the host dies

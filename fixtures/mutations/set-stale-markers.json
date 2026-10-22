@@ -1,0 +1,17 @@
+{
+  // A set over a test file whose markers are wrong before anything runs, both of which --check must
+  // name: one measured at a pin that has moved, and one in no test at all.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/stale-markers.txt"],
+  "pins": "fixtures/mutations/pins.xml",
+  "mutations": [
+    {
+      "name": "a change that should not matter",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    }
+  ]
+}

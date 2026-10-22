@@ -22,6 +22,38 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **`scripts/mutate-behaviour` proves any project's tests, from a set committed beside them.** A set
+  under `tests/<project>/Mutations/`, read with `--set`, names its test project and test files and
+  each mutation's edit, the test that must fail under it and the words it must fail with; a full run
+  fails while any declared test was killed by no mutation, and a kill by another test, a failure in
+  other words, or a test host that died with nothing failed by name each read as what they are rather
+  than as a kill. `--check` proves every edit applies once and every killer is declared, running
+  nothing, and a key the set's types do not know is refused rather than skipped. Each edit is reverted
+  from a snapshot of the file's bytes, so a set runs over uncommitted work. A test no mutation can
+  reach is marked `// inert-at-pin: <package> <version>`, as the gates' are, and excused while the set's
+  pins hold that version; a moved pin, a marker in no test and a kill of a marked test each fail the
+  run instead. The proofs of plan 00034's
+  steps were scripts re-made in each session's scratchpad; they are sets now, and so is the harness's
+  own.
+- **`scripts/mutate-behaviour --parallel <n>` runs mutation sets in `n` worktrees at once, over
+  uncommitted work.** The checkout's state is written as a git tree through a temporary index and loaded
+  into each worktree, so nothing is committed; each worktree runs every `n`th mutation of each set, and
+  the shards are judged as one run per set, refused unless every mutation is there exactly once over
+  that one tree. `--owed <ref>` runs only the sets a change since that ref owes, several `--set` run one
+  after another, and a mutation's build skips the restore and, when the mutation names its killer, runs
+  only the set's own test classes — which `--list` now prints for each mutation. Over the five sets
+  proving `AgentBaseline`, the same 176 mutations each time, a run took 40.2 minutes one at a time
+  before the trims, 32.8 in one worktree with them and 16.5 in four. `docs/mutation-proofs.md` describes
+  the method.
+- **Every committed mutation set carries a green control, and `scripts/mutate-behaviour` refuses a set
+  without one.** Corpus, ingest, review-session and section-decisions each gained one — an edit
+  equivalent by a stated law, in the file most of the set's mutations edit — so a test that fails under
+  every mutation of its set shows as `unexpected-red` under the control instead of reading as killed by
+  each of the others. A set holding red mutations and no green one is a setup fault, judged on the whole
+  set rather than on the part a shard or `--only` chose.
+- `scripts/mutate-behaviour` gives every build and test run it starts `AVALONIA_TELEMETRY_OPTOUT=1`: the
+  collector Avalonia's build task starts before each compile once kept a `--parallel` worktree for three
+  quarters of an hour after its build, and the harness had to leave that worktree behind.
 - `docs/ui-automation-notes.md` is the pointer it was written to become. The Windows driving batches
   this repository measured landed in `Bennewitz.Ninja.XamlQuality`'s `docs/avalonia-gotchas.md` and
   `docs/ai-drivable-ui.md` on 2026-10-13, so the staged copy of each is replaced by a row naming where

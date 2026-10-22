@@ -1,0 +1,18 @@
+// A test file holding a marker at the pin its set's own pins file holds: one test a mutation must
+// kill, and one excused while that pin holds — unless a mutation kills it anyway.
+
+public sealed class MarkedTests
+{
+    [Fact]
+    public void A_test_with_no_marker()
+    {
+        Assert.True(true);
+    }
+
+    [Fact]
+    public void A_test_inert_at_its_pin()
+    {
+        // inert-at-pin: Fixture.Package 1.0.0
+        Assert.True(true);
+    }
+}

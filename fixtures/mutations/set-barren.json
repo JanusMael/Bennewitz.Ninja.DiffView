@@ -1,0 +1,16 @@
+{
+  // A set holding to account a file in which the reader finds no test — the subject, which holds none —
+  // so every judgement of its tests would pass on nothing read. --check must refuse it.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/subject.txt"],
+  "mutations": [
+    {
+      "name": "a change that should not matter",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    }
+  ]
+}

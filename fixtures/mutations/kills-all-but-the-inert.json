@@ -1,0 +1,5 @@
+{
+  // Kills as a run records them, by mutation, for set-marked.json: every test but the one marked inert
+  // at its pin, which is excused, so the judgement holds.
+  "the one place changes": ["A_test_with_no_marker"]
+}

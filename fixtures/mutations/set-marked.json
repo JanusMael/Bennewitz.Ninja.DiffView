@@ -1,0 +1,24 @@
+{
+  // A set over a test file holding a marker at the pin the set's own pins file holds. Read by
+  // MutateBehaviourTests under --check, and under --kills, which judges recorded kills and runs nothing.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": ["fixtures/mutations/marked-tests.txt"],
+  "pins": "fixtures/mutations/pins.xml",
+  "mutations": [
+    {
+      "name": "the one place changes",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Somewhere else.",
+      "killer": "A_test_with_no_marker"
+    },
+    {
+      "name": "a change that should not matter",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    }
+  ]
+}

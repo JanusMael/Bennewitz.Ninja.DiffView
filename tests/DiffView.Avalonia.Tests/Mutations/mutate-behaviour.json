@@ -1,0 +1,349 @@
+{
+  // The harness's own proof: every test in MutateBehaviourTests killed by a mutation of the reading
+  // it guards.
+  //
+  // ⛔ Run it with --parallel or from a COPY of the harness, never from scripts/mutate-behaviour.cs
+  // itself, which refuses: every test it judges runs `dotnet run scripts/mutate-behaviour.cs`, which
+  // rebuilds that file's own cached build — the one a harness started from that path is running from,
+  // and which Windows holds locked. Each inner build would fail, every test would go red, and every
+  // mutation would read as killed. --parallel's shards run from the binary that started them.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --parallel 4 --set tests/DiffView.Avalonia.Tests/Mutations/mutate-behaviour.json
+  //   or copy scripts/mutate-behaviour.cs to a directory outside the repository, then from the root:
+  //   dotnet run <copy>/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/mutate-behaviour.json
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.MutateBehaviourTests",
+  "tests": ["tests/DiffView.Avalonia.Tests/MutateBehaviourTests.cs"],
+  "mutations": [
+    {
+      "name": "a reading forgets where the trace stopped",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "        lines.Sort();",
+      "new": "        lines.Clear();",
+      "killer": "A_run_that_went_red_is_read_as_red_and_says_where_its_trace_stopped"
+    },
+    {
+      "name": "no run is ever read as passed",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "bool passed = log.Contains(\"Test run summary: Passed!\", StringComparison.Ordinal);",
+      "new": "bool passed = false;",
+      "killer": "A_run_that_stayed_green_is_read_as_green"
+    },
+    {
+      "name": "a red declaration that stayed green is not a survivor",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "            return \"survived\";",
+      "new": "            return Ok;",
+      "killer": "A_reading_that_disagrees_with_the_declaration_fails"
+    },
+    {
+      "name": "a green declaration is met by any run",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "return read.Verdict == \"green\" ? Ok : \"unexpected-red\";",
+      "new": "return Ok;",
+      "killer": "An_aborted_host_is_not_read_as_green"
+    },
+    {
+      "name": "a red with no test failed is read as a kill",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (read.Failed.Count == 0)",
+      "new": "if (read.Failed.Count < 0)",
+      "killer": "An_aborted_host_is_not_read_as_a_kill_either"
+    },
+    {
+      "name": "a failed test's name is misread",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "string name = m.Groups[\"name\"].Value;",
+      "new": "string name = m.Groups[\"name\"].Value + \"?\";",
+      "killer": "A_kill_by_the_declared_test_in_the_declared_words_is_as_declared"
+    },
+    {
+      "name": "the killer is never checked",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (declared.Killer is { } killer && !read.Failed.Contains(killer))",
+      "new": "if (declared.Killer is { } killer && read.Failed.Contains(killer) && killer.Length < 0)",
+      "killer": "A_kill_by_some_other_test_is_a_wrong_killer"
+    },
+    {
+      "name": "the declared words are never checked",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "return declared.Says is { } says && !log.Contains(says, StringComparison.Ordinal)",
+      "new": "return declared.Says is { } says && log.Contains(says, StringComparison.Ordinal) && says.Length < 0",
+      "killer": "The_declared_test_failing_in_other_words_is_a_wrong_assertion"
+    },
+    {
+      "name": "what was there before the edit reads as a stray",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (!was.Contains(entry) && !entry.EndsWith(declared, StringComparison.Ordinal))",
+      "new": "if (!entry.EndsWith(declared, StringComparison.Ordinal))",
+      "killer": "An_edit_that_changed_only_the_file_it_declared_has_strayed_nowhere"
+    },
+    {
+      "name": "a stray is seen and not recorded",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "                strayed.Add(entry);",
+      "new": "                strayed.Clear();",
+      "killer": "An_edit_that_wrote_outside_the_file_it_declared_is_caught_and_named"
+    },
+    {
+      "name": "--only narrows nothing",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": ": [.. plan.Mutations.Where(m => only.Any(o => m.Name.Contains(o, StringComparison.OrdinalIgnoreCase)))];",
+      "new": ": [.. plan.Mutations];",
+      "killer": "A_narrowed_list_is_narrowed"
+    },
+    {
+      "name": "a listed mutation drops its reason",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "        return $\"{expectation} — {reason}\";",
+      "new": "        return expectation;",
+      "killer": "Every_mutation_declares_the_file_it_may_touch_and_why_it_expects_what_it_does"
+    },
+    {
+      "name": "the reader of declared tests finds none",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (TestAttribute().IsMatch(line))",
+      "new": "if (TestAttribute().IsMatch(line) && line.Length < 0)",
+      "killer": "A_committed_set_is_checked_without_building_or_running_anything"
+    },
+    {
+      "name": "an attribute holding a bracket of its own ends the reader's walk upward",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (!line.StartsWith('['))",
+      "new": "if (!line.StartsWith('[') || line.IndexOf(']') < line.Length - 1)",
+      "killer": "A_committed_set_is_checked_without_building_or_running_anything",
+      "because": "the reader that matched brackets lost plan 00034 step 4's theory this way, and the set read that test as one no mutation was asked to kill"
+    },
+    {
+      "name": "a listed mutation hides its killer",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "string expectation = Killer is null ? Expect : $\"{Expect}, killed by {Killer}\";",
+      "new": "string expectation = Expect;",
+      "killer": "A_set_lists_the_killer_each_mutation_names_and_why_a_green_one_should_stay_green"
+    },
+    {
+      "name": "a killer nobody declared is let through",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (hasDeclaredTests && m.Killer is { } killer && !declared.Declares(killer))",
+      "new": "if (hasDeclaredTests && m.Killer is { } killer && declared.Declares(killer) && killer.Length < 0)",
+      "killer": "A_set_whose_edits_do_not_apply_once_or_name_a_stranger_is_refused_before_anything_runs"
+    },
+    {
+      "name": "a mutation with no reason is accepted",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (m.Killer is null && m.Because is null)",
+      "new": "if (m.Killer is null && m.Because is null && m.Name.Length < 0)",
+      "killer": "A_mutation_that_names_neither_its_killer_nor_why_is_refused"
+    },
+    {
+      "name": "a key the set's types do not know is skipped",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "    UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]",
+      "new": "    UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip)]",
+      "killer": "A_set_with_a_key_the_harness_does_not_know_is_refused_rather_than_ignored"
+    },
+    {
+      "name": "a marker is never read",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (!marker.Success)",
+      "new": "if (!marker.Success || marker.Success)",
+      "killer": "A_test_marked_inert_at_a_pin_its_set_still_holds_is_read_as_marked"
+    },
+    {
+      "name": "a set's own pins file is ignored",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "set.Pins ?? DefaultPins",
+      "new": "DefaultPins",
+      "killer": "A_test_marked_inert_at_a_pin_its_set_still_holds_is_read_as_marked",
+      "because": "the fixture's marker is then judged against Directory.Packages.props, which pins no Fixture.Package"
+    },
+    {
+      "name": "a moved pin still excuses the test it was measured at",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (pinned != marker.Version)",
+      "new": "if (pinned != marker.Version && marker.Version.Length < 0)",
+      "killer": "A_marker_whose_pin_moved_or_that_no_test_holds_is_refused_before_anything_runs"
+    },
+    {
+      "name": "a marker no test holds is let through",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "foreach (string stray in declared.StrayMarkers)",
+      "new": "foreach (string stray in declared.StrayMarkers.Where(_ => false))",
+      "killer": "A_marker_whose_pin_moved_or_that_no_test_holds_is_refused_before_anything_runs"
+    },
+    {
+      "name": "a test's body runs to the end of its file",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (lines[i].TrimEnd('\\r') == indent + \"}\")",
+      "new": "if (lines[i].TrimEnd('\\r') == indent + \"}\" && indent.Length < 0)",
+      "killer": "A_marker_whose_pin_moved_or_that_no_test_holds_is_refused_before_anything_runs",
+      "because": "the marker in the method after the test then reads as the test's own, and the stray is never seen"
+    },
+    {
+      "name": "a declared test no mutation killed passes",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "public bool Holds => (Unkilled.Count == 0 || Narrowed) && Belied.Count == 0;",
+      "new": "public bool Holds => (Unkilled.Count >= 0 || Narrowed) && Belied.Count == 0;",
+      "killer": "A_declared_test_no_mutation_killed_fails_the_judgement"
+    },
+    {
+      "name": "a marker excuses nothing",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "t.InertAt.Count == 0 && !killedBy.ContainsKey(t.Name))]",
+      "new": "!killedBy.ContainsKey(t.Name))]",
+      "killer": "A_test_marked_inert_and_killed_by_none_is_excused"
+    },
+    {
+      "name": "a marker excuses its test whatever killed it",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "t.InertAt.Count > 0 && killedBy.ContainsKey(t.Name)).Select",
+      "new": "t.InertAt.Count > 0 && killedBy.ContainsKey(t.Name) && t.Name.Length < 0).Select",
+      "killer": "A_test_marked_inert_that_a_mutation_killed_anyway_fails_the_judgement_and_names_the_mutation"
+    },
+    {
+      "name": "a kill is never recorded",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "        killedBy.TryAdd(test, mutation);",
+      "new": "        _ = killedBy.ContainsKey(test);",
+      "killer": "A_test_marked_inert_and_killed_by_none_is_excused",
+      "because": "a run's own kills and recorded ones go through the one RecordKills, so the recorded kill of the test with no marker is lost and that test reads as killed by none"
+    },
+    {
+      "name": "a test file in which the reader finds no test is let through",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "foreach (string file in declared.Barren)",
+      "new": "foreach (string file in declared.Barren.Where(_ => false))",
+      "killer": "A_test_file_in_which_the_reader_finds_no_test_is_refused"
+    },
+    {
+      "name": "recorded kills are judged with no test to judge",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (plan.Tests.Count == 0)",
+      "new": "if (plan.Tests.Count < 0)",
+      "killer": "Recorded_kills_with_no_set_to_judge_them_against_are_refused",
+      "because": "the built-in set names no test file, and its judgement would hold over nothing and say so"
+    },
+    {
+      "name": "a shard is dealt one place along",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "all.Where((_, position) => position % count == index - 1);",
+      "new": "all.Where((_, position) => position % count == index);",
+      "killer": "A_shard_is_every_nth_mutation_from_its_own_place"
+    },
+    {
+      "name": "--parallel takes whatever it is given with it",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "parallel is not null && (shard is not null || merge.Count > 0 ||",
+      "new": "parallel is not null && parallel < 0 && (shard is not null || merge.Count > 0 ||",
+      "killer": "Flags_that_contradict_each_other_are_refused_rather_than_resolved",
+      "because": "the test pairs --parallel with --merge, so with the refusal gone the merge runs first and refuses in other words, quickly, where a test pairing --parallel with a cheap flag would start a real parallel run"
+    },
+    {
+      "name": "a merge never asks what code its shards ran over",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (tree != expectedTree)",
+      "new": "if (tree != expectedTree && tree.Length < 0)",
+      "killer": "A_merge_of_every_shard_that_ran_over_other_code_is_refused"
+    },
+    {
+      "name": "a merge short of a mutation is let through",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (missing.Length > 0 || unknown.Length > 0)",
+      "new": "if (unknown.Length > 0)",
+      "killer": "A_merge_short_of_a_mutation_is_refused_and_names_it"
+    },
+    {
+      "name": "a shard given twice is let through",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (!shards.Add(index))",
+      "new": "if (!shards.Add(index) && index < 0)",
+      "killer": "A_shard_given_twice_is_refused",
+      "because": "the duplicate is then caught one step later, as a mutation two shards report, in words the test does not accept"
+    },
+    {
+      "name": "no change owes any set a run",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "return inputs.Select(Normal).FirstOrDefault(touched.Contains);",
+      "new": "return inputs.Select(Normal).FirstOrDefault(p => touched.Contains(p) && p.Length < 0);",
+      "killer": "Only_the_sets_a_change_touches_are_owed_a_run"
+    },
+    {
+      "name": "the harness never knows which script it runs from",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (AppContext.GetData(\"EntryPointFilePath\") is not string entry)",
+      "new": "if (AppContext.GetData(\"EntryPointFilePath\") is not string entry || entry.Length > 0)",
+      "killer": "A_dry_run_of_a_set_that_edits_the_script_running_it_says_a_run_would_need_a_copy"
+    },
+    {
+      "name": "a run from the script its set edits goes ahead",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (ownRunner is not null)\n{\n    Console.Error.WriteLine(",
+      "new": "if (ownRunner is not null && ownRunner.Length == 0)\n{\n    Console.Error.WriteLine(",
+      "killer": "A_run_of_a_set_that_edits_the_script_running_it_is_refused_before_anything_builds"
+    },
+    {
+      "name": "several sets pass whatever each one said",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "return codes.Contains(2) ? 2 : failed > 0 ? 1 : 0;",
+      "new": "return codes.Contains(2) ? 2 : 0;",
+      "killer": "Several_sets_run_one_after_another_each_judged_on_its_own"
+    },
+    {
+      "name": "a green mutation is narrowed to its set's test classes",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "Class is { } named ? [named] : Expect == \"red\" && Killer is not null ? setClasses : [];",
+      "new": "Class is { } named ? [named] : Expect == \"green\" || Killer is not null ? setClasses : [];",
+      "killer": "A_listed_mutation_says_what_its_run_filters_to_and_whether_its_build_restores"
+    },
+    {
+      "name": "a red mutation naming no killer is narrowed to its set's test classes",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "Class is { } named ? [named] : Expect == \"red\" && Killer is not null ? setClasses : [];",
+      "new": "Class is { } named ? [named] : Expect == \"red\" ? setClasses : [];",
+      "killer": "A_listed_mutation_says_what_its_run_filters_to_and_whether_its_build_restores"
+    },
+    {
+      "name": "a red mutation naming its killer runs the whole of its set",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "Class is { } named ? [named] : Expect == \"red\" && Killer is not null ? setClasses : [];",
+      "new": "Class is { } named ? [named] : Expect == \"red\" && Killer is not null && setClasses.Count < 0 ? setClasses : [];",
+      "killer": "A_listed_mutation_says_what_its_run_filters_to_and_whether_its_build_restores"
+    },
+    {
+      "name": "an edit to a props file builds without a restore",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "File.EndsWith(\".props\", StringComparison.OrdinalIgnoreCase)",
+      "new": "File.EndsWith(\".props-never\", StringComparison.OrdinalIgnoreCase)",
+      "killer": "A_listed_mutation_says_what_its_run_filters_to_and_whether_its_build_restores"
+    },
+    {
+      "name": "a set with no green mutation is let through",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (whole.Any(m => m.Expect == \"red\") && !whole.Any(m => m.Expect == \"green\"))",
+      "new": "if (whole.Any(m => m.Expect == \"red\") && !whole.Any(m => m.Expect == \"red\"))",
+      "killer": "A_set_with_red_mutations_and_no_green_one_is_refused_before_anything_runs"
+    },
+    {
+      "name": "the control rule reads only the part of a set this run chose",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (whole.Any(m => m.Expect == \"red\") && !whole.Any(m => m.Expect == \"green\"))",
+      "new": "if (mutations.Any(m => m.Expect == \"red\") && !mutations.Any(m => m.Expect == \"green\"))",
+      "killer": "A_shard_dealt_no_green_mutation_is_not_refused_for_it"
+    },
+    {
+      "name": "Avalonia's build telemetry is left on",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "new Dictionary<string, string>(StringComparer.Ordinal) { [\"AVALONIA_TELEMETRY_OPTOUT\"] = \"1\" };",
+      "new": "new Dictionary<string, string>(StringComparer.Ordinal);",
+      "killer": "Every_build_and_test_run_the_harness_starts_has_Avalonias_telemetry_off"
+    },
+    {
+      "name": "a test run may take twice as long before it is killed",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "TimeSpan.FromMinutes(10);",
+      "new": "TimeSpan.FromMinutes(20);",
+      "expect": "green",
+      "because": "no test here runs a mutation, so none of them meets the bound"
+    }
+  ]
+}

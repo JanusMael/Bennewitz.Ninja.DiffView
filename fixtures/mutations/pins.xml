@@ -1,0 +1,8 @@
+<Project>
+  <!-- The pins the marker fixtures are judged against, in Directory.Packages.props' own shape, so that
+       no fixture leans on a package this repository really pins: moving one of those is a change to
+       the build, and must never redden a test of the harness. -->
+  <ItemGroup>
+    <PackageVersion Include="Fixture.Package" Version="1.0.0" />
+  </ItemGroup>
+</Project>

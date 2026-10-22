@@ -1,0 +1,4 @@
+{
+  // Kills as a run records them, by mutation, for set-marked.json: none at all, so the test with no
+  // marker was killed by none and the judgement fails.
+}
