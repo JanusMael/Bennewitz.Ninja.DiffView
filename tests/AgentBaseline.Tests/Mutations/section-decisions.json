@@ -371,6 +371,51 @@
       "killer": "Blank_lines_after_a_section_leave_its_version_alone_and_a_changed_word_does_not"
     },
     {
+      "name": "the title stays in every path",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "ancestry.Skip(titled ? 1 : 0)",
+      "new": "ancestry.Skip(0)",
+      "killer": "A_take_between_files_titled_differently_goes_under_the_accumulators_own_title",
+      "says": "which the accumulator does not hold",
+      "because": "open item 22, measured: every take between two files titled differently was refused for want of a parent"
+    },
+    {
+      "name": "the title keeps a path of its own, so two files' titles are two sections",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "ancestry.Skip(titled ? 1 : 0)",
+      "new": "ancestry.Skip(titled && i > 0 ? 1 : 0)",
+      "killer": "Taking_a_title_retitles_the_accumulator_and_leaves_every_section_under_it_alone",
+      "says": "would change what it is not about"
+    },
+    {
+      "name": "no document is ever read as titled, so a drop that would make one renames nothing",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "bool titled = located.Count > 0 &&",
+      "new": "bool titled = located.Count < 0 &&",
+      "killer": "A_drop_that_would_leave_one_heading_at_the_top_is_refused_because_it_would_become_the_title"
+    },
+    {
+      "name": "the title's empty path is named in quotes, as nothing",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "headingPath.Length == 0 ? \"the title\" : $\"\\\"{headingPath}\\\"\";",
+      "new": "$\"\\\"{headingPath}\\\"\";",
+      "killer": "A_section_under_a_title_the_accumulator_lacks_is_refused_and_the_refusal_names_the_title"
+    },
+    {
+      "name": "a refusal to defer quotes the title's empty path",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "$\"this version of {MarkdownOutline.Spoken(section.HeadingPath)} is already",
+      "new": "$\"this version of \\\"{section.HeadingPath}\\\" is already",
+      "killer": "A_decision_settles_a_deferral_and_a_deferral_will_not_hide_a_decision"
+    },
+    {
+      "name": "identity hashes the path rather than the text",
+      "file": "src/AgentBaseline/SectionIdentity.cs",
+      "old": "Encoding.UTF8.GetBytes(section.Content)",
+      "new": "Encoding.UTF8.GetBytes(section.HeadingPath)",
+      "killer": "One_rule_in_two_files_titled_differently_is_one_identity"
+    },
+    {
       "name": "an edit's tail starts at its length plus its offset rather than its offset plus its length",
       "file": "src/AgentBaseline/AccumulatorEdits.cs",
       "old": "text.AsSpan(Offset + Length)",

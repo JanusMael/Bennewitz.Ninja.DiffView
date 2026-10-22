@@ -192,7 +192,7 @@ internal sealed class ReviewSession
         if (Durable.LatestFor(identity) is { } decided)
         {
             throw new DecisionRefusedException(
-                $"this version of \"{section.HeadingPath}\" is already {Spoken(decided.Kind)}, and putting it off "
+                $"this version of {MarkdownOutline.Spoken(section.HeadingPath)} is already {Spoken(decided.Kind)}, and putting it off "
                 + "would leave that decision standing where nobody can see it — decide it again instead");
         }
 
@@ -246,7 +246,7 @@ internal sealed class ReviewSession
         }
 
         throw new ArgumentException(
-            $"\"{section.HeadingPath}\" is not one of the sections of \"{Current.Candidate.Label}\", the candidate on the right",
+            $"{MarkdownOutline.Spoken(section.HeadingPath)} is not one of the sections of \"{Current.Candidate.Label}\", the candidate on the right",
             nameof(section));
     }
 

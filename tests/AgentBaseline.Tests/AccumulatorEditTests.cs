@@ -30,7 +30,7 @@ public sealed class AccumulatorEditTests
         string accumulator = Doc("# Rules", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", "");
         string candidate = Doc("# Rules", "", "## One", "", "Alpha, rewritten.", "", "", "## Two", "", "Beta.", "");
 
-        (string after, TakeResult result) = Take(accumulator, candidate, "Rules / One");
+        (string after, TakeResult result) = Take(accumulator, candidate, "One");
 
         Assert.Equal(TakeResult.Replaced, result);
         Assert.Equal(Doc("# Rules", "", "## One", "", "Alpha, rewritten.", "", "## Two", "", "Beta.", ""), after);
@@ -45,7 +45,7 @@ public sealed class AccumulatorEditTests
         string candidate = Doc("# Rules", "", "## One", "", "Alpha.", "", "", "", "## Two", "", "Beta, other.", "");
         MarkdownOutline outline = MarkdownOutline.Read(candidate);
 
-        (TextEdit edit, TakeResult result) = AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Rules / One").Single());
+        (TextEdit edit, TakeResult result) = AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("One").Single());
 
         Assert.Equal(TakeResult.Unchanged, result);
         Assert.Equal(accumulator, edit.ApplyTo(accumulator));
@@ -60,7 +60,7 @@ public sealed class AccumulatorEditTests
             "## Three", "", "Gamma.", "");
         string candidate = Doc("# Rules", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", "", "## Three", "", "Gamma.", "");
 
-        (string after, TakeResult result) = Take(accumulator, candidate, "Rules / Two");
+        (string after, TakeResult result) = Take(accumulator, candidate, "Two");
 
         Assert.Equal(TakeResult.Inserted, result);
         Assert.Equal(
@@ -76,7 +76,7 @@ public sealed class AccumulatorEditTests
         string accumulator = Doc("# Rules", "", "Intro.", "", "## Two", "", "Beta.", "");
         string candidate = Doc("# Rules", "", "Intro.", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", "");
 
-        (string after, TakeResult result) = Take(accumulator, candidate, "Rules / One");
+        (string after, TakeResult result) = Take(accumulator, candidate, "One");
 
         Assert.Equal(TakeResult.Inserted, result);
         Assert.Equal(Doc("# Rules", "", "Intro.", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", ""), after);
@@ -85,13 +85,50 @@ public sealed class AccumulatorEditTests
     [Fact]
     public void With_no_parent_and_no_preceding_sibling_a_section_goes_first_of_all_below_the_preamble()
     {
-        string accumulator = Doc("Above every heading.", "", "# Second", "", "Body.", "");
+        // Two headings at the top of the accumulator, so it has no title for the new one to unseat: a
+        // heading alone would be the title, and one set above it would take that from it.
+        string accumulator = Doc("Above every heading.", "", "# Second", "", "Body.", "", "# Third", "", "More.", "");
         string candidate = Doc("# First", "", "Lead.", "", "# Second", "", "Body.", "");
 
         (string after, TakeResult result) = Take(accumulator, candidate, "First");
 
         Assert.Equal(TakeResult.Inserted, result);
-        Assert.Equal(Doc("Above every heading.", "", "# First", "", "Lead.", "", "# Second", "", "Body.", ""), after);
+        Assert.Equal(
+            Doc("Above every heading.", "", "# First", "", "Lead.", "", "# Second", "", "Body.", "", "# Third", "", "More.", ""),
+            after);
+    }
+
+    [Fact]
+    public void A_take_between_files_titled_differently_goes_under_the_accumulators_own_title()
+    {
+        // ⭐ Open item 22, measured: with the title in the path, the candidate's sections went under a
+        // heading the accumulator did not have, and every such take was refused for want of a parent.
+        string accumulator = Doc("# AGENTS.md — cross-file contracts for DiffView", "", "## 1. Hard invariants", "", "Alpha.", "");
+        MarkdownOutline candidate = MarkdownOutline.Read(Doc(
+            "# AGENTS.md — operational rules for LLM contributors", "", "## 1. Hard invariants", "", "Alpha.", "", "## 2. Testing", "", "Beta.", ""));
+
+        // By index rather than by path: where the take lands is what is under test, and a lookup by the
+        // path would fail before the take was ever asked.
+        (TextEdit edit, TakeResult result) = AccumulatorEdits.Take(accumulator, candidate, 2);
+
+        Assert.Equal(TakeResult.Inserted, result);
+        Assert.Equal(
+            Doc("# AGENTS.md — cross-file contracts for DiffView", "", "## 1. Hard invariants", "", "Alpha.", "", "## 2. Testing", "", "Beta.", ""),
+            edit.ApplyTo(accumulator));
+    }
+
+    [Fact]
+    public void Taking_a_title_retitles_the_accumulator_and_leaves_every_section_under_it_alone()
+    {
+        // The titles of two files are versions of one section, at the empty path, so a take of one
+        // replaces the other rather than setting a second title beside it. By index, as above.
+        string accumulator = Doc("# Old title", "", "Old lead.", "", "## One", "", "Alpha.", "");
+        MarkdownOutline candidate = MarkdownOutline.Read(Doc("# New title", "", "New lead.", "", "## One", "", "Alpha, theirs.", ""));
+
+        (TextEdit edit, TakeResult result) = AccumulatorEdits.Take(accumulator, candidate, 0);
+
+        Assert.Equal(TakeResult.Replaced, result);
+        Assert.Equal(Doc("# New title", "", "New lead.", "", "## One", "", "Alpha.", ""), edit.ApplyTo(accumulator));
     }
 
     [Fact]
@@ -100,12 +137,12 @@ public sealed class AccumulatorEditTests
         string candidate = Doc("# Rules", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", "");
 
         // Ending in a line ending: a blank line before the new section, and the ending kept.
-        (string ended, _) = Take(Doc("# Rules", "", "## One", "", "Alpha.", ""), candidate, "Rules / Two");
+        (string ended, _) = Take(Doc("# Rules", "", "## One", "", "Alpha.", ""), candidate, "Two");
         Assert.Equal(Doc("# Rules", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", ""), ended);
 
         // Ending without one: the section above keeps its text exactly, so it gains no blank line, and
         // the document still ends without one.
-        (string unended, _) = Take(Doc("# Rules", "", "## One", "", "Alpha."), candidate, "Rules / Two");
+        (string unended, _) = Take(Doc("# Rules", "", "## One", "", "Alpha."), candidate, "Two");
         Assert.Equal(Doc("# Rules", "", "## One", "", "Alpha.", "## Two", "", "Beta."), unended);
     }
 
@@ -117,27 +154,43 @@ public sealed class AccumulatorEditTests
         MarkdownOutline outline = MarkdownOutline.Read(candidate);
 
         DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(
-            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Rules / Two / Detail").Single()));
+            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Two / Detail").Single()));
 
-        Assert.Contains("no \"Rules / Two\" to put \"Detail\" under", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("\"Detail\" goes under \"Two\", which the accumulator does not hold", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_section_under_a_title_the_accumulator_lacks_is_refused_and_the_refusal_names_the_title()
+    {
+        // Two headings at the top, so the accumulator has no title: the candidate's Two has nothing to go
+        // under, and its own title would sit beside them as a third rather than above them. The title's
+        // path is empty, and a message quoting it would name nothing at all.
+        string accumulator = Doc("# First", "", "Alpha.", "", "# Second", "", "Beta.", "");
+        MarkdownOutline outline = MarkdownOutline.Read(Doc("# Rules", "", "## Two", "", "Beta.", ""));
+
+        DecisionRefusedException under = Assert.Throws<DecisionRefusedException>(
+            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Two").Single()));
+        Assert.Contains("\"Two\" goes under the title, which the accumulator does not hold", under.Message, StringComparison.Ordinal);
+
+        DecisionRefusedException title = Assert.Throws<DecisionRefusedException>(
+            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("").Single()));
+        Assert.Contains("taking the title would change what it is not about", title.Message, StringComparison.Ordinal);
     }
 
     [Fact]
     public void A_take_is_refused_where_the_accumulator_holds_its_path_or_its_parents_twice()
     {
         string twice = Doc("# Rules", "", "## One", "", "Alpha.", "", "## One", "", "Alpha, again.", "");
-        string candidate = Doc("# Rules", "", "## One", "", "Alpha, rewritten.", "");
+        string candidate = Doc("# Rules", "", "## One", "", "Alpha, rewritten.", "", "### Detail", "", "Fine print.", "");
         MarkdownOutline outline = MarkdownOutline.Read(candidate);
 
         DecisionRefusedException replace = Assert.Throws<DecisionRefusedException>(
-            () => AccumulatorEdits.Take(twice, outline, outline.IndicesOf("Rules / One").Single()));
-        Assert.Contains("holds 2 sections at \"Rules / One\"", replace.Message, StringComparison.Ordinal);
+            () => AccumulatorEdits.Take(twice, outline, outline.IndicesOf("One").Single()));
+        Assert.Contains("holds 2 sections at \"One\"", replace.Message, StringComparison.Ordinal);
 
-        string parentTwice = Doc("# Rules", "", "## One", "", "Alpha.", "", "# Rules", "", "Again.", "");
-        MarkdownOutline withChild = MarkdownOutline.Read(Doc("# Rules", "", "## Two", "", "Beta.", ""));
         DecisionRefusedException insert = Assert.Throws<DecisionRefusedException>(
-            () => AccumulatorEdits.Take(parentTwice, withChild, withChild.IndicesOf("Rules / Two").Single()));
-        Assert.Contains("holds 2 sections at \"Rules\"", insert.Message, StringComparison.Ordinal);
+            () => AccumulatorEdits.Take(twice, outline, outline.IndicesOf("One / Detail").Single()));
+        Assert.Contains("holds 2 sections at \"One\", so a take cannot tell which of them \"Detail\" goes under", insert.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -150,9 +203,9 @@ public sealed class AccumulatorEditTests
         MarkdownOutline outline = MarkdownOutline.Read(candidate);
 
         DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(
-            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Rules / Two").Single()));
+            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Two").Single()));
 
-        Assert.Contains("\"Rules / Three\" would no longer be a heading", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("\"Three\" would no longer be a heading", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -165,9 +218,9 @@ public sealed class AccumulatorEditTests
         MarkdownOutline outline = MarkdownOutline.Read(candidate);
 
         DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(
-            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Rules / One").Single()));
+            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("One").Single()));
 
-        Assert.Contains("\"Rules / One / Detail\", which would read as \"Rules / Detail\"", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("\"One / Detail\", which would read as \"Detail\"", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -195,9 +248,9 @@ public sealed class AccumulatorEditTests
         MarkdownOutline outline = MarkdownOutline.Read(candidate);
 
         DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(
-            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Rules / Foo rules").Single()));
+            () => AccumulatorEdits.Take(accumulator, outline, outline.IndicesOf("Foo rules").Single()));
 
-        Assert.Contains("the section taken, which would read as \"Rules / [Foo] rules\"", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("the section taken, which would read as \"[Foo] rules\"", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -205,9 +258,9 @@ public sealed class AccumulatorEditTests
     {
         string accumulator = Doc("# Rules", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", "", "## Three", "", "Gamma.", "");
 
-        (TextEdit edit, MarkdownSection dropped) = AccumulatorEdits.Drop(accumulator, "Rules / Two");
+        (TextEdit edit, MarkdownSection dropped) = AccumulatorEdits.Drop(accumulator, "Two");
 
-        Assert.Equal("Rules / Two", dropped.HeadingPath);
+        Assert.Equal("Two", dropped.HeadingPath);
         Assert.Equal(Doc("# Rules", "", "## One", "", "Alpha.", "", "## Three", "", "Gamma.", ""), edit.ApplyTo(accumulator));
     }
 
@@ -216,13 +269,14 @@ public sealed class AccumulatorEditTests
     {
         string accumulator = Doc("# Rules", "", "## One", "", "Alpha.", "", "## Two", "", "Beta.", "");
 
-        Assert.Equal(Doc("# Rules", "", "## One", "", "Alpha.", ""), Drop(accumulator, "Rules / Two"));
+        Assert.Equal(Doc("# Rules", "", "## One", "", "Alpha.", ""), Drop(accumulator, "Two"));
     }
 
     [Fact]
     public void Dropping_a_documents_only_section_from_its_first_line_leaves_nothing()
     {
-        Assert.Equal(string.Empty, Drop(Doc("## Only", "", "Text.", ""), "Only"));
+        // A document's only heading is its title, and a title's path is empty.
+        Assert.Equal(string.Empty, Drop(Doc("## Only", "", "Text.", ""), ""));
     }
 
     [Fact]
@@ -230,11 +284,11 @@ public sealed class AccumulatorEditTests
     {
         string accumulator = Doc("# Rules", "", "## One", "", "Alpha.", "", "## One", "", "Alpha, again.", "");
 
-        DecisionRefusedException never = Assert.Throws<DecisionRefusedException>(() => AccumulatorEdits.Drop(accumulator, "Rules / Two"));
-        Assert.Contains("holds no section at \"Rules / Two\"", never.Message, StringComparison.Ordinal);
+        DecisionRefusedException never = Assert.Throws<DecisionRefusedException>(() => AccumulatorEdits.Drop(accumulator, "Two"));
+        Assert.Contains("holds no section at \"Two\"", never.Message, StringComparison.Ordinal);
 
-        DecisionRefusedException twice = Assert.Throws<DecisionRefusedException>(() => AccumulatorEdits.Drop(accumulator, "Rules / One"));
-        Assert.Contains("holds 2 sections at \"Rules / One\"", twice.Message, StringComparison.Ordinal);
+        DecisionRefusedException twice = Assert.Throws<DecisionRefusedException>(() => AccumulatorEdits.Drop(accumulator, "One"));
+        Assert.Contains("holds 2 sections at \"One\"", twice.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -242,9 +296,27 @@ public sealed class AccumulatorEditTests
     {
         string accumulator = Doc("# Rules", "", "## One", "", "Alpha.", "", "### Detail", "", "Fine print.", "", "## Two", "", "Beta.", "");
 
-        DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(() => AccumulatorEdits.Drop(accumulator, "Rules / One"));
+        DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(() => AccumulatorEdits.Drop(accumulator, "One"));
 
-        Assert.Contains("\"Rules / One / Detail\", which would read as \"Rules / Detail\"", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("\"One / Detail\", which would read as \"Detail\"", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_drop_that_would_leave_one_heading_at_the_top_is_refused_because_it_would_become_the_title()
+    {
+        // ⚠ The global CLAUDE.md's shape: two headings at the top, so no title and every path whole. Drop
+        // one and the other is the title — its path empty, and its own left out of every path under it.
+        // Nothing in the text below it moves, and still every section there is renamed, so the guard
+        // refuses it; whether a document has a title is a property of the whole document.
+        string accumulator = Doc("# Working preferences", "", "## Deliverables are files", "", "Alpha.", "", "# Fable family", "", "Beta.", "");
+
+        DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(() => AccumulatorEdits.Drop(accumulator, "Fable family"));
+
+        Assert.Contains("\"Working preferences\", which would read as the title", refused.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"Working preferences / Deliverables are files\", which would read as \"Deliverables are files\"",
+            refused.Message,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -254,6 +326,6 @@ public sealed class AccumulatorEditTests
         // a table that counted CRLF as two lines would put every edit after the first one off by a line.
         string accumulator = "# Rules\r\n\r\n## One\r\n\r\nAlpha.\r\n\r\n## Two\r\n\r\nBeta.\r\n";
 
-        Assert.Equal("# Rules\r\n\r\n## One\r\n\r\nAlpha.\r\n", Drop(accumulator, "Rules / Two"));
+        Assert.Equal("# Rules\r\n\r\n## One\r\n\r\nAlpha.\r\n", Drop(accumulator, "Two"));
     }
 }

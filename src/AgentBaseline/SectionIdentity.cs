@@ -23,10 +23,12 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// two of them being a markdown hard line break.
 /// </para>
 /// <para>
-/// ⚠ The heading path includes every ancestor, a document's own title among them, so two files
-/// titled differently share no path at all. That is decision 6 as step 2 built it, and step 6 keeps
-/// it; whether a sole top-level title belongs in identity is open, and this type is the one place it
-/// would change.
+/// ⭐ <b>A document's title is in no heading path</b>, so one rule is one identity in two files titled
+/// differently — <c>## 1. Hard invariants</c> in each project's <c>AGENTS.md</c> — and the titles
+/// themselves share the empty path, as versions of one section. Decision 6 as step 2 built it took
+/// every ancestor; Brian settled open item 22 on 2026-10-22 before step 8 writes a key to disk, after
+/// which a key's shape is a migration. <see cref="MarkdownOutline"/> is where the path is built, and the
+/// remarks there say what makes a heading the title.
 /// </para>
 /// </remarks>
 /// <param name="HeadingPath">The rule: <see cref="MarkdownSection.HeadingPath"/>.</param>

@@ -4435,6 +4435,16 @@ document's title and is left out of every heading path; the global `CLAUDE.md`, 
 headings are sections, keeps its paths. ⛔ It lands before step 8 writes a key to disk, after which a
 key's shape is a migration.
 
+⚠ **Landed the same day, with two readings the decision leaves open and one cost.** *The top* is the
+outline's and not level 1: the title is the first heading when every heading after it is deeper, because
+a path is built from what sits under what — `## T` over `### a` read as `# T` over `## a` did before,
+and still does. *A document of one heading* is all title. The cost: whether a document has a title is a
+property of the whole document, so a take or a drop that would give it one or take it away renames every
+section under it, and step 6's guard refuses it — a childless `# Fable family` can no longer be dropped
+from the global `CLAUDE.md` — and two copies of one file that differ in it share no path. Measured that
+day, no copy does: the 26 project files under `C:\c\cl` with a heading all have a title, and the global
+`CLAUDE.md` on this box and on JanusHalo opens on the same two top-level headings.
+
 ## The converged mutation runner is a dotnet tool from XamlQuality
 
 Brian, 2026-10-22, settling open item 23. `scripts/mutate-behaviour.cs` and

@@ -1,5 +1,6 @@
 // Plan 00034 step 2: the parse. Markdig as a locator, one line-base boundary.
 // Ported from the step's scratch proof, so it can be run again rather than re-made.
+// And open item 22: a document's title is in no heading path, and what makes a heading the title.
 {
   "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
   "tests": [
@@ -89,6 +90,41 @@
       "old": "int preambleEnd = located.Count > 0 ? located[0].FirstLine : lines.Length;",
       "new": "int preambleEnd = located.Count > 0 ? located[0].FirstLine : 0;",
       "killer": "A_document_with_no_heading_at_all_is_all_preamble_and_no_sections"
+    },
+    {
+      "name": "the title stays in every path",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "ancestry.Skip(titled ? 1 : 0)",
+      "new": "ancestry.Skip(0)",
+      "killer": "A_documents_title_is_in_no_heading_path_so_its_sections_keep_theirs_whatever_it_is_called"
+    },
+    {
+      "name": "a heading as deep as the first one leaves it the title",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "l.Heading.Level > located[0].Heading.Level",
+      "new": "l.Heading.Level >= located[0].Heading.Level",
+      "killer": "Two_headings_at_the_top_of_the_outline_are_sections_and_neither_is_a_title"
+    },
+    {
+      "name": "a sole level-1 heading is the title wherever it stands",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "bool titled = located.Count > 0 && located.Skip(1).All(l => l.Heading.Level > located[0].Heading.Level);",
+      "new": "bool titled = located.Count(l => l.Heading.Level == located.Min(m => m.Heading.Level)) == 1;",
+      "killer": "Two_headings_at_the_top_of_the_outline_are_sections_and_neither_is_a_title"
+    },
+    {
+      "name": "the title is read from level 1 rather than from the outline",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "bool titled = located.Count > 0 && located.Skip(1)",
+      "new": "bool titled = located.Count > 0 && located[0].Heading.Level == 1 && located.Skip(1)",
+      "killer": "A_title_is_the_top_of_the_outline_whatever_its_level"
+    },
+    {
+      "name": "a document of one heading has no title",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "bool titled = located.Count > 0 &&",
+      "new": "bool titled = located.Count > 1 &&",
+      "killer": "A_title_is_the_top_of_the_outline_whatever_its_level"
     },
     {
       "name": "a section's first line has nothing added to it",
