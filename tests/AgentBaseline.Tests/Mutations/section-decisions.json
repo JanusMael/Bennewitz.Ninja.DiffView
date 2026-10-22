@@ -359,15 +359,15 @@
     {
       "name": "identity hashes a section's blank lines too",
       "file": "src/AgentBaseline/SectionIdentity.cs",
-      "old": "Encoding.UTF8.GetBytes(section.Content)",
-      "new": "Encoding.UTF8.GetBytes(section.Text)",
+      "old": "HashOf(section.Content)",
+      "new": "HashOf(section.Text)",
       "killer": "Blank_lines_after_a_section_leave_its_version_alone_and_a_changed_word_does_not"
     },
     {
       "name": "identity trims the trailing spaces that make a hard line break",
       "file": "src/AgentBaseline/SectionIdentity.cs",
-      "old": "Encoding.UTF8.GetBytes(section.Content)",
-      "new": "Encoding.UTF8.GetBytes(section.Content.TrimEnd())",
+      "old": "HashOf(section.Content)",
+      "new": "HashOf(section.Content.TrimEnd())",
       "killer": "Blank_lines_after_a_section_leave_its_version_alone_and_a_changed_word_does_not"
     },
     {
@@ -411,8 +411,8 @@
     {
       "name": "identity hashes the path rather than the text",
       "file": "src/AgentBaseline/SectionIdentity.cs",
-      "old": "Encoding.UTF8.GetBytes(section.Content)",
-      "new": "Encoding.UTF8.GetBytes(section.HeadingPath)",
+      "old": "HashOf(section.Content)",
+      "new": "HashOf(section.HeadingPath)",
       "killer": "One_rule_in_two_files_titled_differently_is_one_identity"
     },
     {

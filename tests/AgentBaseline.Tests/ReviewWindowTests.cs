@@ -121,7 +121,10 @@ public sealed class ReviewWindowTests
 
         // ⛔ Decision 9: the seed machine's own file is read and never written.
         Assert.Equal(seedBytes, File.ReadAllBytes(queue.Seed.Path));
-        Assert.Equal($"Saved the baseline to {output}, and its provenance to {Path.ChangeExtension(output, ".provenance.md")}.", window.OutcomeText.Text);
+        Assert.Equal(
+            $"Saved the baseline to {output}, its provenance to {Path.ChangeExtension(output, ".provenance.md")}, "
+            + $"and its decisions to {Path.ChangeExtension(output, ".decisions.json")}.",
+            window.OutcomeText.Text);
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }

@@ -1,0 +1,427 @@
+{
+  // Plan 00034 step 8: the two stores across a restart — the decision file a save writes and a later
+  // run reads, what that run is told of each version it meets, and decision 9c's three points. Every
+  // test in the two files is held to it: a full run fails while any is killed by none.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/stores.json
+  //
+  // Two mutations were considered and left out. Matching a version by its hash alone changes nothing
+  // these fixtures can show, no two of their sections sharing a text under two headings; and writing the
+  // file without its trailing line ending is caught by the format's own pin, which the first mutation
+  // against the writer already proves.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/RestartTests.cs",
+    "tests/AgentBaseline.Tests/DecisionFileTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "an earlier run's decisions are counted as this run's",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "        Inherited = decisions.Count;\n",
+      "new": "",
+      "killer": "The_report_lists_the_decisions_this_run_made_and_the_file_keeps_every_runs_as_it_read_them"
+    },
+    {
+      "name": "this run's decisions are every run's",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "decisions[Inherited..]",
+      "new": "decisions[0..]",
+      "killer": "The_report_lists_the_decisions_this_run_made_and_the_file_keeps_every_runs_as_it_read_them"
+    },
+    {
+      "name": "a version is known by its heading path alone, so a reworded rejection still hides it",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "int latest = decisions.FindLastIndex(d => d.Section == version);",
+      "new": "int latest = decisions.FindLastIndex(d => d.Section.HeadingPath == version.HeadingPath);",
+      "killer": "A_reworded_version_of_a_rejected_section_is_presented_again_and_an_identical_one_is_not",
+      "because": "plan 00034 step 8: a reworded version of a rejected section is presented again"
+    },
+    {
+      "name": "nothing is decided about the first decision made",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "if (latest < 0)",
+      "new": "if (latest <= 0)",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them"
+    },
+    {
+      "name": "a version left reads as dropped",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "DecisionKind.Rejected => StandingKind.Rejected,",
+      "new": "DecisionKind.Rejected => StandingKind.Dropped,",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them"
+    },
+    {
+      "name": "a version nobody decided is not offered",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "internal bool IsPresented => Kind is StandingKind.Undecided or StandingKind.ReReview;",
+      "new": "internal bool IsPresented => Kind is StandingKind.ReReview;",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them",
+      "says": "A section put off in one run is not offered in the next."
+    },
+    {
+      "name": "a source that moved under an edit is not offered",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "internal bool IsPresented => Kind is StandingKind.Undecided or StandingKind.ReReview;",
+      "new": "internal bool IsPresented => Kind is StandingKind.Undecided;",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review",
+      "says": "An edit whose source has moved is not offered for review."
+    },
+    {
+      "name": "an edit is never asked of its source, so an unchanged one reads as merely taken",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "decisions[governing] is { Kind: DecisionKind.Taken, Edited: true } edit",
+      "new": "decisions[governing] is { Kind: DecisionKind.Taken, Edited: true, Text: null } edit",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review",
+      "because": "decision 9c: without the source now, the source then and the result cannot separate the edit that stands from the one to review"
+    },
+    {
+      "name": "any candidate carrying the version is asked about the edit, not only the one it was taken from",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "\n            && string.Equals(edit.Source, source, StringComparison.Ordinal))",
+      "new": ")",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review"
+    },
+    {
+      "name": "an unchanged source reads re-review and a rewritten one your edit stands",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "edit.Section.Hash == version.Hash ? StandingKind.EditStands : StandingKind.ReReview",
+      "new": "edit.Section.Hash != version.Hash ? StandingKind.EditStands : StandingKind.ReReview",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review"
+    },
+    {
+      "name": "a later decision about the very version does not answer it, so a rewrite left is asked again",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "\n            && governing >= latest",
+      "new": "",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review"
+    },
+    {
+      "name": "a moved source reads as an unchanged one",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "$\"taken from {from} and then edited: {from} has rewritten this, re-review it\"",
+      "new": "$\"taken from {from} and then edited: {from} is unchanged, your edit stands\"",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review",
+      "because": "plan 00034 step 8: the two cases are told apart — source unchanged reads your edit stands, source moved reads re-review"
+    },
+    {
+      "name": "a take then edited reads as one merely taken",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "                StandingKind.Taken when Decision!.Edited => $\"taken from {from} and then edited\",\n",
+      "new": "",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review",
+      "because": "decision 9c: next month reads taken from janushalo and then edited rather than already taken"
+    },
+    {
+      "name": "a version left reads as taken",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "$\"already left, from {from}\"",
+      "new": "$\"already taken, from {from}\"",
+      "killer": "A_reworded_version_of_a_rejected_section_is_presented_again_and_an_identical_one_is_not"
+    },
+    {
+      "name": "a take governs nothing, so no take is ever read as edited",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "d.Kind != DecisionKind.Rejected",
+      "new": "d.Kind == DecisionKind.Dropped",
+      "killer": "An_edited_take_is_saved_with_its_result_and_the_hash_its_source_had_over_normalised_text",
+      "says": "the file says it was not"
+    },
+    {
+      "name": "a leave governs as a take does, so a take left on another machine afterwards is not read",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "d.Kind != DecisionKind.Rejected",
+      "new": "d.Kind >= DecisionKind.Taken",
+      "killer": "A_save_reads_each_take_against_the_section_it_left_and_only_while_that_section_follows_from_it"
+    },
+    {
+      "name": "a take is read against the left after a later take replaced it",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "if (take.Kind != DecisionKind.Taken || GoverningAt(take.Section.HeadingPath) != i)",
+      "new": "if (take.Kind != DecisionKind.Taken)",
+      "killer": "A_save_reads_each_take_against_the_section_it_left_and_only_while_that_section_follows_from_it"
+    },
+    {
+      "name": "a later save reads again the takes an earlier run made",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "for (int i = Inherited; i < kept.Count; i++)",
+      "new": "for (int i = 0; i < kept.Count; i++)",
+      "killer": "The_report_lists_the_decisions_this_run_made_and_the_file_keeps_every_runs_as_it_read_them"
+    },
+    {
+      "name": "an edited take keeps its flag and not its result",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "kept[i] = take with { Edited = true, Result = result };",
+      "new": "kept[i] = take with { Edited = true };",
+      "killer": "An_edited_take_is_saved_with_its_result_and_the_hash_its_source_had_over_normalised_text",
+      "because": "plan 00034 step 8: a test that reloads only the flag passes while the store holds neither"
+    },
+    {
+      "name": "a take is saved as edited exactly when it was not",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "if (!string.Equals(result, take.Text, StringComparison.Ordinal))",
+      "new": "if (string.Equals(result, take.Text, StringComparison.Ordinal))",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them",
+      "says": "is the text it took"
+    },
+    {
+      "name": "two sections at a take's path are read as none",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "if (held.Count > 1)",
+      "new": "if (held.Count > 2)",
+      "killer": "A_save_that_cannot_tell_what_a_take_became_is_refused_and_writes_nothing"
+    },
+    {
+      "name": "a take the left no longer holds is saved as taken",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "held.Count == 1 ? left.Sections[held[0]].Content : null",
+      "new": "held.Count == 1 ? left.Sections[held[0]].Content : take.Text",
+      "killer": "A_save_reads_each_take_against_the_section_it_left_and_only_while_that_section_follows_from_it"
+    },
+    {
+      "name": "a take is read against its section's blank lines too",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "left.Sections[held[0]].Content",
+      "new": "left.Sections[held[0]].Text",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them"
+    },
+    {
+      "name": "a deferral is read from the file as a rejection",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "\"rejected\" => DecisionKind.Rejected,",
+      "new": "\"rejected\" or \"deferred\" => DecisionKind.Rejected,",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why",
+      "because": "decision 10's poisoning by hand: a deferral written into the file would be read as left, and the rule never offered again"
+    },
+    {
+      "name": "a decision's key the reader does not know is read past",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "RefuseUnknownKeys(item, DecisionKeys, what);",
+      "new": "",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "the file's key the reader does not know is read past",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "RefuseUnknownKeys(root, FileKeys, \"the decision file\");",
+      "new": "",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "any version is read",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": " || number != Version)",
+      "new": ")",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a take's hash is not checked against its text",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "if (SectionIdentity.HashOf(text) != hash)",
+      "new": "if (SectionIdentity.HashOf(text) == null)",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a hash in lower case is read",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "!hash.All(char.IsAsciiHexDigitUpper)",
+      "new": "!hash.All(char.IsAsciiHexDigit)",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a hash a digit short is read",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "hash.Length != 64 ||",
+      "new": "hash.Length < 63 ||",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a drop may name a source",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "RefuseKey(item, \"source\", what, \"a drop comes from no candidate\");",
+      "new": "",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a leave may carry a take's text",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "RefuseTakesOwn(item, what, \"a leave\");",
+      "new": "",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a take not edited may carry a result",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "RefuseKey(item, \"result\", what, \"a take that was not edited has none\");",
+      "new": "",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "an edit's result may be the text it took",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "if (edited == text)",
+      "new": "if (edited is null && text is null)",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "the file escapes a rule's own characters",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,\n",
+      "new": "",
+      "killer": "Every_kind_of_decision_is_written_as_the_file_holds_it_and_read_back_as_it_was"
+    },
+    {
+      "name": "the file's lines end in CRLF",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "NewLine = \"\\n\",",
+      "new": "NewLine = \"\\r\\n\",",
+      "killer": "Every_kind_of_decision_is_written_as_the_file_holds_it_and_read_back_as_it_was"
+    },
+    {
+      "name": "a take's edited flag is not written",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "writer.WriteBoolean(\"edited\", decision.Edited);",
+      "new": "",
+      "killer": "Every_kind_of_decision_is_written_as_the_file_holds_it_and_read_back_as_it_was"
+    },
+    {
+      "name": "an edit made away is left out of the file rather than written as null",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "writer.WriteString(\"result\", decision.Result);",
+      "new": "if (decision.Result is { } result) { writer.WriteString(\"result\", result); }",
+      "killer": "Every_kind_of_decision_is_written_as_the_file_holds_it_and_read_back_as_it_was"
+    },
+    {
+      "name": "a write goes straight over the file",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "File.WriteAllBytes(partial, bytes);\n            File.Move(partial, path, overwrite: true);",
+      "new": "File.WriteAllBytes(path, bytes);",
+      "killer": "A_write_that_cannot_finish_leaves_the_file_it_would_replace_as_it_was",
+      "because": "the file holds every earlier run's decisions, so a write torn half way through loses them all"
+    },
+    {
+      "name": "a write that failed leaves its partial file behind",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "                File.Delete(partial);\n",
+      "new": "",
+      "killer": "A_write_that_cannot_finish_leaves_the_file_it_would_replace_as_it_was",
+      "says": "A write that failed left its partial file behind."
+    },
+    {
+      "name": "a session forgets the decisions it was given",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Durable = new DurableStore(earlier ?? []);",
+      "new": "Durable = new DurableStore([]);",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them"
+    },
+    {
+      "name": "a standing is asked in the first candidate's name",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "return Durable.StandingOf(section, Current.Candidate.Label);",
+      "new": "return Durable.StandingOf(section, Queue.Items[0].Candidate.Label);",
+      "killer": "An_edit_whose_source_is_unchanged_reads_your_edit_stands_and_one_whose_source_moved_reads_re_review"
+    },
+    {
+      "name": "a standing does not ask whether the section is the right's",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "        IndexInCurrent(section);\n        return Durable.StandingOf",
+      "new": "        return Durable.StandingOf",
+      "killer": "A_reworded_version_of_a_rejected_section_is_presented_again_and_an_identical_one_is_not"
+    },
+    {
+      "name": "the decision file may be written over a file the corpus read",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "RefuseAnyFileRead(session.Queue, decisions, \"its decision file\");",
+      "new": "",
+      "killer": "A_save_never_puts_its_decision_file_over_a_file_the_corpus_read"
+    },
+    {
+      "name": "a save writes no decision file",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "DecisionFile.Write(decisions, kept);",
+      "new": "",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them"
+    },
+    {
+      "name": "a save writes the decisions without reading a take against the left",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "IReadOnlyList<SectionDecision> kept = session.Durable.Reconcile(session.Accumulator);",
+      "new": "IReadOnlyList<SectionDecision> kept = session.Durable.Decisions;",
+      "killer": "An_edited_take_is_saved_with_its_result_and_the_hash_its_source_had_over_normalised_text",
+      "says": "the file says it was not"
+    },
+    {
+      "name": "a save reads its takes only after it has written the baseline",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "IReadOnlyList<SectionDecision> kept = session.Durable.Reconcile(session.Accumulator);\n\n        PaneWriter.Write(baseline, session.Accumulator, encoding: null, LineEnding.Lf);",
+      "new": "PaneWriter.Write(baseline, session.Accumulator, encoding: null, LineEnding.Lf);\n        IReadOnlyList<SectionDecision> kept = session.Durable.Reconcile(session.Accumulator);",
+      "killer": "A_save_that_cannot_tell_what_a_take_became_is_refused_and_writes_nothing"
+    },
+    {
+      "name": "the decision file is named for the baseline's whole file name",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "Path.ChangeExtension(baselinePath, \".decisions.json\")",
+      "new": "baselinePath + \".decisions.json\"",
+      "killer": "A_review_the_window_saved_is_taken_up_by_the_next_window_with_every_decision_it_made"
+    },
+    {
+      "name": "the report counts no earlier decision",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "if (earlier > 0)",
+      "new": "if (earlier < 0)",
+      "killer": "The_report_lists_the_decisions_this_run_made_and_the_file_keeps_every_runs_as_it_read_them"
+    },
+    {
+      "name": "one earlier decision is counted as many",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "earlier == 1",
+      "new": "earlier < 1",
+      "killer": "A_reworded_version_of_a_rejected_section_is_presented_again_and_an_identical_one_is_not"
+    },
+    {
+      "name": "the report lists every run's decisions as this run's",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "IReadOnlyList<SectionDecision> decisions = session.Durable.Made;",
+      "new": "IReadOnlyList<SectionDecision> decisions = session.Durable.Decisions;",
+      "killer": "The_report_lists_the_decisions_this_run_made_and_the_file_keeps_every_runs_as_it_read_them"
+    },
+    {
+      "name": "the window forgets the decisions it was given",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "session = new ReviewSession(queue, View, earlier);",
+      "new": "session = new ReviewSession(queue, View);",
+      "killer": "A_review_the_window_saved_is_taken_up_by_the_next_window_with_every_decision_it_made"
+    },
+    {
+      "name": "the window does not say where the decisions went",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": ", and its decisions to {saved.DecisionsPath}.\");",
+      "new": ".\");",
+      "killer": "A_review_the_window_saved_is_taken_up_by_the_next_window_with_every_decision_it_made"
+    },
+    {
+      "name": "a version is hashed from another encoding of its text",
+      "file": "src/AgentBaseline/SectionIdentity.cs",
+      "old": "Encoding.UTF8.GetBytes(content)",
+      "new": "Encoding.Unicode.GetBytes(content)",
+      "killer": "An_edited_take_is_saved_with_its_result_and_the_hash_its_source_had_over_normalised_text",
+      "because": "decision 6's hash is SHA-256 of the UTF-8, restated in the test rather than asked of the code under it"
+    },
+    {
+      "name": "a version is hashed in lower-case hex, which the decision file does not read",
+      "file": "src/AgentBaseline/SectionIdentity.cs",
+      "old": "Convert.ToHexString(SHA256",
+      "new": "Convert.ToHexStringLower(SHA256",
+      "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them",
+      "says": "is not a SHA-256 in upper-case hex"
+    },
+    {
+      "name": "an edit's hashes are compared the other way round",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "edit.Section.Hash == version.Hash",
+      "new": "version.Hash == edit.Section.Hash",
+      "expect": "green",
+      "because": "a control: string equality is symmetric, so every standing comes out the same — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

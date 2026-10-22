@@ -204,7 +204,12 @@ public sealed class BaselineOutputTests
         {
             SavedBaseline saved = BaselineOutput.Write(session, output);
 
-            Assert.Equal(new SavedBaseline(output, Path.Combine(tree.PathOf("Baseline"), "AGENTS.provenance.md")), saved);
+            Assert.Equal(
+                new SavedBaseline(
+                    output,
+                    Path.Combine(tree.PathOf("Baseline"), "AGENTS.provenance.md"),
+                    Path.Combine(tree.PathOf("Baseline"), "AGENTS.decisions.json")),
+                saved);
             Assert.Equal(Encoding.UTF8.GetBytes(Seed), File.ReadAllBytes(output));
             Assert.EndsWith(
                 "\n\n## Decisions, in the order made\n\nNone: no section was taken, left or dropped.\n",

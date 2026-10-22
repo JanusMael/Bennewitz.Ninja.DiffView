@@ -85,18 +85,19 @@ internal sealed partial class ReviewWindow : Window
 
     /// <summary>
     /// Starts reviewing <paramref name="queue"/>: its seed on the left as the accumulator, its first
-    /// candidate on the right. A window holds one review.
+    /// candidate on the right, and <paramref name="earlier"/> — the decisions earlier runs made, read back
+    /// from the decision file a save wrote — in its durable store. A window holds one review.
     /// </summary>
     /// <exception cref="InvalidOperationException">This window already holds a review.</exception>
     /// <exception cref="CorpusRefusedException">The queue holds nothing to review; the window is untouched.</exception>
-    internal ReviewSession Review(ReviewQueue queue)
+    internal ReviewSession Review(ReviewQueue queue, IReadOnlyList<SectionDecision>? earlier = null)
     {
         if (session is not null)
         {
             throw new InvalidOperationException("this window already holds a review, and a second one is a second window");
         }
 
-        session = new ReviewSession(queue, View);
+        session = new ReviewSession(queue, View, earlier);
         ShowPosition();
         foreach (ReviewCommand command in commands)
         {
@@ -210,7 +211,7 @@ internal sealed partial class ReviewWindow : Window
         try
         {
             SavedBaseline saved = BaselineOutput.Write(review, path);
-            Say($"Saved the baseline to {saved.BaselinePath}, and its provenance to {saved.ReportPath}.");
+            Say($"Saved the baseline to {saved.BaselinePath}, its provenance to {saved.ReportPath}, and its decisions to {saved.DecisionsPath}.");
         }
         catch (Exception ex) when (ex is SaveRefusedException or IOException or UnauthorizedAccessException)
         {
