@@ -1,3 +1,4 @@
+using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView;
 using Bennewitz.Ninja.DiffView.Core;
 
@@ -6,8 +7,9 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// <summary>
 /// The review: the seed's text on the left as an accumulator, edited by hand and never replaced, and
 /// the queue's candidates shown on the right one at a time — plan 00034 step 5, <i>cycling with the
-/// accumulator intact</i>. Each pane shows its document's normalised text, which is the text the queue
-/// counted every candidate's changes over.
+/// accumulator intact</i> — and the four decisions made about a candidate's sections, step 6. Each
+/// pane shows its document's normalised text, which is the text the queue counted every candidate's
+/// changes over.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,6 +32,19 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// its <see cref="PaneSource.Path"/>, and the header's menu offers that save the moment the side is
 /// dirty, so a left built from the seed's file would offer to overwrite that machine's live file —
 /// which decision 9 exists to rule out. The baseline is written by this tool, to a new path, at step 10.
+/// </para>
+/// <para>
+/// ⭐ <b>A take and a drop are edits of the left's own document</b>, positioned by a parse of the left's
+/// live text and checked before they are made — <see cref="AccumulatorEdits"/>, decision 5 — never a
+/// copy over the diff's alignment, which over a reordered candidate writes one rule over another. Each
+/// is one edit, so one undo takes it back. A <c>leave</c> and a <c>defer</c> write nothing to the left:
+/// the first goes to the <see cref="DurableStore"/>, the second to the <see cref="SessionStore"/>, and
+/// that difference is the one decision 10 turns on.
+/// </para>
+/// <para>
+/// ⚠ The stores record what was decided, and the left is the operator's to go on editing — an undo of
+/// a take, or the take edited by hand. Reconciling the two is decision 9c's work at save, which reads the
+/// left's section against the text the take recorded.
 /// </para>
 /// <para>
 /// Every title ends with its candidate's own file name, because the control chooses a pane's grammar
@@ -77,8 +92,14 @@ internal sealed class ReviewSession
     /// <summary>The seed and the candidates under review, in the order they are reviewed.</summary>
     internal ReviewQueue Queue { get; }
 
+    /// <summary>Taken, rejected and dropped: what the next run must know was decided.</summary>
+    internal DurableStore Durable { get; } = new();
+
+    /// <summary>Where the review is, and what it has put off for now.</summary>
+    internal SessionStore Session { get; } = new();
+
     /// <summary>Where in <see cref="ReviewQueue.Items"/> the right pane is.</summary>
-    internal int Position { get; private set; }
+    internal int Position => Session.Position;
 
     /// <summary>The candidate the right pane shows.</summary>
     internal QueuedCandidate Current => Queue.Items[Position];
@@ -122,12 +143,119 @@ internal sealed class ReviewSession
         Show(index);
     }
 
+    /// <summary>
+    /// Takes <paramref name="section"/> — one of the right's sections — into the accumulator: its
+    /// version replaces the left's section at the same heading path, or is inserted where the candidate
+    /// has it when the left holds none. Recorded as taken, with the content taken.
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="section"/> is not one of the current candidate's.</exception>
+    /// <exception cref="DecisionRefusedException">
+    /// The take cannot be placed, or would change another section; nothing is written or recorded.
+    /// </exception>
+    internal TakeResult Take(MarkdownSection section)
+    {
+        int index = IndexInCurrent(section);
+        TextDocument left = view.LeftDocument;
+        (TextEdit edit, TakeResult result) = AccumulatorEdits.Take(left.Text, Current.Candidate.Document.Outline, index);
+        if (result != TakeResult.Unchanged)
+        {
+            left.Replace(edit.Offset, edit.Length, edit.Text);
+        }
+
+        Decide(new SectionDecision(DecisionKind.Taken, SectionIdentity.Of(section), Current.Candidate.Label, section.Content));
+        return result;
+    }
+
+    /// <summary>
+    /// Leaves <paramref name="section"/> — one of the right's sections — out of the baseline, durably:
+    /// the same version is not offered again. The left is not touched.
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="section"/> is not one of the current candidate's.</exception>
+    internal void Leave(MarkdownSection section)
+    {
+        IndexInCurrent(section);
+        Decide(new SectionDecision(DecisionKind.Rejected, SectionIdentity.Of(section), Current.Candidate.Label, null));
+    }
+
+    /// <summary>
+    /// Puts <paramref name="section"/> — one of the right's sections — off for this session, deciding
+    /// nothing: it is held in the session store and never in the durable one. The left is not touched.
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="section"/> is not one of the current candidate's.</exception>
+    /// <exception cref="DecisionRefusedException">
+    /// That version is already decided, and putting it off would leave the decision standing unseen.
+    /// </exception>
+    internal void Defer(MarkdownSection section)
+    {
+        IndexInCurrent(section);
+        SectionIdentity identity = SectionIdentity.Of(section);
+        if (Durable.LatestFor(identity) is { } decided)
+        {
+            throw new DecisionRefusedException(
+                $"this version of \"{section.HeadingPath}\" is already {Spoken(decided.Kind)}, and putting it off "
+                + "would leave that decision standing where nobody can see it — decide it again instead");
+        }
+
+        Session.Defer(new DeferredSection(identity, Current.Candidate.Label));
+    }
+
+    /// <summary>
+    /// Drops the accumulator's own section at <paramref name="headingPath"/> from the baseline, durably:
+    /// the only decision that makes the baseline lose something the machines had (decision 10).
+    /// </summary>
+    /// <exception cref="DecisionRefusedException">
+    /// The left holds no section at that path, or two, or dropping it would move another; nothing is
+    /// written or recorded.
+    /// </exception>
+    internal void Drop(string headingPath)
+    {
+        TextDocument left = view.LeftDocument;
+        (TextEdit removal, MarkdownSection dropped) = AccumulatorEdits.Drop(left.Text, headingPath);
+        left.Replace(removal.Offset, removal.Length, removal.Text);
+        Decide(new SectionDecision(DecisionKind.Dropped, SectionIdentity.Of(dropped), null, null));
+    }
+
     private void Show(int index)
     {
-        Position = index;
+        Session.Position = index;
         Candidate candidate = Queue.Items[index].Candidate;
         view.RightSource = new PaneSource(candidate.Document.Text) { Title = TitleOf(candidate.Label, candidate) };
     }
+
+    /// <summary>Records a durable decision, which settles any deferral of the same version.</summary>
+    private void Decide(SectionDecision decision)
+    {
+        Durable.Record(decision);
+        Session.Settle(decision.Section);
+    }
+
+    /// <summary>
+    /// Where <paramref name="section"/> is among the current candidate's sections. By reference: a
+    /// section is a handle on the right's own outline, and an equal one from elsewhere is not it.
+    /// </summary>
+    private int IndexInCurrent(MarkdownSection section)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+        IReadOnlyList<MarkdownSection> sections = Current.Candidate.Document.Outline.Sections;
+        for (int i = 0; i < sections.Count; i++)
+        {
+            if (ReferenceEquals(sections[i], section))
+            {
+                return i;
+            }
+        }
+
+        throw new ArgumentException(
+            $"\"{section.HeadingPath}\" is not one of the sections of \"{Current.Candidate.Label}\", the candidate on the right",
+            nameof(section));
+    }
+
+    private static string Spoken(DecisionKind kind) => kind switch
+    {
+        DecisionKind.Taken => "taken",
+        DecisionKind.Rejected => "left",
+        _ => "dropped",
+    };
 
     private static string TitleOf(string name, Candidate candidate) =>
         $"{name} — {System.IO.Path.GetFileName(candidate.Path)}";

@@ -2,13 +2,12 @@
 
 ## Resume
 
-**`main` carries everything through PR #36, and CI is green on it** — PR #36 merged on a full
+**`main` carries everything through PR #37, and CI is green on it** — PR #37 merged on a full
 10-of-10, 2026-10-20. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 816** here, `Passed!`, by a local run — sixty-two
-more than at PR #36, fifty-three of them step 4's and nine step 5's. ⛔ **The Linux total is
-deliberately not written down**: it is read
-off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
+wrong the moment it is true.* **Windows measured 872** here, `Passed!`, by a local run — fifty-six
+more than at PR #37, twenty-seven of them step 6's and twenty-nine the proof harness's. ⛔ **The Linux
+total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
@@ -74,12 +73,12 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen, and steps 1 to 5 are done.** `AgentBaseline`
+⭐ **`plans/00034` is approved, committed and frozen, and steps 1 to 6 are done.** `AgentBaseline`
 consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator
 against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 6 — take, leave,
-drop and defer, and the session store they write to — is next.**
+is never edited again** — drift comes here, and superseding it means a new number. **Step 7 — the loop end to
+end, cycling by the *next* command — is next**, and a window for that command is what pays step 11.
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -320,6 +319,137 @@ changes over normalised text, so the review would be a different diff from the o
 ordered by; a test now feeds it the CRLF and list-nested shapes §2 measured. And nothing asserted the
 two null guards.
 
+**Step 6 is take, leave, drop and defer, and the stores they write to — and the negative held.**
+`ReviewSession` gains the four verbs. A **take** and a **drop** are edits of the left's own document,
+placed by a parse of its live text — `AccumulatorEdits`, decision 5 — and never by the diff. The
+step's negative test takes a section from a candidate reordered so that the line diff pairs its Two
+with the accumulator's Three, a pairing the test reads off the view's own blocks as its premise, so the
+fixture cannot quietly stop misaligning; every other section comes out byte-identical. A mutation that
+places the take by the alignment instead, as draft 1's `CopyToLeft` did, writes Two over Three and is
+killed by exactly that assertion. Each edit is one `Replace`, so one undo takes it back and the edits
+typed before it stand. A **leave** goes to the durable store and a **defer** to the session store, and
+⛔ the poisoning decision 10 exists to prevent is a mutation here — a deferral written to the durable
+store as a rejection — killed by the test that says what each store holds. Both stores are in memory
+until step 8, which is where they are read back across a restart. The suite measured **859** here
+against 816 before it, judged `healthy` by `catch-crash --check --expect auto`.
+
+⭐ **Every edit is checked before it is written**, and that is what makes the placement safe rather than
+merely right. The result is parsed, and every section the decision is not about must come out
+byte-identical at the same heading path, with the text above the first heading unchanged — otherwise
+nothing is written, and the refusal names what would have moved. It refuses what no placement rule can
+make safe: a section whose fence never closes, which set mid-document turns every heading after it into
+code; a heading a level deeper, which would re-parent the sections under it; a setext heading against a
+paragraph, which takes the paragraph into its title; and — the one only this check sees — a heading
+whose link resolves in its own file and not in the accumulator, so it lands under another path while
+nothing around it moves.
+
+⚠ **Readings the plan leaves open, made rather than assumed.** *Placement*: a take of a path the
+accumulator holds replaces that section's content; one it lacks goes after the nearest preceding
+sibling the accumulator holds and everything under it, or first under its parent — and ⛔ the parent
+must be held, because a section put anywhere else sits under another heading and changes its own path,
+so that take is refused with *take that section first*. *Blank lines*: a take carries a section's
+content without its trailing blank lines and leaves the accumulator's own separation where it was; a
+drop removes the section and the blank lines after it. *Granularity*: a section is a heading and the
+lines up to the next heading of any level, so a drop that would leave sections orphaned under the
+heading above is refused — drop those first. *Identity*: decision 6's hash is over that same content,
+so a rule set off by other blank lines, or moved from the middle of a file to its end, is the same
+version; trailing spaces stay, two of them being a hard line break. *Handles*: a section handed to a
+verb must be one of the right's own, by reference — a title that reads the same, line for line, in the
+candidate before is refused. *Deciding again*: the durable store keeps every decision in order and
+answers with the latest; a durable decision settles a deferral of the same version, and deferring a
+version already decided is refused, because the decision would stand where nobody can see it. *Undo
+and hand edits*: the stores record what was decided and the left stays the operator's to edit;
+reconciling the two is decision 9c's work at save, against the text each take recorded.
+
+⛔ **And one finding the plan's identity rule did not anticipate, now open item 22.** A heading path
+includes its document's own title, and the project corpus titles its `AGENTS.md` files per
+repository while their sections agree — so no section of one matches a section of another, and every
+take between two differently titled files is refused for want of its parent. Step 6 keeps decision 6
+as step 2 built it, with identity computed in `SectionIdentity` alone so that a change lands in one
+place; the decision is Brian's, and it is owed before step 8 writes a key to disk.
+
+**Fifty mutations, each declaring the test that must fail under it and, where it matters, the words it
+must fail with; all fifty killed as declared, and none of the step's twenty-seven tests went
+unkilled.** Two more were considered and left out as **equivalent**, each read before it was dropped: a
+take written as `left.Text = …` is one `Replace` over the whole document in AvaloniaEdit, so the text
+and the single step of undo come out the same; and a sibling search walked past the parent finds
+nothing more, no section before its parent sharing that parent.
+
+⭐ **The proof harness is committed now, and a step's proof is data beside its tests** — Brian,
+2026-10-20: *"keep your reusable tools around and make any reasonably reusable tools reusable"*. Steps
+2 to 5 were each proven by a script re-made in that session's scratchpad, and the handoff for this
+step said to rebuild it from a description. `scripts/mutate-behaviour.cs`, the committed sibling, could
+be pointed at nothing but the library's tests; it now reads a set named by `--set` — one per step under
+`tests/AgentBaseline.Tests/Mutations/`, `outline`, `ingest`, `corpus`, `review-session` and
+`section-decisions` — judges a named killer and the words it must say, fails a full run on any declared
+test no mutation killed, and reverts each edit from a snapshot, so a proof runs before its work is
+committed. It honours the gates' `inert-at-pin` marker as well, which step 2's two tests of Markdig's
+CommonMark compliance have carried since that step's own proof named them: a marked test is excused
+while the set's pins still hold its version, a moved pin or a marker in no test is a setup fault, and a
+kill of a marked test fails the run, the marker having been wrong. Ported from the old scripts and run
+again over this step's code, **126 mutations, all as declared, over 85 declared tests, every one
+killed but the two excused as inert at Markdig 1.4.1** — the evidence that step 6's changes to
+`MarkdownOutline` and `ReviewSession` left the earlier steps' tests guarding. The harness proved its
+own tests the same way, **30 mutations, all as declared, every one of its 24 tests killed**, from a
+copy of itself, because the tests it judges rebuild the script it would be running from. ⚠ **Porting
+step 4's proof found the harness's first reader of a test file wrong**: it matched an attribute's
+brackets, stopped at the `]` inside step 4's `[InlineData("""{ "candidates": [ 3 ] }""")]` and lost
+the theory, so `--check` called three mutations'
+killer undeclared — a test the reader never saw, reported as one nobody wrote. It reads by lines now,
+against a fixture of that shape, and a test file in which it finds no test at all is a setup fault
+rather than a file with nothing to judge. ⚠ This touches `scripts/`, which decision 13's wording rules
+out and its reason — no synthetic driver — does not: the second such drift, after step 11's, and
+recorded as one.
+
+⭐ **And the proofs run in parallel now, and only where a change owes them** — Brian, 2026-10-20, of the
+sequential run that measured them: *"is there a better way to do this?"*, then *"Do this task here"*. A
+mutation cost about twelve seconds, three-fifths of it the build and two-fifths the test run, and the
+206 went one at a time: **50.7 minutes**. `--parallel <n>` deals each set's mutations into `n` worktrees
+cut from `HEAD`, each given this checkout's state — uncommitted work included, written as a git tree
+through a temporary index so that nothing is committed — and judges the shards as one run per set;
+`--owed <ref>` runs only the sets a change touches; and each mutation's build skips the restore and,
+when it names its killer, runs only the set's test classes, two trims measured at 6.4 s to 4.5 and 6.0 s
+to 1.7 before either was made. Measured on this box, sixteen logical CPUs, over the five AgentBaseline
+sets — the same 176 mutations each time: **40.2 minutes** one at a time before the trims, **32.8** in
+one worktree with them and **16.5** in four, so the trims are worth about a fifth and four worktrees run
+about twice as fast as one rather than four times, each shard's builds sharing the CPU with the other
+three's — an earlier four-worktree run was through the same five in about 14, inside a run of all six
+that took **21.1** for 214 mutations, so the box's own load moves these by minutes. Every run gave the
+sequential run's verdicts mutation for mutation — corpus 37 tests killed, ingest 22, outline 15 with two
+inert at Markdig 1.4.1, review-session 9 and section-decisions 27. ⚠ **A build's telemetry can outlive
+it in a worktree**: Avalonia's `Avalonia.BuildServices` starts a collector before each compile, and it
+kept its working directory under the worktree's `src/` for minutes after, so the one-worktree run's
+directory would not delete — the harness named it and the remedy, and the verdicts stood.
+`AVALONIA_TELEMETRY_OPTOUT=1` stops the collector, and since 2026-10-22, at Brian's choice, every build
+and test run the harness starts is given it. ⚠ **The harness's own set failed that first run of all six,
+and how it failed is the argument for a green mutation in every set.** A new test of the dry run checked
+that set itself, whose edits stop applying while one of them is in place, so it failed under all 38 of
+its mutations, and the mutation naming it as killer read as proving it while proving nothing: every red
+mutation read as killed as declared, and only the set's one green mutation, going red, said a word. Four
+of the six sets then carried none, and in the kills the run kept none of their tests was killed by more
+than eight of its set's mutations. ⭐ **On 2026-10-21 each gained one** — corpus, ingest, review-session
+and section-decisions — in the file most of its mutations edit, each equivalent by a stated law rather
+than by what the tests happen to read: addition and `Math.Max` commute, and interpolating strings with
+no format is concatenating them. Proved in four worktrees: **all 167 of the four sets' mutations as
+declared**, every declared test killed as before and each control green, in 9.7 minutes — the four
+controls the only change from the sequential run's verdicts. A check for a test killed by every mutation
+of its set was weighed and left out: as a fault it misfires on a small set aimed at one test, which
+every mutation kills legitimately, and as a warning it says nothing a green control does not,
+deterministically, once every set carries one. ⭐ **And on 2026-10-22 the harness refuses a set holding
+red mutations and no green one**, judged on the whole set — Brian's choice over a test of this
+repository's sets, the rule being the method's and going where the harness goes (DECISIONS.md). The last
+run before the pull request took all six sets in four worktrees on the harness as it ships: **all 226
+mutations as declared**, every declared test killed or excused at its pin, in 24.4 minutes — the four
+controls the only change from the sequential run's verdicts. The test reads a fixture now,
+`set-edits-its-runner.json`; the run's refusal gained a test and a mutation of its own, and so did the
+trims — `--list` names what each run filters to and whether its build restores, and four mutations each
+break one of the rules it holds. The set again, in four worktrees: **43 mutations, all as declared,
+every one of its 34 tests killed**, in 8.6 minutes. ⚠ It is also the second runner of this idea on the
+estate: `Bennewitz.Ninja.XamlQuality`'s `tools/mutate.cs` holds each defect to the exact set of tests
+that must fail, works in copies of the tree that rebuild only what a defect touches, and refuses a run
+estimated past thirty minutes, where this one judges a set's completeness, honours `inert-at-pin`, keeps
+green controls and runs owed sets only. Converging the two is open item 23.
+
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with
 no depth limit the rule as first written admitted **684** candidates where the corpus is **236**, and
@@ -332,7 +462,7 @@ current, so identity and not bytes is what says a drop was safe. ⭐ **None of i
 the plan**; it came from a scratch script that burned **1,174 s of CPU** proving the first wording's
 cost defect by walking into it.
 
-⚠ The open-item list below holds **three** actionable entries — items 19, 20 and 21 — with item 14
+⚠ The open-item list below holds **five** actionable entries — items 19, 20, 21, 22 and 23 — with item 14
 startable beside them, and **it emptied, refilled and emptied once more inside 2026-10-13** before
 gaining them — which is the thing to take from it rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
 batches had landed and that **three of them changed under its own measurement**, which put two items
@@ -884,15 +1014,66 @@ wording.
     ⚠ Items 4, 9, 10 and 12 of the 2026-10-08 batch were **never measured there** — 4 and 9 stay ours,
     12 was left out, 10 was already in that guide's journal — so none of them became a pointer either.
 
+22. **A section's identity includes its document's own title, so no section matches across files
+    titled differently — measured 2026-10-20, a decision of Brian's, owed before plan 00034 step 8
+    writes a key to disk.** Decision 6 makes identity a heading path and a hash, and step 2 builds the
+    path from every ancestor, a document's top-level title among them. Measured at step 6 on `C:\c\cl`:
+    ClaudeForge's and OpenForge2k's `AGENTS.md` are titled `AGENTS.md — operational rules for LLM
+    contributors`, DiffView's `AGENTS.md — cross-file contracts for DiffView` and XamlQuality's
+    `AGENTS.md — XamlQuality`, while ClaudeForge, OpenForge2k and DiffView all open on
+    `## 1. Hard invariants`. To the tool that section is three different rules, and every take between
+    two differently titled files is refused for want of its parent — in the project corpus, which
+    decision 14 names as the one the tool is tuned against.
+
+    ⭐ **Recommended**: read a document's sole top-level heading, when it is also its first heading, as
+    the document's title, and leave it out of every heading path — so `1. Hard invariants` is one rule in
+    all three files. The global `CLAUDE.md`, whose two top-level headings are sections rather than a
+    title, keeps its paths exactly as they are. It is one change where the path is built and one in
+    `SectionIdentity`, and ⛔ it must land before step 8 writes a key to disk, after which a key's shape
+    is a migration. ⚠ It narrows §7's rewording risk and does not close it; and the titles themselves
+    become one section, so taking one file's title retitles the baseline — arguably the point.
+
+    ⭐ **Decided 2026-10-22, by Brian: the title leaves every heading path** — `DECISIONS.md`, *A
+    document's sole leading title is not part of any heading path*. It is work now, owed before step 8
+    writes a key.
+
+23. **Two mutation runners for one idea, and where the shared one lives — a decision of Brian's, raised
+    2026-10-20.** Brian, of `scripts/mutate-behaviour`: *"if you prove that this works well for this
+    project, we should document it and potentially send it to assemblyquality or another repo of mine
+    for use by other repo's of mine as an approach"*. It is proven here — the measurement is in the step
+    6 block above — and `docs/mutation-proofs.md` describes it. ⚠ **It is not the estate's only
+    runner**: `Bennewitz.Ninja.XamlQuality`'s `tools/mutate.cs` (plan 00001 there, 2026-10-12) runs a
+    catalog of defects in copies of the tree, holds each to the exact set of tests that must fail,
+    rebuilds only what a defect touches and swaps the assembly, and refuses a run estimated past thirty
+    minutes. Neither has all of the other's, so sending this one as it stands would make the second copy
+    of the idea a third.
+
+    | Home | For it | Against it |
+    |---|---|---|
+    | `Bennewitz.Ninja.XamlQuality`, a dotnet tool beside `theme-audit` | the other runner is already there, and so is the packaging of a tool | its name is about markup |
+    | `Bennewitz.Ninja.AssemblyQuality`, Brian's suggestion | the family's .NET-wide rules package | no tool ships from it yet, and no runner lives there |
+    | `Bennewitz.Ninja.CodeQuality` | the most neutral name in the family | the youngest, no tool ships from it yet |
+    | `Bennewitz.Ninja.Templates` (`dotnet new bbpkg`) | reaches every new repository | a template copies, so each repository's copy drifts on its own |
+
+    ⭐ **Recommended**: one converged runner, shipped as a dotnet tool from XamlQuality, where the other
+    runner and the packaging both are — this one's sets, completeness, markers, green controls, owed
+    runs and worktree shards with that one's exact failing set, assembly swap and estimate — and
+    DiffView and XamlQuality each retire their local copy for it. The approach document goes with it.
+
+    ⭐ **Decided 2026-10-22, by Brian: XamlQuality** — `DECISIONS.md`, *The converged mutation runner is a
+    dotnet tool from XamlQuality*. ⛔ The move itself starts only on his word.
+
 Items 3, 9 and 10 are Brian's own, item 13 waits on GitHub's image rather than on its date (still
-`ubuntu-24.04` on 2026-10-19, measured) and item 16 is shelved. **Items 19, 20 and 21 are actionable,
-and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped the reading it
+`ubuntu-24.04` on 2026-10-19, measured) and item 16 is shelved. **Items 19, 20, 21, 22 and 23 are actionable**,
+22 and 23 decided by Brian on 2026-10-22 — 22 owed before step 8, 23 waiting on his word to start the
+move — **and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped the reading it
 waits on — what that item now means is moving the pin, which re-opens every rule's reading and so is
 a change of its own rather than a rider on plan 00034's step 2. Items 17 and 18 closed on 2026-10-13,
 and items 5, 6, 12 and 15 were already closed. ⚠ The list was empty twice inside 2026-10-13 and has
-refilled four times since from a
+refilled six times since from a
 measurement rather than from a decision — its own attended run, then item 20 a day later, then item 21
-from a peer's release — so read an empty list as a state and never as a finish.
+from a peer's release, then item 22 from reading the corpus at plan 00034 step 6, then item 23 from
+reading a peer's runner of the same idea — so read an empty list as a state and never as a finish.
 
 ### Running it
 

@@ -51,6 +51,40 @@ internal sealed record MarkdownSection(
 {
     /// <summary>How many lines this section governs, its heading included.</summary>
     internal int LineCount => LastLine - FirstLine + 1;
+
+    /// <summary>
+    /// The section's last line that is not blank, 1-based: where its heading and body end, before
+    /// the blank lines that part it from whatever follows.
+    /// </summary>
+    /// <remarks>
+    /// Those blank lines say where a section sits — between two others, at the end of a file, before
+    /// a file's last line ending or after it — and nothing about what it says. So
+    /// <see cref="Content"/> leaves them out, identity hashes without them, and a take or a drop
+    /// leaves the accumulator's own separation where it was.
+    /// </remarks>
+    internal int ContentLastLine => FirstLine + LastContentIndex(Text);
+
+    /// <summary>
+    /// The section's text without its trailing blank lines: what a take carries into the accumulator,
+    /// and what <see cref="SectionIdentity"/> hashes.
+    /// </summary>
+    internal string Content => string.Join("\n", Text.Split('\n')[..(LastContentIndex(Text) + 1)]);
+
+    /// <summary>
+    /// The index of the last line of <paramref name="text"/> that is not blank. Never below 0: the
+    /// heading's own first line is never blank, an empty ATX heading being its <c>#</c>.
+    /// </summary>
+    private static int LastContentIndex(string text)
+    {
+        string[] lines = text.Split('\n');
+        int last = lines.Length - 1;
+        while (last > 0 && string.IsNullOrWhiteSpace(lines[last]))
+        {
+            last--;
+        }
+
+        return last;
+    }
 }
 
 /// <summary>
@@ -103,16 +137,20 @@ internal sealed class MarkdownOutline
     internal static readonly MarkdownPipeline Pipeline =
         new MarkdownPipelineBuilder().UseYamlFrontMatter().Build();
 
+    private readonly int[] parents;
+
     private MarkdownOutline(
         IReadOnlyList<string> lines,
         string preamble,
         bool hasFrontMatter,
-        IReadOnlyList<MarkdownSection> sections)
+        IReadOnlyList<MarkdownSection> sections,
+        int[] parents)
     {
         Lines = lines;
         Preamble = preamble;
         HasFrontMatter = hasFrontMatter;
         Sections = sections;
+        this.parents = parents;
     }
 
     /// <summary>The document's lines, line endings normalised, without their terminators.</summary>
@@ -164,7 +202,8 @@ internal sealed class MarkdownOutline
         located.Sort((a, b) => a.FirstLine.CompareTo(b.FirstLine));
 
         List<MarkdownSection> sections = new(located.Count);
-        List<(int Level, string Title)> ancestry = [];
+        int[] parents = new int[located.Count];
+        List<(int Level, string Title, int Index)> ancestry = [];
 
         for (int i = 0; i < located.Count; i++)
         {
@@ -178,7 +217,8 @@ internal sealed class MarkdownOutline
                 ancestry.RemoveAt(ancestry.Count - 1);
             }
 
-            ancestry.Add((heading.Level, title));
+            parents[i] = ancestry.Count > 0 ? ancestry[^1].Index : -1;
+            ancestry.Add((heading.Level, title, i));
 
             sections.Add(new MarkdownSection(
                 heading.Level,
@@ -195,7 +235,50 @@ internal sealed class MarkdownOutline
             lines,
             string.Join("\n", lines[..preambleEnd]),
             document.FirstOrDefault() is Markdig.Extensions.Yaml.YamlFrontMatterBlock,
-            sections);
+            sections,
+            parents);
+    }
+
+    /// <summary>
+    /// The index in <see cref="Sections"/> of the section <paramref name="index"/> sits under, or -1
+    /// for one with no heading of a lower level above it. This is the structure
+    /// <see cref="MarkdownSection.HeadingPath"/> is a string of, kept as indices so nothing has to
+    /// take the path apart again: a title may itself hold <c>" / "</c>.
+    /// </summary>
+    internal int ParentOf(int index) => parents[index];
+
+    /// <summary>
+    /// The last section of <paramref name="index"/>'s subtree: its last descendant, or itself when it
+    /// has none. A subtree is contiguous in document order, so this is where it ends.
+    /// </summary>
+    internal int SubtreeEnd(int index)
+    {
+        int end = index;
+        while (end + 1 < Sections.Count && Descends(end + 1, index))
+        {
+            end++;
+        }
+
+        return end;
+    }
+
+    /// <summary>The indices of every section at <paramref name="headingPath"/>, in document order.</summary>
+    internal IReadOnlyList<int> IndicesOf(string headingPath) =>
+        [.. Enumerable.Range(0, Sections.Count)
+            .Where(i => string.Equals(Sections[i].HeadingPath, headingPath, StringComparison.Ordinal))];
+
+    /// <summary>Whether <paramref name="ancestor"/> is above <paramref name="index"/> in the outline.</summary>
+    private bool Descends(int index, int ancestor)
+    {
+        for (int at = parents[index]; at >= 0; at = parents[at])
+        {
+            if (at == ancestor)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

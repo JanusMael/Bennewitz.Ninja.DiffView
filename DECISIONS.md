@@ -4397,3 +4397,50 @@ is wanted. A rule that predicts correctly can still name the wrong cause, and no
 measurement aimed at the cause will show it — which is what UI Automation's `SetFocus` on the window
 throwing *"Target element cannot receive focus"* during that run is a reminder of: the obvious
 instrument is not always the one that answers.
+
+## Every mutation set carries a green control, and the harness refuses one that does not
+
+Brian, 2026-10-22, choosing between a harness refusal, a test over this repository's sets and a rule
+left in prose. A green mutation's run is the only one in which a test that fails under every mutation of
+its set shows: on 2026-10-20 a test of the harness read the set it belonged to and failed under all 38
+of that set's mutations, every red one read as killed as declared, and only the green one went red. **So
+a set holding red mutations and no green one is a setup fault**, refused before anything builds, like a
+test file in which the reader finds no test. It is judged on the whole set, never on the part `--only`
+or `--shard` chose, or a shard dealt only red mutations would be refused. ⭐ **A refusal in the harness
+rather than a test over this repository's sets, because the rule is the method's**: it travels with the
+harness to the runner open item 23 converges on. A check for a test killed by every mutation of its set
+was weighed and left out — as a fault it misfires on a small set aimed at one test, which every mutation
+kills legitimately, and beside a green control a warning says nothing the control does not.
+
+## The proof harness opts its builds out of Avalonia's build telemetry
+
+Brian, 2026-10-22: every build and test run `scripts/mutate-behaviour.cs` starts carries
+`AVALONIA_TELEMETRY_OPTOUT=1`, sequential runs as well as `--parallel`'s shards.
+`Avalonia.BuildServices` runs `AvaloniaStatsTask` before every compile, and the task starts a collector
+that posts usage to Avalonia's API; on 2026-10-20 one kept its working directory in a worktree for about
+45 minutes after its build, so the harness had to leave that worktree behind. The variable is the
+package's own — read out of `Avalonia.BuildServices.dll` 11.3.2, not remembered — and the one tier that
+refuses an opt-out is Avalonia Accelerate, which DiffView does not use. A developer's own builds are
+untouched: the variable is given to the harness's children only.
+
+## A document's sole leading title is not part of any heading path
+
+Brian, 2026-10-22, settling open item 22 — ⚠ **a drift from plan 00034's decision 6, recorded here; the
+plan stays as approved.** Decision 6 makes a section's identity its heading path and a hash, and step 2
+built the path from every ancestor, a document's own top-level title among them, so `## 1. Hard
+invariants` in ClaudeForge's, OpenForge2k's and DiffView's `AGENTS.md`, each titled differently, was
+three rules to the tool, and every take between two of them was refused for want of a parent. A
+document's top-level heading, when it is the only one and the document's first heading, is the
+document's title and is left out of every heading path; the global `CLAUDE.md`, whose two top-level
+headings are sections, keeps its paths. ⛔ It lands before step 8 writes a key to disk, after which a
+key's shape is a migration.
+
+## The converged mutation runner is a dotnet tool from XamlQuality
+
+Brian, 2026-10-22, settling open item 23. `scripts/mutate-behaviour.cs` and
+`Bennewitz.Ninja.XamlQuality`'s `tools/mutate.cs` are two runners of one idea, each with what the other
+lacks. One runner takes both, shipped as a dotnet tool from XamlQuality beside `theme-audit`, where the
+other runner and a tool's packaging already are; DiffView and XamlQuality each retire their local copy
+for it, and `docs/mutation-proofs.md` goes with it. AssemblyQuality, which Brian had named, CodeQuality
+and the `bbpkg` template were weighed and passed over — open item 23 has the table. ⛔ **The move starts
+only on Brian's word.**
