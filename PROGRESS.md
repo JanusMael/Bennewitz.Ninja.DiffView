@@ -98,18 +98,17 @@ different one. ⛔ **No Avalonia and no Markdig reference yet**, deliberately: a
 its own.
 
 ⛔ **And step 1 found a step-order hazard in the plan, which is recorded here because the plan is
-frozen.** `AccessibilityCoverageTests` asserts that the library's and the demo's two subjects account
-for every element its scan of `src` finds, so **the first `.axaml` under `src/AgentBaseline` makes
-that equality false** — and the failure names neither this project nor this plan. Step 1 read the plan
+frozen.** `AccessibilityCoverageTests` asserted that the library's and the demo's two subjects account
+for every element its scan of `src` finds, so **the first `.axaml` under `src/AgentBaseline` made
+that equality false** — and the failure named neither this project nor this plan. Step 1 read the plan
 as putting the window at **step 5** and the `src` gates at **step 11**, so steps 5 to 10 would run
 red — and step 5 turned out to need no window, so the step that brings the first markup is the one
-that pays. ⭐ What step 1
-left instead of an edit to the plan is a tripwire with its instructions attached:
-`ProjectShapeTests.No_markup_lives_here_yet_and_the_first_file_that_does_owes_a_gate` fails on that
-first markup file, says to pay step 11 in the same change — this project's own subject, its own
-measured floor, `AutomationProperties.Name` on every interactive control, `BNXQ1004` clean — and says
-to delete itself once that is done. A plan's step order is not a contract the suite enforces; this
-is how one gets enforced anyway.
+that pays. ⭐ What step 1 left instead of an edit to the plan was a tripwire with its instructions
+attached, `ProjectShapeTests.No_markup_lives_here_yet_and_the_first_file_that_does_owes_a_gate`, retired
+by step 7 as it asked: it failed on that first markup file, said to pay step 11 in the same change —
+this project's own subject, its own measured floor, `AutomationProperties.Name` on every interactive
+control, `BNXQ1004` clean — and said to delete itself once that was done. A plan's step order is not a
+contract the suite enforces; this is how one got enforced anyway.
 
 **Step 2 is the parse, and three of the plan's own notes about Markdig were measured sharper.**
 `MarkdownOutline` takes Markdig as a locator only — levels and line spans from the tree, every line

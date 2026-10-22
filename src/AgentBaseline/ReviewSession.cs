@@ -104,6 +104,23 @@ internal sealed class ReviewSession
     /// <summary>The candidate the right pane shows.</summary>
     internal QueuedCandidate Current => Queue.Items[Position];
 
+    /// <summary>The accumulator's text as it now stands — takes, drops and typing alike: what a save writes.</summary>
+    internal string Accumulator => view.LeftDocument.Text;
+
+    /// <summary>
+    /// The current candidate's section that governs 1-based <paramref name="line"/> of the right pane, or
+    /// <see langword="null"/> for a line above its first heading or past its last line. The right shows
+    /// the text the candidate's outline was read from, so its lines are the outline's.
+    /// </summary>
+    internal MarkdownSection? CandidateSectionAt(int line) => SectionAt(Current.Candidate.Document.Outline, line);
+
+    /// <summary>
+    /// The heading path of the accumulator's section that governs 1-based <paramref name="line"/> of the
+    /// left pane, read from a parse of the left's live text, or <see langword="null"/> for a line in no
+    /// section.
+    /// </summary>
+    internal string? AccumulatorPathAt(int line) => SectionAt(MarkdownOutline.Read(view.LeftDocument.Text), line)?.HeadingPath;
+
     /// <summary>
     /// Shows the next candidate. At the last there is none, so nothing moves and the answer is
     /// <see langword="false"/>.
@@ -192,7 +209,7 @@ internal sealed class ReviewSession
         if (Durable.LatestFor(identity) is { } decided)
         {
             throw new DecisionRefusedException(
-                $"this version of {MarkdownOutline.Spoken(section.HeadingPath)} is already {Spoken(decided.Kind)}, and putting it off "
+                $"this version of {MarkdownOutline.Spoken(section.HeadingPath)} is already {decided.Kind.Spoken()}, and putting it off "
                 + "would leave that decision standing where nobody can see it — decide it again instead");
         }
 
@@ -250,12 +267,12 @@ internal sealed class ReviewSession
             nameof(section));
     }
 
-    private static string Spoken(DecisionKind kind) => kind switch
-    {
-        DecisionKind.Taken => "taken",
-        DecisionKind.Rejected => "left",
-        _ => "dropped",
-    };
+    /// <summary>
+    /// The section of <paramref name="outline"/> whose lines hold <paramref name="line"/>. A section runs to
+    /// the line before the next heading of any level, so the sections never overlap and at most one does.
+    /// </summary>
+    private static MarkdownSection? SectionAt(MarkdownOutline outline, int line) =>
+        outline.Sections.FirstOrDefault(s => s.FirstLine <= line && line <= s.LastLine);
 
     private static string TitleOf(string name, Candidate candidate) =>
         $"{name} — {System.IO.Path.GetFileName(candidate.Path)}";

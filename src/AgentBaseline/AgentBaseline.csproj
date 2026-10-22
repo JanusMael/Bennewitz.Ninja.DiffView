@@ -4,14 +4,14 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <!-- ⛔ Still no markup. Avalonia arrives at plan 00034's step 5 through the library, for the view
-       ReviewSession drives, but the first .axaml under src makes AccessibilityCoverageTests'
-       library-plus-demo equality false, which step 11 pays. ProjectShapeTests holds the tripwire
-       that says so. -->
-
   <ItemGroup>
     <!-- Step 2's parse. A locator only — see Directory.Packages.props and MarkdownOutline. -->
     <PackageReference Include="Markdig" />
+    <!-- Step 7's window. The markup compiler and the name generator come with the package itself; a
+         project reference to the library carries neither. That markup is AccessibilityCoverageTests'
+         third subject, beside the library's and the demo's, with a floor of its own: step 11, paid in
+         the change that brought the first .axaml here. -->
+    <PackageReference Include="Avalonia" />
   </ItemGroup>
 
   <ItemGroup>

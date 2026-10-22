@@ -67,6 +67,7 @@ const string CoreProject = "src/DiffView.Core/DiffView.Core.csproj";
 const string FindBar = "src/DiffView.Avalonia/DiffFindBar.cs";
 const string SbsTheme = "src/DiffView.Avalonia/Themes/SideBySideDiffView.axaml";
 const string DemoView = "src/DiffView.Demo/MainWindow.axaml";
+const string BaselineWindow = "src/AgentBaseline/ReviewWindow.axaml";
 const string SbsSource = "src/DiffView.Avalonia/SideBySideDiffView.cs";
 const string SbsController = "src/DiffView.Avalonia/DiffBuildController.cs";
 const string ViewerTheme = "src/DiffView.Avalonia/Themes/DiffViewer.axaml";
@@ -365,6 +366,14 @@ List<Mutation> mutations =
             "XamlScanContext.Load(all.Root)"),
         "Every_interactive_control_has_an_automation_name"),
 
+    // Plan 00034 step 11: the baseline tool's review window made it a third markup-bearing project under
+    // src, with a subject of its own — widened here, narrowed below, as each of the other two is.
+    new("baseline tool's subject loses its Path.Combine", A11yClass,
+        () => Sub(A11yGate,
+            @"XamlScanContext\.Load\(Path\.Combine\(all\.Root, ""AgentBaseline""\)\)",
+            "XamlScanContext.Load(all.Root)"),
+        "Every_interactive_control_has_an_automation_name"),
+
     // Narrowing is each floor's to catch, and each floor comes before the equalities so it is the one
     // that trips.
     new("library subject points at markup-free ground", A11yClass,
@@ -377,11 +386,20 @@ List<Mutation> mutations =
         () => Sub(A11yGate, @"""DiffView\.Demo""", @"""DiffView.Core"""),
         "Every_interactive_control_has_an_automation_name"),
 
+    new("baseline tool's subject points at markup-free ground", A11yClass,
+        () => Sub(A11yGate, @"""AgentBaseline""", @"""DiffView.Core"""),
+        "Every_interactive_control_has_an_automation_name"),
+
     // The stock floor reads its own count, so widening THAT reading alone leaves the full-set equality
     // balanced — which is why the stock names are held to an accounting of their own.
     new("the stock floor's reading is widened to the whole scan", A11yClass,
         () => Sub(A11yGate, @"int stock = stockRule\.Analyze\(librarySubject\)\.Inspected;",
             "int stock = stockRule.Analyze(allScan).Inspected;"),
+        "Every_interactive_control_has_an_automation_name"),
+
+    // The tool's window is made of buttons, which are stock names, so the stock accounting needs its term.
+    new("the stock accounting leaves the baseline tool's subject out", A11yClass,
+        () => Sub(A11yGate, @" \+ stockRule\.Analyze\(baselineSubject\)\.Inspected", ""),
         "Every_interactive_control_has_an_automation_name"),
 
     // The exclusion list is the hand-written element set one level up, so it earns itself or fails.
@@ -466,6 +484,11 @@ List<Mutation> mutations =
     // The one framework name the stock seventeen leave out that is live here — the demo's menu bar.
     new("the demo's menu bar loses its automation name", A11yClass,
         () => Sub(DemoView, @" AutomationProperties\.Name=""Main menu""", ""),
+        "Every_interactive_control_has_an_automation_name"),
+
+    // The findings reach the third project's markup, and not merely its count.
+    new("a button in the baseline tool's window loses its automation name", A11yClass,
+        () => Sub(BaselineWindow, @"\s*AutomationProperties\.Name=""Show the next candidate on the right""", ""),
         "Every_interactive_control_has_an_automation_name"),
 
     new("an automation name is present but empty", A11yClass,
