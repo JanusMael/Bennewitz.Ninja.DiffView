@@ -256,7 +256,7 @@
     {
       "name": "a save does not say where it wrote",
       "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
-      "old": "Say($\"Saved the baseline to {saved.BaselinePath}, and its provenance to {saved.ReportPath}.\");",
+      "old": "Say($\"Saved the baseline to {saved.BaselinePath}, its provenance to {saved.ReportPath}, and its decisions to {saved.DecisionsPath}.\");",
       "new": "Say(\"Saved.\");",
       "killer": "The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves"
     },

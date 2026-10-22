@@ -44,7 +44,12 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// <para>
 /// ⚠ The stores record what was decided, and the left is the operator's to go on editing — an undo of
 /// a take, or the take edited by hand. Reconciling the two is decision 9c's work at save, which reads the
-/// left's section against the text the take recorded.
+/// left's section against the text the take recorded (<see cref="DurableStore.Reconcile"/>).
+/// </para>
+/// <para>
+/// ⭐ A session begins from the decisions earlier runs made when it is given them — step 8, read back from
+/// the decision file a save wrote — so a version decided then is answered now (<see cref="StandingOf"/>).
+/// It never begins from an earlier session store: what was put off is offered again.
 /// </para>
 /// <para>
 /// Every title ends with its candidate's own file name, because the control chooses a pane's grammar
@@ -61,10 +66,16 @@ internal sealed class ReviewSession
     /// Seeds <paramref name="view"/>'s left with <paramref name="queue"/>'s seed and shows the first
     /// candidate on its right.
     /// </summary>
+    /// <param name="queue">The seed and the candidates to review.</param>
+    /// <param name="view">The view to review them in.</param>
+    /// <param name="earlier">
+    /// The decisions earlier runs made, as <see cref="DecisionFile.Read"/> gives them back, or
+    /// <see langword="null"/> for a first run.
+    /// </param>
     /// <exception cref="CorpusRefusedException">
     /// The queue holds nothing to review — refused before the view is touched.
     /// </exception>
-    internal ReviewSession(ReviewQueue queue, SideBySideDiffView view)
+    internal ReviewSession(ReviewQueue queue, SideBySideDiffView view, IReadOnlyList<SectionDecision>? earlier = null)
     {
         ArgumentNullException.ThrowIfNull(queue);
         ArgumentNullException.ThrowIfNull(view);
@@ -76,6 +87,7 @@ internal sealed class ReviewSession
         }
 
         Queue = queue;
+        Durable = new DurableStore(earlier ?? []);
         this.view = view;
 
         // Merging two phrasings is typing in the left (decision 9c), so the accumulator is editable. A
@@ -92,8 +104,8 @@ internal sealed class ReviewSession
     /// <summary>The seed and the candidates under review, in the order they are reviewed.</summary>
     internal ReviewQueue Queue { get; }
 
-    /// <summary>Taken, rejected and dropped: what the next run must know was decided.</summary>
-    internal DurableStore Durable { get; } = new();
+    /// <summary>Taken, rejected and dropped: what the next run must know was decided, earlier runs' first.</summary>
+    internal DurableStore Durable { get; }
 
     /// <summary>Where the review is, and what it has put off for now.</summary>
     internal SessionStore Session { get; } = new();
@@ -214,6 +226,18 @@ internal sealed class ReviewSession
         }
 
         Session.Defer(new DeferredSection(identity, Current.Candidate.Label));
+    }
+
+    /// <summary>
+    /// What the durable store says of <paramref name="section"/> — one of the right's sections — earlier
+    /// runs' decisions included: whether a review offers it again, and why not
+    /// (<see cref="DurableStore.StandingOf"/>).
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="section"/> is not one of the current candidate's.</exception>
+    internal SectionStanding StandingOf(MarkdownSection section)
+    {
+        IndexInCurrent(section);
+        return Durable.StandingOf(section, Current.Candidate.Label);
     }
 
     /// <summary>
