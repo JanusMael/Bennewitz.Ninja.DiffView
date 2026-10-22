@@ -92,7 +92,7 @@ internal static class AccumulatorEdits
         if (held.Count > 1)
         {
             throw new DecisionRefusedException(
-                $"the accumulator holds {held.Count} sections at \"{taken.HeadingPath}\", so a take cannot tell which "
+                $"the accumulator holds {held.Count} sections at {MarkdownOutline.Spoken(taken.HeadingPath)}, so a take cannot tell which "
                 + "of them to replace — make their headings differ by hand first");
         }
 
@@ -106,7 +106,7 @@ internal static class AccumulatorEdits
 
             int start = lines.Offset(replaced.FirstLine);
             TextEdit replace = new(start, lines.EndOffset(replaced.ContentLastLine) - start, taken.Content);
-            Verify(before, accumulator, replace, Expected.Replace(held[0], taken), $"taking \"{taken.HeadingPath}\"");
+            Verify(before, accumulator, replace, Expected.Replace(held[0], taken), $"taking {MarkdownOutline.Spoken(taken.HeadingPath)}");
             return (replace, TakeResult.Replaced);
         }
 
@@ -114,7 +114,7 @@ internal static class AccumulatorEdits
         TextEdit insert = at < before.Sections.Count
             ? new TextEdit(lines.Offset(before.Sections[at].FirstLine), 0, taken.Content + "\n\n")
             : AtEnd(accumulator, taken.Content);
-        Verify(before, accumulator, insert, Expected.Insert(at, taken), $"taking \"{taken.HeadingPath}\"");
+        Verify(before, accumulator, insert, Expected.Insert(at, taken), $"taking {MarkdownOutline.Spoken(taken.HeadingPath)}");
         return (insert, TakeResult.Inserted);
     }
 
@@ -137,14 +137,14 @@ internal static class AccumulatorEdits
         if (holding.Count == 0)
         {
             throw new DecisionRefusedException(
-                $"the accumulator holds no section at \"{headingPath}\" to drop — a section only a candidate carries "
+                $"the accumulator holds no section at {MarkdownOutline.Spoken(headingPath)} to drop — a section only a candidate carries "
                 + "is left, not dropped");
         }
 
         if (holding.Count > 1)
         {
             throw new DecisionRefusedException(
-                $"the accumulator holds {holding.Count} sections at \"{headingPath}\", so a drop cannot tell which of "
+                $"the accumulator holds {holding.Count} sections at {MarkdownOutline.Spoken(headingPath)}, so a drop cannot tell which of "
                 + "them to remove — make their headings differ by hand first");
         }
 
@@ -171,7 +171,7 @@ internal static class AccumulatorEdits
             remove = new TextEdit(0, accumulator.Length, string.Empty);
         }
 
-        Verify(before, accumulator, remove, Expected.Drop(index), $"dropping \"{headingPath}\"");
+        Verify(before, accumulator, remove, Expected.Drop(index), $"dropping {MarkdownOutline.Spoken(headingPath)}");
         return (remove, dropped);
     }
 
@@ -192,14 +192,14 @@ internal static class AccumulatorEdits
             if (parents.Count == 0)
             {
                 throw new DecisionRefusedException(
-                    $"the accumulator has no \"{parentPath}\" to put \"{taken.Title}\" under — take that section first, "
-                    + "or the new one would sit under another heading and lose its own path");
+                    $"\"{taken.Title}\" goes under {MarkdownOutline.Spoken(parentPath)}, which the accumulator does not hold — "
+                    + "take that section first, or the new one would sit under another heading and lose its own path");
             }
 
             if (parents.Count > 1)
             {
                 throw new DecisionRefusedException(
-                    $"the accumulator holds {parents.Count} sections at \"{parentPath}\", so a take cannot tell which "
+                    $"the accumulator holds {parents.Count} sections at {MarkdownOutline.Spoken(parentPath)}, so a take cannot tell which "
                     + $"of them \"{taken.Title}\" goes under — make their headings differ by hand first");
             }
 
@@ -291,8 +291,8 @@ internal static class AccumulatorEdits
 
                 List<string> found = [.. after.Sections.Select(s => s.HeadingPath)];
                 changed.Add($"the result would hold {after.Sections.Count} sections where {count} are expected");
-                changed.AddRange(Without(wanted, found).Select(p => $"\"{p}\" would no longer be a heading"));
-                changed.AddRange(Without(found, wanted).Select(p => $"\"{p}\" would become a heading"));
+                changed.AddRange(Without(wanted, found).Select(p => $"{MarkdownOutline.Spoken(p)} would no longer be a heading"));
+                changed.AddRange(Without(found, wanted).Select(p => $"{MarkdownOutline.Spoken(p)} would become a heading"));
                 return changed;
             }
 
@@ -314,8 +314,8 @@ internal static class AccumulatorEdits
                 }
 
                 changed.Add(string.Equals(was.HeadingPath, now.HeadingPath, StringComparison.Ordinal)
-                    ? $"the text of \"{was.HeadingPath}\""
-                    : $"\"{was.HeadingPath}\", which would read as \"{now.HeadingPath}\"");
+                    ? $"the text of {MarkdownOutline.Spoken(was.HeadingPath)}"
+                    : $"{MarkdownOutline.Spoken(was.HeadingPath)}, which would read as {MarkdownOutline.Spoken(now.HeadingPath)}");
             }
 
             if (Taken is { } taken)
@@ -324,7 +324,7 @@ internal static class AccumulatorEdits
                 if (!string.Equals(landed.HeadingPath, taken.HeadingPath, StringComparison.Ordinal)
                     || !string.Equals(landed.Content, taken.Content, StringComparison.Ordinal))
                 {
-                    changed.Add($"the section taken, which would read as \"{landed.HeadingPath}\"");
+                    changed.Add($"the section taken, which would read as {MarkdownOutline.Spoken(landed.HeadingPath)}");
                 }
             }
 

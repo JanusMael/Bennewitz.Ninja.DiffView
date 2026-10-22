@@ -34,9 +34,10 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// heading's source line is the underline.
 /// </param>
 /// <param name="HeadingPath">
-/// The titles of this heading and its ancestors, joined with <c>" / "</c>. Plan 00034 decision 6
-/// makes this half of a section's identity — the path identifies the rule, a hash of the body
-/// identifies its version.
+/// The titles of this heading and its ancestors, joined with <c>" / "</c> — all but the document's
+/// own title, which is in no path, its own included (<see cref="MarkdownOutline"/>). Plan 00034
+/// decision 6 makes this half of a section's identity — the path identifies the rule, a hash of the
+/// body identifies its version.
 /// </param>
 /// <param name="FirstLine">The heading's own first line, 1-based.</param>
 /// <param name="LastLine">The last line this section governs, 1-based and inclusive.</param>
@@ -119,6 +120,18 @@ internal sealed record MarkdownSection(
 /// </description>
 /// </item>
 /// </list>
+/// <para>
+/// ⭐ <b>A document's title is in no heading path</b> — Brian, 2026-10-22, open item 22, a drift from
+/// decision 6 that <c>DECISIONS.md</c> records. The title is the document's first heading when every
+/// heading after it is deeper, which makes it the only heading at the top of the outline and puts
+/// every other one under it. Its own path is empty, so the titles of two files are one section, and
+/// what is under them keeps its path whatever each file is called: <c>## 1. Hard invariants</c> is one
+/// rule in every <c>AGENTS.md</c> that opens on it. The global <c>CLAUDE.md</c>, whose two top-level
+/// headings are sections, has no title and keeps every path. The top is the outline's and not level 1,
+/// because a path is built from what sits under what: <c>## T</c> over <c>### a</c> reads exactly as
+/// <c># T</c> over <c>## a</c> does, title or not. ⚠ A heading with no text directly under the title
+/// shares its empty path, and a decision about either is refused as naming two sections.
+/// </para>
 /// <para>
 /// ⚠ The namespace is deliberately <b>not</b> <c>…AgentBaseline.Markdown</c>. C# walks enclosing
 /// namespaces before global, so inside such a namespace the name <c>Markdown</c> would resolve to
@@ -205,6 +218,11 @@ internal sealed class MarkdownOutline
         int[] parents = new int[located.Count];
         List<(int Level, string Title, int Index)> ancestry = [];
 
+        // ⭐ The title, in the remarks' sense: the first heading, when every heading after it is deeper. It
+        // is then never popped, so it is the bottom of every ancestry, and a path leaves out exactly that —
+        // the first entry, never a split on " / ", which a title may itself hold.
+        bool titled = located.Count > 0 && located.Skip(1).All(l => l.Heading.Level > located[0].Heading.Level);
+
         for (int i = 0; i < located.Count; i++)
         {
             (int firstLine, HeadingBlock heading) = located[i];
@@ -223,7 +241,7 @@ internal sealed class MarkdownOutline
             sections.Add(new MarkdownSection(
                 heading.Level,
                 title,
-                string.Join(" / ", ancestry.Select(a => a.Title)),
+                string.Join(" / ", ancestry.Skip(titled ? 1 : 0).Select(a => a.Title)),
                 EditorLine(firstLine),
                 EditorLine(lastLine),
                 string.Join("\n", lines[firstLine..(lastLine + 1)])));
@@ -266,6 +284,13 @@ internal sealed class MarkdownOutline
     internal IReadOnlyList<int> IndicesOf(string headingPath) =>
         [.. Enumerable.Range(0, Sections.Count)
             .Where(i => string.Equals(Sections[i].HeadingPath, headingPath, StringComparison.Ordinal))];
+
+    /// <summary>
+    /// <paramref name="headingPath"/> as a message names it: in quotes, or as <c>the title</c> for the
+    /// empty path a document's title has, which in quotes would read as nothing at all.
+    /// </summary>
+    internal static string Spoken(string headingPath) =>
+        headingPath.Length == 0 ? "the title" : $"\"{headingPath}\"";
 
     /// <summary>Whether <paramref name="ancestor"/> is above <paramref name="index"/> in the outline.</summary>
     private bool Descends(int index, int ancestor)

@@ -33,7 +33,7 @@ A set is a JSON file beside the tests it proves, `tests/<project>/Mutations/<sub
 }
 ```
 
-That is the first of the fifty-one in `tests/AgentBaseline.Tests/Mutations/section-decisions.json`, the
+That is the first of the fifty-seven in `tests/AgentBaseline.Tests/Mutations/section-decisions.json`, the
 proof of plan 00034 step 6's negative test.
 
 | Key | Meaning |

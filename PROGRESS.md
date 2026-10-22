@@ -5,8 +5,8 @@
 **`main` carries everything through PR #38, and CI is green on it** — PR #38 merged on a full
 10-of-10, 2026-10-22. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 872** here, `Passed!`, by a local run — fifty-six
-more than at PR #37, twenty-seven of them step 6's and twenty-nine the proof harness's. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 880** here, `Passed!`, by a local run — eight
+more than at PR #38, all item 22's. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -361,12 +361,11 @@ version already decided is refused, because the decision would stand where nobod
 and hand edits*: the stores record what was decided and the left stays the operator's to edit;
 reconciling the two is decision 9c's work at save, against the text each take recorded.
 
-⛔ **And one finding the plan's identity rule did not anticipate, now open item 22.** A heading path
-includes its document's own title, and the project corpus titles its `AGENTS.md` files per
-repository while their sections agree — so no section of one matches a section of another, and every
-take between two differently titled files is refused for want of its parent. Step 6 keeps decision 6
-as step 2 built it, with identity computed in `SectionIdentity` alone so that a change lands in one
-place; the decision is Brian's, and it is owed before step 8 writes a key to disk.
+⛔ **And one finding the plan's identity rule did not anticipate, open item 22.** A heading path included
+its document's own title, and the project corpus titles its `AGENTS.md` files per repository while their
+sections agree — so no section of one matched a section of another, and every take between two
+differently titled files was refused for want of its parent. Step 6 kept decision 6 as step 2 built it;
+Brian settled the item on 2026-10-22, and it landed after PR #38, below.
 
 **Fifty mutations, each declaring the test that must fail under it and, where it matters, the words it
 must fail with; all fifty killed as declared, and none of the step's twenty-seven tests went
@@ -450,6 +449,29 @@ that must fail, works in copies of the tree that rebuild only what a defect touc
 estimated past thirty minutes, where this one judges a set's completeness, honours `inert-at-pin`, keeps
 green controls and runs owed sets only. Converging the two is open item 23.
 
+⭐ **Open item 22 landed after PR #38: a document's title is in no heading path** — Brian's decision of
+2026-10-22, `DECISIONS.md`. `MarkdownOutline` reads a document's first heading as its title when every
+heading after it is deeper, and leaves the title out of every path, its own included:
+`## 1. Hard invariants` is one rule in every `AGENTS.md` that opens on it, a take between two files
+titled differently goes under the accumulator's own title, and the titles are versions of one section at
+the empty path, which a refusal names as *the title* rather than as `""`. ⚠ **Two readings the decision
+leaves open, made rather than assumed.** *The top* is the outline's and not level 1, because a path is
+built from what sits under what: `## Notes` over `###` reads as `#` over `##` does, title or not. *A
+document of one heading* is all title. Measured that day on the corpus decision 14 tunes against: every
+one of the 26 project files under `C:\c\cl` with a heading — each `AGENTS.md`, and each `CLAUDE.md` that
+is more than a pointer — has a title, and both global `CLAUDE.md`s read, this box's and JanusHalo's,
+open on the same two top-level headings and so have none. ⚠ **What it costs**: whether a document has a
+title is a property of the whole document. A take or a drop that would give it one or take it away
+renames every section under it, and the guard refuses that — dropping a childless `# Fable family` from
+the global `CLAUDE.md` is refused where it was not before
+(`A_drop_that_would_leave_one_heading_at_the_top_is_refused_because_it_would_become_the_title`) — and
+two copies of one file that differ in it share no path, which no copy measured does. Eight tests and
+eleven mutations, five in `outline` and six in `section-decisions`; the four sets the change owed, run
+in four worktrees: **121 mutations, all as declared**, every declared test killed or excused at its pin
+— ingest 22, outline 18 with two inert at Markdig 1.4.1, review-session 9 and section-decisions 32 — in
+10.4 minutes. The suite measured **880** here against 872, judged `healthy` by
+`catch-crash --check --expect auto`.
+
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with
 no depth limit the rule as first written admitted **684** candidates where the corpus is **236**, and
@@ -462,7 +484,7 @@ current, so identity and not bytes is what says a drop was safe. ⭐ **None of i
 the plan**; it came from a scratch script that burned **1,174 s of CPU** proving the first wording's
 cost defect by walking into it.
 
-⚠ The open-item list below holds **five** actionable entries — items 19, 20, 21, 22 and 23 — with item 14
+⚠ The open-item list below holds **four** actionable entries — items 19, 20, 21 and 23 — with item 14
 startable beside them, and **it emptied, refilled and emptied once more inside 2026-10-13** before
 gaining them — which is the thing to take from it rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
 batches had landed and that **three of them changed under its own measurement**, which put two items
@@ -1014,28 +1036,14 @@ wording.
     ⚠ Items 4, 9, 10 and 12 of the 2026-10-08 batch were **never measured there** — 4 and 9 stay ours,
     12 was left out, 10 was already in that guide's journal — so none of them became a pointer either.
 
-22. **A section's identity includes its document's own title, so no section matches across files
-    titled differently — measured 2026-10-20, a decision of Brian's, owed before plan 00034 step 8
-    writes a key to disk.** Decision 6 makes identity a heading path and a hash, and step 2 builds the
-    path from every ancestor, a document's top-level title among them. Measured at step 6 on `C:\c\cl`:
-    ClaudeForge's and OpenForge2k's `AGENTS.md` are titled `AGENTS.md — operational rules for LLM
-    contributors`, DiffView's `AGENTS.md — cross-file contracts for DiffView` and XamlQuality's
-    `AGENTS.md — XamlQuality`, while ClaudeForge, OpenForge2k and DiffView all open on
-    `## 1. Hard invariants`. To the tool that section is three different rules, and every take between
-    two differently titled files is refused for want of its parent — in the project corpus, which
-    decision 14 names as the one the tool is tuned against.
-
-    ⭐ **Recommended**: read a document's sole top-level heading, when it is also its first heading, as
-    the document's title, and leave it out of every heading path — so `1. Hard invariants` is one rule in
-    all three files. The global `CLAUDE.md`, whose two top-level headings are sections rather than a
-    title, keeps its paths exactly as they are. It is one change where the path is built and one in
-    `SectionIdentity`, and ⛔ it must land before step 8 writes a key to disk, after which a key's shape
-    is a migration. ⚠ It narrows §7's rewording risk and does not close it; and the titles themselves
-    become one section, so taking one file's title retitles the baseline — arguably the point.
-
-    ⭐ **Decided 2026-10-22, by Brian: the title leaves every heading path** — `DECISIONS.md`, *A
-    document's sole leading title is not part of any heading path*. It is work now, owed before step 8
-    writes a key.
+22. ~~A section's identity includes its document's own title, so no section matches across files titled
+    differently~~ — **fixed 2026-10-22, on Brian's decision, before step 8 writes a key to disk.** A
+    document's first heading, when every heading after it is deeper, is its title and is in no heading
+    path, its own included, so `## 1. Hard invariants` is one rule in ClaudeForge's, OpenForge2k's and
+    DiffView's `AGENTS.md`, and a take between two of them goes under the accumulator's own title. ⚠
+    Whether a document has a title is a property of the whole document, so an edit that would change it
+    renames every section under it and is refused. *Open item 22 landed after PR #38* above has the
+    record, and `DECISIONS.md` the decision.
 
 23. **Two mutation runners for one idea, and where the shared one lives — a decision of Brian's, raised
     2026-10-20.** Brian, of `scripts/mutate-behaviour`: *"if you prove that this works well for this
@@ -1064,16 +1072,16 @@ wording.
     dotnet tool from XamlQuality*. ⛔ The move itself starts only on his word.
 
 Items 3, 9 and 10 are Brian's own, item 13 waits on GitHub's image rather than on its date (still
-`ubuntu-24.04` on 2026-10-19, measured) and item 16 is shelved. **Items 19, 20, 21, 22 and 23 are actionable**,
-22 and 23 decided by Brian on 2026-10-22 — 22 owed before step 8, 23 waiting on his word to start the
-move — **and item 14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped the reading it
-waits on — what that item now means is moving the pin, which re-opens every rule's reading and so is
-a change of its own rather than a rider on plan 00034's step 2. Items 17 and 18 closed on 2026-10-13,
-and items 5, 6, 12 and 15 were already closed. ⚠ The list was empty twice inside 2026-10-13 and has
-refilled six times since from a
-measurement rather than from a decision — its own attended run, then item 20 a day later, then item 21
-from a peer's release, then item 22 from reading the corpus at plan 00034 step 6, then item 23 from
-reading a peer's runner of the same idea — so read an empty list as a state and never as a finish.
+`ubuntu-24.04` on 2026-10-19, measured) and item 16 is shelved. **Items 19, 20, 21 and 23 are
+actionable**, 23 decided by Brian on 2026-10-22 and waiting on his word to start the move — **and item
+14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped the reading it waits on —
+what that item now means is moving the pin, which re-opens every rule's reading and so is a change of
+its own rather than a rider on plan 00034's step 2. Item 22 closed on 2026-10-22, on Brian's decision of
+that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already closed. ⚠ The
+list was empty twice inside 2026-10-13 and has refilled six times since from a measurement rather than
+from a decision — its own attended run, then item 20 a day later, then item 21 from a peer's release,
+then item 22 from reading the corpus at plan 00034 step 6, then item 23 from reading a peer's runner of
+the same idea — so read an empty list as a state and never as a finish.
 
 ### Running it
 

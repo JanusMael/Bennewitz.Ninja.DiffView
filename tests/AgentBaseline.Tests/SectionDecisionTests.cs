@@ -75,11 +75,11 @@ public sealed class SectionDecisionTests
 
         // ⛔ The premise, asserted rather than assumed: the diff really does set the candidate's Two beside
         // the accumulator's Three. Were it to stop, a take positioned by the alignment would pass too.
-        MarkdownSection two = SectionOf(session, "Rules / Two");
+        MarkdownSection two = SectionOf(session, "Two");
         ChangeBlock beside = host.View.Document!.Blocks.Single(b =>
             b.LinesFor(DiffSide.Right).Start <= two.FirstLine - 1
             && two.FirstLine - 1 < b.LinesFor(DiffSide.Right).Start + b.LinesFor(DiffSide.Right).Count);
-        int seedThree = MarkdownOutline.Read(Seed).Sections.Single(s => s.HeadingPath == "Rules / Three").FirstLine - 1;
+        int seedThree = MarkdownOutline.Read(Seed).Sections.Single(s => s.HeadingPath == "Three").FirstLine - 1;
         LineRange left = beside.LinesFor(DiffSide.Left);
         Assert.True(
             left.Start <= seedThree && seedThree < left.Start + left.Count,
@@ -96,7 +96,7 @@ public sealed class SectionDecisionTests
         {
             MarkdownSection was = before.Sections[i];
             MarkdownSection now = after.Sections[i];
-            if (was.HeadingPath == "Rules / Two")
+            if (was.HeadingPath == "Two")
             {
                 Assert.Equal(two.Content, now.Content);
                 continue;
@@ -131,7 +131,7 @@ public sealed class SectionDecisionTests
         string typed = host.View.LeftDocument.Text;
         Assert.True(typed == Seed.Replace("Alpha.", "Alpha. Kept.", StringComparison.Ordinal), "The left refused the keystroke.");
 
-        session.Take(SectionOf(session, "Rules / Two"));
+        session.Take(SectionOf(session, "Two"));
         Assert.NotEqual(typed, host.View.LeftDocument.Text);
 
         // ⛔ Through the document, not around it: a left replaced by a new source has no undo at all.
@@ -153,9 +153,9 @@ public sealed class SectionDecisionTests
         ReviewQueue queue = QueueOf(tree, Reordered);
         using ReviewHost host = new();
         ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
-        MarkdownSection ours = MarkdownOutline.Read(Seed).Sections.Single(s => s.HeadingPath == "Rules / Two");
+        MarkdownSection ours = MarkdownOutline.Read(Seed).Sections.Single(s => s.HeadingPath == "Two");
 
-        session.Drop("Rules / Two");
+        session.Drop("Two");
 
         Assert.Equal(
             Doc("# Rules", "", "## One", "", "Alpha.", "", "## Three", "", "Gamma.", "", "## Four", "", "Delta.", ""),
@@ -177,11 +177,11 @@ public sealed class SectionDecisionTests
         ReviewQueue queue = QueueOf(tree, Reworded);
         using ReviewHost host = new();
         ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
-        SectionIdentity one = SectionIdentity.Of(SectionOf(session, "Rules / One"));
-        SectionIdentity two = SectionIdentity.Of(SectionOf(session, "Rules / Two"));
+        SectionIdentity one = SectionIdentity.Of(SectionOf(session, "One"));
+        SectionIdentity two = SectionIdentity.Of(SectionOf(session, "Two"));
 
-        session.Leave(SectionOf(session, "Rules / One"));
-        session.Defer(SectionOf(session, "Rules / Two"));
+        session.Leave(SectionOf(session, "One"));
+        session.Defer(SectionOf(session, "Two"));
 
         // ⛔ Decision 10's poisoning, ruled out: what is put off is in the session store and nowhere else.
         Assert.Equal([new SectionDecision(DecisionKind.Rejected, one, "machine 1", null)], session.Durable.Decisions);
@@ -202,8 +202,8 @@ public sealed class SectionDecisionTests
         ReviewQueue queue = QueueOf(tree, Reworded);
         using ReviewHost host = new();
         ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
-        MarkdownSection one = SectionOf(session, "Rules / One");
-        MarkdownSection two = SectionOf(session, "Rules / Two");
+        MarkdownSection one = SectionOf(session, "One");
+        MarkdownSection two = SectionOf(session, "Two");
 
         session.Defer(two);
         session.Take(two);
@@ -214,6 +214,14 @@ public sealed class SectionDecisionTests
         DecisionRefusedException refused = Assert.Throws<DecisionRefusedException>(() => session.Defer(one));
         Assert.Contains("already left", refused.Message, StringComparison.Ordinal);
         Assert.False(session.Session.IsDeferred(SectionIdentity.Of(one)));
+
+        // The refusal names what it refuses, and the title's path is empty: quoted, it would name nothing.
+        MarkdownSection title = SectionOf(session, "");
+        session.Leave(title);
+        Assert.Contains(
+            "this version of the title is already left",
+            Assert.Throws<DecisionRefusedException>(() => session.Defer(title)).Message,
+            StringComparison.Ordinal);
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }
@@ -226,13 +234,13 @@ public sealed class SectionDecisionTests
         ReviewQueue queue = QueueOf(tree, Reordered, Reworded);
         using ReviewHost host = new();
         ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
-        MarkdownSection fromMachine1 = SectionOf(session, "Rules / Two");
-        MarkdownSection titleFromMachine1 = SectionOf(session, "Rules");
+        MarkdownSection fromMachine1 = SectionOf(session, "Two");
+        MarkdownSection titleFromMachine1 = SectionOf(session, "");
         Assert.True(await host.AwaitBuildAsync(session.Next));
 
         // A section is a handle on the right's own outline: one from the candidate shown before is not one —
         // not even a title that reads the same, line for line, in the candidate shown now.
-        Assert.Equal(titleFromMachine1, SectionOf(session, "Rules"));
+        Assert.Equal(titleFromMachine1, SectionOf(session, ""));
         Assert.Equal("section", Assert.Throws<ArgumentException>(() => session.Take(fromMachine1)).ParamName);
         Assert.Equal("section", Assert.Throws<ArgumentException>(() => session.Leave(titleFromMachine1)).ParamName);
         Assert.Equal("section", Assert.Throws<ArgumentException>(() => session.Defer(fromMachine1)).ParamName);
@@ -254,7 +262,7 @@ public sealed class SectionDecisionTests
         using ReviewHost host = new();
         ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
 
-        Assert.Throws<DecisionRefusedException>(() => session.Take(SectionOf(session, "Rules / Five / Detail")));
+        Assert.Throws<DecisionRefusedException>(() => session.Take(SectionOf(session, "Five / Detail")));
 
         Assert.Equal(Seed, host.View.LeftDocument.Text);
         Assert.False(host.Left.CanUndo, "A refused take wrote to the accumulator and took it back.");

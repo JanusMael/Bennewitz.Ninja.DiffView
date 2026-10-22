@@ -268,18 +268,67 @@ public sealed class MarkdownOutlineTests
             "",
             "## Back to two",
             "",
-            "#### Under two"));
+            "#### Under two",
+            "",
+            "# Second top"));
 
         // Decision 6 makes the heading path half of a section's identity, so it has to survive the
-        // level skipping these documents really contain.
+        // level skipping these documents really contain. Two headings at the top, so neither is a
+        // title and every path shows its whole ancestry; the title has tests of its own below.
         Assert.Equal(
             [
                 "Top",
                 "Top / Skipped to three",
                 "Top / Back to two",
                 "Top / Back to two / Under two",
+                "Second top",
             ],
             outline.Sections.Select(s => s.HeadingPath));
+    }
+
+    [Fact]
+    public void A_documents_title_is_in_no_heading_path_so_its_sections_keep_theirs_whatever_it_is_called()
+    {
+        string[] body = ["", "Lead.", "", "## 1. Hard invariants", "", "Rule.", "", "### Detail", "", "## 2. Tests", ""];
+        MarkdownOutline ours = MarkdownOutline.Read(Doc(["# AGENTS.md — cross-file contracts for DiffView", .. body]));
+        MarkdownOutline theirs = MarkdownOutline.Read(Doc(["# AGENTS.md — operational rules for LLM contributors", .. body]));
+
+        // ⭐ Open item 22, measured on C:\c\cl: three projects' AGENTS.md open on `## 1. Hard invariants`
+        // under three titles, and with the title in the path that was three rules. The title's own path
+        // is empty, so the two titles are versions of one section as well.
+        string[] expected = ["", "1. Hard invariants", "1. Hard invariants / Detail", "2. Tests"];
+        Assert.Equal(expected, ours.Sections.Select(s => s.HeadingPath));
+        Assert.Equal(expected, theirs.Sections.Select(s => s.HeadingPath));
+    }
+
+    [Fact]
+    public void Two_headings_at_the_top_of_the_outline_are_sections_and_neither_is_a_title()
+    {
+        // The global CLAUDE.md's shape: two top-level headings, each a section with rules under it.
+        MarkdownOutline claude = MarkdownOutline.Read(Doc(
+            "# Working preferences", "", "## Deliverables are files", "", "# Fable family", "", "## The loop", ""));
+
+        // And a level-1 heading that is the only one but not the first: the heading above it is at the
+        // top of the outline as well, so neither is the document's title.
+        MarkdownOutline late = MarkdownOutline.Read(Doc("## Intro", "", "# Main", "", "## Under main", ""));
+
+        Assert.Equal(
+            ["Working preferences", "Working preferences / Deliverables are files", "Fable family", "Fable family / The loop"],
+            claude.Sections.Select(s => s.HeadingPath));
+        Assert.Equal(["Intro", "Main", "Main / Under main"], late.Sections.Select(s => s.HeadingPath));
+    }
+
+    [Fact]
+    public void A_title_is_the_top_of_the_outline_whatever_its_level()
+    {
+        // A path is built from what sits under what, so `## Notes` over `###` leaves its title out as
+        // `#` over `##` does; read as level 1 instead, these would keep "Notes" in every path.
+        Assert.Equal(
+            ["", "One", "One / Detail"],
+            MarkdownOutline.Read(Doc("## Notes", "", "### One", "", "#### Detail", "")).Sections.Select(s => s.HeadingPath));
+
+        // A document of one heading is all title: nothing after it is anything but deeper.
+        Assert.Equal([""], MarkdownOutline.Read(Doc("# Only", "", "Body.")).Sections.Select(s => s.HeadingPath));
     }
 
     [Fact]
