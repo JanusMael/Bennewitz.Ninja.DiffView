@@ -22,6 +22,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **The accessibility gate accounts for a third markup-bearing project under `src`.** `AgentBaseline`,
+  plan 00034's consolidation tool, has a review window now, and `AccessibilityCoverageTests` holds its
+  markup as a subject with a floor of its own, beside the library's and the demo's; both of the gate's
+  accountings gained its term, and `scripts/mutate-gates` carries a mutation that trips each new reading
+  first, so `--guards` lists 82 and a full run carries 116 mutations. Step 1's tripwire, which failed the
+  moment that window's first markup landed and said to pay for it in the same change, is retired.
 - **`scripts/mutate-behaviour` proves any project's tests, from a set committed beside them.** A set
   under `tests/<project>/Mutations/`, read with `--set`, names its test project and test files and
   each mutation's edit, the test that must fail under it and the words it must fail with; a full run
