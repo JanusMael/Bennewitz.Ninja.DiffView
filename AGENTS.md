@@ -406,7 +406,10 @@ no dates, no counts.
   ships, less `Excluded`, plus the framework names in `LiveFrameworkElements` and `ForwardCover` — so
   every pane in a view carries `AutomationProperties.Name` and a new public control is covered the
   moment it exists. Each name is floored on its own: one that covers nothing fails, and so does a
-  forward-cover name that starts covering something.
+  forward-cover name that starts covering something. Its scan of `src` is accounted for subject by
+  subject — the library, the demo and `AgentBaseline`'s review window, each with a floor of its own — so
+  a further markup-bearing project under `src` makes the accounting false until it has a subject and a
+  floor too, the way `BaselineWithin` came with the review window's first markup.
 - **A test that hit-tests draws a frame first.** Avalonia hit-tests the scene the compositor last
   rendered, not the layout, so a control just shown hit-tests to whatever was drawn there before it —
   the find bar's centre landed on the pane below until a frame was drawn. `Window.CaptureRenderedFrame`

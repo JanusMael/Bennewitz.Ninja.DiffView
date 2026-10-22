@@ -5,20 +5,17 @@
 **`main` carries everything through PR #39, and CI is green on it** — PR #39 merged on a full
 10-of-10, 2026-10-22. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 880** here, `Passed!`, by a local run — eight
-more than at PR #38, all item 22's. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 892** here, `Passed!`, by a local run — twelve
+more than at PR #39: plan 00034 step 7's thirteen, less step 1's tripwire. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
-**112** mutations and derives **81** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full runs — over the change that added `--parallel`, on 2026-10-19, in one
-worktree, in four and in eight — agreed verdict for verdict and trip for trip: all 112 behaved as
-declared, 108 killed by the test each names, 2 by the build and 2 green
-by design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 81 guards
-tripped first by one of them, no `inert-at-pin` marker standing, and the tree clean after it.
-**No full run is owed at PR #28**: it moved no gate file, no gated subject and no pin, and `--guards`
-exits 0 at 81 either side of it.
+**116** mutations and derives **82** guards from the gate files; CI runs its `--guards` half on
+Linux, and the last full run — over plan 00034 step 7's change, which moved a gate file, on 2026-10-22,
+in four worktrees — gave all 116 as declared: 112 killed by the test each names, 2 by the build and 2
+green by design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 82 guards
+tripped first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it.
 
 ⛔ **PR #28's Windows leg failed once on a network flake and passed on a re-run** — `git fetch` of the
 DiffPlex reference source could not reach `github.com:443` after 21 s, which killed *Fetch reference
@@ -73,12 +70,14 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen, and steps 1 to 6 are done.** `AgentBaseline`
-consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left accumulator
-against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
+⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 7 are done, and step 11 with step 7.**
+`AgentBaseline` consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left
+accumulator against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 7 — the loop end to
-end, cycling by the *next* command — is next**, and a window for that command is what pays step 11.
+is never edited again** — drift comes here, and superseding it means a new number. **Step 8 — the two
+stores across a restart — is next.** ⚠ And one thing none of the twelve steps names stands between the
+tool and the real consolidation the plan is done by: a start-up that is told a corpus and a seed and
+opens the review window on them. Nothing launches the window yet.
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -470,6 +469,61 @@ in four worktrees: **121 mutations, all as declared**, every declared test kille
 — ingest 22, outline 18 with two inert at Markdig 1.4.1, review-session 9 and section-decisions 32 — in
 10.4 minutes. The suite measured **880** here against 872, judged `healthy` by
 `catch-crash --check --expect auto`.
+
+⭐ **Step 7 is the loop end to end, cycling by the *next* command — and the window that command needed
+paid step 11.** `ReviewWindow` hosts the view with the review's commands — *Previous* and *Next
+candidate*, *Take*, *Leave*, *Defer*, *Drop* and *Save baseline…* — and ⭐ **the next command is F8, the
+previous one Shift+F8**: one key along from the F7 that walks a candidate's changes, and bound by neither
+the view's key map nor AvaloniaEdit. The bindings are the window's, so they fire whichever pane has the
+keyboard, and at either end the window says so and moves nothing, as F7 stops at the last change. A verb
+acts on the section at its own pane's caret — take, leave and defer on the candidate's at the right's,
+drop on the accumulator's at the left's — and every outcome is said in the window, a refusal included. A
+save writes the accumulator to a path the operator chooses, as LF and UTF-8 without a byte-order mark,
+with a provenance report beside it, `<name>.provenance.md`: the seed, the queue in review order and every
+durable decision in the order made. ⛔ **It never writes over a file the corpus read** — the seed's or a
+queued candidate's, for the baseline or for its report, compared without case — because a save dialog
+names the seed machine's live file as easily as the view's `Save` would have written over it.
+
+The step's verification is
+`ReviewWindowTests.The_loop_end_to_end_takes_a_section_cycles_by_the_next_command_takes_another_drops_one_and_saves`:
+over three candidates, the seed and two to review, it takes a section at the right pane's caret, presses
+F8 in that pane, takes another, drops one at the left pane's caret and saves — every step through the
+window, each button clicked through its automation peer as a harness would — then asserts the saved
+bytes, the report and the seed's file untouched. Twelve more tests hold the rest, among them that F8 works
+from either pane, that each verb reads its own pane's caret where the two panes hold different sections at
+one line, and that a save refuses a path differing from a candidate's only in case. The suite measured
+**892** here against 880, judged `healthy` by `catch-crash --check --expect auto`.
+
+⚠ **Readings the plan leaves open, made rather than assumed.** *The report is the decision log and
+nothing more yet*: whether the saved text still carries what each take took — after an undo, or a take
+edited by hand — is decision 9c's to mark at step 10, beside step 9's staleness, so until then its
+*taken* is the decision made and not a claim about the text. *The report's place* is beside the
+baseline, named so that a walk for the baseline's own target never finds it. *A caret above a pane's
+first heading* is in no section, and a verb there says so and does nothing. *A window holds one review*;
+a second is refused. ⚠ **And nothing launches the window**: `Program` still exits 2, having no way to be
+told a corpus and a seed, so the window is reached by the tests alone — the start-up the plan's twelve
+steps do not name, and which the real consolidation needs.
+
+**Step 11 is paid in the same change, as step 1's tripwire asked, and the tripwire is retired.**
+`AccessibilityCoverageTests` accounts for three markup-bearing subjects under `src` now, the review window
+the third, `BaselineWithin`, with a floor of its own: the window carries **8** of the elements `BNXQ1002`
+inspects — seven buttons and the view, read by setting the floor past them — and the floor is 4. The
+stock names' accounting gained the same third term, the buttons being stock names. Every interactive
+control in the window carries `AutomationProperties.Name`, and an `AutomationId` besides, and `BNXQ1004`
+reads it clean, there being no grid in it. `scripts/mutate-gates.cs` gained four mutations — the subject
+widened and narrowed, the stock term dropped, a button's name removed — so **116** mutations derive **82**
+guards, the new floor among them. The full run the gate file owed, in four worktrees over the step's
+commit: **all 116 as declared** — 112 killed by the test each names, 2 by the build and 2 green by design,
+nothing unexpected — and all 82 guards tripped first, in 15.7 minutes. ⚠ **This is the drift from
+decision 13 that step 5 foresaw**: `DECISIONS.md` records it beside step 6's, each for a proof harness and
+neither for the synthetic driver that is the decision's reason.
+
+**Fifty-four mutations, each declaring the test that must fail under it, all as declared, and none of
+the step's thirteen tests went unkilled** — `review-window`, with a green control. Run in four worktrees
+beside the two sets the change to `ReviewSession` owed, `review-session` and `section-decisions`: **135
+mutations, all as declared**, every declared test killed, in 15.6 minutes. ⚠ Five of them are killed by a
+wait: a key bound to nothing, or a button wired to the command that cannot move, starts no build, and the
+host waits its 30 seconds for one before it says so.
 
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with
@@ -1001,8 +1055,8 @@ wording.
     The fix is to exclude `*.received.*` from the Avalonia item globs, with a test that proves the
     exclusion holds — a stray written into the tree must leave the built assembly unchanged, which is
     the assertion the measurement above already has the shape of. ⚠ `src/DiffView.Demo` globs markup
-    too, and `src/AgentBaseline` will once plan 00034 reaches step 5, so the exclusion belongs wherever
-    markup is globbed rather than in one project.
+    too, and so has `src/AgentBaseline` since plan 00034's step 7 gave it a window, so the exclusion
+    belongs wherever markup is globbed rather than in one project.
 
 21. **`AGENTS.md` §9's X11 half is now the second copy of lessons that live in XamlQuality — reduce it
     to a pointer. Unblocked 2026-10-15.** §8's rule is that `docs/avalonia-gotchas.md` and

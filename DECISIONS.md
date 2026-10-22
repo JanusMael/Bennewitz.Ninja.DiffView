@@ -4454,3 +4454,16 @@ other runner and a tool's packaging already are; DiffView and XamlQuality each r
 for it, and `docs/mutation-proofs.md` goes with it. AssemblyQuality, which Brian had named, CodeQuality
 and the `bbpkg` template were weighed and passed over — open item 23 has the table. ⛔ **The move starts
 only on Brian's word.**
+
+## Plan 00034's decision 13 kept its reason and lost its wording to the proof harnesses
+
+Recorded at plan 00034 step 7, 2026-10-22 — ⚠ **a drift from the plan's decision 13, recorded here; the
+plan stays as approved.** The decision reads *no synthetic driver; nothing under `scripts/` is touched —
+but the `src` gates are paid*, and its reason is the first half: `scripts/drive-demo` judges the library's
+rendering, and a second app adds no platform for it to judge. The second half has given way twice, each
+time for a proof harness and never for a driver. At step 6, `scripts/mutate-behaviour.cs` was generalised
+so that each step's proof is a set committed beside its tests. At step 7, which paid step 11,
+`scripts/mutate-gates.cs` gained four mutations for the accessibility gate's third subject — the touch
+step 5 foresaw, because a full run fails on any guard no mutation trips first, and nothing else trips the
+new floor first. ⭐ What holds is the reason: nothing under `scripts/` drives the app, and every step is
+proven headless.
