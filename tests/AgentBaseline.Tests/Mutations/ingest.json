@@ -1,0 +1,165 @@
+// Plan 00034 step 3: ingest normalisation — decode, LF, unwrap, keep the raw bytes.
+// Ported from the step's scratch proof, so it can be run again rather than re-made.
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/IngestTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a one-item list with no heading is unwrapped anyway",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "return item.Descendants<HeadingBlock>().Any() ? (list, item) : null;",
+      "new": "return (list, item);",
+      "killer": "A_one_item_list_with_no_heading_is_a_list_not_a_wrapped_document"
+    },
+    {
+      "name": "the tab check reads only the characters being removed (the first draft)",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "string remaining = i != first ? lines[i]",
+      "new": "string remaining = i != first ? lines[i][..Math.Min(offset, lines[i].Length)]",
+      "killer": "A_tab_after_the_part_being_removed_is_refused_too_because_tab_stops_are_absolute"
+    },
+    {
+      "name": "the tab check never fires",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "if (Indent(remaining).Contains('\\t'))",
+      "new": "if (Indent(remaining).Contains('\\u0001'))",
+      "killer": "A_tab_in_the_indent_is_refused_and_the_document_is_left_nested"
+    },
+    {
+      "name": "the marker check accepts anything after the marker",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "if (prefix[at] != ' ')",
+      "new": "if (prefix[at] == '\\u0001')",
+      "killer": "A_marker_that_cannot_be_removed_as_characters_is_refused"
+    },
+    {
+      "name": "an ordered marker is checked against the wrong delimiter",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "prefix[at] != list.OrderedDelimiter",
+      "new": "prefix[at] == list.OrderedDelimiter",
+      "killer": "An_ordered_list_marker_is_unwrapped_too"
+    },
+    {
+      "name": "a continuation line keeps one space of the indent",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": ": line[Math.Min(LeadingSpaces(line), offset)..];",
+      "new": ": line[Math.Min(LeadingSpaces(line), offset - 1)..];",
+      "killer": "A_document_wholly_nested_in_a_list_item_unwraps_to_the_plain_document_it_wraps"
+    },
+    {
+      "name": "the first line is cut one character past the marker's padding",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "i == first ? (line.Length > offset ? line[offset..] : string.Empty)",
+      "new": "i == first ? (line.Length > offset + 1 ? line[(offset + 1)..] : string.Empty)",
+      "killer": "Unwrapping_removes_only_whitespace_and_the_one_marker"
+    },
+    {
+      "name": "the first line is cut through the heading's own marker",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "i == first ? (line.Length > offset ? line[offset..] : string.Empty)",
+      "new": "i == first ? (line.Length > offset + 2 ? line[(offset + 2)..] : string.Empty)",
+      "killer": "The_unwrapped_document_has_the_plain_documents_headings"
+    },
+    {
+      "name": "front matter is not set aside",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "document.Where(b => b is not YamlFrontMatterBlock)",
+      "new": "document.Where(b => b is not null)",
+      "killer": "Front_matter_above_a_nested_document_is_kept_and_the_rest_unwrapped"
+    },
+    {
+      "name": "only one level is ever unwrapped",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "for (int level = 0; level < MaxLevels; level++)",
+      "new": "for (int level = 0; level < 1; level++)",
+      "killer": "A_document_nested_twice_unwraps_both_levels"
+    },
+    {
+      "name": "reaching the bound is reported as a finish",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "stillNested ? $\"still wholly nested in a list item after {MaxLevels} levels\" : null);",
+      "new": "stillNested ? (string?)null : null);",
+      "killer": "Nesting_deeper_than_the_bound_is_refused_and_says_so"
+    },
+    {
+      "name": "a document that is not nested comes back changed",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "return new UnwrapResult(current, level, null);",
+      "new": "return new UnwrapResult(current + \"\\n\", level, null);",
+      "killer": "Ingesting_what_ingest_produced_changes_nothing"
+    },
+    {
+      "name": "the raw bytes alias the caller's array instead of copying it",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "ImmutableArray<byte> raw = [.. bytes];",
+      "new": "ImmutableArray<byte> raw = System.Runtime.InteropServices.ImmutableCollectionsMarshal.AsImmutableArray(bytes);",
+      "killer": "The_raw_bytes_are_retained_unchanged_even_when_the_callers_array_changes"
+    },
+    {
+      "name": "the source line ending is always reported as LF",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "TextProbe.Probe(source.Text).LineEnding,",
+      "new": "LineEnding.Lf,",
+      "killer": "A_CRLF_source_is_read_as_LF_and_its_bytes_keep_their_CRLF"
+    },
+    {
+      "name": "the source line ending is always reported as CRLF",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "TextProbe.Probe(source.Text).LineEnding,",
+      "new": "LineEnding.CrLf,",
+      "killer": "An_LF_source_says_it_was_LF"
+    },
+    {
+      "name": "a byte-order mark is never recorded",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "bool marked = preamble.Length > 0 && bytes.AsSpan().StartsWith(preamble);",
+      "new": "bool marked = preamble.Length < 0;",
+      "killer": "A_byte_order_mark_is_recorded_and_kept_out_of_the_text"
+    },
+    {
+      "name": "a byte-order mark is always claimed",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "bool marked = preamble.Length > 0 && bytes.AsSpan().StartsWith(preamble);",
+      "new": "bool marked = preamble.Length >= 0;",
+      "killer": "No_byte_order_mark_is_claimed_where_there_is_none"
+    },
+    {
+      "name": "the Latin-1 fallback is not carried across",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "Latin1Fallback = source.Latin1Fallback;",
+      "new": "Latin1Fallback = !source.IsBinary && source.IsBinary;",
+      "killer": "Bytes_that_are_not_UTF8_fall_back_to_Latin1_and_say_so"
+    },
+    {
+      "name": "the binary flag is not carried across",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "IsBinary = source.IsBinary;",
+      "new": "IsBinary = source.Latin1Fallback;",
+      "killer": "A_NUL_marks_the_candidate_binary_and_it_is_still_ingested"
+    },
+    {
+      "name": "the path is dropped",
+      "file": "src/AgentBaseline/IngestedDocument.cs",
+      "old": "return FromBytes(File.ReadAllBytes(path), path);",
+      "new": "return FromBytes(File.ReadAllBytes(path), null);",
+      "killer": "A_file_is_ingested_with_its_path"
+    },
+    {
+      "name": "a lone carriage return is not a line ending",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "text.Replace(\"\\r\\n\", \"\\n\", StringComparison.Ordinal).Replace('\\r', '\\n');",
+      "new": "text.Replace(\"\\r\\n\", \"\\n\", StringComparison.Ordinal);",
+      "killer": "The_line_ending_normaliser_agrees_with_the_cores_line_splitter"
+    },
+    {
+      "name": "the item's offset adds its column to its width rather than its width to its column",
+      "file": "src/AgentBaseline/ListUnwrap.cs",
+      "old": "int offset = item.Column + item.ColumnWidth;",
+      "new": "int offset = item.ColumnWidth + item.Column;",
+      "expect": "green",
+      "because": "a control: addition commutes, so every offset is the same column — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

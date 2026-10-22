@@ -1,0 +1,504 @@
+// Plan 00034 step 4: the corpus — labels, targets, counts, order, and all three exclusions.
+// Ported from the step's scratch proof, so it can be run again rather than re-made.
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/CorpusTests.cs",
+    "tests/AgentBaseline.Tests/CorpusExclusionTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a default label may repeat a label the manifest gave",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (!shared && !explicitLabels.Contains(candidate))",
+      "new": "if (!shared)",
+      "killer": "Each_candidate_is_labelled_by_the_manifest_or_by_the_shortest_trailing_path_no_other_shares"
+    },
+    {
+      "name": "every default label is the last directory alone",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "for (int length = 1; length <= mine.Length; length++)",
+      "new": "for (int length = 1; length <= 1; length++)",
+      "killer": "Each_candidate_is_labelled_by_the_manifest_or_by_the_shortest_trailing_path_no_other_shares"
+    },
+    {
+      "name": "a label used twice is accepted",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (!labels.Add(label))",
+      "new": "if (!labels.Add(label) && labels.Count < 0)",
+      "killer": "Two_candidates_given_one_label_are_refused"
+    },
+    {
+      "name": "a directory named as a candidate is not refused",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (files.DirectoryExists(entry.Path))",
+      "new": "if (files.DirectoryExists(entry.Path) && entry.Path.Length < 0)",
+      "killer": "A_directory_named_as_a_candidate_is_refused_and_told_how_a_directory_is_read"
+    },
+    {
+      "name": "a path named twice is admitted twice",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (!seen.Add(entry.Path))",
+      "new": "if (!seen.Add(entry.Path) && entry.Path.Length < 0)",
+      "killer": "A_path_named_twice_is_refused"
+    },
+    {
+      "name": "a missing candidate is skipped without a word",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "missing.Add(new MissingCandidate(path, label, \"does not exist\"));",
+      "new": "",
+      "killer": "A_missing_candidate_is_reported_by_its_label_and_kept_out_of_the_queue"
+    },
+    {
+      "name": "a missing candidate loses its label",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "missing.Add(new MissingCandidate(path, label, \"does not exist\"));",
+      "new": "missing.Add(new MissingCandidate(path, null, \"does not exist\"));",
+      "killer": "A_missing_candidate_is_reported_by_its_label_and_kept_out_of_the_queue"
+    },
+    {
+      "name": "a binary candidate is admitted",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (document.IsBinary)",
+      "new": "if (document.IsBinary && document.Latin1Fallback)",
+      "killer": "A_candidate_that_is_not_text_is_reported_and_cannot_be_the_seed"
+    },
+    {
+      "name": "a named path under build output is left out",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (Read(files, entry.Path, entry.Label, missing) is not { } document)",
+      "new": "if (CorpusWalk.Segments(entry.Path).Any(CorpusWalk.BuildOutput.Contains) || Read(files, entry.Path, entry.Label, missing) is not { } document)",
+      "killer": "A_path_named_under_a_pruned_directory_is_still_a_candidate_and_the_walk_still_prunes"
+    },
+    {
+      "name": "a named copy met again by a walk becomes a copy as well",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (!seen.Add(found.Path))",
+      "new": "if (!seen.Add(found.Path) && found.Copy is null)",
+      "killer": "A_path_named_under_a_pruned_directory_is_still_a_candidate_and_the_walk_still_prunes"
+    },
+    {
+      "name": "two targets are merged as one",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "return targets.Count switch",
+      "new": "return Math.Min(targets.Count, 1) switch",
+      "killer": "Candidates_for_two_file_names_are_refused_before_anything_is_read"
+    },
+    {
+      "name": "the disk is read before the targets are checked",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "CandidateTarget target = OneTarget(request);",
+      "new": "_ = request.Candidates.Select(c => files.FileExists(c.Path)).ToList(); CandidateTarget target = OneTarget(request);",
+      "killer": "Candidates_for_two_file_names_are_refused_before_anything_is_read"
+    },
+    {
+      "name": "a candidate's own scope is ignored",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "OptionalString(item, \"scope\", \"a candidate\") ?? scope));",
+      "new": "scope));",
+      "killer": "A_root_file_and_a_project_file_are_two_targets_though_they_share_a_file_name"
+    },
+    {
+      "name": "a file name differing in case is a second target",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "&& string.Equals(FileName, other.FileName, StringComparison.OrdinalIgnoreCase)",
+      "new": "&& string.Equals(FileName, other.FileName, StringComparison.Ordinal)",
+      "killer": "A_file_name_differing_only_in_case_is_one_target"
+    },
+    {
+      "name": "a missing seed is reported as an unknown label",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "Report.Missing.FirstOrDefault(m => m.Label == label)",
+      "new": "Report.Missing.FirstOrDefault(m => m.Label == \"\\u0001\")",
+      "killer": "A_seed_that_is_missing_is_refused_and_says_it_is_missing"
+    },
+    {
+      "name": "the queue diffs the raw bytes, not the normalised text",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "DiffBuildResult diff = DiffDocumentBuilder.Build(left, new PaneSource(candidate.Document.Text), cancellationToken);",
+      "new": "DiffBuildResult diff = DiffDocumentBuilder.Build(left, PaneSource.FromBytes([.. candidate.Document.RawBytes]), cancellationToken);",
+      "killer": "Each_candidate_is_counted_against_the_seeds_normalised_text_and_the_seed_is_not_queued"
+    },
+    {
+      "name": "the seed is queued against itself",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (ReferenceEquals(candidate, chosen))",
+      "new": "if (ReferenceEquals(candidate, null))",
+      "killer": "Each_candidate_is_counted_against_the_seeds_normalised_text_and_the_seed_is_not_queued"
+    },
+    {
+      "name": "a change count reads the inserted rows",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "internal int Changes => Diff.BlockCount;",
+      "new": "internal int Changes => Diff.Inserted;",
+      "killer": "Each_candidate_is_counted_against_the_seeds_normalised_text_and_the_seed_is_not_queued"
+    },
+    {
+      "name": "the queue puts the fewest changes first",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "[.. queued.OrderByDescending(q => q.Changes)]",
+      "new": "[.. queued.OrderBy(q => q.Changes)]",
+      "killer": "The_queue_puts_the_most_changes_first_and_a_tie_keeps_the_order_it_was_given"
+    },
+    {
+      "name": "a tie is broken by label rather than by the order given",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "[.. queued.OrderByDescending(q => q.Changes)]",
+      "new": "[.. queued.OrderByDescending(q => q.Changes).ThenByDescending(q => q.Candidate.Label, StringComparer.Ordinal)]",
+      "killer": "The_queue_puts_the_most_changes_first_and_a_tie_keeps_the_order_it_was_given"
+    },
+    {
+      "name": "a listed order is read as divergence",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "\"listed\" => CorpusOrder.Listed,",
+      "new": "\"listed\" => CorpusOrder.Divergence,",
+      "killer": "A_listed_order_reviews_the_candidates_as_the_manifest_lists_them"
+    },
+    {
+      "name": "the corpus seeds itself from its first candidate",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "string label = seed ?? RequestedSeed ?? throw new CorpusRefusedException(",
+      "new": "string label = seed ?? RequestedSeed ?? Candidates[0].Label; _ = new CorpusRefusedException(",
+      "killer": "A_corpus_never_chooses_its_own_seed"
+    },
+    {
+      "name": "build output is descended and only reported (filtering after the walk)",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "pruned.Add(new PrunedDirectory(subdirectory, name));",
+      "new": "pruned.Add(new PrunedDirectory(subdirectory, name)); pending.Push(subdirectory);",
+      "killer": "Build_output_is_counted_and_never_descended_while_everything_else_is_walked",
+      "says": "the walk reached into"
+    },
+    {
+      "name": "artifacts is not build output (the first closed list)",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "\".git\", \"node_modules\", \"bin\", \"obj\", \"artifacts\",",
+      "new": "\".git\", \"node_modules\", \"bin\", \"obj\",",
+      "killer": "Build_output_is_counted_and_never_descended_while_everything_else_is_walked",
+      "says": "the walk reached into artifacts"
+    },
+    {
+      "name": "hidden entries are skipped, as new EnumerationOptions() skips them",
+      "file": "src/AgentBaseline/CorpusFileSystem.cs",
+      "old": "AttributesToSkip = 0,",
+      "new": "AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,",
+      "killer": "Build_output_is_counted_and_never_descended_while_everything_else_is_walked"
+    },
+    {
+      "name": "a walk root named like build output is pruned",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "Stack<string> pending = new([root]);",
+      "new": "Stack<string> pending = new(BuildOutput.Contains(Path.GetFileName(root)) ? Array.Empty<string>() : [root]);",
+      "killer": "A_directory_the_operator_names_to_walk_is_walked_whatever_it_is_called"
+    },
+    {
+      "name": "a copy is admitted as though no tier held it",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (found.Copy is not null && include is null)",
+      "new": "if (found.Copy is null && include is not null)",
+      "killer": "Each_copy_is_named_and_judged_by_the_document_it_copies_not_by_its_bytes"
+    },
+    {
+      "name": "a copy is judged held only when its text matches (the hash rule)",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "c.Found.Copy.Identity is { } identity ? HolderOf(candidates, identity)?.Label : null,",
+      "new": "c.Found.Copy.Identity is { } identity && HolderOf(candidates, identity) is { } holder && holder.Document.Text == File.ReadAllText(c.Found.Path) ? holder.Label : null,",
+      "killer": "Each_copy_is_named_and_judged_by_the_document_it_copies_not_by_its_bytes"
+    },
+    {
+      "name": "the copy directory nearest the root wins",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "for (int i = below.Length - 2; i >= 0; i--)",
+      "new": "for (int i = 0; i <= below.Length - 2; i++)",
+      "killer": "Each_copy_is_named_and_judged_by_the_document_it_copies_not_by_its_bytes"
+    },
+    {
+      "name": "a reference copy is taken for the holding repository's document",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": ": below[holder + 1];",
+      "new": ": RepositoryHolding(root, below[..holder]);",
+      "killer": "Each_copy_is_named_and_judged_by_the_document_it_copies_not_by_its_bytes"
+    },
+    {
+      "name": "a worktree under .claude is taken for .claude's document",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "if (string.Equals(Path.GetFileName(directory), ClaudeDirectory, StringComparison.OrdinalIgnoreCase))",
+      "new": "if (string.Equals(Path.GetFileName(directory), \"\\u0001\", StringComparison.OrdinalIgnoreCase))",
+      "killer": "Each_copy_is_named_and_judged_by_the_document_it_copies_not_by_its_bytes"
+    },
+    {
+      "name": "children are walked in whatever order the disk lists them",
+      "file": "src/AgentBaseline/CorpusFileSystem.cs",
+      "old": "directories.Sort(StringComparer.Ordinal);",
+      "new": "",
+      "killer": "Each_copy_is_named_and_judged_by_the_document_it_copies_not_by_its_bytes"
+    },
+    {
+      "name": "a walk root named like a copy directory is judged as one",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "string[] below = Segments(Path.GetRelativePath(root, file));",
+      "new": "string[] below = Segments(file);",
+      "killer": "A_directory_the_operator_names_to_walk_is_walked_whatever_it_is_called"
+    },
+    {
+      "name": "an include re-admits nothing",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "request.Includes.FirstOrDefault(i => IsAtOrUnder(found.Path, i))",
+      "new": "request.Includes.FirstOrDefault(i => i.Length < 0)",
+      "killer": "An_include_re_admits_a_copy_and_an_include_that_re_admits_nothing_is_reported"
+    },
+    {
+      "name": "an include naming a directory re-admits nothing under it",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "|| path.StartsWith(root + System.IO.Path.DirectorySeparatorChar, PathComparison);",
+      "new": ";",
+      "killer": "An_include_re_admits_a_copy_and_an_include_that_re_admits_nothing_is_reported"
+    },
+    {
+      "name": "an include naming a file exactly re-admits nothing",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "return string.Equals(path, root, PathComparison)",
+      "new": "return string.Equals(path, \"\\u0001\", PathComparison)",
+      "killer": "An_include_re_admits_a_copy_and_an_include_that_re_admits_nothing_is_reported"
+    },
+    {
+      "name": "an include that matched nothing is not reported",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "[.. request.Includes.Where(i => !includesUsed.Contains(i))]",
+      "new": "[]",
+      "killer": "An_include_re_admits_a_copy_and_an_include_that_re_admits_nothing_is_reported"
+    },
+    {
+      "name": "identical pointers collapse into one (the content-hash rule)",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "pointers.Add(new ExcludedFile(path, label, named));",
+      "new": "if (!pointers.Any(p => File.ReadAllText(p.Path) == File.ReadAllText(path))) { pointers.Add(new ExcludedFile(path, label, named)); }",
+      "killer": "Pointers_are_counted_one_per_file_and_never_collapsed_into_one"
+    },
+    {
+      "name": "a pointer inside a copy is counted as a fourth repository",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "copies.Add((found, !document.IsBinary && IsPointer(document)));",
+      "new": "if (IsPointer(document)) { pointers.Add(new ExcludedFile(found.Path, null, false)); } else { copies.Add((found, false)); }",
+      "killer": "Pointers_are_counted_one_per_file_and_never_collapsed_into_one"
+    },
+    {
+      "name": "a copy never says it is a pointer",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "copies.Add((found, !document.IsBinary && IsPointer(document)));",
+      "new": "copies.Add((found, false));",
+      "killer": "Pointers_are_counted_one_per_file_and_never_collapsed_into_one"
+    },
+    {
+      "name": "an import followed by more text is a pointer",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (trimmed.Length < 2 || trimmed[0] != '@' || trimmed.Any(char.IsWhiteSpace))",
+      "new": "if (trimmed.Length < 2 || trimmed[0] != '@')",
+      "killer": "A_pointer_is_a_file_of_imports_and_nothing_else"
+    },
+    {
+      "name": "a bare @ is a pointer",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (trimmed.Length < 2 || trimmed[0] != '@' || trimmed.Any(char.IsWhiteSpace))",
+      "new": "if (trimmed.Length < 1 || trimmed[0] != '@' || trimmed.Any(char.IsWhiteSpace))",
+      "killer": "A_pointer_is_a_file_of_imports_and_nothing_else"
+    },
+    {
+      "name": "a file with no line at all is a pointer",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "return imports;",
+      "new": "return imports || !imports;",
+      "killer": "A_pointer_is_a_file_of_imports_and_nothing_else"
+    },
+    {
+      "name": "a directory link is entered",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "unentered.Add(new UnenteredDirectory(link, \"a link, which the walk does not follow\"));",
+      "new": "pending.Push(link);",
+      "killer": "A_directory_link_is_reported_and_never_followed"
+    },
+    {
+      "name": "a directory link is not reported",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "unentered.Add(new UnenteredDirectory(link, \"a link, which the walk does not follow\"));",
+      "new": "",
+      "killer": "A_directory_link_is_reported_and_never_followed"
+    },
+    {
+      "name": "a link is taken for a directory",
+      "file": "src/AgentBaseline/CorpusFileSystem.cs",
+      "old": "(directory.Attributes & FileAttributes.ReparsePoint) != 0 && directory.LinkTarget is not null;",
+      "new": "(directory.Attributes & FileAttributes.ReparsePoint) != 0 && directory.LinkTarget is null;",
+      "killer": "A_directory_link_is_reported_and_never_followed"
+    },
+    {
+      "name": "an unreadable directory ends the walk",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "unentered.Add(new UnenteredDirectory(directory, ex.Message));",
+      "new": "unentered.Add(new UnenteredDirectory(directory, ex.Message)); pending.Clear();",
+      "killer": "A_directory_that_cannot_be_read_is_reported_and_the_walk_goes_on"
+    },
+    {
+      "name": "an unreadable directory is not reported",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "unentered.Add(new UnenteredDirectory(directory, ex.Message));",
+      "new": "",
+      "killer": "A_directory_that_cannot_be_read_is_reported_and_the_walk_goes_on"
+    },
+    {
+      "name": "a directory to walk that is missing is not reported",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "missing.Add(new MissingCandidate(root, null, \"the directory to walk does not exist\"));",
+      "new": "",
+      "killer": "A_directory_to_walk_that_is_not_there_is_reported_as_missing"
+    },
+    {
+      "name": "a file given as a directory to walk is reported missing instead",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (files.FileExists(root))",
+      "new": "if (files.FileExists(root) && root.Length < 0)",
+      "killer": "A_file_given_as_a_directory_to_walk_is_refused"
+    },
+    {
+      "name": "a comment line in a path list is read as a path",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "if (line.Length == 0 || line.StartsWith('#'))",
+      "new": "if (line.Length == 0)",
+      "killer": "A_path_list_takes_paths_and_file_uris_and_skips_blank_lines_and_comments"
+    },
+    {
+      "name": "a file URI is read as a relative path",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "return System.IO.Path.GetFullPath(uri.LocalPath);",
+      "new": "return System.IO.Path.GetFullPath(location, baseDirectory);",
+      "killer": "A_path_list_takes_paths_and_file_uris_and_skips_blank_lines_and_comments"
+    },
+    {
+      "name": "a URI of any scheme is accepted",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "if (!Uri.TryCreate(location, UriKind.Absolute, out Uri? uri) || !uri.IsFile)",
+      "new": "if (!Uri.TryCreate(location, UriKind.Absolute, out Uri? uri))",
+      "killer": "A_uri_that_is_not_a_file_is_refused_because_there_is_no_transport"
+    },
+    {
+      "name": "a key the manifest does not know is ignored",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "if (!known.Contains(property.Name))",
+      "new": "if (!known.Contains(property.Name) && known.Count < 0)",
+      "killer": "A_manifest_key_it_does_not_know_is_refused_rather_than_ignored"
+    },
+    {
+      "name": "a walk with no target is accepted",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "if (walks.Count > 0 && walkTarget is null)",
+      "new": "if (walks.Count < 0 && walkTarget is null)",
+      "killer": "A_walk_with_no_target_is_refused_because_it_would_not_know_what_to_look_for"
+    },
+    {
+      "name": "a relative path is read against the working directory",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "return System.IO.Path.GetFullPath(location, baseDirectory);",
+      "new": "return System.IO.Path.GetFullPath(location);",
+      "killer": "A_manifest_reads_its_relative_paths_against_its_own_directory"
+    },
+    {
+      "name": "build output is counted once whatever the number",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": ".ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);",
+      "new": ".ToDictionary(g => g.Key, g => 1, StringComparer.OrdinalIgnoreCase);",
+      "killer": "Build_output_is_counted_and_never_descended_while_everything_else_is_walked"
+    },
+    {
+      "name": "a binary file says it was not named",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "binary.Add(new ExcludedFile(path, label, named));",
+      "new": "binary.Add(new ExcludedFile(path, label, !named));",
+      "killer": "A_candidate_that_is_not_text_is_reported_and_cannot_be_the_seed"
+    },
+    {
+      "name": "a pointer a walk found says it was named",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "pointers.Add(new ExcludedFile(path, label, named));",
+      "new": "pointers.Add(new ExcludedFile(path, label, !named));",
+      "killer": "Pointers_are_counted_one_per_file_and_never_collapsed_into_one"
+    },
+    {
+      "name": "a pointer seed is reported as an unknown label",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "Report.Pointers.FirstOrDefault(p => p.Label == label)",
+      "new": "Report.Pointers.FirstOrDefault(p => p.Label == \"\\u0001\")",
+      "killer": "A_pointer_cannot_be_the_seed_and_the_refusal_says_why"
+    },
+    {
+      "name": "a candidate that cannot be read is skipped without a word",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "missing.Add(new MissingCandidate(path, label, $\"could not be read: {ex.Message}\"));",
+      "new": "",
+      "killer": "A_candidate_that_cannot_be_read_is_reported_as_missing_with_the_reason"
+    },
+    {
+      "name": "two candidates in one directory share a label",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "return string.Join('/', [.. mine, System.IO.Path.GetFileName(admitted[index].Path)]);",
+      "new": "return string.Join('/', mine);",
+      "killer": "Two_candidates_in_one_directory_are_told_apart_by_their_file_names"
+    },
+    {
+      "name": "an empty label is accepted",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "if (string.IsNullOrWhiteSpace(label))",
+      "new": "if (string.IsNullOrWhiteSpace(label) && label.Length < 0)",
+      "killer": "An_empty_label_is_refused"
+    },
+    {
+      "name": "an input naming nothing gathers an empty corpus",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "0 => throw new CorpusRefusedException(\"the input names no candidate and no directory to walk\"),",
+      "new": "0 => new CandidateTarget(\"AGENTS.md\", null),",
+      "killer": "An_input_naming_nothing_is_refused"
+    },
+    {
+      "name": "a manifest that is not JSON escapes as a parser error",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "catch (JsonException ex)",
+      "new": "catch (JsonException ex) when (ex.Message.Length < 0)",
+      "killer": "A_manifest_that_cannot_be_read_as_one_is_refused_and_says_why"
+    },
+    {
+      "name": "a manifest that is a list is read as an object",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "if (root.ValueKind != JsonValueKind.Object)",
+      "new": "if (root.ValueKind == JsonValueKind.Undefined)",
+      "killer": "A_manifest_that_cannot_be_read_as_one_is_refused_and_says_why"
+    },
+    {
+      "name": "a value that is not a string is read as one",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": ": throw new CorpusRefusedException($\"{what}'s \\\"{key}\\\" is not a string\");",
+      "new": ": value.ToString();",
+      "killer": "A_manifest_that_cannot_be_read_as_one_is_refused_and_says_why"
+    },
+    {
+      "name": "a manifest's include list is never read",
+      "file": "src/AgentBaseline/CorpusRequest.cs",
+      "old": "List<string> includes = [.. OptionalArray(root, \"include\").Select(i => Resolve(PathString(i, \"\\\"include\\\"\"), manifestDirectory))];",
+      "new": "List<string> includes = [];",
+      "killer": "An_include_re_admits_a_copy_and_an_include_that_re_admits_nothing_is_reported"
+    },
+    {
+      "name": "a copy sitting directly in a copy directory is given an identity",
+      "file": "src/AgentBaseline/CorpusWalk.cs",
+      "old": "return new CopyPlace(holderName, null);",
+      "new": "return new CopyPlace(holderName, string.Join('/', below));",
+      "killer": "A_copy_sitting_directly_in_a_copy_directory_is_named_with_no_identity"
+    },
+    {
+      "name": "a default label's cut asks for the larger bound with its arguments swapped",
+      "file": "src/AgentBaseline/Corpus.cs",
+      "old": "segments[Math.Max(0, segments.Length - length)..]",
+      "new": "segments[Math.Max(segments.Length - length, 0)..]",
+      "expect": "green",
+      "because": "a control: Math.Max is commutative, so every label is cut at the same place — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

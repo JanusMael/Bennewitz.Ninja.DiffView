@@ -1,0 +1,102 @@
+// Plan 00034 step 2: the parse. Markdig as a locator, one line-base boundary.
+// Ported from the step's scratch proof, so it can be run again rather than re-made.
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/MarkdownOutlineTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "heading line read from Line rather than Span.Start",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "LineOfOffset(lineStarts, h.Span.Start)",
+      "new": "h.Line",
+      "killer": "A_setext_heading_begins_at_its_text_rather_than_at_its_underline"
+    },
+    {
+      "name": "the pipeline drops UseYamlFrontMatter",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "new MarkdownPipelineBuilder().UseYamlFrontMatter().Build()",
+      "new": "new MarkdownPipelineBuilder().Build()",
+      "killer": "Front_matter_is_detected_and_never_read_as_a_setext_heading"
+    },
+    {
+      "name": "the walk takes top-level blocks rather than descendants",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "document.Descendants<HeadingBlock>()",
+      "new": "document.OfType<HeadingBlock>()",
+      "killer": "A_document_wholly_nested_in_a_list_item_yields_its_headings"
+    },
+    {
+      "name": "the line-base boundary stops converting",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "markdigLine + 1",
+      "new": "markdigLine",
+      "killer": "The_first_line_of_a_document_is_line_one"
+    },
+    {
+      "name": "line endings are not normalised",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "text.Replace(\"\\r\\n\", \"\\n\", StringComparison.Ordinal).Replace('\\r', '\\n')",
+      "new": "text",
+      "killer": "A_lone_carriage_return_is_a_line_ending_too"
+    },
+    {
+      "name": "the ancestry stack never pops, so every heading nests",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "ancestry[^1].Level >= heading.Level",
+      "new": "ancestry[^1].Level >= heading.Level + 100",
+      "killer": "The_heading_path_names_the_ancestry_even_where_a_level_is_skipped"
+    },
+    {
+      "name": "a section's text is dedented on the way out",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "string.Join(\"\\n\", lines[firstLine..(lastLine + 1)])",
+      "new": "string.Join(\"\\n\", lines[firstLine..(lastLine + 1)].Select(l => l.TrimStart()))",
+      "killer": "A_nested_sections_text_keeps_the_indent_the_source_had"
+    },
+    {
+      "name": "the title is taken from the source line instead of the inline tree",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "string title = TitleOf(heading);",
+      "new": "string title = lines[firstLine].Trim().TrimStart('#').Trim();",
+      "killer": "Atx_headings_carry_their_level_and_lose_any_closing_sequence"
+    },
+    {
+      "name": "front matter is always claimed",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "document.FirstOrDefault() is Markdig.Extensions.Yaml.YamlFrontMatterBlock",
+      "new": "true",
+      "killer": "A_document_without_front_matter_does_not_claim_to_have_it"
+    },
+    {
+      "name": "the preamble is dropped",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "string.Join(\"\\n\", lines[..preambleEnd])",
+      "new": "string.Empty",
+      "killer": "Everything_above_the_first_heading_is_kept_as_the_preamble"
+    },
+    {
+      "name": "a section runs one line into the next section's heading",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "located[i + 1].FirstLine - 1",
+      "new": "located[i + 1].FirstLine",
+      "killer": "The_sections_and_the_preamble_cover_every_line_once"
+    },
+    {
+      "name": "a document with no heading reports no preamble either",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "int preambleEnd = located.Count > 0 ? located[0].FirstLine : lines.Length;",
+      "new": "int preambleEnd = located.Count > 0 ? located[0].FirstLine : 0;",
+      "killer": "A_document_with_no_heading_at_all_is_all_preamble_and_no_sections"
+    },
+    {
+      "name": "a section's first line has nothing added to it",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "EditorLine(firstLine),",
+      "new": "EditorLine(firstLine) + 0,",
+      "expect": "green",
+      "because": "a control: an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

@@ -1,0 +1,382 @@
+{
+  // Plan 00034 step 6: take, leave, drop and defer, the stores they write to, and the identity they key
+  // on. Every test in the three files is held to it: a full run fails while any is killed by none.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/section-decisions.json
+  //
+  // Two mutations were considered and left out as EQUIVALENT, each read before it was dropped:
+  // writing a take as `left.Text = …` is one Replace over the whole document in AvaloniaEdit, so the
+  // text and the single step of undo come out the same; and walking a sibling search past the parent
+  // changes nothing, because no section before its parent can share that parent.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/AccumulatorEditTests.cs",
+    "tests/AgentBaseline.Tests/SectionIdentityTests.cs",
+    "tests/AgentBaseline.Tests/SectionDecisionTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a take is placed by the diff's alignment, as draft 1's CopyToLeft was",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "left.Replace(edit.Offset, edit.Length, edit.Text);",
+      "new": "view.CopyBlock(view.Document!.Blocks.Select((b, i) => (b, i)).First(p => p.b.LinesFor(DiffSide.Right).Start <= section.FirstLine - 1 && section.FirstLine - 1 < p.b.LinesFor(DiffSide.Right).Start + p.b.LinesFor(DiffSide.Right).Count).i, DiffSide.Left);",
+      "killer": "Taking_a_section_from_a_reordered_candidate_leaves_every_other_section_of_the_accumulator_byte_identical",
+      "says": "is not byte-identical after the take",
+      "because": "decision 5: a copy over the aligned range writes the candidate's Two over the accumulator's Three, which the misaligned fixture is built to show"
+    },
+    {
+      "name": "a take is written as two edits, so two undos",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "left.Replace(edit.Offset, edit.Length, edit.Text);",
+      "new": "left.Remove(edit.Offset, edit.Length); left.Insert(edit.Offset, edit.Text);",
+      "killer": "A_take_is_one_undo_step_and_the_edits_typed_before_it_stand",
+      "says": "One undo did not take the take back"
+    },
+    {
+      "name": "a take records nothing",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Decide(new SectionDecision(DecisionKind.Taken,",
+      "new": "_ = (new SectionDecision(DecisionKind.Taken,",
+      "killer": "Taking_a_section_from_a_reordered_candidate_leaves_every_other_section_of_the_accumulator_byte_identical"
+    },
+    {
+      "name": "a take records the section's blank lines along with its content",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Current.Candidate.Label, section.Content));",
+      "new": "Current.Candidate.Label, section.Text));",
+      "killer": "Taking_a_section_from_a_reordered_candidate_leaves_every_other_section_of_the_accumulator_byte_identical"
+    },
+    {
+      "name": "a take is recorded before it is placed, so a refused one is recorded too",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "int index = IndexInCurrent(section);",
+      "new": "int index = IndexInCurrent(section); Durable.Record(new SectionDecision(DecisionKind.Taken, SectionIdentity.Of(section), Current.Candidate.Label, section.Content));",
+      "killer": "A_refused_take_writes_nothing_and_records_nothing"
+    },
+    {
+      "name": "a leave is recorded as a take",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "DecisionKind.Rejected, SectionIdentity.Of(section)",
+      "new": "DecisionKind.Taken, SectionIdentity.Of(section)",
+      "killer": "Leave_is_durable_and_defer_is_the_sessions_and_neither_touches_the_accumulator"
+    },
+    {
+      "name": "a deferral is written to the durable store as a rejection",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Session.Defer(new DeferredSection(identity, Current.Candidate.Label));",
+      "new": "Durable.Record(new SectionDecision(DecisionKind.Rejected, identity, Current.Candidate.Label, null));",
+      "killer": "Leave_is_durable_and_defer_is_the_sessions_and_neither_touches_the_accumulator",
+      "because": "decision 10's poisoning: not now spelled as a rejection, so next month's run never offers the rule again"
+    },
+    {
+      "name": "a deferral is held in both stores",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Session.Defer(new DeferredSection(identity, Current.Candidate.Label));",
+      "new": "Session.Defer(new DeferredSection(identity, Current.Candidate.Label)); Durable.Record(new SectionDecision(DecisionKind.Rejected, identity, Current.Candidate.Label, null));",
+      "killer": "Leave_is_durable_and_defer_is_the_sessions_and_neither_touches_the_accumulator",
+      "because": "the session store still looks right, so only the durable store's own contents show the poisoning"
+    },
+    {
+      "name": "a decision leaves a deferral of the same version standing",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Session.Settle(decision.Section);",
+      "new": "",
+      "killer": "A_decision_settles_a_deferral_and_a_deferral_will_not_hide_a_decision"
+    },
+    {
+      "name": "a deferral is allowed over a decision a candidate made",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "if (Durable.LatestFor(identity) is { } decided)",
+      "new": "if (Durable.LatestFor(identity) is { } decided && decided.Source is null)",
+      "killer": "A_decision_settles_a_deferral_and_a_deferral_will_not_hide_a_decision"
+    },
+    {
+      "name": "a drop writes nothing",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "left.Replace(removal.Offset, removal.Length, removal.Text);",
+      "new": "",
+      "killer": "Dropping_a_section_removes_it_from_the_accumulator_and_records_the_version_removed"
+    },
+    {
+      "name": "a drop names the candidate under review as its source",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "SectionIdentity.Of(dropped), null, null));",
+      "new": "SectionIdentity.Of(dropped), Current.Candidate.Label, null));",
+      "killer": "Dropping_a_section_removes_it_from_the_accumulator_and_records_the_version_removed"
+    },
+    {
+      "name": "a drop records the candidate's version of the section rather than the accumulator's own",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "SectionIdentity.Of(dropped)",
+      "new": "SectionIdentity.Of(Current.Candidate.Document.Outline.Sections.FirstOrDefault(s => s.HeadingPath == dropped.HeadingPath) ?? dropped)",
+      "killer": "Dropping_a_section_removes_it_from_the_accumulator_and_records_the_version_removed"
+    },
+    {
+      "name": "a section is matched by value, so one from the candidate before is taken for the one shown",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "if (ReferenceEquals(sections[i], section))",
+      "new": "if (sections[i] == section)",
+      "killer": "A_verb_given_a_section_the_right_does_not_show_is_refused_by_name"
+    },
+    {
+      "name": "a missing section is not refused by name",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "ArgumentNullException.ThrowIfNull(section);",
+      "new": "",
+      "killer": "A_verb_given_a_section_the_right_does_not_show_is_refused_by_name"
+    },
+    {
+      "name": "a leave does not ask whether the section is the right's",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "        IndexInCurrent(section);\n        Decide(new SectionDecision(DecisionKind.Rejected",
+      "new": "        Decide(new SectionDecision(DecisionKind.Rejected",
+      "killer": "A_verb_given_a_section_the_right_does_not_show_is_refused_by_name"
+    },
+    {
+      "name": "a deferral does not ask whether the section is the right's",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "        IndexInCurrent(section);\n        SectionIdentity identity",
+      "new": "        SectionIdentity identity",
+      "killer": "A_verb_given_a_section_the_right_does_not_show_is_refused_by_name"
+    },
+    {
+      "name": "a take carries the candidate's blank lines along with its section",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "TextEdit replace = new(start, lines.EndOffset(replaced.ContentLastLine) - start, taken.Content);",
+      "new": "TextEdit replace = new(start, lines.EndOffset(replaced.ContentLastLine) - start, taken.Text);",
+      "killer": "A_section_the_accumulator_holds_is_replaced_and_the_blank_lines_after_it_stay_the_accumulators"
+    },
+    {
+      "name": "a take replaces the accumulator's blank lines as well as its content",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "TextEdit replace = new(start, lines.EndOffset(replaced.ContentLastLine) - start, taken.Content);",
+      "new": "TextEdit replace = new(start, lines.EndOffset(replaced.LastLine) - start, taken.Content);",
+      "killer": "A_section_the_accumulator_holds_is_replaced_and_the_blank_lines_after_it_stay_the_accumulators"
+    },
+    {
+      "name": "the same version is written over itself when its blank lines differ",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (string.Equals(replaced.Content, taken.Content, StringComparison.Ordinal))",
+      "new": "if (string.Equals(replaced.Text, taken.Text, StringComparison.Ordinal))",
+      "killer": "Taking_the_version_the_accumulator_already_holds_writes_nothing"
+    },
+    {
+      "name": "a take of a path held twice is placed rather than refused",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (held.Count > 1)",
+      "new": "if (held.Count > 2)",
+      "killer": "A_take_is_refused_where_the_accumulator_holds_its_path_or_its_parents_twice"
+    },
+    {
+      "name": "a parent held twice is taken to be the first",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (parents.Count > 1)",
+      "new": "if (parents.Count > 2)",
+      "killer": "A_take_is_refused_where_the_accumulator_holds_its_path_or_its_parents_twice"
+    },
+    {
+      "name": "a missing parent is not refused",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (parents.Count == 0)",
+      "new": "if (parents.Count < 0)",
+      "killer": "A_take_whose_parent_the_accumulator_lacks_is_refused"
+    },
+    {
+      "name": "an insertion goes after the sibling's own section, not after everything under it",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "return accumulator.SubtreeEnd(found[0]) + 1;",
+      "new": "return found[0] + 1;",
+      "killer": "A_section_the_accumulator_lacks_goes_after_its_nearest_preceding_sibling_and_everything_under_that"
+    },
+    {
+      "name": "an insertion with no sibling held goes to the end",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "return heldParent + 1;",
+      "new": "return accumulator.Sections.Count;",
+      "killer": "With_no_preceding_sibling_held_a_section_goes_first_under_its_parent"
+    },
+    {
+      "name": "a section with no parent goes below the first heading rather than above it",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "int heldParent = -1;",
+      "new": "int heldParent = 0;",
+      "killer": "With_no_parent_and_no_preceding_sibling_a_section_goes_first_of_all_below_the_preamble"
+    },
+    {
+      "name": "an inserted section is set against the next heading with no blank line",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "taken.Content + \"\\n\\n\")",
+      "new": "taken.Content + \"\\n\")",
+      "killer": "With_no_preceding_sibling_held_a_section_goes_first_under_its_parent"
+    },
+    {
+      "name": "the end of a document with a last line ending is reached as if it had none",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "? new TextEdit(accumulator.Length, 0, \"\\n\" + content + \"\\n\")",
+      "new": "? new TextEdit(accumulator.Length, 0, \"\\n\" + content)",
+      "killer": "At_the_end_a_take_leaves_the_last_line_as_it_was_with_a_line_ending_or_without"
+    },
+    {
+      "name": "the end of a document without a last line ending gains a blank line",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": ": new TextEdit(accumulator.Length, 0, \"\\n\" + content);",
+      "new": ": new TextEdit(accumulator.Length, 0, \"\\n\\n\" + content);",
+      "killer": "At_the_end_a_take_leaves_the_last_line_as_it_was_with_a_line_ending_or_without"
+    },
+    {
+      "name": "the guard passes everything",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (changed.Count == 0)",
+      "new": "if (changed.Count >= 0)",
+      "killer": "A_take_whose_fence_never_closes_is_refused_because_it_would_swallow_the_headings_after_it"
+    },
+    {
+      "name": "the guard compares a section's text and not its path",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "&& string.Equals(was.HeadingPath, now.HeadingPath, StringComparison.Ordinal)",
+      "new": "&& was.HeadingPath.Length >= 0",
+      "killer": "A_take_that_would_move_the_sections_under_another_is_refused"
+    },
+    {
+      "name": "the guard does not name the headings a take would swallow",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "Without(wanted, found)",
+      "new": "Without(wanted, wanted)",
+      "killer": "A_take_whose_fence_never_closes_is_refused_because_it_would_swallow_the_headings_after_it"
+    },
+    {
+      "name": "the guard does not look at the text above the first heading",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (!string.Equals(before.Preamble, after.Preamble, StringComparison.Ordinal))",
+      "new": "if (before.Preamble.Length < 0)",
+      "killer": "A_setext_heading_set_against_the_text_above_it_is_refused_rather_than_taking_that_text_into_its_title"
+    },
+    {
+      "name": "the guard does not look at the section taken as it lands",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (Taken is { } taken)",
+      "new": "if (Taken is { } taken && taken.Level < 0)",
+      "killer": "A_section_whose_title_reads_otherwise_in_the_accumulator_is_refused"
+    },
+    {
+      "name": "a replacement is never checked",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "Verify(before, accumulator, replace, Expected.Replace(held[0], taken)",
+      "new": "_ = (before, accumulator, replace, Expected.Replace(held[0], taken)",
+      "killer": "A_take_that_would_move_the_sections_under_another_is_refused"
+    },
+    {
+      "name": "an insertion is never checked",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "Verify(before, accumulator, insert, Expected.Insert(at, taken)",
+      "new": "_ = (before, accumulator, insert, Expected.Insert(at, taken)",
+      "killer": "A_take_whose_fence_never_closes_is_refused_because_it_would_swallow_the_headings_after_it"
+    },
+    {
+      "name": "a drop is never checked",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "Verify(before, accumulator, remove, Expected.Drop(index)",
+      "new": "_ = (before, accumulator, remove, Expected.Drop(index)",
+      "killer": "A_drop_that_would_move_the_sections_under_it_is_refused"
+    },
+    {
+      "name": "a drop leaves the blank lines after the section behind",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "remove = new TextEdit(start, lines.Offset(before.Sections[index + 1].FirstLine) - start, string.Empty);",
+      "new": "remove = new TextEdit(start, lines.EndOffset(dropped.ContentLastLine) - start, string.Empty);",
+      "killer": "Dropping_a_section_removes_its_lines_and_the_blank_lines_after_it"
+    },
+    {
+      "name": "dropping the last section leaves the line ending in front of it",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "int start = lines.EndOffset(dropped.FirstLine - 1);",
+      "new": "int start = lines.Offset(dropped.FirstLine);",
+      "killer": "Dropping_the_last_section_leaves_the_one_above_with_exactly_the_text_it_had"
+    },
+    {
+      "name": "a document's only section is not removed",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "remove = new TextEdit(0, accumulator.Length, string.Empty);",
+      "new": "remove = new TextEdit(0, 0, string.Empty);",
+      "killer": "Dropping_a_documents_only_section_from_its_first_line_leaves_nothing"
+    },
+    {
+      "name": "a drop of a path held twice removes the first",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (holding.Count > 1)",
+      "new": "if (holding.Count > 2)",
+      "killer": "A_drop_is_refused_where_the_accumulator_holds_the_path_never_or_twice"
+    },
+    {
+      "name": "a drop of a path the accumulator does not hold is not refused",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (holding.Count == 0)",
+      "new": "if (holding.Count < 0)",
+      "killer": "A_drop_is_refused_where_the_accumulator_holds_the_path_never_or_twice"
+    },
+    {
+      "name": "the line table counts a CRLF as two line endings",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (c == '\\r' && i + 1 < text.Length && text[i + 1] == '\\n')",
+      "new": "if (c == '\\r' && i + 1 < text.Length && text[i + 1] == '\\n' && i < 0)",
+      "killer": "A_line_ending_of_any_of_the_three_kinds_counts_one_line_as_the_outline_does"
+    },
+    {
+      "name": "a section's parent is the section before it",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "parents[i] = ancestry.Count > 0 ? ancestry[^1].Index : -1;",
+      "new": "parents[i] = i - 1;",
+      "killer": "A_section_the_accumulator_lacks_goes_after_its_nearest_preceding_sibling_and_everything_under_that"
+    },
+    {
+      "name": "a subtree ends where it starts",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "while (end + 1 < Sections.Count && Descends(end + 1, index))",
+      "new": "while (end + 1 < Sections.Count && Descends(end + 1, index) && end < 0)",
+      "killer": "A_section_the_accumulator_lacks_goes_after_its_nearest_preceding_sibling_and_everything_under_that"
+    },
+    {
+      "name": "descent is read one level down only",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "for (int at = parents[index]; at >= 0; at = parents[at])",
+      "new": "for (int at = parents[index]; at >= 0; at = -1)",
+      "killer": "A_section_the_accumulator_lacks_goes_after_its_nearest_preceding_sibling_and_everything_under_that"
+    },
+    {
+      "name": "a section's content keeps its trailing blank lines",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "while (last > 0 && string.IsNullOrWhiteSpace(lines[last]))",
+      "new": "while (last > 0 && lines[last].Length < 0)",
+      "killer": "Blank_lines_after_a_section_leave_its_version_alone_and_a_changed_word_does_not"
+    },
+    {
+      "name": "line endings are not normalised before the parse",
+      "file": "src/AgentBaseline/MarkdownOutline.cs",
+      "old": "text.Replace(\"\\r\\n\", \"\\n\", StringComparison.Ordinal).Replace('\\r', '\\n');",
+      "new": "text;",
+      "killer": "Line_endings_and_a_list_nesting_do_not_change_a_sections_identity"
+    },
+    {
+      "name": "identity hashes a section's blank lines too",
+      "file": "src/AgentBaseline/SectionIdentity.cs",
+      "old": "Encoding.UTF8.GetBytes(section.Content)",
+      "new": "Encoding.UTF8.GetBytes(section.Text)",
+      "killer": "Blank_lines_after_a_section_leave_its_version_alone_and_a_changed_word_does_not"
+    },
+    {
+      "name": "identity trims the trailing spaces that make a hard line break",
+      "file": "src/AgentBaseline/SectionIdentity.cs",
+      "old": "Encoding.UTF8.GetBytes(section.Content)",
+      "new": "Encoding.UTF8.GetBytes(section.Content.TrimEnd())",
+      "killer": "Blank_lines_after_a_section_leave_its_version_alone_and_a_changed_word_does_not"
+    },
+    {
+      "name": "an edit's tail starts at its length plus its offset rather than its offset plus its length",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "text.AsSpan(Offset + Length)",
+      "new": "text.AsSpan(Length + Offset)",
+      "expect": "green",
+      "because": "a control: addition commutes, so every edit keeps the same tail — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

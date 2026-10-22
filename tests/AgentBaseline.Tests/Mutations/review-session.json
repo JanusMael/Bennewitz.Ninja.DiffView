@@ -1,0 +1,185 @@
+// Plan 00034 step 5: cycling with the accumulator intact.
+// Ported from the step's scratch proof, so it can be run again rather than re-made.
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/ReviewSessionTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "cycling assigns the left again, under a title that counts the candidates",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Position = index;",
+      "new": "Position = index; view.LeftSource = new PaneSource(Queue.Seed.Document.Text) { Title = $\"baseline at candidate {index + 1}\" };",
+      "killer": "Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo",
+      "says": "did not survive"
+    },
+    {
+      "name": "cycling assigns the left again with its own edited text (the text survives, the undo does not)",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Position = index;",
+      "new": "Position = index; view.LeftSource = new PaneSource(view.LeftDocument.Text) { Title = view.LeftSource?.Title };",
+      "killer": "Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo",
+      "says": "emptied its undo stack"
+    },
+    {
+      "name": "the accumulator is left read-only",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "view.LeftReadOnly = false;",
+      "new": "",
+      "killer": "Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo",
+      "says": "The left refused the keystroke"
+    },
+    {
+      "name": "next shows the same candidate again",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Show(Position + 1);",
+      "new": "Show(Position);",
+      "killer": "Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo"
+    },
+    {
+      "name": "a candidate is left editable",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "view.RightReadOnly = true;",
+      "new": "view.RightReadOnly = false;",
+      "killer": "A_candidate_on_the_right_refuses_a_keystroke"
+    },
+    {
+      "name": "the accumulator carries the seed's path",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Title = TitleOf($\"baseline from {queue.Seed.Label}\", queue.Seed),",
+      "new": "Title = TitleOf($\"baseline from {queue.Seed.Label}\", queue.Seed), Path = queue.Seed.Path,",
+      "killer": "The_view_cannot_save_the_accumulator_over_the_seeds_own_file",
+      "says": "The view offers to save the edited accumulator"
+    },
+    {
+      "name": "a candidate carries its own path",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "{ Title = TitleOf(candidate.Label, candidate) };",
+      "new": "{ Title = TitleOf(candidate.Label, candidate), Path = candidate.Path };",
+      "killer": "The_view_cannot_save_the_accumulator_over_the_seeds_own_file",
+      "says": "source carries the candidate"
+    },
+    {
+      "name": "next runs past the last",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "if (Position == Queue.Items.Count - 1)",
+      "new": "if (Position == Queue.Items.Count)",
+      "killer": "Next_and_previous_stop_at_the_ends_and_a_jump_shows_the_candidate_it_names"
+    },
+    {
+      "name": "previous runs before the first",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "if (Position == 0)",
+      "new": "if (Position == -1)",
+      "killer": "Next_and_previous_stop_at_the_ends_and_a_jump_shows_the_candidate_it_names"
+    },
+    {
+      "name": "previous shows the same candidate again",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Show(Position - 1);",
+      "new": "Show(Position);",
+      "killer": "Next_and_previous_stop_at_the_ends_and_a_jump_shows_the_candidate_it_names"
+    },
+    {
+      "name": "the current candidate is always the first",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "internal QueuedCandidate Current => Queue.Items[Position];",
+      "new": "internal QueuedCandidate Current => Queue.Items[0];",
+      "killer": "Next_and_previous_stop_at_the_ends_and_a_jump_shows_the_candidate_it_names"
+    },
+    {
+      "name": "the right shows the seed rather than the candidate",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "new PaneSource(candidate.Document.Text)",
+      "new": "new PaneSource(Queue.Seed.Document.Text)",
+      "killer": "Next_and_previous_stop_at_the_ends_and_a_jump_shows_the_candidate_it_names"
+    },
+    {
+      "name": "a jump past the end is accepted",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Queue.Items.Count);",
+      "new": "",
+      "killer": "A_jump_past_either_end_is_refused_and_nothing_moves"
+    },
+    {
+      "name": "a jump before the start is accepted",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "ArgumentOutOfRangeException.ThrowIfNegative(index);",
+      "new": "",
+      "killer": "A_jump_past_either_end_is_refused_and_nothing_moves"
+    },
+    {
+      "name": "the right is titled with the label alone",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "{ Title = TitleOf(candidate.Label, candidate) };",
+      "new": "{ Title = candidate.Label };",
+      "killer": "Each_pane_is_titled_for_what_it_holds_and_both_end_in_the_targets_file_name"
+    },
+    {
+      "name": "the left is titled as the seed's file",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "TitleOf($\"baseline from {queue.Seed.Label}\", queue.Seed)",
+      "new": "TitleOf(queue.Seed.Label, queue.Seed)",
+      "killer": "Each_pane_is_titled_for_what_it_holds_and_both_end_in_the_targets_file_name"
+    },
+    {
+      "name": "a title drops the file name the grammar is chosen from",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "{System.IO.Path.GetFileName(candidate.Path)}",
+      "new": "",
+      "killer": "Each_pane_is_titled_for_what_it_holds_and_both_end_in_the_targets_file_name"
+    },
+    {
+      "name": "the left shows the seed's bytes rather than its normalised text",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "view.LeftSource = new PaneSource(queue.Seed.Document.Text)",
+      "new": "view.LeftSource = new PaneSource(PaneSource.FromBytes([.. queue.Seed.Document.RawBytes]).Text)",
+      "killer": "Each_pane_shows_its_documents_normalised_text_and_not_its_bytes"
+    },
+    {
+      "name": "the right shows a candidate's bytes rather than its normalised text",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "new PaneSource(candidate.Document.Text)",
+      "new": "new PaneSource(PaneSource.FromBytes([.. candidate.Document.RawBytes]).Text)",
+      "killer": "Each_pane_shows_its_documents_normalised_text_and_not_its_bytes"
+    },
+    {
+      "name": "a missing queue is not refused by name",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "ArgumentNullException.ThrowIfNull(queue);",
+      "new": "",
+      "killer": "A_session_without_a_queue_or_a_view_is_refused_by_name"
+    },
+    {
+      "name": "a missing view is not refused by name",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "ArgumentNullException.ThrowIfNull(view);",
+      "new": "",
+      "killer": "A_session_without_a_queue_or_a_view_is_refused_by_name"
+    },
+    {
+      "name": "a queue holding only the seed is not refused",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "if (queue.Items.Count == 0)",
+      "new": "if (queue.Items.Count < 0)",
+      "killer": "A_queue_holding_only_the_seed_is_refused_before_the_view_is_touched"
+    },
+    {
+      "name": "the view is touched before the refusal",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "ArgumentNullException.ThrowIfNull(view);",
+      "new": "ArgumentNullException.ThrowIfNull(view); view.LeftReadOnly = false;",
+      "killer": "A_queue_holding_only_the_seed_is_refused_before_the_view_is_touched",
+      "says": "opened the left for editing before it refused"
+    },
+    {
+      "name": "a pane's title is concatenated rather than interpolated",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "$\"{name} — {System.IO.Path.GetFileName(candidate.Path)}\";",
+      "new": "string.Concat(name, \" — \", System.IO.Path.GetFileName(candidate.Path));",
+      "expect": "green",
+      "because": "a control: interpolating strings with no format is concatenating them, null as empty in both, so every title is the same string — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}
