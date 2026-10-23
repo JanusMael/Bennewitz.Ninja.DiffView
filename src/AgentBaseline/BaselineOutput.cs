@@ -5,26 +5,27 @@ namespace Bennewitz.Ninja.AgentBaseline;
 
 /// <summary>
 /// A save refused before a byte was written: the path is a file the corpus read, which decision 9 says
-/// this tool never writes over.
+/// this tool never writes over — or the accumulator does not let the save tell what a take became.
 /// </summary>
 internal sealed class SaveRefusedException(string message) : Exception(message);
 
-/// <summary>Where a save wrote the baseline and its provenance report, as full paths.</summary>
-internal sealed record SavedBaseline(string BaselinePath, string ReportPath);
+/// <summary>Where a save wrote the baseline, its provenance report and its decision file, as full paths.</summary>
+internal sealed record SavedBaseline(string BaselinePath, string ReportPath, string DecisionsPath);
 
 /// <summary>
-/// Writes the accumulator out as the new baseline, with a provenance report beside it — plan 00034
-/// decision 9: as LF, to a new path the operator chooses, by this tool rather than by the view.
+/// Writes the accumulator out as the new baseline, with a provenance report and a decision file beside
+/// it — plan 00034 decision 9: as LF, to a new path the operator chooses, by this tool rather than by the
+/// view.
 /// </summary>
 /// <remarks>
 /// <para>
 /// ⛔ <b>Never over a file the corpus read.</b> The view's own save was ruled out because it writes a side
 /// back to its source's path, which for the accumulator would be the seed machine's live file — and a
 /// path chosen in a dialog can name that file just as well, so the refusal lives here and not only in
-/// what the panes carry. The seed and every queued candidate are refused, for the baseline and for its
-/// report alike, before anything is written. Paths are compared without case: Windows' file systems and
-/// macOS's default one ignore it, and refusing a name that differs only in case costs nothing where
-/// they do not.
+/// what the panes carry. The seed and every queued candidate are refused, for the baseline, its report
+/// and its decision file alike, before anything is written. Paths are compared without case: Windows'
+/// file systems and macOS's default one ignore it, and refusing a name that differs only in case costs
+/// nothing where they do not.
 /// </para>
 /// <para>
 /// The baseline is the accumulator's text as it stands — takes, drops and typing alike — written LF and
@@ -34,9 +35,17 @@ internal sealed record SavedBaseline(string BaselinePath, string ReportPath);
 /// </para>
 /// <para>
 /// The report is <see cref="ReportPathFor"/>: the seed, the queue in review order, and every durable
-/// decision in the order made — the decision log §1 calls the product. ⚠ It is the log and nothing more
+/// decision this run made, in the order made — the decision log §1 calls the product. Decisions an earlier
+/// run made it counts and does not list: the decision file keeps them. ⚠ It is the log and nothing more
 /// yet: whether the saved text still carries what each take took — an undo, or the take edited by hand —
 /// is decision 9c's to mark at step 10, beside step 9's staleness.
+/// </para>
+/// <para>
+/// ⭐ The decision file is <see cref="DecisionsPathFor"/>, step 8's durable store on disk: every run's
+/// decisions, each take this run made read against the text being saved
+/// (<see cref="DurableStore.Reconcile"/>), and nothing of the session store. A take the save cannot read
+/// refuses it before anything is written, as a path the corpus read does. A later run begins from that
+/// file, so an operator who keeps it beside the baseline keeps every decision behind it.
 /// </para>
 /// </remarks>
 internal static class BaselineOutput
@@ -48,10 +57,18 @@ internal static class BaselineOutput
     internal static string ReportPathFor(string baselinePath) => Path.ChangeExtension(baselinePath, ".provenance.md");
 
     /// <summary>
-    /// Writes <paramref name="session"/>'s accumulator to <paramref name="path"/> as the baseline, and its
-    /// provenance beside it.
+    /// The decision file's path for a baseline at <paramref name="baselinePath"/>: beside it, with
+    /// <c>.decisions.json</c> for its extension.
     /// </summary>
-    /// <exception cref="SaveRefusedException">Either file would be one the corpus read; nothing was written.</exception>
+    internal static string DecisionsPathFor(string baselinePath) => Path.ChangeExtension(baselinePath, ".decisions.json");
+
+    /// <summary>
+    /// Writes <paramref name="session"/>'s accumulator to <paramref name="path"/> as the baseline, and its
+    /// provenance and its decisions beside it.
+    /// </summary>
+    /// <exception cref="SaveRefusedException">
+    /// A file would be one the corpus read, or a take cannot be read against the accumulator; nothing was written.
+    /// </exception>
     /// <exception cref="IOException">A file could not be written.</exception>
     /// <exception cref="UnauthorizedAccessException">A file may not be written.</exception>
     internal static SavedBaseline Write(ReviewSession session, string path)
@@ -61,12 +78,16 @@ internal static class BaselineOutput
 
         string baseline = Path.GetFullPath(path);
         string report = ReportPathFor(baseline);
+        string decisions = DecisionsPathFor(baseline);
         RefuseAnyFileRead(session.Queue, baseline, "the baseline");
         RefuseAnyFileRead(session.Queue, report, "its provenance report");
+        RefuseAnyFileRead(session.Queue, decisions, "its decision file");
+        IReadOnlyList<SectionDecision> kept = session.Durable.Reconcile(session.Accumulator);
 
         PaneWriter.Write(baseline, session.Accumulator, encoding: null, LineEnding.Lf);
         PaneWriter.Write(report, Report(session, Path.GetFileName(baseline)), encoding: null, LineEnding.Lf);
-        return new SavedBaseline(baseline, report);
+        DecisionFile.Write(decisions, kept);
+        return new SavedBaseline(baseline, report, decisions);
     }
 
     /// <summary>
@@ -90,7 +111,15 @@ internal static class BaselineOutput
         }
 
         report.Append("\n## Decisions, in the order made\n\n");
-        IReadOnlyList<SectionDecision> decisions = session.Durable.Decisions;
+        int earlier = session.Durable.Inherited;
+        if (earlier > 0)
+        {
+            report.Append(earlier == 1
+                ? "One decision made before this run came with it and is not listed here: the decision file beside this report keeps it.\n\n"
+                : $"{earlier} decisions made before this run came with it and are not listed here: the decision file beside this report keeps them.\n\n");
+        }
+
+        IReadOnlyList<SectionDecision> decisions = session.Durable.Made;
         if (decisions.Count == 0)
         {
             report.Append("None: no section was taken, left or dropped.\n");

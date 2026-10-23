@@ -4467,3 +4467,47 @@ so that each step's proof is a set committed beside its tests. At step 7, which 
 step 5 foresaw, because a full run fails on any guard no mutation trips first, and nothing else trips the
 new floor first. ⭐ What holds is the reason: nothing under `scripts/` drives the app, and every step is
 proven headless.
+
+## Plan 00034's durable store is a decision file each save writes beside its baseline
+
+Recorded at plan 00034 step 8, 2026-10-22 — ⚠ **readings the plan leaves open, made rather than assumed;
+the plan stays as approved.** Decision 10 says what the durable store holds and that it outlives the run,
+decision 9c what a take records, and §7 that the store is content at rest, written only where the
+operator points; none says when the store is written, where it goes, or how a later run asks it anything.
+
+**When: at save, never as each decision is made.** The file describes the baseline written beside it. A
+take recorded as it is made would tell the next run that a rule went into a baseline that may never be
+saved, and decision 9c's edited flag and result exist only once the operator has finished editing, which
+is the save. ⚠ The cost is that a review abandoned or crashed before its save loses its decisions
+together with its accumulator; a decision outliving the text it shaped would be the worse failure.
+
+**Where: `<name>.decisions.json`, beside the baseline and its report**, and refused over a file the
+corpus read as they are. Each save writes every run's decisions — the earlier runs' as they were read,
+this run's after them — so the newest file is the whole history, and the report beside it lists this
+run's and counts the rest. It is written whole beside itself and moved over, because a torn write would
+lose every earlier run's decisions where a torn baseline loses one save. ⚠ How a later run is pointed at
+the file is the start-up's, which none of the plan's steps names.
+
+**The shape: JSON at version 1, read strictly as the manifest is.** A key, a kind, a value's shape or a
+version the reader does not know is refused rather than skipped, because a decision dropped in silence is
+a rule offered again, or one never offered again, with nothing to say why. ⛔ The kinds are closed at
+decision 10's three, so a deferral cannot come in by hand either, and a take's hash is checked against
+its text, the two being one fact written twice.
+
+**Decision 9c is read at save.** A take this run made is compared with the accumulator's section at its
+heading path while it is still what that section follows from: the last take or drop there, a leave
+writing nothing to the left. The same text, and the take is kept as taken; different, and it is edited,
+with that section as its result; none, and it is edited with no result, the baseline holding no rule
+under that path any more. A take a later take replaced is history, kept as taken. Two sections at a
+take's path refuse the save, as they refuse a take or a drop, because what the take became cannot be
+told.
+
+**Presented means the store has decided nothing about that exact version.** `DurableStore.StandingOf`
+answers a candidate's section with the latest decision about its identity, so a reworded version is a
+new one and is offered, and an identical one — on the machine it was decided on or any other — is
+answered and is not. ⭐ Where the section's path follows from an edited take of that very candidate, the
+candidate is asked instead, its hash now against the hash taken — *your edit stands* or *re-review* —
+unless a later decision is about this exact version, so a rewrite reviewed and left stays left. ⚠ A
+source is known by its label, so a candidate relabelled in a later run is answered by identity alone,
+and its rewrite reads as undecided rather than as one to re-review. ⚠ Nothing in the window reads a
+standing yet: the right still shows every section, decided before or not.

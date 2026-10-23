@@ -32,13 +32,21 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// </para>
 /// </remarks>
 /// <param name="HeadingPath">The rule: <see cref="MarkdownSection.HeadingPath"/>.</param>
-/// <param name="Hash">The version: SHA-256 of <see cref="MarkdownSection.Content"/> as UTF-8, in hex.</param>
+/// <param name="Hash">The version: <see cref="HashOf"/> of <see cref="MarkdownSection.Content"/>.</param>
 internal sealed record SectionIdentity(string HeadingPath, string Hash)
 {
     /// <summary>The identity of <paramref name="section"/>.</summary>
     internal static SectionIdentity Of(MarkdownSection section)
     {
         ArgumentNullException.ThrowIfNull(section);
-        return new SectionIdentity(section.HeadingPath, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(section.Content))));
+        return new SectionIdentity(section.HeadingPath, HashOf(section.Content));
     }
+
+    /// <summary>
+    /// The version half of an identity: SHA-256 of <paramref name="content"/> as UTF-8, in upper-case hex.
+    /// One function, so a decision file checking a take's hash against its text asks exactly what a review
+    /// asked when it recorded the take.
+    /// </summary>
+    internal static string HashOf(string content) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
 }
