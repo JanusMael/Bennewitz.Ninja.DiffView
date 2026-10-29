@@ -78,8 +78,8 @@ persisted across runs. Approved 2026-10-14 and committed as its own change befor
 is never edited again** — drift comes here, and superseding it means a new number. **Step 9 — narrow
 staleness — is next.** The tool opens on what its command line names now — a manifest or a path list, a
 seed, and the decision file an earlier save wrote — and says what the corpus left out before the window
-opens, so the real consolidation the plan is done by can be run at all. ⚠ The window's platform lifetime
-is the one part of it no headless test reaches, and a by-hand run of it is owed first.
+opens, so the real consolidation the plan is done by can be run at all. The window's platform lifetime,
+the one part of it no headless test reaches, was run by hand the same day and opened, drew and closed.
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -605,7 +605,10 @@ platform lifetime is out of a headless test's reach;
 a plan. `StandingLineTests` drives the line through the window: a version an earlier run left, a move
 within a section, a caret in no section, a candidate come back to. The suite measured **956** here
 against 928, judged `healthy` by `catch-crash --check --expect auto`. ⚠ **`App.Run`'s platform lifetime
-is the part no test can start**, so a by-hand run judges it, on Brian's word to borrow the desktop.
+is the part no test can start**, so it was run by hand on Brian's word that day: on a corpus of three
+machines and a fourth missing, it printed its four lines — the missing one among them — opened *Agent
+baseline* at 1280×800 with the seed against the most-changed candidate, drew the review as the tests do,
+in a frame `PrintWindow` took with no input sent, and closed on a close request with exit code 0.
 
 **Fifty-one mutations, each declaring the test that must fail under it or that it must stay green, all
 as declared, and none of the twenty tests went unkilled** — `startup`, whose green control swaps a
