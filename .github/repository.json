@@ -1,0 +1,28 @@
+{
+  "description": "Side-by-side and unified diff controls for Avalonia, built on AvaloniaEdit — editable panes, word-level highlights, collapsible unchanged rows, find, an overview map and connectors — plus a UI-free diff model. Ships as Bennewitz.Ninja.DiffView.Avalonia and Bennewitz.Ninja.DiffView.Core.",
+  "homepage": "",
+  "topics": [
+    "avalonia",
+    "avaloniaedit",
+    "compare",
+    "control",
+    "csharp",
+    "diff",
+    "diff-view",
+    "diffplex",
+    "dotnet",
+    "nuget",
+    "side-by-side",
+    "text-diff"
+  ],
+  "requiredChecks": [
+    "Build & Test (ubuntu-latest)",
+    "Build & Test (windows-latest)",
+    "Build & Test (macos-latest)",
+    "Culture Leg (de-DE)",
+    "Trim Check (Release linux-x64)"
+  ],
+  "content": [],
+  "undocumented": {},
+  "trimming": "required"
+}
