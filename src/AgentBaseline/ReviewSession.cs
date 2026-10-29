@@ -56,6 +56,12 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// from the title's extension when there is no path. A title of the label alone would highlight one
 /// candidate and not the next, as a label happened to end in <c>.md</c> or not.
 /// </para>
+/// <para>
+/// ⭐ <b>Where the accumulator moved under a review is the session store's to say</b> — decision 11's narrow
+/// staleness, <see cref="Staleness"/>. Every move of the right pane records the accumulator as the candidate
+/// leaving it was reviewed against, and a candidate is stale where the accumulator has since gained or changed a
+/// section it carries a version of its own. Step 10's save is what warns on it.
+/// </para>
 /// <para>Like the view it drives, a session is used on the UI thread only.</para>
 /// </remarks>
 internal sealed class ReviewSession
@@ -111,7 +117,7 @@ internal sealed class ReviewSession
         {
             Title = TitleOf($"baseline from {queue.Seed.Label}", queue.Seed),
         };
-        Show(0);
+        Show();
     }
 
     /// <summary>The seed and the candidates under review, in the order they are reviewed.</summary>
@@ -157,7 +163,7 @@ internal sealed class ReviewSession
             return false;
         }
 
-        Show(Position + 1);
+        MoveTo(Position + 1);
         return true;
     }
 
@@ -172,7 +178,7 @@ internal sealed class ReviewSession
             return false;
         }
 
-        Show(Position - 1);
+        MoveTo(Position - 1);
         return true;
     }
 
@@ -182,7 +188,7 @@ internal sealed class ReviewSession
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Queue.Items.Count);
-        Show(index);
+        MoveTo(index);
     }
 
     /// <summary>
@@ -254,6 +260,15 @@ internal sealed class ReviewSession
     }
 
     /// <summary>
+    /// Where the candidates reviewed so far are stale — plan 00034 decision 11, narrowed: each section of a
+    /// candidate that the accumulator has gained or changed since the candidate last left the right pane, where
+    /// the candidate carries its own version and that version is not the one the accumulator now holds
+    /// (<see cref="SessionStore.StaleIn"/>). The accumulator is read from its live text, so typing counts as a
+    /// take does.
+    /// </summary>
+    internal IReadOnlyList<StaleSection> Staleness() => Session.StaleIn(Queue.Items, MarkdownOutline.Read(view.LeftDocument.Text));
+
+    /// <summary>
     /// Drops the accumulator's own section at <paramref name="headingPath"/> from the baseline, durably:
     /// the only decision that makes the baseline lose something the machines had (decision 10).
     /// </summary>
@@ -269,10 +284,20 @@ internal sealed class ReviewSession
         Decide(new SectionDecision(DecisionKind.Dropped, SectionIdentity.Of(dropped), null, null));
     }
 
-    private void Show(int index)
+    /// <summary>
+    /// Moves the right pane to the candidate at <paramref name="index"/>, the session store recording what the
+    /// candidate leaving it was reviewed against: the accumulator as it reads now.
+    /// </summary>
+    private void MoveTo(int index)
     {
-        Session.Position = index;
-        Candidate candidate = Queue.Items[index].Candidate;
+        Session.MoveTo(index, MarkdownOutline.Read(view.LeftDocument.Text));
+        Show();
+    }
+
+    /// <summary>Shows the candidate at <see cref="Position"/> on the right.</summary>
+    private void Show()
+    {
+        Candidate candidate = Current.Candidate;
         view.RightSource = new PaneSource(candidate.Document.Text) { Title = TitleOf(candidate.Label, candidate) };
     }
 

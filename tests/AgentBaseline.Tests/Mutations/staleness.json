@@ -1,0 +1,144 @@
+// Plan 00034 step 9: narrow staleness. A candidate is stale only where it carries its own version of a
+// section the accumulator has gained or changed since the candidate last left the right pane — decision 11 —
+// read against what the session store recorded at that departure, which nothing writes (decision 10).
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/StalenessTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a departure records nothing, so nothing is ever stale",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "        reviewedAgainst[Position] = VersionsIn(accumulator);\n",
+      "new": "",
+      "killer": "Taking_a_section_a_candidate_has_no_version_of_leaves_it_unstale_and_one_it_carries_differently_marks_it",
+      "says": "After a take of One, which machine 1 carries in a version of its own"
+    },
+    {
+      "name": "a section the accumulator has not moved since the review stales a candidate whose version differs",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "!now[path].SequenceEqual(then[path]) && ",
+      "new": "",
+      "killer": "Taking_a_section_a_candidate_has_no_version_of_leaves_it_unstale_and_one_it_carries_differently_marks_it",
+      "says": "After a take of Three, which machine 1 has no version of"
+    },
+    {
+      "name": "a stale section is named for the candidate on the right",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "new StaleSection(path, candidate.Label)",
+      "new": "new StaleSection(path, queue[Position].Candidate.Label)",
+      "killer": "Taking_a_section_a_candidate_has_no_version_of_leaves_it_unstale_and_one_it_carries_differently_marks_it",
+      "says": "After a take of One, which machine 1 carries in a version of its own"
+    },
+    {
+      "name": "the very version taken stales the candidate carrying it",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": " && !own.SequenceEqual(now[path])",
+      "new": "",
+      "killer": "A_reviewed_candidate_carrying_the_very_version_taken_is_not_stale_there",
+      "says": "After a take of One in the very version machine 1 carries"
+    },
+    {
+      "name": "a candidate's version is compared with what it was reviewed against rather than with what is held now",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "!own.SequenceEqual(now[path])",
+      "new": "!own.SequenceEqual(then[path])",
+      "killer": "A_reviewed_candidate_carrying_the_very_version_taken_is_not_stale_there",
+      "says": "After a take of One in the very version machine 1 carries"
+    },
+    {
+      "name": "the candidate on the right is stale like any other",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "i == Position || ",
+      "new": "",
+      "killer": "Typing_stales_a_candidate_reviewed_before_it_but_never_the_one_on_the_right",
+      "says": "After typing in One with machine 1 on the right"
+    },
+    {
+      "name": "a departure is recorded as the seed rather than as the accumulator then reads",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Session.MoveTo(index, MarkdownOutline.Read(view.LeftDocument.Text));",
+      "new": "Session.MoveTo(index, Queue.Seed.Document.Outline);",
+      "killer": "Typing_stales_a_candidate_reviewed_before_it_but_never_the_one_on_the_right",
+      "says": "After machine 1 left the right pane again"
+    },
+    {
+      "name": "staleness is read against the seed rather than the accumulator as it now reads",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Session.StaleIn(Queue.Items, MarkdownOutline.Read(view.LeftDocument.Text))",
+      "new": "Session.StaleIn(Queue.Items, Queue.Seed.Document.Outline)",
+      "killer": "Typing_stales_a_candidate_reviewed_before_it_but_never_the_one_on_the_right",
+      "says": "After typing in One with machine 1 on the right"
+    },
+    {
+      "name": "a candidate shown again keeps the reading of its first departure",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "reviewedAgainst[Position] = VersionsIn(accumulator);",
+      "new": "_ = reviewedAgainst.TryAdd(Position, VersionsIn(accumulator));",
+      "killer": "Coming_back_to_a_stale_candidate_reviews_it_again",
+      "says": "After machine 1 left the right pane a second time"
+    },
+    {
+      "name": "the reading is recorded for the candidate arriving rather than the one leaving",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "        reviewedAgainst[Position] = VersionsIn(accumulator);\n        Position = index;",
+      "new": "        Position = index;\n        reviewedAgainst[Position] = VersionsIn(accumulator);",
+      "killer": "A_candidate_never_on_the_right_is_never_stale",
+      "says": "After a take of One from machine 2, machine 3 not yet shown"
+    },
+    {
+      "name": "a candidate never shown is read as reviewed against an empty accumulator",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "reviewedAgainst.GetValueOrDefault(i) is not { } then",
+      "new": "(reviewedAgainst.GetValueOrDefault(i) ?? Array.Empty<string>().ToLookup(p => p)) is not { } then",
+      "killer": "A_candidate_never_on_the_right_is_never_stale",
+      "says": "After a take of One from machine 2, machine 3 not yet shown"
+    },
+    {
+      "name": "a section the accumulator lost stales every candidate carrying a version of it",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "now.Contains(path) && ",
+      "new": "",
+      "killer": "A_section_the_accumulator_has_dropped_stales_nothing",
+      "says": "After One was dropped from the accumulator"
+    },
+    {
+      "name": "a path held twice is read as its first section alone",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "outline.Sections.ToLookup(",
+      "new": "outline.Sections.DistinctBy(s => s.HeadingPath, StringComparer.Ordinal).ToLookup(",
+      "killer": "A_path_the_accumulator_holds_twice_is_read_as_both_its_sections",
+      "says": "After typing in the second of two sections at Notes"
+    },
+    {
+      "name": "a missing accumulator is not refused by name on a move",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "        ArgumentNullException.ThrowIfNull(accumulator);\n        reviewedAgainst[Position]",
+      "new": "        reviewedAgainst[Position]",
+      "killer": "The_session_store_refuses_a_missing_accumulator_or_queue_by_name"
+    },
+    {
+      "name": "a missing queue is not refused by name",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "        ArgumentNullException.ThrowIfNull(queue);\n",
+      "new": "",
+      "killer": "The_session_store_refuses_a_missing_accumulator_or_queue_by_name"
+    },
+    {
+      "name": "a missing accumulator is not refused by name when staleness is read",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "ArgumentNullException.ThrowIfNull(queue);\n        ArgumentNullException.ThrowIfNull(accumulator);\n",
+      "new": "ArgumentNullException.ThrowIfNull(queue);\n",
+      "killer": "The_session_store_refuses_a_missing_accumulator_or_queue_by_name"
+    },
+    {
+      "name": "two runs of sections are compared the other way round",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "!now[path].SequenceEqual(then[path])",
+      "new": "!then[path].SequenceEqual(now[path])",
+      "expect": "green",
+      "because": "a control: sequence equality is symmetric — two runs hold the same strings in the same order whichever is asked about the other — so nothing a test reads changes, and an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

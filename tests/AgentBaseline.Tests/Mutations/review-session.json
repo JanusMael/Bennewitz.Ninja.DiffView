@@ -9,16 +9,16 @@
     {
       "name": "cycling assigns the left again, under a title that counts the candidates",
       "file": "src/AgentBaseline/ReviewSession.cs",
-      "old": "Position = index;",
-      "new": "Position = index; view.LeftSource = new PaneSource(Queue.Seed.Document.Text) { Title = $\"baseline at candidate {index + 1}\" };",
+      "old": "Session.MoveTo(index, MarkdownOutline.Read(view.LeftDocument.Text));",
+      "new": "Session.MoveTo(index, MarkdownOutline.Read(view.LeftDocument.Text)); view.LeftSource = new PaneSource(Queue.Seed.Document.Text) { Title = $\"baseline at candidate {index + 1}\" };",
       "killer": "Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo",
       "says": "did not survive"
     },
     {
       "name": "cycling assigns the left again with its own edited text (the text survives, the undo does not)",
       "file": "src/AgentBaseline/ReviewSession.cs",
-      "old": "Position = index;",
-      "new": "Position = index; view.LeftSource = new PaneSource(view.LeftDocument.Text) { Title = view.LeftSource?.Title };",
+      "old": "Session.MoveTo(index, MarkdownOutline.Read(view.LeftDocument.Text));",
+      "new": "Session.MoveTo(index, MarkdownOutline.Read(view.LeftDocument.Text)); view.LeftSource = new PaneSource(view.LeftDocument.Text) { Title = view.LeftSource?.Title };",
       "killer": "Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo",
       "says": "emptied its undo stack"
     },
@@ -33,8 +33,8 @@
     {
       "name": "next shows the same candidate again",
       "file": "src/AgentBaseline/ReviewSession.cs",
-      "old": "Show(Position + 1);",
-      "new": "Show(Position);",
+      "old": "MoveTo(Position + 1);",
+      "new": "MoveTo(Position);",
       "killer": "Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo"
     },
     {
@@ -77,8 +77,8 @@
     {
       "name": "previous shows the same candidate again",
       "file": "src/AgentBaseline/ReviewSession.cs",
-      "old": "Show(Position - 1);",
-      "new": "Show(Position);",
+      "old": "MoveTo(Position - 1);",
+      "new": "MoveTo(Position);",
       "killer": "Next_and_previous_stop_at_the_ends_and_a_jump_shows_the_candidate_it_names"
     },
     {

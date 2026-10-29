@@ -304,8 +304,17 @@ internal sealed class DurableStore
 internal sealed record DeferredSection(SectionIdentity Section, string Source);
 
 /// <summary>
-/// The session store: where the review is and what it has put off — plan 00034 decision 10. Staleness
-/// joins it at step 9.
+/// One place a candidate is stale — plan 00034 decision 11: the candidate carries its own version of the
+/// section at <paramref name="HeadingPath"/>, and the accumulator has gained or changed that section since the
+/// candidate was last reviewed.
+/// </summary>
+/// <param name="HeadingPath">The section, by its heading path.</param>
+/// <param name="Source">The candidate's label.</param>
+internal sealed record StaleSection(string HeadingPath, string Source);
+
+/// <summary>
+/// The session store: where the review is, what it has put off, and what each candidate was reviewed against,
+/// which is what its staleness is read from — plan 00034 decision 10.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -314,17 +323,42 @@ internal sealed record DeferredSection(SectionIdentity Section, string Source);
 /// is never at once put off and decided.
 /// </para>
 /// <para>
+/// ⭐ <b>Staleness is narrow</b> — decision 11. Every take changes the accumulator that each candidate reviewed
+/// before it was diffed against, so literal staleness is near-universal, and a save warning on it would warn on
+/// everything. A candidate is stale only where it carries its own version of a section the accumulator has
+/// since gained or changed, and that version is not the one the accumulator now holds: a section it has no
+/// version of, or one it carries exactly as taken, gives its review nothing to look at again.
+/// </para>
+/// <para>
+/// <i>Since</i> means since the candidate last left the right pane, where its review ended:
+/// <see cref="MoveTo"/> records the accumulator as it reads at that moment. The candidate on the right is under
+/// review against the accumulator as it stands, so it is never stale; one never shown was never reviewed; and a
+/// candidate shown again is reviewed again, its departure recorded anew. What was gained or changed is read
+/// against that record, so typing in the accumulator counts as a take does, and a take undone stales nothing.
+/// </para>
+/// <para>
+/// ⚠ A section the accumulator has <b>lost</b> since, dropped or deleted by hand, stales nothing. Decision 11
+/// names a section gained or changed, and a drop decides the rule whole: were it to count, every candidate
+/// carrying a version of a dropped rule would be stale at once, which is the wall decision 11 narrows away.
+/// </para>
+/// <para>
 /// ⛔ <b>Nothing of it is written.</b> A save writes the durable store and this one not at all, so a later
-/// run begins at the first candidate with nothing put off, and a section deferred is offered again: what
-/// it means for <c>defer</c> to be session state.
+/// run begins at the first candidate with nothing put off and nothing stale, and a section deferred is
+/// offered again: what it means for <c>defer</c> to be session state.
 /// </para>
 /// </remarks>
 internal sealed class SessionStore
 {
     private readonly List<DeferredSection> deferred = [];
 
+    /// <summary>
+    /// What each candidate was last reviewed against, by its place in the queue: the accumulator's sections as
+    /// they read the moment it last left the right pane.
+    /// </summary>
+    private readonly Dictionary<int, ILookup<string, string>> reviewedAgainst = [];
+
     /// <summary>Where in the queue the right pane is.</summary>
-    internal int Position { get; set; }
+    internal int Position { get; private set; }
 
     /// <summary>What is put off, in the order it was.</summary>
     internal IReadOnlyList<DeferredSection> Deferred => deferred;
@@ -344,4 +378,63 @@ internal sealed class SessionStore
 
     /// <summary>Takes <paramref name="section"/> off the deferred list: it has been decided.</summary>
     internal void Settle(SectionIdentity section) => deferred.RemoveAll(d => d.Section == section);
+
+    /// <summary>
+    /// Moves the right pane to the candidate at <paramref name="index"/> in the queue. The candidate it leaves
+    /// was reviewed against <paramref name="accumulator"/>, the accumulator as it reads at this moment, which
+    /// replaces whatever an earlier departure recorded for it.
+    /// </summary>
+    internal void MoveTo(int index, MarkdownOutline accumulator)
+    {
+        ArgumentNullException.ThrowIfNull(accumulator);
+        reviewedAgainst[Position] = VersionsIn(accumulator);
+        Position = index;
+    }
+
+    /// <summary>
+    /// Where the candidates of <paramref name="queue"/> are stale against <paramref name="accumulator"/>, the
+    /// accumulator as it reads now: in the queue's order, each candidate's in its own document order.
+    /// </summary>
+    /// <remarks>
+    /// A heading path is compared as the run of sections at it, in order, so a document holding one path twice
+    /// is read rather than refused: staleness warns, and refuses nothing.
+    /// </remarks>
+    internal IReadOnlyList<StaleSection> StaleIn(IReadOnlyList<QueuedCandidate> queue, MarkdownOutline accumulator)
+    {
+        ArgumentNullException.ThrowIfNull(queue);
+        ArgumentNullException.ThrowIfNull(accumulator);
+
+        ILookup<string, string> now = VersionsIn(accumulator);
+        List<StaleSection> stale = [];
+        for (int i = 0; i < queue.Count; i++)
+        {
+            // The candidate on the right is under review now, and one never shown has not been reviewed at all.
+            if (i == Position || reviewedAgainst.GetValueOrDefault(i) is not { } then)
+            {
+                continue;
+            }
+
+            Candidate candidate = queue[i].Candidate;
+            foreach (IGrouping<string, string> own in VersionsIn(candidate.Document.Outline))
+            {
+                // Held now, so gained or changed rather than lost; moved since the review; and not the
+                // candidate's own version, which would leave nothing to look at again.
+                string path = own.Key;
+                if (now.Contains(path) && !now[path].SequenceEqual(then[path]) && !own.SequenceEqual(now[path]))
+                {
+                    stale.Add(new StaleSection(path, candidate.Label));
+                }
+            }
+        }
+
+        return stale;
+    }
+
+    /// <summary>
+    /// Every heading path <paramref name="outline"/> holds, each with the content of every section at it in
+    /// document order: the text a take carries and an identity hashes, without the blank lines after it that
+    /// say only where a section sits.
+    /// </summary>
+    private static ILookup<string, string> VersionsIn(MarkdownOutline outline) =>
+        outline.Sections.ToLookup(s => s.HeadingPath, s => s.Content, StringComparer.Ordinal);
 }
