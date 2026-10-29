@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` carries everything through PR #41, and CI is green on it** — PR #41 merged on a full
+**`main` carries everything through PR #42, and CI is green on it** — PR #42 merged on a full
 10-of-10, 2026-10-29. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
 wrong the moment it is true.* **Windows measured 956** here, `Passed!`, by a local run — twenty-eight
