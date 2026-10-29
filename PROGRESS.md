@@ -5,8 +5,8 @@
 **`main` carries everything through PR #42, and CI is green on it** — PR #42 merged on a full
 10-of-10, 2026-10-29. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 956** here, `Passed!`, by a local run — twenty-eight
-more than at PR #41, all of them the start-up's. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 964** here, `Passed!`, by a local run — eight
+more than at PR #42, all of them plan 00034 step 9's. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -70,13 +70,13 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 8 are done, step 11 with step 7, and
-the start-up none of the twelve steps names, ahead of step 9 on Brian's word of 2026-10-29.**
+⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 9 are done, step 11 with step 7, and
+the start-up none of the twelve steps names, built ahead of step 9 on Brian's word of 2026-10-29.**
 `AgentBaseline` consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left
 accumulator against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 9 — narrow
-staleness — is next.** The tool opens on what its command line names now — a manifest or a path list, a
+is never edited again** — drift comes here, and superseding it means a new number. **Step 10 — the save,
+which warns on step 9's staleness — is next.** The tool opens on what its command line names now — a manifest or a path list, a
 seed, and the decision file an earlier save wrote — and says what the corpus left out before the window
 opens, so the real consolidation the plan is done by can be run at all. The window's platform lifetime,
 the one part of it no headless test reaches, was run by hand the same day and opened, drew and closed.
@@ -620,6 +620,42 @@ never matches, a string's length below zero, and the build refused it — CS8518
 as a build and not as a test's kill. Rewritten as a length no message reaches, the set ran again alone:
 **51 of 51**, in 4.1 minutes. The two runs' trees differ under `src`, `tests` and `scripts` in that one
 line of `startup.json` alone, which none of the other four sets reads.
+
+⭐ **Step 9 is narrow staleness, and it is read rather than marked.** Every move of the right pane — F8,
+Shift+F8 or a jump — records in the session store the accumulator's sections as the candidate leaving it was
+reviewed against (`SessionStore.MoveTo`), and `ReviewSession.Staleness` reads, against the accumulator's live
+text, where each candidate is stale: at a section it carries a version of its own, which the accumulator has
+gained or changed since that departure and now holds in another version. The candidate on the right is under
+review and never stale, one never shown has not been reviewed, and one shown again is reviewed again. Read and
+not marked, typing counts as a take does and a take undone stales nothing. ⚠ **Nothing reads it yet but the
+tests**: step 10's save is where decision 11 warns, and its report where an accepted staleness is recorded.
+
+The step's verification is
+`StalenessTests.Taking_a_section_a_candidate_has_no_version_of_leaves_it_unstale_and_one_it_carries_differently_marks_it`:
+with one candidate reviewed and the next on the right, a take of a section the reviewed one has no version of
+leaves nothing stale — though it carries versions of two other sections that are not the accumulator's — and a
+take of one it carries differently marks it there and nowhere else; undone, that take takes the mark back.
+Seven more hold the rest: the very version taken stales nothing, typing stales a candidate behind the one on
+the right and never that one, coming back reviews a candidate again, one never shown is never stale, a drop
+stales nothing, a path held twice is read as both its sections, and the store refuses what is missing by name.
+The suite measured **964** here against 956, judged `healthy` by `catch-crash --check --expect auto`.
+
+⚠ **Readings the plan leaves open, made rather than assumed** — `DECISIONS.md`, *Plan 00034's staleness is
+read against what each candidate was last reviewed against*. *Since* is the candidate's last departure from
+the right pane. *Its own version* is one the accumulator does not now hold. *Gained or changed* is never
+*lost*: a drop stales nothing, because it decides the rule whole and would otherwise stale every candidate
+carrying a version of it at once. ⚠ And passing back through a candidate clears what was stale under it, a
+look and a pass being one thing to the window.
+
+**Seventeen mutations, each declaring the test that must fail under it or that it must stay green, all as
+declared, and none of the eight tests went unkilled** — `staleness`, whose green control compares two runs of
+sections the other way round. `Show` became `MoveTo` and `Show`, so four of `review-session`'s mutations follow
+the move to its new lines. Run in four worktrees beside the four sets the change owed — `review-session`,
+`review-window`, `section-decisions` and `stores` — in 17.2 minutes, **207 of 208 behaved as declared**. ⚠ The
+208th, a `section-decisions` mutation, was reported as a build because an MSBuild worker node died mid-build
+under the four worktrees' load, `MSB4166`, and not because its edit failed to compile; the set ran again
+alone over the same `src`, `tests` and `scripts` trees, **57 of 57**, every declared test killed, in 3.6
+minutes. So all 208 are as declared, and every declared test of the five sets is killed.
 
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with

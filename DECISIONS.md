@@ -4558,3 +4558,39 @@ section's name and `SectionStanding.Spoken` — and not as the caret moves withi
 stays until the operator moves on; moving to another candidate clears it. ⛔ Hiding a decided section was
 the other reading of *presented*, and it is not available: the library's public folding is
 `UnchangedContextRows`, which folds matching rows, and plan 00034 §4 rules out a library change.
+
+## Plan 00034's staleness is read against what each candidate was last reviewed against
+
+Recorded at plan 00034 step 9, 2026-10-29 — ⚠ **readings the plan leaves open, made rather than assumed;
+the plan stays as approved.** Decision 11 says a candidate is stale only where it carries its own version
+of a section the left has since gained or changed, and that a save warns on it rather than refusing;
+decision 10 puts staleness in the session store; step 9's verification asks that a take of a section a
+candidate has no version of leaves it unstale and a take of one it carries a differing version of marks
+it. None says what *since* is measured from, what ends it, or what a drop does.
+
+**Since means since the candidate last left the right pane**, which is where its review ended.
+`SessionStore.MoveTo` records the accumulator's sections as they read at that moment — each heading path
+with its contents — for the candidate leaving, and a candidate is stale where the accumulator's contents
+at a path now differ from that record. The candidate on the right is under review against the
+accumulator as it stands, so it is never stale; one never shown has not been reviewed, and will be
+against the accumulator as it then stands; and one shown again is reviewed again, its next departure
+replacing the record. ⚠ So passing back through a candidate on the way to another clears what was stale
+under it, as reviewing it does: the window cannot tell a look from a pass, and what it shows on arrival
+is the diff against the accumulator as it stands.
+
+**Read, never marked.** `ReviewSession.Staleness` compares the record with the accumulator's live text
+whenever it is asked, so typing in a section counts as a take does and a take undone stales nothing:
+nothing has to be unmarked, and nothing can be forgotten.
+
+**Its own version means one the accumulator does not now hold.** A candidate carrying exactly the version
+just taken shows nothing at that section, so it is not stale there — step 9's *a differing version*. A
+path held twice is compared as the run of sections at it, in order, so staleness reads what a take
+refuses: it warns, and refuses nothing.
+
+**Gained or changed, never lost.** A section the accumulator has lost since — dropped, or deleted by hand
+— stales nothing. Decision 11 names a section gained or changed, and a drop decides the rule whole: were
+it to count, every candidate carrying any version of a dropped rule would be stale at once, the wall
+decision 11 narrows away. A section taken again after its drop is gained, and stales as any take does.
+
+⚠ **Nothing reads it yet but the tests.** Step 10's save is where decision 11 warns, and its provenance
+report where an accepted staleness is recorded.
