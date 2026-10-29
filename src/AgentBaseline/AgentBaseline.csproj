@@ -12,6 +12,10 @@
          third subject, beside the library's and the demo's, with a floor of its own: step 11, paid in
          the change that brought the first .axaml here. -->
     <PackageReference Include="Avalonia" />
+    <!-- The start-up's shell: a platform to run the window on, and the base theme the tests'
+         BaselineTestApp applies, so a test asserts the window the operator sees. -->
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Semi.Avalonia" />
   </ItemGroup>
 
   <ItemGroup>

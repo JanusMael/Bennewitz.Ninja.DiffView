@@ -1,8 +1,10 @@
 using System.Windows.Input;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
+using AvaloniaEdit.Editing;
 using Bennewitz.Ninja.DiffView;
 
 namespace Bennewitz.Ninja.AgentBaseline;
@@ -31,8 +33,15 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// dropping it.
 /// </para>
 /// <para>
-/// ⚠ Nothing launches this window yet: <see cref="Program"/> cannot be told a corpus or a seed, so the
-/// tests construct it. That start-up is what a real consolidation needs next.
+/// ⭐ <b>The line under the panes says what the durable store knows about the section at the right pane's
+/// caret</b> — <i>not decided yet</i>, <i>already left, from "janusser6"</i>, or an edited take's <i>your
+/// edit stands</i> or <i>re-review</i> — so a run that began from a decision file shows which sections are
+/// new. It is said as the caret enters a section and not as it moves within one, so a verb's outcome stays
+/// until the operator moves on. Saying it is Brian's choice of 2026-10-29: the library folds matching rows
+/// and nothing else, so hiding a decided section is not available to this app.
+/// </para>
+/// <para>
+/// <see cref="Startup.Open"/> starts the review the command line names in this window.
 /// </para>
 /// </remarks>
 internal sealed partial class ReviewWindow : Window
@@ -45,6 +54,7 @@ internal sealed partial class ReviewWindow : Window
 
     private readonly ReviewCommand[] commands;
     private ReviewSession? session;
+    private MarkdownSection? sectionSpoken;
 
     /// <summary>Builds the window with no review in it; <see cref="Review"/> starts one.</summary>
     public ReviewWindow()
@@ -72,6 +82,7 @@ internal sealed partial class ReviewWindow : Window
         KeyBindings.Add(new KeyBinding { Gesture = PreviousGesture, Command = previous });
 
         ChooseSavePath = ChooseInDialogAsync;
+        View.TemplateApplied += OnViewTemplateApplied;
     }
 
     /// <summary>
@@ -114,6 +125,7 @@ internal sealed partial class ReviewWindow : Window
         ReviewSession review = session!;
         if (forward ? review.Next() : review.Previous())
         {
+            sectionSpoken = null;
             ShowPosition();
             Say(string.Empty);
             return;
@@ -254,6 +266,42 @@ internal sealed partial class ReviewWindow : Window
 
         Say($"Nothing to {verb}: the caret in the right pane is above its first heading, in no section.");
         return null;
+    }
+
+    /// <summary>
+    /// Follows the right pane's caret, which the view's template makes: this window applies no theme of
+    /// its own, so the template is applied once, and a pane a later one replaced would move no caret.
+    /// </summary>
+    private void OnViewTemplateApplied(object? sender, TemplateAppliedEventArgs e)
+    {
+        if (e.NameScope.Find<DiffPanePresenter>(SideBySideDiffView.RightPanePart) is { } right)
+        {
+            right.TextArea.Caret.PositionChanged += OnRightCaretMoved;
+        }
+    }
+
+    /// <summary>
+    /// Says what the durable store knows about the candidate's section at the right pane's caret, once the
+    /// caret is in a section other than the one last said.
+    /// </summary>
+    private void OnRightCaretMoved(object? sender, EventArgs e)
+    {
+        if (session is not { } review || sender is not Caret caret)
+        {
+            return;
+        }
+
+        MarkdownSection? section = review.CandidateSectionAt(caret.Line);
+        if (ReferenceEquals(section, sectionSpoken))
+        {
+            return;
+        }
+
+        sectionSpoken = section;
+        if (section is not null)
+        {
+            Say($"{MarkdownOutline.Spoken(section.HeadingPath)} — {review.StandingOf(section).Spoken}.");
+        }
     }
 
     /// <summary>

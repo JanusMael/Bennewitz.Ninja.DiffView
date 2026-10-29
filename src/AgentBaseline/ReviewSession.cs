@@ -63,6 +63,21 @@ internal sealed class ReviewSession
     private readonly SideBySideDiffView view;
 
     /// <summary>
+    /// Why <paramref name="queue"/> cannot be reviewed — it holds only the seed — or <see langword="null"/>
+    /// when it can: one reading, for the session and for the start-up that refuses before a window opens.
+    /// </summary>
+    internal static string? WhyNothingToReview(ReviewQueue queue)
+    {
+        if (queue.Items.Count == 0)
+        {
+            return $"nothing to review: the corpus holds only the seed, \"{queue.Seed.Label}\", and a file "
+                + "has nothing to offer against itself";
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Seeds <paramref name="view"/>'s left with <paramref name="queue"/>'s seed and shows the first
     /// candidate on its right.
     /// </summary>
@@ -79,11 +94,9 @@ internal sealed class ReviewSession
     {
         ArgumentNullException.ThrowIfNull(queue);
         ArgumentNullException.ThrowIfNull(view);
-        if (queue.Items.Count == 0)
+        if (WhyNothingToReview(queue) is { } why)
         {
-            throw new CorpusRefusedException(
-                $"nothing to review: the corpus holds only the seed, \"{queue.Seed.Label}\", and a file "
-                + "has nothing to offer against itself");
+            throw new CorpusRefusedException(why);
         }
 
         Queue = queue;
