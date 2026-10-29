@@ -1174,17 +1174,44 @@ wording.
     ⭐ **Decided 2026-10-22, by Brian: XamlQuality** — `DECISIONS.md`, *The converged mutation runner is a
     dotnet tool from XamlQuality*. ⛔ The move itself starts only on his word.
 
+24. **The family's repository conventions — measured 2026-10-29, and Brian's to schedule.** Templates'
+    plans/00009 step 4 is DiffView conforming to `docs/repository-conventions.md` in
+    `Bennewitz.Ninja.Templates`, and the Templates session reported on 2026-10-29 that it is all that
+    holds up AppKit — `Bennewitz.Ninja.AppServices` renamed, with ScopedEditors and DiffView imported into
+    it — which ⛔ imports no repository while it has an open pull request. Brian asked for it measured
+    first. Templates `v2026.4.1023`'s `scripts/repo-conventions.cs -- check`, run read-only against this
+    checkout, reports **44 findings**, the same at the token depth CI runs and at `--admin`:
+
+    | Area | Findings | What closes them |
+    |---|---|---|
+    | `.github/repository.json` | 1 | The file: the description, the topics, the five checks `main` already requires, and `undocumented`, each exempt top-level directory with its reason |
+    | The documents | 20 | A root `CLAUDE.md` holding `@AGENTS.md`, `.github/copilot-instructions.md`, and an `AGENTS.md` with a `CLAUDE.md` beside it in each of the nine top-level directories git tracks — `.github`, `docs`, `fixtures`, `mappings`, `plans`, `reference`, `scripts`, `src` and `tests` — or an exemption for the directory |
+    | The `main` ruleset | 3 | Nothing of their own: with no `repository.json` the check wants no required checks. ⛔ **`apply` run before the file lists the five would strip them from `main`** |
+    | Friend grants | 20 | The convention's one generated grants file, linked into every project, makes every assembly's internals visible to every other; each of the seven projects takes it and deletes its own grant, or opts out with `SolutionFriendGrants` false and keeps it. ⚠ Taking it lets `AgentBaseline` and the demo reach the library's internals, which the compiler refuses them today — plan 00034 decision 1 keeps `AgentBaseline` on the public surface |
+
+    GitHub's settings and security toggles conform already: `--admin` adds nothing. The way in is the
+    document's *Bringing an existing repository in* — the scripts from Templates'
+    `templates/bbpkg/scripts/`, the `conventions` job and the release preflight step, the documents,
+    the grants or the opt-outs, then `apply` and `check --admin`, with `conventions` required only once
+    it is green. ⚠ **PR #2** (`conventions/repository-settings`, 2026-09-24) is an early version of the
+    same work — `repository.json`, the CI job and a 1,258-line `repo-conventions.cs` against today's
+    1,918 — another session's, behind `main`, and merged or closed before AppKit imports DiffView.
+    ⛔ Conforming starts only on Brian's word.
+
 Items 3, 9 and 10 are Brian's own, item 13 waits on GitHub's image rather than on its date (still
 `ubuntu-24.04` on 2026-10-19, measured) and item 16 is shelved. **Items 19, 20, 21 and 23 are
-actionable**, 23 decided by Brian on 2026-10-22 and waiting on his word to start the move — **and item
-14 became startable on 2026-10-14** when XamlQuality `2026.4.1014` shipped the reading it waits on —
-what that item now means is moving the pin, which re-opens every rule's reading and so is a change of
-its own rather than a rider on plan 00034's step 2. Item 22 closed on 2026-10-22, on Brian's decision of
-that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already closed. ⚠ The
-list was empty twice inside 2026-10-13 and has refilled six times since from a measurement rather than
-from a decision — its own attended run, then item 20 a day later, then item 21 from a peer's release,
-then item 22 from reading the corpus at plan 00034 step 6, then item 23 from reading a peer's runner of
-the same idea — so read an empty list as a state and never as a finish.
+actionable**, 23 decided by Brian on 2026-10-22 and waiting on his word to start the move, and **item 24
+is measured and waits on his word to start** — **and item 14 became startable on 2026-10-14** when
+XamlQuality `2026.4.1014` shipped the reading it waits on — what that item now means is moving the pin,
+which re-opens every rule's reading and so is a change of its own rather than a rider on plan 00034's
+step 2. ⚠ XamlQuality is `Bennewitz.Ninja.Inspections` since its rename, with AssemblyQuality and
+CodeQuality merged into it and archived (verified 2026-10-29), so items 14 and 23 name a repository by
+its old name. Item 22 closed on 2026-10-22, on Brian's decision of that day; items 17 and 18 closed on
+2026-10-13, and items 5, 6, 12 and 15 were already closed. ⚠ The list was empty twice inside 2026-10-13
+and has refilled seven times since from a measurement rather than from a decision — its own attended
+run, then item 20 a day later, then item 21 from a peer's release, then item 22 from reading the corpus
+at plan 00034 step 6, then item 23 from reading a peer's runner of the same idea, then item 24 from a
+peer's report — so read an empty list as a state and never as a finish.
 
 ### Running it
 
