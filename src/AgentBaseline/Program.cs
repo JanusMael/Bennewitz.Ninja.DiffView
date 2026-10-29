@@ -7,27 +7,63 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// <remarks>
 /// Plan 00034 step 1 put the project in the solution and deliberately nothing else in it. The parse
 /// arrived at step 2, ingest normalisation at step 3, the corpus at step 4, the review at steps 5 and 6,
-/// and at step 7 <see cref="ReviewWindow"/>, the loop as the operator drives it. What is not built is
-/// the start-up between them: nothing yet reads a corpus and a seed from the command line and opens the
-/// window on them, so the window is reached by the tests alone.
+/// the window at step 7 and the decision file at step 8. <see cref="Startup"/> is what joins them: the
+/// command line names a corpus, a seed and the decision file an earlier save wrote, and the window opens
+/// on them.
 /// </remarks>
 internal static class Program
 {
-    /// <summary>
-    /// What the executable says while it has nothing to do. Exposed so a test can assert it without
-    /// starting a process.
-    /// </summary>
-    internal const string NothingToRunYet =
-        "agent-baseline: nothing to run yet — the review window is built, and nothing yet reads a corpus "
-        + "and a seed to open it on.";
+    [STAThread]
+    private static int Main(string[] args) =>
+        Run(args, Environment.CurrentDirectory, Console.Out, Console.Error, App.Run);
 
     /// <summary>
-    /// Reports that the tool is not wired up and exits non-zero, because a tool that can do nothing
-    /// and reports success is the shape of defect this repository keeps finding.
+    /// Reads the command line and opens the review it names, saying first everything the corpus left out.
     /// </summary>
-    private static int Main()
+    /// <param name="args">The command line.</param>
+    /// <param name="workingDirectory">What a relative path on it is taken against.</param>
+    /// <param name="output">Where the start-up says what it is about to review.</param>
+    /// <param name="errors">Where a refusal is said.</param>
+    /// <param name="review">Runs the review; <see cref="App.Run"/> outside the tests.</param>
+    /// <returns>
+    /// The review's own exit code, or 2 when the start-up refused — a tool that cannot start and reports
+    /// success is the shape of defect this repository keeps finding.
+    /// </returns>
+    internal static int Run(
+        IReadOnlyList<string> args,
+        string workingDirectory,
+        TextWriter output,
+        TextWriter errors,
+        Func<StartupPlan, int> review)
     {
-        Console.WriteLine(NothingToRunYet);
-        return 2;
+        StartupRequest request;
+        try
+        {
+            request = Startup.Parse(args, workingDirectory);
+        }
+        catch (StartupRefusedException refused)
+        {
+            errors.WriteLine($"agent-baseline: {refused.Message}");
+            errors.WriteLine(Startup.Usage);
+            return 2;
+        }
+
+        StartupPlan plan;
+        try
+        {
+            plan = Startup.Prepare(request);
+        }
+        catch (Exception ex) when (ex is StartupRefusedException or CorpusRefusedException)
+        {
+            errors.WriteLine($"agent-baseline: {ex.Message}");
+            return 2;
+        }
+
+        foreach (string line in Startup.Describe(plan))
+        {
+            output.WriteLine(line);
+        }
+
+        return review(plan);
     }
 }

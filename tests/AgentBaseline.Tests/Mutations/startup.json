@@ -1,0 +1,387 @@
+{
+  // The start-up plan 00034 names in no step, built ahead of step 9 on Brian's word of 2026-10-29: the
+  // command line, the plan it reads, what is said before the window opens, the window opened on it, and
+  // the line under the panes that says what the durable store knows about the section at the right
+  // pane's caret. Every test in the two files is held to it: a full run fails while any is killed by none.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/startup.json
+  //
+  // Three places are left out, each for a stated reason. The caret handler's null guard is the
+  // compiler's: without it the build refuses CS8602 under warnings as errors, so a mutation there is
+  // killed by the build rather than by a test. Its early return before a review exists cannot be removed
+  // and still compile, the review being the pattern's own variable. And App — the platform lifetime
+  // App.Run starts — is what no headless test can reach; a by-hand run judges it, and Program.Run takes
+  // the review as a parameter so everything before that call is held here.
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/StartupTests.cs",
+    "tests/AgentBaseline.Tests/StandingLineTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "an option it does not know is read as one it does",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if (!Options.Contains(option))",
+      "new": "if (!Options.Contains(option) && option.Length > 99)",
+      "killer": "A_command_line_the_start_up_cannot_read_is_refused_and_says_why"
+    },
+    {
+      "name": "an option's value may be the next option",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": " || Options.Contains(args[i + 1]))",
+      "new": ")",
+      "killer": "A_command_line_the_start_up_cannot_read_is_refused_and_says_why"
+    },
+    {
+      "name": "a blank value is a value",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": " || string.IsNullOrWhiteSpace(args[i + 1])",
+      "new": "",
+      "killer": "A_command_line_the_start_up_cannot_read_is_refused_and_says_why"
+    },
+    {
+      "name": "an option given twice keeps its first value and says nothing",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if (!given.TryAdd(option, args[++i]))",
+      "new": "if (!given.TryAdd(option, args[++i]) && option.Length > 99)",
+      "killer": "A_command_line_the_start_up_cannot_read_is_refused_and_says_why"
+    },
+    {
+      "name": "a corpus named both ways is read as one",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if (manifest == list)",
+      "new": "if (!manifest && !list)",
+      "killer": "A_command_line_the_start_up_cannot_read_is_refused_and_says_why"
+    },
+    {
+      "name": "a relative corpus path is kept as it was given",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "Path.GetFullPath(manifest ? manifestPath! : listPath!, workingDirectory)",
+      "new": "(manifest ? manifestPath! : listPath!)",
+      "killer": "The_command_line_names_a_corpus_a_seed_and_a_decision_file_each_path_made_full"
+    },
+    {
+      "name": "the decision file is taken against the process's own directory",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "Path.GetFullPath(decisions, workingDirectory)",
+      "new": "Path.GetFullPath(decisions)",
+      "killer": "The_command_line_names_a_corpus_a_seed_and_a_decision_file_each_path_made_full"
+    },
+    {
+      "name": "the seed the command line names is dropped",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "given.GetValueOrDefault(\"--seed\")",
+      "new": "null",
+      "killer": "The_command_line_names_a_corpus_a_seed_and_a_decision_file_each_path_made_full"
+    },
+    {
+      "name": "a named decision file is never read",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : []",
+      "new": "[]",
+      "killer": "A_manifest_names_the_seed_and_the_decision_file_brings_every_earlier_decision"
+    },
+    {
+      "name": "the corpus is read before the decision file",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "        IReadOnlyList<SectionDecision> earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : [];\n\n        string text = ReadText(request.CorpusPath, request.IsManifest ? \"the manifest\" : \"the path list\");\n",
+      "new": "        string text = ReadText(request.CorpusPath, request.IsManifest ? \"the manifest\" : \"the path list\");\n\n        IReadOnlyList<SectionDecision> earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : [];\n",
+      "killer": "A_decision_file_named_and_not_there_is_refused_before_any_corpus_is_read",
+      "because": "a mistyped decision file is refused before any corpus is walked"
+    },
+    {
+      "name": "a path list is read against the process's directory, not its own",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "string directory = Path.GetDirectoryName(request.CorpusPath)!;",
+      "new": "string directory = Environment.CurrentDirectory;",
+      "killer": "A_path_list_is_read_against_its_own_directory_with_the_seed_the_command_line_names"
+    },
+    {
+      "name": "a path list is read as a manifest",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "Corpus corpus = Corpus.Gather(request.IsManifest",
+      "new": "Corpus corpus = Corpus.Gather(request.CorpusPath.Length > 0",
+      "killer": "A_path_list_is_read_against_its_own_directory_with_the_seed_the_command_line_names"
+    },
+    {
+      "name": "the manifest's seed and the command line's may differ",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "&& !string.Equals(named, stated, StringComparison.Ordinal))",
+      "new": "&& string.Equals(named, stated, StringComparison.Ordinal))",
+      "killer": "A_seed_named_twice_differently_is_refused_and_named_alike_is_one_seed"
+    },
+    {
+      "name": "the manifest's seed is not heard",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if ((request.Seed ?? corpus.RequestedSeed) is not { } seed)",
+      "new": "if (request.Seed is not { } seed)",
+      "killer": "A_manifest_names_the_seed_and_the_decision_file_brings_every_earlier_decision"
+    },
+    {
+      "name": "a corpus with candidates is said to hold none",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "corpus.Candidates.Count == 0",
+      "new": "corpus.Candidates.Count >= 0",
+      "killer": "No_seed_named_anywhere_is_refused_with_the_labels_to_choose_from"
+    },
+    {
+      "name": "a queue of the seed alone reaches the window",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if (ReviewSession.WhyNothingToReview(queue) is { } why)",
+      "new": "if (ReviewSession.WhyNothingToReview(queue) is { Length: > 9999 } why)",
+      "killer": "A_seed_that_is_no_candidate_or_all_there_is_is_refused_before_any_window_opens",
+      "because": "a refusal inside the window's start would be a crash, said nowhere the operator reads"
+    },
+    {
+      "name": "the window opens without the earlier decisions",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "window.Review(plan.Queue, plan.Earlier);",
+      "new": "window.Review(plan.Queue);",
+      "killer": "The_window_opens_on_the_plan_with_every_earlier_decision_in_its_store"
+    },
+    {
+      "name": "the order is said the other way round",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "plan.Corpus.Order == CorpusOrder.Divergence ?",
+      "new": "plan.Corpus.Order != CorpusOrder.Divergence ?",
+      "killer": "The_start_up_says_what_it_reviews_against_which_seed_and_which_earlier_decisions_came_with_it"
+    },
+    {
+      "name": "one is counted as many",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "count == 1 ? one : many ?? one + \"s\"",
+      "new": "count < 1 ? one : many ?? one + \"s\"",
+      "killer": "The_start_up_says_what_it_reviews_against_which_seed_and_which_earlier_decisions_came_with_it"
+    },
+    {
+      "name": "a run with no decision file is said to have an empty one",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "\"No decision file is named, so no earlier decision is known.\"",
+      "new": "\"0 earlier decisions.\"",
+      "killer": "The_start_up_says_what_it_reviews_against_which_seed_and_which_earlier_decisions_came_with_it"
+    },
+    {
+      "name": "what the corpus left out is not said",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "        lines.AddRange(LeftOut(plan.Corpus.Report));\n",
+      "new": "",
+      "killer": "A_command_line_naming_a_review_says_what_it_reviews_and_what_was_left_out_and_runs_it",
+      "because": "step 4: a missing candidate is reported rather than skipped, and a report nobody is shown skips it"
+    },
+    {
+      "name": "a missing candidate's label is not said",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "(missing.Label is { } label ? $\" (\\\"{label}\\\")\" : \"\")",
+      "new": "\"\"",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "a reason keeps its own full stop beside the line's",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "{Clause(unentered.Reason)}",
+      "new": "{unentered.Reason}",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "a file that is not text is said by its label, not where it is",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "Not text, so no candidate: {binary.Path}.",
+      "new": "Not text, so no candidate: {binary.Label}.",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "pointers are counted when there are none",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if (report.Pointers.Count > 0)",
+      "new": "if (report.Pointers.Count >= 0)",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "build output is said when there is none",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if (report.Pruned.Count > 0)",
+      "new": "if (report.Pruned.Count >= 0)",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "build output is named out of order",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": ".OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase)",
+      "new": ".OrderByDescending(p => p.Key, StringComparer.OrdinalIgnoreCase)",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "directories are counted as directorys",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "Counted(report.Pruned.Count, \"directory\", \"directories\")",
+      "new": "Counted(report.Pruned.Count, \"directory\")",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "a copy no candidate holds is not flagged",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "\", ⚠ held by no candidate\"",
+      "new": "\"\"",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing",
+      "because": "plan 00034 section 7: naming every copy is the defence against this one being the only one"
+    },
+    {
+      "name": "a pointer in a copy directory is said as a copy",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "string what = copy.IsPointer ? \"A pointer\"",
+      "new": "string what = copy.Holder.Length < 0 ? \"A pointer\"",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "a copy is not said to be a copy of anything",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "(copy.Identity is { } identity ? $\" of {identity}\" : \"\")",
+      "new": "\"\"",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "an include that re-admitted nothing is not said",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "foreach (string include in report.UnmatchedIncludes)",
+      "new": "foreach (string include in report.UnmatchedIncludes.Take(0))",
+      "killer": "Every_line_of_the_corpus_report_is_said_and_an_empty_report_says_nothing"
+    },
+    {
+      "name": "a refused decision file loses where it is",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "$\"{refused.Message}, in {path}\"",
+      "new": "refused.Message",
+      "killer": "A_file_that_is_no_decision_file_or_cannot_be_read_is_refused_naming_where_it_is"
+    },
+    {
+      "name": "a decision file in a directory that is not there is said as unreadable",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": " or DirectoryNotFoundException)\n        {\n            throw new StartupRefusedException($\"the decision file {path} is not there",
+      "new": ")\n        {\n            throw new StartupRefusedException($\"the decision file {path} is not there",
+      "killer": "A_decision_file_named_and_not_there_is_refused_before_any_corpus_is_read"
+    },
+    {
+      "name": "a corpus file in a directory that is not there is said as unreadable",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": " or DirectoryNotFoundException)\n        {\n            throw new StartupRefusedException($\"{what} {path} is not there\");",
+      "new": ")\n        {\n            throw new StartupRefusedException($\"{what} {path} is not there\");",
+      "killer": "A_corpus_file_that_is_not_there_or_cannot_be_read_is_refused_as_what_it_was_named"
+    },
+    {
+      "name": "an unreadable decision file escapes the start-up",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": " or UnauthorizedAccessException)\n        {\n            throw new StartupRefusedException($\"the decision file {path} cannot be read",
+      "new": ")\n        {\n            throw new StartupRefusedException($\"the decision file {path} cannot be read",
+      "killer": "A_file_that_is_no_decision_file_or_cannot_be_read_is_refused_naming_where_it_is",
+      "because": "measured on Windows: reading a directory throws UnauthorizedAccessException, not an IOException"
+    },
+    {
+      "name": "an unreadable corpus file escapes the start-up",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": " or UnauthorizedAccessException)\n        {\n            throw new StartupRefusedException($\"{what} {path} cannot be read",
+      "new": ")\n        {\n            throw new StartupRefusedException($\"{what} {path} cannot be read",
+      "killer": "A_corpus_file_that_is_not_there_or_cannot_be_read_is_refused_as_what_it_was_named",
+      "because": "measured on Windows: reading a directory throws UnauthorizedAccessException, not an IOException"
+    },
+    {
+      "name": "a command line it cannot read is not told how it is written",
+      "file": "src/AgentBaseline/Program.cs",
+      "old": "            errors.WriteLine(Startup.Usage);\n",
+      "new": "",
+      "killer": "A_command_line_the_start_up_cannot_read_says_why_and_how_it_is_written_and_runs_nothing"
+    },
+    {
+      "name": "a command line it cannot read exits as a success",
+      "file": "src/AgentBaseline/Program.cs",
+      "old": "errors.WriteLine(Startup.Usage);\n            return 2;",
+      "new": "errors.WriteLine(Startup.Usage);\n            return 0;",
+      "killer": "A_command_line_the_start_up_cannot_read_says_why_and_how_it_is_written_and_runs_nothing"
+    },
+    {
+      "name": "a refused review is told the usage as well",
+      "file": "src/AgentBaseline/Program.cs",
+      "old": "            errors.WriteLine($\"agent-baseline: {ex.Message}\");\n",
+      "new": "            errors.WriteLine($\"agent-baseline: {ex.Message}\");\n            errors.WriteLine(Startup.Usage);\n",
+      "killer": "A_review_the_start_up_refuses_says_why_without_the_usage_and_runs_nothing"
+    },
+    {
+      "name": "a corpus refusal escapes the start-up",
+      "file": "src/AgentBaseline/Program.cs",
+      "old": "when (ex is StartupRefusedException or CorpusRefusedException)",
+      "new": "when (ex is StartupRefusedException)",
+      "killer": "A_review_the_start_up_refuses_says_why_without_the_usage_and_runs_nothing"
+    },
+    {
+      "name": "a refused review exits as a success",
+      "file": "src/AgentBaseline/Program.cs",
+      "old": "errors.WriteLine($\"agent-baseline: {ex.Message}\");\n            return 2;",
+      "new": "errors.WriteLine($\"agent-baseline: {ex.Message}\");\n            return 0;",
+      "killer": "A_review_the_start_up_refuses_says_why_without_the_usage_and_runs_nothing"
+    },
+    {
+      "name": "nothing is said before the review runs",
+      "file": "src/AgentBaseline/Program.cs",
+      "old": "foreach (string line in Startup.Describe(plan))",
+      "new": "foreach (string line in Startup.Describe(plan).Take(0))",
+      "killer": "A_command_line_naming_a_review_says_what_it_reviews_and_what_was_left_out_and_runs_it"
+    },
+    {
+      "name": "the review's own exit code is not handed on",
+      "file": "src/AgentBaseline/Program.cs",
+      "old": "return review(plan);",
+      "new": "review(plan);\n        return 0;",
+      "killer": "A_command_line_naming_a_review_says_what_it_reviews_and_what_was_left_out_and_runs_it"
+    },
+    {
+      "name": "the right pane's caret is not followed",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "right.TextArea.Caret.PositionChanged += OnRightCaretMoved;",
+      "new": "right.TextArea.Caret.PositionChanged -= OnRightCaretMoved;",
+      "killer": "The_line_says_what_the_store_knows_of_the_section_the_right_pane_caret_enters"
+    },
+    {
+      "name": "the left pane's caret is followed in the right's place",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "e.NameScope.Find<DiffPanePresenter>(SideBySideDiffView.RightPanePart)",
+      "new": "e.NameScope.Find<DiffPanePresenter>(SideBySideDiffView.LeftPanePart)",
+      "killer": "The_line_says_what_the_store_knows_of_the_section_the_right_pane_caret_enters"
+    },
+    {
+      "name": "the line is said again as the caret moves within its section",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "        if (ReferenceEquals(section, sectionSpoken))\n        {\n            return;\n        }\n\n",
+      "new": "",
+      "killer": "A_verbs_outcome_stays_while_the_caret_moves_within_its_section_and_goes_when_it_leaves",
+      "because": "a verb's outcome stays until the operator moves on, or the line could never say what a click did"
+    },
+    {
+      "name": "a caret in no section leaves the last section remembered",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "        sectionSpoken = section;\n        if (section is not null)\n        {\n",
+      "new": "        if (section is not null)\n        {\n            sectionSpoken = section;\n",
+      "killer": "A_caret_in_no_section_says_nothing_and_the_section_it_returns_to_is_said_again"
+    },
+    {
+      "name": "a move leaves the line remembering what it last said",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "            sectionSpoken = null;\n            ShowPosition();",
+      "new": "            ShowPosition();",
+      "killer": "Coming_back_to_a_candidate_says_the_section_the_caret_enters_there_again"
+    },
+    {
+      "name": "the line names the section's title and not its standing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "{review.StandingOf(section).Spoken}",
+      "new": "{section.Title}",
+      "killer": "The_line_says_what_the_store_knows_of_the_section_the_right_pane_caret_enters"
+    },
+    {
+      "name": "a counted noun's arms swap with its negated test",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "count == 1 ? one : many ?? one + \"s\"",
+      "new": "count != 1 ? many ?? one + \"s\" : one",
+      "expect": "green",
+      "because": "a conditional's two arms swap when its test is negated: the same noun for every count"
+    }
+  ]
+}
