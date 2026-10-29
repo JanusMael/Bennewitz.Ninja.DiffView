@@ -4511,3 +4511,50 @@ unless a later decision is about this exact version, so a rewrite reviewed and l
 source is known by its label, so a candidate relabelled in a later run is answered by identity alone,
 and its rewrite reads as undecided rather than as one to re-review. ⚠ Nothing in the window reads a
 standing yet: the right still shows every section, decided before or not.
+
+## Plan 00034's start-up is a command line naming a corpus, a seed and a decision file
+
+Recorded 2026-10-29, between plan 00034 steps 8 and 9 — ⚠ **drift, recorded here because the plan is
+frozen.** None of the plan's twelve steps builds the start-up, and the plan is done only by a real
+consolidation, which needs one. Brian decided on 2026-10-29 that it is built now, before step 9, as a
+change of its own, and that the window says the durable store's answer for the section at the right
+pane's caret; each was his choice among stated options. The readings below are the start-up's own.
+
+**The command line names everything and infers nothing.** `--manifest <file>` or `--list <file>`, exactly
+one, then `--seed <label>` and `--decisions <file>`, each optional and each given once. A corpus is never
+told apart by its extension or its content. A relative path on the command line is taken against the
+directory it was given in, and a path inside a path list against the list's own directory, as a
+manifest's are against the manifest's, so a list means the same thing wherever it is run from. An option
+the start-up does not know, one with no value, or one given twice is refused with the usage, and the tool
+exits 2: a tool that cannot start and reports success is the shape of defect this repository keeps
+finding.
+
+**The seed is the manifest's or the command line's, and never both differently.** Decision 9b: stated in
+the manifest or chosen at start-up, never implied by ordering. Two different answers are refused rather
+than one preferred, and none at all is refused with the labels to choose from.
+
+**A decision file is read only when one is named, and before the corpus.** A first run names none. A
+named file that is not there is refused, never read as empty, because a mistyped path must not open a
+review that has forgotten every decision made before it; it is read first so that mistake is refused
+before any corpus is walked. ⚠ The file names no target, so nothing stops a `CLAUDE.md` run being handed
+an `AGENTS.md` run's file: the operator names it. The cheapest moment to give the file a target is before
+the first real save writes one.
+
+**Everything the corpus left out is said before the window opens**, one line for each file or directory
+the report names and one for each count it keeps: a missing candidate, a file that is not text, the
+pointers, the build and tool output pruned, a directory not entered, each copy and whether any candidate
+holds it, an include that re-admitted nothing. Step 4 built that report and nothing showed it, and a
+report nobody is shown is a candidate skipped in silence. A seed that is all the corpus holds is refused
+there too, through the session's own `ReviewSession.WhyNothingToReview`, so the refusal is said before a
+window opens rather than thrown inside one.
+
+**The shell is code, not markup.** `App` applies Semi and the DiffView styles as the tests'
+`BaselineTestApp` does, and adds nothing to what the accessibility and grid gates scan in `src`. Its
+platform lifetime is the one part no headless test can start, so `Program.Run` takes the review as a
+parameter and everything before that call is tested; a by-hand run judges the rest.
+
+**The line under the panes says what the store knows as the right pane's caret enters a section** — the
+section's name and `SectionStanding.Spoken` — and not as the caret moves within one, so a verb's outcome
+stays until the operator moves on; moving to another candidate clears it. ⛔ Hiding a decided section was
+the other reading of *presented*, and it is not available: the library's public folding is
+`UnchangedContextRows`, which folds matching rows, and plan 00034 §4 rules out a library change.

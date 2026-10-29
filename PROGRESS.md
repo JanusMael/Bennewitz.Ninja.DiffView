@@ -5,8 +5,8 @@
 **`main` carries everything through PR #41, and CI is green on it** — PR #41 merged on a full
 10-of-10, 2026-10-29. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 928** here, `Passed!`, by a local run — thirty-six
-more than at PR #40, all of them plan 00034 step 8's. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 956** here, `Passed!`, by a local run — twenty-eight
+more than at PR #41, all of them the start-up's. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -70,14 +70,16 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 8 are done, and step 11 with step 7.**
+⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 8 are done, step 11 with step 7, and
+the start-up none of the twelve steps names, ahead of step 9 on Brian's word of 2026-10-29.**
 `AgentBaseline` consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left
 accumulator against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
 is never edited again** — drift comes here, and superseding it means a new number. **Step 9 — narrow
-staleness — is next.** ⚠ And one thing none of the twelve steps names stands between the tool and the
-real consolidation the plan is done by: a start-up that is told a corpus, a seed and the decision file
-an earlier save wrote, and opens the review window on them. Nothing launches the window yet.
+staleness — is next.** The tool opens on what its command line names now — a manifest or a path list, a
+seed, and the decision file an earlier save wrote — and says what the corpus left out before the window
+opens, so the real consolidation the plan is done by can be run at all. ⚠ The window's platform lifetime
+is the one part of it no headless test reaches, and a by-hand run of it is owed first.
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -574,6 +576,47 @@ round. Three of `section-decisions`' mutations were re-pointed at `SectionIdenti
 hash function a review and a decision file share. Run in four worktrees beside the three sets the change
 owed — `review-session`, `review-window` and `section-decisions`: **191 mutations, all as declared**,
 every declared test killed, in 12.9 minutes.
+
+⭐ **The start-up is built ahead of step 9, and the tool opens on a corpus now.** None of the plan's
+twelve steps names it, and the real consolidation the plan is done by needs one, so Brian decided on
+2026-10-29 that it comes next, as a change of its own — drift, which `DECISIONS.md` records as *Plan
+00034's start-up is a command line naming a corpus, a seed and a decision file*. The command line is
+`--manifest <file>` or `--list <file>`, with `--seed <label>` and `--decisions <file>`, and
+`Startup.Parse` infers nothing from it. `Startup.Prepare` reads the decision file before the corpus, so a
+mistyped one is refused before any walk; refuses a seed named twice over or not at all; and refuses a
+seed that is all the corpus holds before a window opens, through the session's own
+`ReviewSession.WhyNothingToReview`. `Startup.Describe` says what is reviewed, against which seed, with
+how many earlier decisions, and every line of the corpus report — the report step 4 built and nothing
+showed until now. `App` is code and no markup, applies Semi and the DiffView styles, and opens the window
+through `Startup.Open`.
+
+⭐ **And the line under the panes says what the durable store knows about the section at the right
+pane's caret** — Brian's choice of the same day, the library having no way to hide a decided section:
+*"One" — already left, from "machine 1"*, *not decided yet*, or an edited take's *your edit stands* and
+*re-review*. It is said as the caret enters a section and not as it moves within one, so a verb's outcome
+stays until the operator moves on, and moving to another candidate clears it.
+
+The verification is twenty-eight tests. `StartupTests` holds the command line and its nine refusals, the
+plan from a manifest and from a path list read against its own directory, every refusal of a seed, a
+decision file and a corpus file, the lines said before the window and the ones the corpus report
+becomes, and `Program.Run`'s exit codes and streams, the review it runs passed in so that only the
+platform lifetime is out of a headless test's reach;
+`StartupTests.The_window_opens_on_the_plan_with_every_earlier_decision_in_its_store` opens the window on
+a plan. `StandingLineTests` drives the line through the window: a version an earlier run left, a move
+within a section, a caret in no section, a candidate come back to. The suite measured **956** here
+against 928, judged `healthy` by `catch-crash --check --expect auto`. ⚠ **`App.Run`'s platform lifetime
+is the part no test can start**, so a by-hand run judges it, on Brian's word to borrow the desktop.
+
+**Fifty-one mutations, each declaring the test that must fail under it or that it must stay green, all
+as declared, and none of the twenty tests went unkilled** — `startup`, whose green control swaps a
+conditional's arms under its negated test. The four sets the change owed besides — `review-session`,
+`review-window`, `section-decisions` and `stores`, owed by the session's shared check and the window's
+line — ran beside it in four worktrees: **191 of 191 as declared**, every declared test killed, in 25
+minutes. ⚠ **That run's `startup` was 50 of 51**: one mutation wrote a pattern the compiler can prove
+never matches, a string's length below zero, and the build refused it — CS8518, which the harness reports
+as a build and not as a test's kill. Rewritten as a length no message reaches, the set ran again alone:
+**51 of 51**, in 4.1 minutes. The two runs' trees differ under `src`, `tests` and `scripts` in that one
+line of `startup.json` alone, which none of the other four sets reads.
 
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with
