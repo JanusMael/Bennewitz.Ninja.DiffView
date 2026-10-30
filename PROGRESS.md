@@ -1365,8 +1365,22 @@ wording.
     rests on. `apply` stays Brian's, after `repository.json` lists the five checks, and PR #2, which
     this supersedes, is his or its session's to close.
 
+    ✅ **Conformed 2026-10-30, on `conventions/the-repository-conforms`, local.** `scripts/repo-conventions.cs`,
+    the template's at `v2026.4.1030`, reports this checkout conforming at offline, token and admin depth:
+    `.github/repository.json` listing the five checks `main` requires; an `AGENTS.md` and a `CLAUDE.md` in each
+    top-level directory, a root `CLAUDE.md`, `.github/copilot-instructions.md` and `AGENTS.md` §11; the
+    grants as decided, read back from the built assemblies; CI's `conventions` job and the release's
+    `check --release` step, each after the local feed is packed. `DECISIONS.md`, *The libraries opt out of the
+    solution's friend grants*, has the reasoning. ⚠ `reference/`'s two documents needed `.gitignore`
+    exceptions, that file re-admitting each tracked file there by name. `DocumentationCitationTests` reads each
+    directory's `AGENTS.md` now, proven by planting a stale citation in two of them: both checks failed on
+    exactly those lines, and passed once they were restored byte for byte. What remains is Brian's: `apply`,
+    whose dry run sends only what GitHub already holds; `conventions` added to `requiredChecks`, with `apply`
+    again, once the job is green on `main`; and PR #2 closed.
+
 Items 3, 9 and 10 are Brian's own and item 16 is shelved. **Every other open item was scheduled by Brian
-on 2026-10-30**: item 24 starts beside the consolidation's review and item 14 follows it, items 19, 20
+on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
+14 follows it, items 19, 20
 and 21 go on one branch together, and item 23's brief goes to the Inspections repository now. Item 13
 closed on 2026-10-30, read off a run's log rather than a date; item 22 closed on 2026-10-22, on Brian's
 decision of that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already

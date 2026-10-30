@@ -205,3 +205,39 @@ jobs:
           -c Release -r linux-x64
           --self-contained true
           -o /tmp/trim-check
+
+  # The family conventions: documentation at the root and in every top-level directory, the
+  # description, topics, feature toggles and rulesets — docs/repository-conventions.md in
+  # Bennewitz.Ninja.Templates, enforced by scripts/repo-conventions.cs, the template's copy.
+  #
+  # ⚠ Unlike the template's job, this one fetches the reference sources and packs the diagnostics
+  # package first: the check evaluates every project after a restore, and the demo restores from the
+  # local feed that pack fills, so without it the demo's friend grants cannot be read.
+  #
+  # ⚠ Not a required check until it is green, when .github/repository.json lists it and
+  # `repo-conventions apply` writes the ruleset: required while red, it would block every pull
+  # request. Renaming the job after that means changing the list and running apply in one change.
+  conventions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Fetch reference sources
+        run: dotnet run scripts/fetch-reference.cs
+
+      - name: Pack ClaudeForge diagnostics into the local feed
+        run: dotnet run scripts/pack-diagnostics.cs
+
+      - name: Check the repository conventions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check
