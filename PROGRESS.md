@@ -1411,6 +1411,16 @@ wording.
     whose dry run sends only what GitHub already holds; `conventions` added to `requiredChecks`, with `apply`
     again, once the job is green on `main`; and PR #2 closed.
 
+    ⚠ **What AppKit reads of DiffView is narrower than conforming** (the Templates session, 2026-10-30):
+    its step 4 is verified by `conventions` green in DiffView itself and `gh pr list` empty, so it waits on
+    this branch merged into `main` with no pull request left open, PR #2 among them. `apply` and the
+    required check keep DiffView conforming afterwards and are not what it reads. That session had been
+    waiting on PR #2 itself, and was told on Brian's word that #2 is superseded here. ⚠ The template has
+    moved past `v2026.4.1030` on Templates' `main`, to ship as `2026.4.1031`; once it does, `check --repo`
+    reads this copy as behind until it is synced — a sync, not a blocker for AppKit — and the sync takes the
+    script and not the template's xunit.v3 4.0.2: `Directory.Packages.props` says why this repository stays
+    on 3.2.2, and AvaloniaUI/Avalonia#22072 is the upstream issue.
+
 Items 3, 9 and 10 are Brian's own and item 16 is shelved. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
