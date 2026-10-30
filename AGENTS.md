@@ -653,15 +653,16 @@ wrong conclusion during the work above: an `ssh` probe that had actually failed 
 succeeded, because `head` exits 0 regardless. Capture the status without a pipe, or read
 `${PIPESTATUS[0]}`. The same trap applies to any pipeline whose last stage always succeeds.
 
-### Avalonia and drivable-UI lessons go to XamlQuality
+### Avalonia and drivable-UI lessons go to Inspections
 
-`docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` in `JanusMael/Bennewitz.Ninja.XamlQuality` are
-the one living copy of each. A new Avalonia foot-gun, a lesson about driving or verifying a desktop UI
-by agent, or a correction to either document goes to the XamlQuality session by message — `ListAgents`
-shows it as XamlQuality — with the versions and the measurement or source behind it, or as an issue in
-that repository when no session is running. Keep no copy here: once a lesson lands there, what stays in
-this file is a pointer, plus whatever is specific to DiffView or to this machine. `DECISIONS.md` records
-why.
+`docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` in `JanusMael/Bennewitz.Ninja.Inspections` are
+the one living copy of each. Inspections is XamlQuality's repository under a new name: the old name
+redirects to it, the `Bennewitz.Ninja.XamlQuality` package keeps its id, and `ListAgents` still shows
+the session working there as XamlQuality. A new Avalonia foot-gun, a lesson about driving or verifying
+a desktop UI by agent, or a correction to either document goes to that session by message, with the
+versions and the measurement or source behind it, or as an issue in that repository when no session is
+running. Keep no copy here: once a lesson lands there, what stays in this file is a pointer, plus
+whatever is specific to DiffView or to this machine. `DECISIONS.md` records why.
 
 ## 9. Looking at the running app
 
@@ -790,6 +791,18 @@ from opposite directions:
 
 ### On Linux, and on this box in particular
 
+What a driver meets under X11 in general lives where §8 sends it, in Inspections'
+`docs/avalonia-gotchas.md` under *Linux platform integration*, measured on this box and checked there
+against the merged document:
+
+| What | Inspections' entry |
+|---|---|
+| A menu, a context menu and a tooltip are each a popup of their own, laid out a pass after it opens; mutter's own override windows, and the X keyboard focus a right-click leaves on one of them; accelerators that do not arrive where a click does | *Driving an Avalonia app with `xdotool`: a popup is its own X window, and accelerators do not arrive* |
+| A frame grabbed from before the action, and a black frame from a session that is not presenting | *Under X11, a grab cannot say whether an action took* |
+| `getwindowgeometry` counting a frame twice, and `xwininfo`'s free-text list of windows | *Under X11, `xdotool getwindowgeometry` counts a window frame twice, and `xwininfo` lists windows in free text* |
+
+What stays here is this machine's and the demo's.
+
 - **The session is Wayland (`XDG_SESSION_TYPE=wayland`) with XWayland at `DISPLAY=:0`, and the demo
   is an XWayland client** — Avalonia's X11 backend — so it has a real X window that can be grabbed.
   So does Beyond Compare, at `/usr/bin/bcompare`, which is the reference a by-hand pass compares
@@ -800,11 +813,17 @@ from opposite directions:
 - **`ffmpeg`'s `x11grab` by window id is what works here; ImageMagick's `import` does not**, in any
   form, though it is installed. `XAUTHORITY` matters — without it `x11grab` reports *outside the
   screen size 0x0*, which reads like a compositor problem and is an auth one.
-- ⛔ **A black frame means the session is not presenting**, not that the app is broken: a closed
-  remote-desktop connection leaves XWayland up with nothing composited. The driver refuses a frame
-  with no pixel brighter than black and keeps the file.
-- **Grab the client's window, not the frame**, and **the main window is the one titled
-  `DiffView Demo`, not the widest** — the F12 live-log window shares the class and is wider.
+- **The main window is the one titled `DiffView Demo`, not the widest** — the F12 live-log window
+  shares the class and is wider.
+- **The driver carries the entries above.** `popup` takes the viewable window that was not there at
+  the `mark` and is more than a pixel each way, which passes over mutter's guard window, there before
+  any mark, and its 1×1; a click outside the window it is relative to is refused; positions come from
+  `xwininfo`'s absolute upper-left; and `capture` refuses a frame with no pixel brighter than black,
+  and keeps the file.
+- **A tooltip can be driven here**, whatever this file said from 2026-09-13 until **2026-09-28**,
+  when `hover` raised one on every trial; `DECISIONS.md` has the trials. A driven frame judges a
+  tooltip's layout at real size and in a locale, and the headless tests that assert its text stay the
+  evidence for the text.
 - **`xdotool` and `wmctrl` are installed, so the app can be driven and not only looked at.** This
   section claimed the opposite for three plans; check before repeating it.
 - **The demo's flags** are `--theme`, `--variant`, `--left`, `--right`, `--unified`, `--viewer`,
@@ -813,9 +832,6 @@ from opposite directions:
   disagree. `--palette` exists because the capture half drives nothing, so without it the
   colour-blind palette — the one palette whose purpose is that some readers cannot use the other —
   was reachable only by clicking through a menu.
-- **Driving a menu, a tooltip or an accelerator with `xdotool` is XamlQuality's to document** (§8),
-  under *Linux platform integration*: how to find and grab a menu's popup, and why an accelerator
-  does not arrive where a click does.
 
 ### When the whole session is wedged rather than not presenting
 
@@ -857,28 +873,6 @@ Both cost time on **2026-09-13**, and the driver carries both.
   harness's own shell command line, so the shell matches itself and the turn ends at exit 144 — the
   same exit code the harness's own reaping produces, which sends you looking in the wrong place.
   Close the window instead, or kill a pid you recorded at launch.
-
-### Mutter keeps override windows that are not menus
-
-A menu's popup is found as a viewable override-redirect window, and mutter keeps two of its own: a
-screen-sized *mutter guard window* and a 1×1 at (−100, −100). On **2026-09-28** a finder that took
-the tallest such window picked each in turn, and the 1×1, polled before the real popup had mapped,
-sent a menu click to (5, 729) on the screen. The driver filters both out by size and refuses a click
-outside the popup's own bounds. After a synthetic right-click opens a context menu, X keyboard focus
-can also land on that 1×1 window, and every key after it reaches nothing until the demo is
-reactivated. The general lessons are XamlQuality's (§8).
-
-### Tooltips can be driven here
-
-This said the opposite from 2026-09-13 until **2026-09-28**, when plan 00023's driver measured it
-again: `hover` raised the tooltip on every trial — the change-marker margin's and the line-number
-margin's, jumping in from outside the window, from its far corner, from another line of the same
-margin, and with the demo in `pt-BR` — and the scratch script behind the old finding raised the same
-tooltip pixel for pixel. The demo's Avalonia was 12.1.2 on both dates; what made the first
-measurement fail was never established. A tooltip is its own override-redirect window, found by the
-same root-child diff as a menu, so a tooltip's layout at real size and in a locale can be judged from
-a driven frame. The headless tests that assert its text stay the evidence for the text.
-`DECISIONS.md` has the trials.
 
 ### Driving a locale
 

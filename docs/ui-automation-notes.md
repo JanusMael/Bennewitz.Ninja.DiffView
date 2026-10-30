@@ -1,15 +1,17 @@
 # Driving a desktop UI: what this repository has measured
 
 > **Most of this is a pointer now.** `AGENTS.md` §8 says Avalonia and drivable-UI lessons have one
-> living copy, in `JanusMael/Bennewitz.Ninja.XamlQuality` — `docs/avalonia-gotchas.md` for framework
-> foot-guns and `docs/ai-drivable-ui.md` for driving and verifying by agent. The Windows batches of
-> 2026-09-30, 10-08, 10-09 and 10-10 **landed there on 2026-10-13**, in pull requests
+> living copy, in `JanusMael/Bennewitz.Ninja.Inspections`, which is XamlQuality's repository renamed —
+> `docs/avalonia-gotchas.md` for framework foot-guns and `docs/ai-drivable-ui.md` for driving and
+> verifying by agent. The Windows batches of 2026-09-30, 10-08, 10-09 and 10-10 **landed there on
+> 2026-10-13**, in pull requests
 > [#59](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/pull/59),
 > [#60](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/pull/60) and
 > [#67](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/pull/67), several of them changed by
-> XamlQuality's own measurement. What is left here is what did **not** land: the X11 batch, the
-> entries nobody has re-measured, one disagreement, and whatever is specific to DiffView or to one of
-> these machines.
+> XamlQuality's own measurement, and the X11 batch of 2026-09-28 **on 2026-10-15**, in
+> [#83](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/83). What is left here is what
+> did **not** land: the entries nobody has re-measured, one disagreement, and whatever is specific to
+> DiffView or to one of these machines.
 >
 > ⚠ **The reduction is conditional on landing, never on sending.** Each row below was checked against
 > the merged documents rather than taken from the report of them.
@@ -100,34 +102,30 @@ repaired one printed `per-monitor DPI aware: False` and still read physical coor
 first, launched the same way, read virtualised ones. The verdict does not rest on it — the driver named
 the obstructing window itself.
 
-## Linux and X11 — still owed upstream
+## Linux and X11 — landed upstream
 
-⛔ **The 2026-09-28 batch has NOT landed** (confirmed by XamlQuality, 2026-10-13), so none of this is
-a pointer yet and the copy here is the only one. `AGENTS.md` §9 is the long-form record. The parts
-that are not specific to this machine, and therefore belong upstream:
+⭐ **The batch of 2026-09-28 landed on 2026-10-15**, in Inspections
+[#83](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/pull/83), and each finding was checked
+against the merged document on `main` rather than against the message that reported it. All six are
+pointers now, into `avalonia-gotchas.md` under *Linux platform integration*:
 
-- An Avalonia popup — a menu or a tooltip — is its own unnamed, **override-redirect** top-level
-  window. Find it by diffing the root's children against a mark taken before the action, never by
-  counting or by name.
-- A popup opens on one layout pass and lays out on the next, so a frame taken between them is an
-  empty box. Wait until its geometry holds still.
-- A window manager may keep override windows of its own that are not menus — mutter keeps a
-  screen-sized guard window and a 1×1 off screen — so a finder that takes "the newest override
-  window" or "the tallest" picks one of those. Filter by size and refuse a click outside the popup's
-  own bounds.
-- `xwininfo`'s per-window field **labels** are fixed strings and do not translate, but the root's
-  child list contains free text, so read that by its two ends — the id first, the geometry last.
-  A harness that parses English output fails exactly when someone is checking a translation.
-- A reparenting window manager's frame is a window of its own: `xdotool getwindowgeometry` counts its
-  offset twice, so take positions from `xwininfo`'s absolute upper-left, and grab the **client**
-  window, not the frame.
-- A grab that succeeds and comes back solid black means the session is not presenting — a closed
-  remote-desktop connection leaves one. Check the pixels; never read the app's state from them.
+| What this repository measured | Lives in |
+|---|---|
+| A popup, a menu or a tooltip, is its own unnamed override-redirect window, found by diffing the root's children against a mark | *Driving an Avalonia app with `xdotool`: a popup is its own X window, and accelerators do not arrive* |
+| A popup opens on one layout pass and lays out on the next | the same entry |
+| Mutter keeps a screen-sized guard window and a 1×1 off screen, so a finder filters them and refuses a click outside the popup | the same entry |
+| `xwininfo`'s field labels do not translate, but the root's child list is free text | *Under X11, `xdotool getwindowgeometry` counts a window frame twice, and `xwininfo` lists windows in free text* |
+| `getwindowgeometry` counts a reparenting frame's offset twice, so positions come from `xwininfo` and a grab takes the client window | the same entry |
+| A grab that succeeds and comes back solid black is a session that is not presenting | *Under X11, a grab cannot say whether an action took* |
+
+What is this machine's — the session, the grab that works here, the demo's two windows — stays in
+`AGENTS.md` §9.
 
 ### The tooltip re-measurement, which XamlQuality asked for
 
-Their `xdotool` entry records the **opposite** — that a tooltip cannot be driven under X11 — and it
-stands unchanged until X11 is measured on their side. This repository's two readings, sent 2026-10-13:
+Their `xdotool` entry recorded the **opposite**, that a tooltip cannot be driven under X11, until these
+two readings, sent 2026-10-13, landed with the rest of the batch: it now carries the ten trials of ten,
+and the earlier date's failure as never established. The readings as they were sent:
 
 | | |
 |---|---|
@@ -236,17 +234,8 @@ drawn from the `LoggerConfiguration` alone, without reading the `Emit` twenty li
 
 ## Still owed
 
-- **The X11 batch of 2026-09-28**, above, which has not landed, and **the X11 tooltip reading**, which
-  XamlQuality had not checked as of 2026-10-13. The environment and method went to them that day at
-  their request; their `xdotool` entry stands until they measure X11. ⚠ Their lane is **not** WSLg as
-  first feared but GNOME Shell 50.1 with mutter, headless on a virtual monitor inside WSL, the
-  application under Xwayland — closer to this session than WSLg would be, and still not it: 48.7
-  against 50.1, a real desktop against a headless virtual monitor, physical input against XTEST. They
-  will carry the environment on whatever lands.
 - **The macOS back end** is specified in plan 00023 and not written; its permission grants are
   interactive and cannot be scripted. Open item 9.
-- **The interactive pass's exit code**, open item 18: it has no `exit` path, so it returns 0 with a
-  failure list, and item 17's own harness read that 0 as a pass over four failed assertions.
 - **A by-hand pass at a scaling other than 100%** exercises less than it looks like it does. On a
   console at 200% the demo is `2200x1440`, the View menu's palette entry falls outside its scrolling
   popup and is absent from the tree, and the splitter and map drags press coordinates that belong to a
