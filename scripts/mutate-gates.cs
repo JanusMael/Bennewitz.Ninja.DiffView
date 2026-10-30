@@ -1104,39 +1104,39 @@ List<Mutation> mutations =
     new("the model takes the solution's friend grants", AssemblyClass,
         () => Sub(CoreProject, "<SolutionFriendGrants>false</SolutionFriendGrants>",
             "<SolutionFriendGrants>true</SolutionFriendGrants>"),
-        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+        "No_library_grants_its_internals_beyond_its_own_tests"),
 
     new("the UI assembly takes the solution's friend grants", AssemblyClass,
         () => Sub(UiProject, "<SolutionFriendGrants>false</SolutionFriendGrants>",
             "<SolutionFriendGrants>true</SolutionFriendGrants>"),
-        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+        "No_library_grants_its_internals_beyond_its_own_tests"),
 
     // Unconfigured, the rule reads no grant at all and finds nothing, which is what each floor is for.
     new("BNAQ1005's model instance allows nothing", AssemblyClass,
         () => Sub(AssemblyGate, @"FriendGrantRule modelGrants = new\(\[ModelTests\]\);",
             "FriendGrantRule modelGrants = new();"),
-        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+        "No_library_grants_its_internals_beyond_its_own_tests"),
 
     new("BNAQ1005's UI instance allows nothing", AssemblyClass,
         () => Sub(AssemblyGate, @"FriendGrantRule uiGrants = new\(\[UiTests\]\);",
             "FriendGrantRule uiGrants = new();"),
-        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+        "No_library_grants_its_internals_beyond_its_own_tests"),
 
     // One list naming both test assemblies passes each library's own read, so only the controls — each
     // instance over the other library — can see it.
     new("BNAQ1005's model instance allows the UI's tests too", AssemblyClass,
         () => Sub(AssemblyGate, @"FriendGrantRule modelGrants = new\(\[ModelTests\]\);",
             "FriendGrantRule modelGrants = new([ModelTests, UiTests]);"),
-        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+        "No_library_grants_its_internals_beyond_its_own_tests"),
 
     new("BNAQ1005's UI instance allows the model's tests too", AssemblyClass,
         () => Sub(AssemblyGate, @"FriendGrantRule uiGrants = new\(\[UiTests\]\);",
             "FriendGrantRule uiGrants = new([UiTests, ModelTests]);"),
-        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+        "No_library_grants_its_internals_beyond_its_own_tests"),
 
     new("BNAQ1005's subject is swapped for the UI assembly", AssemblyClass,
         () => SwapSubject(5),
-        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+        "No_library_grants_its_internals_beyond_its_own_tests"),
 ];
 
 // The whole declared set: what a shard is cut from, and what a merge checks its shards against.
@@ -1407,6 +1407,9 @@ try
         // failure is still read as that failure: the run fails either way, but the diagnosis can be wrong.
         bool noFailuresReported = Regex.IsMatch(testLog, @"^\s*failed:\s*0\s*$", RegexOptions.Multiline);
 
+        // ⚠ Read by the words a gate test's name begins with, so a gate test named otherwise is never read
+        // as the one that failed: its kills come back `wrong-killer` naming nobody — measured, when BNAQ1005's
+        // gate was first named Each_….
         IEnumerable<string> failed = Regex.Matches(testLog, @"\b((?:Every|The|A|No)_\w{8,})")
             .Select(m => m.Groups[1].Value)
             .Distinct()
