@@ -4661,3 +4661,70 @@ same two steps and before it builds.
 change sends only what GitHub already holds. `conventions` joins `requiredChecks` once it is green on `main`,
 with `apply` run again then, and PR #2, another session's early version of this work, is superseded — its
 closing is his or that session's.
+
+## Both quality packages at 1026 and 1029, every rule re-read here
+
+Open item 14 moves `Bennewitz.Ninja.XamlQuality` to `2026.4.1026` and `Bennewitz.Ninja.AssemblyQuality` to
+`2026.4.1029`, the latest of each on nuget.org, on Brian's word of 2026-10-30: after item 24 and on a branch of
+its own, so that one full gate run covers item 24's grants as well. Plan 00028 is the precedent, and its
+standard holds — a rule is adopted only if it can fail here, and a guard counts only when a committed mutation
+makes it the first assertion to fail.
+
+**Every rule was read over one commit at both pins.** A scratch probe, never committed, read every rule either
+package ships, found by reflection so the one source compiled at both pins: each XamlQuality rule over the
+library's markup, the demo's, AgentBaseline's and all of `src`, with their assemblies and without, and each
+AssemblyQuality rule over both libraries, the demo, AgentBaseline and the library's test assembly, as
+constructed by default and as the gates configure them. It ran at `2026.3.928` and at the new pins over
+`eb0012c`. No rule id moved in either release, and none of the 80 readings both pins take moved — the same
+counts, the same findings and the same skipped subjects; only `BNXQ1003`'s skip reasons are reworded, and
+`TemplatePartTests` keys its skips on their subjects. At the new pins the suite runs 981, healthy, the theme
+audit's report and compat dictionaries come out unchanged under its new colour model, and the build is clean
+under warnings as errors.
+
+| Rule | At the new pins | So |
+|---|---|---|
+| Every rule adopted or declined before | the readings of `2026.3.928`, unchanged | each decision stands |
+| `BNXQ1010`, list rows draw a background | 0 inspected on every subject; given no assemblies, it skips the one `ItemsSource` | **declined**: no list, combo or tab row here |
+| `BNAQ1005`, every grant names an allowed assembly | each library with its own tests allowed: 1 grant read, 0 findings; each list over the other library: 1 read, 1 finding | **adopted** |
+| `BNAQ1006`, references resolve and stay granted | 20 references read in the model and 1042 in the UI assembly, 0 findings, 0 skipped | **declined** |
+
+**`BNAQ1005` holds each library to its own tests.** `src/AGENTS.md`'s first rule — the two libraries share their
+internals with their own tests and nothing else, which item 24 decided — was guarded by nothing but the two
+projects' files, and a library that takes the solution's generated grants still compiles: measured for both, so
+the compiler does not refuse the change that would let every host here reach the library's internals.
+`AssemblyQualityTests.No_library_grants_its_internals_beyond_its_own_tests` gives each library an
+allow-list of its own, because the rule allows the same names in every assembly it scans, and a list naming both
+test assemblies would pass the model granting to the UI's tests. Each list is also its instance's control, read
+over the other library, whose one grant it must report by its exact name. ⚠ The rule's README suggests allowing
+the solution's own assemblies, the family's convention, which here would pass a library granting to the demo; the
+lists are narrower because item 24's decision is.
+
+**`BNAQ1006` has nothing here it could fail on.** It resolves each reference into an assembly outside the scan
+against the version that loads, and each reference to an internal against its provider's grants. Here the
+versions that load are the versions compiled against, and a withdrawn grant fails the build of the assembly that
+used it before any test runs — which is why the rule's README runs it at a provider's release, against the
+consumers already published. DiffView publishes nothing yet (open item 3), so it has no such consumers; it is
+worth reading again once it does.
+
+**`BNXQ1010` has nothing here to read.** Its subject is a list, combo or tab row generated from `ItemsSource`, and
+the one `ItemsSource` in this repository's markup is the text area's margin host, an `ItemsControl`, which
+generates no such row. It is declined as `BNXQ1001`, `BNXQ1005` and `BNXQ1009` are.
+
+**The proof.** `--guards` lists 88, six of them `BNAQ1005`'s, and the gate's seven mutations trip those six
+first between them — a library taking the solution's grants, an instance allowing nothing or the other
+library's tests too, and the gate's subject swapped for the UI assembly — each by `--only` first and again in
+the full run. The full run over `3c39ffe`, which the two pins, the new gate and item 24's grant changes each
+owed, gave all 123 mutations as declared — 119 killed by the test each names, 2 by the build and 2 green by
+design — and tripped all 88 guards first, with no `inert-at-pin` marker standing; the suite runs 982 under
+`catch-crash --expect auto`.
+
+**It was the second run over that commit, with MSBuild's node reuse off.** The first lost three mutations to
+`MSB4166`, *child node exited prematurely*, in three of its four shards and in the same thirty seconds, with no
+failure file written. Its other 120 verdicts were as declared, and the second run's tests killed all three, so
+none of them was a compile error. Three builds in separate worktrees failing together points outside them, and
+what ties separate builds together is node reuse: a worker node outlives its build and is handed to the next,
+whichever session starts it, so anything that ends a node ends the build holding it. The second run set
+`MSBUILDDISABLENODEREUSE=1`, and its workers were read running with `/nodeReuse:false`, each build's own. That
+it was clean is consistent with node reuse being the cause, and does not prove it. It took 25.5 minutes, beside
+other sessions' builds, where four worktrees took 11.5 on a quiet box; how much of the difference is node reuse
+being off was not measured.
