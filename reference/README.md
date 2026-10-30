@@ -7,7 +7,8 @@ a control's behaviour before a feature is added here or in ClaudeForge, and for 
 audit theme keys (`theme-audit`).
 
 The checkouts are not committed. `.gitignore` excludes every directory under `reference/`;
-only this file and `sources.json` are versioned.
+only this file, `sources.json`, `Directory.Packages.props` and the `AGENTS.md` and `CLAUDE.md` beside
+them are versioned.
 
 ## Fetching
 
