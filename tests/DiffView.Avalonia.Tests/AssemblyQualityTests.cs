@@ -301,7 +301,7 @@ public sealed class AssemblyQualityTests
     /// </para>
     /// </remarks>
     [Fact]
-    public void Each_library_grants_its_internals_to_its_own_tests_and_nothing_else()
+    public void No_library_grants_its_internals_beyond_its_own_tests()
     {
         AssemblyScanContext model = Scan("DiffView.Core");
         AssemblyScanContext ui = Scan("DiffView.Avalonia");
