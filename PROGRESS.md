@@ -5,8 +5,8 @@
 **`main` carries everything through PR #42, and CI is green on it** — PR #42 merged on a full
 10-of-10, 2026-10-29. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 964** here, `Passed!`, by a local run — eight
-more than at PR #42, all of them plan 00034 step 9's. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 977** here, `Passed!`, by a local run — twenty-one
+more than at PR #42, all of them plan 00034 steps 9 and 10's. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -70,13 +70,13 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 9 are done, step 11 with step 7, and
+⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 11 are done, step 11 with step 7, and
 the start-up none of the twelve steps names, built ahead of step 9 on Brian's word of 2026-10-29.**
 `AgentBaseline` consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left
 accumulator against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 10 — the save,
-which warns on step 9's staleness — is next.** The tool opens on what its command line names now — a manifest or a path list, a
+is never edited again** — drift comes here, and superseding it means a new number. **Step 12 — the record —
+is next, and after it the real consolidation the plan is done by.** The tool opens on what its command line names now — a manifest or a path list, a
 seed, and the decision file an earlier save wrote — and says what the corpus left out before the window
 opens, so the real consolidation the plan is done by can be run at all. The window's platform lifetime,
 the one part of it no headless test reaches, was run by hand the same day and opened, drew and closed.
@@ -656,6 +656,44 @@ the move to its new lines. Run in four worktrees beside the four sets the change
 under the four worktrees' load, `MSB4166`, and not because its edit failed to compile; the set ran again
 alone over the same `src`, `tests` and `scripts` trees, **57 of 57**, every declared test killed, in 3.6
 minutes. So all 208 are as declared, and every declared test of the five sets is killed.
+
+⭐ **Step 10 is the save, and a save over stale candidates is made twice** — Brian's choice of 2026-10-29
+for decision 11, which warns rather than refuses. The first writes nothing and asks for no file: it says, in
+the line under the panes, which candidates are stale where, and that saving again accepts it. A second save
+over the same staleness and the same text opens the dialog and saves; anything changed in between is asked
+about again, and a save with nothing stale is made once. `BaselineOutput.Write` holds the rule below the
+window, refusing before a byte is written unless what was accepted is exactly what is stale. The report says
+each take as the save reads it — decision 9c's *taken, then edited* or *taken, then removed*, never *taken*
+for a take the text no longer carries — and after the decisions lists the staleness accepted, or says none
+was. ⭐ **And the decision file names its target now**, Brian's other answer that day and drift from the plan:
+`"target"` and `"scope"`, as a manifest names them, and the start-up refuses a file written for another
+target, naming both — the caveat the start-up left, closed before the first real save writes a file.
+
+The step's verification is `SaveTests`, six tests:
+`SaveTests.A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it` drives the
+window over three machines, two of them stale behind the third's takes — the first save asks for no file and
+writes none, the second saves and its report lists the three stale sections, and the save after it warns again;
+`SaveTests.A_save_after_the_accumulator_or_the_staleness_changed_asks_again` types between the two saves, and
+moves between them; and the rest hold a save with nothing stale made once, the writer's refusal, the report's
+edited and removed takes with the file's target, and how staleness is said. ⛔ **The seed's bytes unchanged
+after a save** is asserted where it is hardest to keep: over a seed in CRLF behind a byte-order mark, which a
+save written back over it in the accumulator's convention would lose. `StartupTests` gained the refusal of
+another target, by file name and by scope, a file name differing in case accepted; `DecisionFileTests` the
+target's shape and five refusals. The suite measured **977** here against 964, judged `healthy` by
+`catch-crash --check --expect auto`.
+
+⚠ **Readings the plan leaves open, made rather than assumed** — `DECISIONS.md`, *Plan 00034's save over stale
+candidates is made twice, and its decision file names its target*. *The same* is the staleness and the
+accumulator's text together. *Each save* uses up its acknowledgement, and one the dialog ends without a file
+keeps it. The file's *version stays 1*, no file having been written by a real save.
+
+**Twenty-six mutations, each declaring the test that must fail under it or that it must stay green, all as
+declared, and none of the six tests went unkilled** — `save`, whose green control builds this run's decisions
+as a list rather than as a collection expression. Six more in `stores` hold the decision file's target and
+scope, four in `startup` its refusal, and seven mutations follow the code they edit to its new lines. Run in
+four worktrees with the seven other sets the change owed — `corpus`, `review-session`, `review-window`,
+`section-decisions`, `staleness`, `startup` and `stores`: **365 of 365 as declared**, every declared test
+killed, in 24.8 minutes.
 
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with

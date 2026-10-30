@@ -4594,3 +4594,38 @@ decision 11 narrows away. A section taken again after its drop is gained, and st
 
 ⚠ **Nothing reads it yet but the tests.** Step 10's save is where decision 11 warns, and its provenance
 report where an accepted staleness is recorded.
+
+## Plan 00034's save over stale candidates is made twice, and its decision file names its target
+
+Recorded at plan 00034 step 10, 2026-10-29 — two choices of Brian's that day, each the recommendation among
+stated options, and the readings made around them. Decision 11 says a save lists the stale candidates and
+asks; the plan does not say how it asks. And the decision file's missing target, which the start-up's section
+above left as a caveat, is closed here, before the first real save writes a file.
+
+**The acknowledgement is a second save.** Of a second save, a confirmation dialog and a checkbox beside the
+button, the second save was chosen because it needs no new window or markup, so no accessibility subject, floor
+or gate run, and it says its warning where the window says every other outcome. The first save over stale
+candidates writes nothing and asks for no file: it says which candidates are stale where, and that saving
+again accepts it. A second save over the same staleness and the same accumulator text opens the dialog and
+saves; anything changed in between — a take, typing, a move that changes what is stale — is asked about again.
+A save with nothing stale is made once. Each save that writes uses up its acknowledgement, and one the dialog
+ends without a file keeps it, nothing having changed.
+
+**The writer holds the rule as well.** `BaselineOutput.Write` takes the staleness accepted and refuses, before
+a byte is written, unless it is exactly what the review is stale at now. Decision 11 warns rather than refuses,
+and the warning is the window's; a refusal below it only means a caller skipped the warning. The report lists
+the staleness accepted after the decisions, candidate by candidate, or says that none was.
+
+**An edited take is said as edited.** The report's decisions are this run's as the save reads them —
+`DurableStore.Reconcile`, step 8's reading — so a take the saved text holds changed reads *taken, then
+edited*, one whose path the saved text holds no section at reads *taken, then removed*, and only a take the
+text still carries as taken reads *taken*. A take a later take replaced is history and stays *taken*, as
+step 8 settled. Decision 9c names this the one line of the report that can be a quiet lie.
+
+**The decision file names its target — drift from the plan.** A save writes `"target"` and `"scope"`, the
+manifest's own keys, beside the version; the reader requires both, refuses a blank target, and takes a scope
+as text or null. The start-up compares the file's target with the corpus's once the corpus is read, which is
+the first moment its target is known, and refuses a file for another one, naming both; a file name differing
+only in case is the same target, as decision 12 compares targets. ⚠ The version stays 1: no real save had
+written a file, so no file anywhere lacks the keys, and a format changed before its first use needs no
+migration.
