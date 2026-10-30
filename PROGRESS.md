@@ -81,6 +81,11 @@ seed, and the decision file an earlier save wrote — and says what the corpus l
 opens, so the real consolidation the plan is done by can be run at all. The window's platform lifetime,
 the one part of it no headless test reaches, was run by hand the same day and opened, drew and closed.
 
+⭐ **Brian chose how the consolidation runs, 2026-10-30.** The session gathers each reachable machine's
+`~/.claude/CLAUDE.md` over the tailnet, read-only, into a corpus outside the repository and writes its
+manifest; Brian reviews it in the window; and nothing is written back to any machine until he has
+approved the baseline's exact text, each machine's own file backed up beside it first.
+
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
 verifying an edit against its source needs the source *then*, the result and the source *now*, and
@@ -1069,17 +1074,13 @@ wording.
     "the spike exists" as "the spike answered"** — that confusion is this item's whole subject matter
     in miniature, and the shelving is a decision about runner minutes, not a finding.
 
-13. **The first CI run after 2026-10-19 runs on Ubuntu 26.** `ubuntu-latest` moves then, and the
-    Linux leg renders the snapshot baselines. A frame the new image shifts fails as a snapshot with
-    its received file uploaded beside it, and is fixed then rather than pinned against now —
-    `DECISIONS.md`, *CI's actions run on Node.js 24, and the Linux runner is not pinned*.
-
-    ⚠ **The date is not the event — measured on the date itself.** Both of PR #33's Linux legs ran
-    at about 19:40Z on 2026-10-19 and both report `Image: ubuntu-24.04` (`20261012.334.1`), green, so
-    `ubuntu-latest` had not moved by then: the move is GitHub's rollout, not a calendar day. The item
-    stays open until a run's own *Set up job* names Ubuntu 26, and ⛔ **that log line, not the date, is
-    what says a shifted frame is this item arriving** rather than a regression in whatever PR runs
-    first.
+13. ~~**The first CI run after 2026-10-19 runs on Ubuntu 26**~~ — **closed 2026-10-30, read off a run
+    and not a date.** `main`'s CI run after PR #42 (2026-10-29T21:12Z) names `Image: ubuntu-26.04`,
+    version `20261025.179.1`, in its Linux leg's *Set up job*, and every leg of it is green, the snapshot
+    baselines among them, so Ubuntu 26 arrived and no frame shifted. On 2026-10-19 itself both of PR
+    #33's Linux legs still reported `ubuntu-24.04`: the move was GitHub's rollout, not the calendar's.
+    Which run was the first on Ubuntu 26 was not read; the item asked for a run's own log line naming
+    it, and this one does.
 
 14. **Plan 00030 — a reference of the controls' template parts, generated from the code — waits on
     XamlQuality.** Its *looked up* column is to come from BNXQ1003's own reading, which is private at
@@ -1115,6 +1116,13 @@ wording.
     the model package. **This item does owe a full run**, once the readings are re-taken. ⚠ And
     `Bennewitz.Ninja.AssemblyQuality` `2026.3.929` has been on nuget.org since 2026-09-29 without this
     document mentioning it, so whether it moves beside XamlQuality is part of this item's decision.
+
+    ⭐ **Brian, 2026-10-30: both pins move, after item 24, on a branch of their own** — XamlQuality to
+    `2026.4.1026` and AssemblyQuality to `2026.4.1029`, the latest on nuget.org that day — with every
+    rule's reading re-taken and the full gate run made over the result, so that the one run covers
+    item 24's grant changes as well. Plan 00030's draft comes back for approval after that. ⚠ **The
+    rename moved no package id**: nuget.org has no `Bennewitz.Ninja.Inspections`, and both packages
+    still publish under their own names (read 2026-10-30).
 
 15. ~~The hosting guide's id table is written by hand and checked by nothing~~ — **closed.**
     `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds
@@ -1210,6 +1218,10 @@ wording.
     driving a desktop UI is XamlQuality's to hold first, so it goes there as a lesson and may come
     back as a driver change.
 
+    ⭐ **Brian, 2026-10-30: do it now, on one branch with items 20 and 21.** The attended run at 200% on
+    JANUSWAX2 stays owed, and until it is made the change is proven only as far as a headless run
+    reaches.
+
 20. **A stray `*.received.axaml` is compiled into the library and shipped — measured 2026-10-14.**
     `ReferenceAuditTests` writes `<name>.received.axaml` beside a stale compat dictionary when the check
     drifts, which lands it in `src/DiffView.Avalonia/Themes/Compat/`. `.gitignore` keeps it out of a
@@ -1236,6 +1248,8 @@ wording.
     the assertion the measurement above already has the shape of. ⚠ `src/DiffView.Demo` globs markup
     too, and so has `src/AgentBaseline` since plan 00034's step 7 gave it a window, so the exclusion
     belongs wherever markup is globbed rather than in one project.
+
+    ⭐ **Brian, 2026-10-30: do it now, on one branch with items 19 and 21.**
 
 21. **`AGENTS.md` §9's X11 half is now the second copy of lessons that live in XamlQuality — reduce it
     to a pointer. Unblocked 2026-10-15.** §8's rule is that `docs/avalonia-gotchas.md` and
@@ -1267,6 +1281,9 @@ wording.
     than the app; the demo's own flags; and the GPU-hang section, which is this host's hardware.
     ⚠ Items 4, 9, 10 and 12 of the 2026-10-08 batch were **never measured there** — 4 and 9 stay ours,
     12 was left out, 10 was already in that guide's journal — so none of them became a pointer either.
+
+    ⭐ **Brian, 2026-10-30: do it now, on one branch with items 19 and 20.** The pointers name
+    `Bennewitz.Ninja.Inspections`, XamlQuality's repository since the rename, and §8 says so as well.
 
 22. ~~A section's identity includes its document's own title, so no section matches across files titled
     differently~~ — **fixed 2026-10-22, on Brian's decision, before step 8 writes a key to disk.** A
@@ -1303,6 +1320,11 @@ wording.
     ⭐ **Decided 2026-10-22, by Brian: XamlQuality** — `DECISIONS.md`, *The converged mutation runner is a
     dotnet tool from XamlQuality*. ⛔ The move itself starts only on his word.
 
+    ⭐ **Started 2026-10-30, on Brian's word.** DiffView's part is a brief to the Inspections repository —
+    XamlQuality's since the rename, with AssemblyQuality and CodeQuality merged into it — on what this
+    runner brings: the sets, completeness, the markers, green controls, owed runs and worktree shards.
+    The tool is built there; DiffView retires its copy in a change of its own once the tool ships.
+
 24. **The family's repository conventions — measured 2026-10-29, and Brian's to schedule.** Templates'
     plans/00009 step 4 is DiffView conforming to `docs/repository-conventions.md` in
     `Bennewitz.Ninja.Templates`, and the Templates session reported on 2026-10-29 that it is all that
@@ -1327,20 +1349,28 @@ wording.
     1,918 — another session's, behind `main`, and merged or closed before AppKit imports DiffView.
     ⛔ Conforming starts only on Brian's word.
 
-Items 3, 9 and 10 are Brian's own, item 13 waits on GitHub's image rather than on its date (still
-`ubuntu-24.04` on 2026-10-19, measured) and item 16 is shelved. **Items 19, 20, 21 and 23 are
-actionable**, 23 decided by Brian on 2026-10-22 and waiting on his word to start the move, and **item 24
-is measured and waits on his word to start** — **and item 14 became startable on 2026-10-14** when
-XamlQuality `2026.4.1014` shipped the reading it waits on — what that item now means is moving the pin,
-which re-opens every rule's reading and so is a change of its own rather than a rider on plan 00034's
-step 2. ⚠ XamlQuality is `Bennewitz.Ninja.Inspections` since its rename, with AssemblyQuality and
-CodeQuality merged into it and archived (verified 2026-10-29), so items 14 and 23 name a repository by
-its old name. Item 22 closed on 2026-10-22, on Brian's decision of that day; items 17 and 18 closed on
-2026-10-13, and items 5, 6, 12 and 15 were already closed. ⚠ The list was empty twice inside 2026-10-13
-and has refilled seven times since from a measurement rather than from a decision — its own attended
-run, then item 20 a day later, then item 21 from a peer's release, then item 22 from reading the corpus
-at plan 00034 step 6, then item 23 from reading a peer's runner of the same idea, then item 24 from a
-peer's report — so read an empty list as a state and never as a finish.
+    ⭐ **Brian, 2026-10-30: conforming starts now, beside the consolidation's review, on a branch of its
+    own.** For the friend grants, every project but the two libraries takes the generated file and
+    deletes its own grant; `DiffView.Core` and `DiffView.Avalonia` opt out with `SolutionFriendGrants`
+    false and keep granting to their own tests alone. ⚠ **It is the granting side that opts out**: an
+    opted-out project still receives everyone else's grants, so the libraries opting out is what keeps
+    the compiler refusing `AgentBaseline` and the demo their internals, which plan 00034 decision 1
+    rests on. `apply` stays Brian's, after `repository.json` lists the five checks, and PR #2, which
+    this supersedes, is his or its session's to close.
+
+Items 3, 9 and 10 are Brian's own and item 16 is shelved. **Every other open item was scheduled by Brian
+on 2026-10-30**: item 24 starts beside the consolidation's review and item 14 follows it, items 19, 20
+and 21 go on one branch together, and item 23's brief goes to the Inspections repository now. Item 13
+closed on 2026-10-30, read off a run's log rather than a date; item 22 closed on 2026-10-22, on Brian's
+decision of that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already
+closed. ⚠ XamlQuality is `Bennewitz.Ninja.Inspections` since its rename, with AssemblyQuality and
+CodeQuality merged into it and archived (verified 2026-10-29), and no package id moved with them
+(2026-10-30), so items 14 and 23 name the repository by its old name and the packages by their own. ⚠
+The list was empty twice inside 2026-10-13 and has refilled seven times since from a measurement rather
+than from a decision — its own attended run, then item 20 a day later, then item 21 from a peer's
+release, then item 22 from reading the corpus at plan 00034 step 6, then item 23 from reading a peer's
+runner of the same idea, then item 24 from a peer's report — so read an empty list as a state and never
+as a finish.
 
 ### Running it
 
