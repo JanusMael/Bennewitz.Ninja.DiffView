@@ -55,7 +55,7 @@ public sealed class DocumentationCitationTests
         string tests = AllTestSource();
         List<string> stale = [];
 
-        foreach (string document in Documents)
+        foreach (string document in EvidenceCitingDocuments())
         {
             string path = RepoPaths.Source(document);
             if (!File.Exists(path))
@@ -258,16 +258,18 @@ public sealed class DocumentationCitationTests
     }
 
     /// <summary>
-    /// Every document that points at a numbered section: the top-level record, the authored documents
-    /// under <c>docs/</c>, and every plan. <c>docs/locale-review/</c> is left out because it is
+    /// Every document that points at a numbered section: the top-level record, each top-level
+    /// directory's <c>AGENTS.md</c>, the authored documents under <c>docs/</c>, and every plan. Each is
+    /// read once, however many of those it is. <c>docs/locale-review/</c> is left out because it is
     /// generated from the string table and cites nothing — a reference appearing there would be the
     /// generator's to fix, not a citation's.
     /// </summary>
     private static IEnumerable<string> SectionCitingDocuments()
     {
-        foreach (string document in Documents)
+        HashSet<string> named = new(StringComparer.Ordinal);
+        foreach (string document in EvidenceCitingDocuments())
         {
-            if (File.Exists(RepoPaths.Source(document)))
+            if (File.Exists(RepoPaths.Source(document)) && named.Add(document))
             {
                 yield return document;
             }
@@ -284,7 +286,7 @@ public sealed class DocumentationCitationTests
             IEnumerable<string> found = Directory
                 .EnumerateFiles(path, "*.md", SearchOption.TopDirectoryOnly)
                 .Select(file => $"{directory}/{Path.GetFileName(file)}")
-                .Where(relative => !Documents.Contains(relative, StringComparer.Ordinal))
+                .Where(relative => !named.Contains(relative))
                 .OrderBy(relative => relative, StringComparer.Ordinal);
 
             foreach (string relative in found)
@@ -294,6 +296,27 @@ public sealed class DocumentationCitationTests
         }
     }
 
+    /// <summary>
+    /// Every document whose test citations must resolve: the top-level record, the hosting guide, and
+    /// the <c>AGENTS.md</c> the family's repository conventions put in each top-level directory, which
+    /// are written fact-shaped so that a claim gone stale shows as a name nothing defines.
+    /// </summary>
+    private static IEnumerable<string> EvidenceCitingDocuments()
+    {
+        foreach (string document in Documents)
+        {
+            yield return document;
+        }
+
+        foreach (string directory in Directory.EnumerateDirectories(RepoPaths.Root).Order(StringComparer.Ordinal))
+        {
+            string document = $"{Path.GetFileName(directory)}/AGENTS.md";
+            if (File.Exists(RepoPaths.Source(document)))
+            {
+                yield return document;
+            }
+        }
+    }
     private static string AllTestSource()
     {
         string root = RepoPaths.Source("tests");

@@ -912,3 +912,22 @@ committed proof set under `tests/AgentBaseline.Tests/Mutations` — both §5.
 | A save never writes over a file the corpus read, writes LF, and goes over stale candidates only once exactly that staleness is accepted — in the window, by a second save over the same staleness and the same text | The seed machine's live file overwritten, or a stale baseline saved without a word | `BaselineOutput.Write`, `ReviewWindow.OnSave`; tests `BaselineOutputTests.A_save_never_writes_the_baseline_over_a_file_the_corpus_read`, `SaveTests.A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it` |
 | The report says each take as the save reads it — edited, removed or taken | The one line of the report that can be a quiet lie: a take edited by hand reported as the source's version | `BaselineOutput.Report`, `DurableStore.Reconcile`; test `SaveTests.The_report_says_an_edited_take_was_edited_and_a_removed_one_removed_and_the_file_names_its_target` |
 | The command line infers nothing: one corpus, named as a manifest or as a path list, and each option once | A corpus told apart by its extension, or a seed implied by the order | `Startup.Parse`; test `StartupTests.A_command_line_the_start_up_cannot_read_is_refused_and_says_why` |
+
+## 11. The directories
+
+Each top-level directory git tracks carries an `AGENTS.md` of its own, holding what only that
+directory's files show, with a `CLAUDE.md` beside it holding `@AGENTS.md`; the root's `CLAUDE.md` and
+`.github/copilot-instructions.md` point here. `scripts/repo-conventions.cs` fails while one is missing,
+which is the family's conventions in Bennewitz.Ninja.Templates, configured by `.github/repository.json`.
+
+| Directory | What it holds |
+|---|---|
+| `.github` | The workflows and `repository.json` |
+| `docs` | The hosting guide, the proof method, and the documents tools generate |
+| `fixtures` | The tests' inputs, compared byte for byte |
+| `mappings` | The theme audit's reviewed key tables |
+| `plans` | The plans, frozen once approved |
+| `reference` | ⛔ Upstream checkouts, fetched and never committed — **prune it from every search** |
+| `scripts` | The tools, each a file-based app |
+| `src` | The libraries, the demo and AgentBaseline |
+| `tests` | The test projects and their proof sets |
