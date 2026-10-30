@@ -36,6 +36,13 @@
     <None Include="$(RepoRoot)docs/hosting-diffview.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <!-- The library's internals reach its own tests and nothing else, so it opts out of the solution's
+       friend grants (the root Directory.Build.targets) and declares its one grant here: the compiler
+       goes on holding every host in this repository to the public surface. -->
+  <PropertyGroup>
+    <SolutionFriendGrants>false</SolutionFriendGrants>
+  </PropertyGroup>
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>DiffView.Core.Tests</_Parameter1>

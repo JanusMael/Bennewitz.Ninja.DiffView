@@ -64,6 +64,13 @@
     <ProjectReference Include="../DiffView.Core/DiffView.Core.csproj" />
   </ItemGroup>
 
+  <!-- The library's internals reach its own tests and nothing else, so it opts out of the solution's
+       friend grants (the root Directory.Build.targets) and declares its one grant here: the compiler
+       goes on holding AgentBaseline and the demo to the public surface, as plan 00034 decision 1 needs. -->
+  <PropertyGroup>
+    <SolutionFriendGrants>false</SolutionFriendGrants>
+  </PropertyGroup>
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>DiffView.Avalonia.Tests</_Parameter1>

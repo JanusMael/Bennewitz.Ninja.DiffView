@@ -4629,3 +4629,35 @@ the first moment its target is known, and refuses a file for another one, naming
 only in case is the same target, as decision 12 compares targets. ⚠ The version stays 1: no real save had
 written a file, so no file anywhere lacks the keys, and a format changed before its first use needs no
 migration.
+
+## The libraries opt out of the solution's friend grants
+
+Open item 24 brings DiffView into the family's repository conventions — `docs/repository-conventions.md` in
+Bennewitz.Ninja.Templates, enforced by `scripts/repo-conventions.cs`, the template's copy — and one of them is
+solution-wide friend grants: a generated `AssemblyInfo.InternalsVisibleTo.cs` that the root
+`Directory.Build.targets` links into every project, so that each project's internals reach every assembly the
+repository builds. A project may opt out with `SolutionFriendGrants` false and keep grants of its own.
+
+**Brian chose on 2026-10-30: every project but the two libraries takes the generated file.** `DiffView.Core`
+and `DiffView.Avalonia` opt out and keep granting to their own tests alone; the demo, AgentBaseline and the test
+projects take it, and the demo and AgentBaseline delete the grants they declared. ⚠ **It is the granting side
+that opts out.** An opted-out project still *receives* everyone else's grants, so what keeps a host off a
+library internal is the library declining to grant, never the host declining to take. Plan 00034 decision 1
+keeps AgentBaseline on the public surface, and with the libraries opted out the compiler still holds it there,
+and the demo with it. Read back from the built assemblies: each library grants its own tests alone, and the
+demo and AgentBaseline grant all seven of the repository's assemblies.
+
+**The demo's grant to its tests now comes from the generated file.** *The demo loads on `Opened`, and the smoke
+snapshot zeroes the build time* records the demo granting `DiffView.Avalonia.Tests` `InternalsVisibleTo` for
+that one seam. The seam still has its grant; it is no longer the only one the demo makes.
+
+**CI's `conventions` job prepares the local feed first, unlike the template's.** The check evaluates every
+project after a restore, and the demo restores `LayeredEditors.Avalonia.Diagnostics` from the local feed
+`scripts/pack-diagnostics.cs` fills, so the job fetches the reference sources and packs that feed before it
+checks — the two steps every other job takes before it restores. The release runs `check --release` after the
+same two steps and before it builds.
+
+**What stays Brian's.** `repo-conventions apply` writes GitHub's settings and rulesets; its dry run over this
+change sends only what GitHub already holds. `conventions` joins `requiredChecks` once it is green on `main`,
+with `apply` run again then, and PR #2, another session's early version of this work, is superseded — its
+closing is his or that session's.
