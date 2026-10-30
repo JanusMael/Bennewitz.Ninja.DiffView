@@ -53,6 +53,12 @@ public sealed class AssemblyQualityTests
     /// </summary>
     private const string ShadowControlName = "ShadowControl";
 
+    /// <summary>The one assembly <c>DiffView.Core</c> may grant its internals to: its own tests.</summary>
+    private const string ModelTests = "DiffView.Core.Tests";
+
+    /// <summary>The one assembly <c>DiffView.Avalonia</c> may grant its internals to: its own tests, which is this assembly.</summary>
+    private const string UiTests = "DiffView.Avalonia.Tests";
+
     /// <summary>A scan of the one assembly with this simple name.</summary>
     /// <remarks>
     /// <para>
@@ -270,5 +276,60 @@ public sealed class AssemblyQualityTests
         Assert.Contains(
             control.Findings,
             f => f.Subject.Contains(ShadowControlName, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Each library grants its internals to its own tests and to nothing else, which is <c>src/AGENTS.md</c>'s
+    /// first rule: a host here reaching a library internal fails to compile only while the library does not
+    /// grant it, so this is what holds the demo and AgentBaseline to the public surface.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>BNAQ1005</c>, which reads the grants the compiled assembly carries, so a grant made any way is read:
+    /// the <c>AssemblyAttribute</c> item each library declares, the solution's generated
+    /// <c>AssemblyInfo.InternalsVisibleTo.cs</c>, which the root <c>Directory.Build.targets</c> links into every
+    /// project whose <c>SolutionFriendGrants</c> is not false, or an attribute in source. A library that takes
+    /// the solution's grants compiles, and every host here can then reach its internals.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>One allow-list per library, not one for both.</b> The rule allows the same names in every assembly
+    /// it scans, so a list naming both test assemblies would pass the model granting to the UI's tests. Each
+    /// list is also what tells the two subjects apart and what shows its instance can fire: the model's
+    /// reports the UI assembly's one grant, and the UI's the model's — measured at <c>2026.4.1029</c>, one
+    /// grant read and one finding each way. Unconfigured, the rule reads no grant at all, which is what each
+    /// count is floored against.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Each_library_grants_its_internals_to_its_own_tests_and_nothing_else()
+    {
+        AssemblyScanContext model = Scan("DiffView.Core");
+        AssemblyScanContext ui = Scan("DiffView.Avalonia");
+        FriendGrantRule modelGrants = new([ModelTests]);
+        FriendGrantRule uiGrants = new([UiTests]);
+
+        AssemblyRuleResult ofModel = modelGrants.Analyze(model);
+        Assert.True(ofModel.Inspected > 0, "BNAQ1005 read no grant in DiffView.Core: it was given nothing to allow, so it asked no question.");
+        Assert.True(
+            ofModel.Findings.Count == 0,
+            "DiffView.Core grants its internals beyond its own tests:" + Environment.NewLine
+            + string.Join(Environment.NewLine, ofModel.Findings.Select(f => "  " + f)));
+
+        AssemblyRuleResult ofUi = uiGrants.Analyze(ui);
+        Assert.True(ofUi.Inspected > 0, "BNAQ1005 read no grant in DiffView.Avalonia: it was given nothing to allow, so it asked no question.");
+        Assert.True(
+            ofUi.Findings.Count == 0,
+            "DiffView.Avalonia grants its internals beyond its own tests:" + Environment.NewLine
+            + string.Join(Environment.NewLine, ofUi.Findings.Select(f => "  " + f)));
+
+        // The controls: each instance over the other library, whose one grant names tests this one does not
+        // allow. Matched whole: an anchor matched as a substring passes on any longer name holding it, which
+        // is how the DiffPlex control above once passed on the stock control's finding.
+        Assert.Contains(
+            modelGrants.Analyze(ui).Findings,
+            f => string.Equals(f.Subject, UiTests, StringComparison.Ordinal));
+        Assert.Contains(
+            uiGrants.Analyze(model).Findings,
+            f => string.Equals(f.Subject, ModelTests, StringComparison.Ordinal));
     }
 }

@@ -50,14 +50,15 @@
          developed and tested. Test-only: ReferenceAuditTests and ThemeResolutionTests read it,
          nothing shipped does. The `theme-audit` command itself is the sibling package
          Bennewitz.Ninja.XamlQuality.ThemeAudit, installed as a dotnet tool — see README.md. -->
-    <!-- Moved together by plan 00028, which re-read every rule of both at the new pins: each release
-         renamed every rule id (XQ100n became BNXQ100n, AQ100n became BNAQ100n) and changed what a rule
-         counts as inspected, so a rule's reading here is a measurement against these versions and a
-         move re-opens it. 928 rather than the plan's 925: AssemblyQuality 928 reports a type it cannot
-         load as Skipped instead of throwing, and XamlQuality 928 is 925 with three opt-in rules nothing
-         here adopts. -->
-    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.928" />
-    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.3.928" />
+    <!-- A rule's reading here is a measurement against these versions, so a move re-opens every rule:
+         plan 00028's renamed every rule id (XQ100n became BNXQ100n, AQ100n became BNAQ100n) and changed
+         what a rule counts as inspected. Open item 14 moved both again and read every rule of both over
+         one commit at the old pins and the new: no id moved, and every rule this repository uses read the
+         same counts, findings and skipped subjects on every subject it reads. Of the three rules new since
+         928, BNAQ1005 is adopted (AssemblyQualityTests); BNXQ1010 has nothing here to read and BNAQ1006
+         nothing here it could fail on, so both are declined. DECISIONS.md has the readings. -->
+    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1026" />
+    <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1029" />
     <!-- Unicode's East Asian Width, for scripts/measure-menu-width.cs: a CJK glyph takes two columns,
          and .NET carries no such table. Script-only: nothing the solution builds references it. -->
     <PackageVersion Include="Wcwidth" Version="4.0.1" />
