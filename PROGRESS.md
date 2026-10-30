@@ -1271,39 +1271,36 @@ wording.
     and `tests/**/*.received.*`, and nothing under `src`, so a compat dictionary the audit rejects on a
     runner is written where the upload never looks.
 
-21. **`AGENTS.md` §9's X11 half is now the second copy of lessons that live in XamlQuality — reduce it
-    to a pointer. Unblocked 2026-10-15.** §8's rule is that `docs/avalonia-gotchas.md` and
-    `docs/ai-drivable-ui.md` are the one living copy of each, and that **once a lesson lands there,
-    what stays here is a pointer** plus whatever is specific to DiffView or to this machine. The X11
-    batch of 2026-09-28, the tooltip re-measure of 2026-10-13 and the two §5 lessons were the reason
-    §9's Linux sections were still full copies.
+21. ~~`AGENTS.md` §9's X11 half is the second copy of lessons that live in XamlQuality~~ — **reduced to
+    pointers 2026-10-30, on Brian's word of the same day, on one branch with items 19 and 20.** §8's
+    rule is that `docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` are the one living copy of
+    each, and that once a lesson lands there, what stays here is a pointer plus whatever is specific to
+    DiffView or to this machine. The X11 batch of 2026-09-28 landed in XamlQuality's repository, since
+    renamed `Bennewitz.Ninja.Inspections`, in PR #83, merged 2026-10-15T13:33:53Z, and each pointer was
+    checked against `docs/avalonia-gotchas.md` on `main` at `8bfa11f` rather than against this item's
+    own list.
 
-    ✅ **They landed in `JanusMael/Bennewitz.Ninja.XamlQuality` PR #83, merged 2026-10-15T13:33:53Z**,
-    and ⛔ **each was checked against the merged documents on `main` rather than against the message
-    that reported them** — which is §8's rule and is what caught the gap on 2026-10-13. Confirmed
-    present: the retitled *"a popup is its own X window, and accelerators do not arrive"* with the old
-    *"a tooltip never appears"* gone; the tooltip raised in **ten trials of ten** on 2026-09-28 against
-    the attempt of 2026-09-13 that raised none; a popup laying out on the *next* pass; mutter's guard
-    window, its 1 × 1 and the X keyboard focus a context menu leaves there; *"a grab cannot say
-    whether an action took"*; `getwindowgeometry` counting a frame twice and `xwininfo`'s free-text
-    list; key bindings running before `KeyDown`; and that raising `MenuItem.ClickEvent` does not toggle
-    a checkable item. In `ai-drivable-ui.md`, §5 step 7 gains the guard's own premise with
-    **INCONCLUSIVE** for a run whose premise failed, and step 11 the aware driver's unaware one-off at
-    200% with our unexplained difference left as *not established*. Each entry says it was not
-    reproduced there and names this environment.
+    **What became a pointer**: §9's *On Linux* opens with a table naming the three entries under
+    *Linux platform integration*: the popup entry, which carries the tooltip trials, mutter's two
+    windows and the focus a right-click leaves on one of them; *a grab cannot say whether an action
+    took*, which carries the black frame of a session that is not presenting; and *`getwindowgeometry`
+    counts a window frame twice*. The *Mutter keeps override windows* and *Tooltips can be driven here*
+    subsections went, a line of each staying as what the driver does and what this file once said.
+    **What stayed**, as listed when the item was opened: the session and its `DISPLAY`, the demo's
+    1100×720, Beyond Compare, `x11grab` and `XAUTHORITY`, the two windows sharing the demo's class, the
+    unmapped first search result, `pkill -f`, the flags and the GPU hang; and with them the root grab
+    coming back black under XWayland, which is this machine's and is in no Inspections entry. Items 4,
+    9, 10 and 12 of the 2026-10-08 batch were never measured there, so none became a pointer either.
+    §8 names Inspections, says the package keeps its `Bennewitz.Ninja.XamlQuality` id and the session
+    still lists as XamlQuality, and every section keeps its number.
 
-    **What becomes a pointer**: the tooltip section, mutter's override-redirect windows, and the
-    black-grab and geometry-reading bullets. ⛔ **What stays, because it is this machine's or this
-    repository's**: the session being Wayland with XWayland at `DISPLAY=:0` and the demo's `1100x720`;
-    Beyond Compare at `/usr/bin/bcompare` as the by-hand reference; `ffmpeg`'s `x11grab` by window id
-    working where ImageMagick's `import` does not, and `XAUTHORITY` mattering; the unmapped first
-    result of `xdotool search --class DiffView`; ⛔ `pkill -f 'DiffView.Demo'` killing the turn rather
-    than the app; the demo's own flags; and the GPU-hang section, which is this host's hardware.
-    ⚠ Items 4, 9, 10 and 12 of the 2026-10-08 batch were **never measured there** — 4 and 9 stay ours,
-    12 was left out, 10 was already in that guide's journal — so none of them became a pointer either.
-
-    ⭐ **Brian, 2026-10-30: do it now, on one branch with items 19 and 20.** The pointers name
-    `Bennewitz.Ninja.Inspections`, XamlQuality's repository since the rename, and §8 says so as well.
+    ⚠ **Two corrections on the way.** §9 said the driver filtered both of mutter's windows out by size,
+    where `AppearedSince` passes over the guard window because it was there before the `mark` and over
+    the 1×1 by its size; §9 now says what the code does. And the twin: `docs/ui-automation-notes.md`
+    still said the batch had *not* landed and that its copy was the only one, that Inspections' entry
+    recorded the opposite about tooltips, and that item 18's exit code was owed, though it was fixed on
+    2026-10-13. Its Linux section is now a table of the six findings and where each lives, its tooltip
+    section says the readings landed, and its *Still owed* keeps the three entries that are.
 
 22. ~~A section's identity includes its document's own title, so no section matches across files titled
     differently~~ — **fixed 2026-10-22, on Brian's decision, before step 8 writes a key to disk.** A
