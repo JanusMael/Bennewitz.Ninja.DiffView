@@ -94,10 +94,10 @@ public sealed class AccessibilityCoverageTests
     /// </summary>
     /// <remarks>
     /// ⛔ <b><c>Menu</c> is here because the demo's menu bar is interactive and nothing else covers it.</b>
-    /// Its fifty-three <c>MenuItem</c>s are covered, because <c>MenuItem</c> <em>is</em> one of the stock
+    /// Its fifty-nine <c>MenuItem</c>s are covered, because <c>MenuItem</c> <em>is</em> one of the stock
     /// seventeen — which is exactly how an unnamed bar can hide among them. Proven by arithmetic rather
-    /// than assumed: the demo holds exactly fifty-three <c>MenuItem</c>s and the stock set inspects
-    /// exactly fifty-three of its elements, so it would be fifty-four if <c>Menu</c> were among them.
+    /// than assumed: the demo holds exactly fifty-nine <c>MenuItem</c>s and the stock set inspects
+    /// exactly fifty-nine of its elements, so it would be sixty if <c>Menu</c> were among them.
     /// </remarks>
     private static readonly string[] LiveFrameworkElements = [nameof(Menu)];
 
@@ -144,8 +144,8 @@ public sealed class AccessibilityCoverageTests
     private const int StockInspectedFloor = 8;
 
     /// <summary>
-    /// A floor on the demo's share of the findings scan, well under the 57 it carries so that ordinary
-    /// menu edits do not churn it — 53 of those 57 are <c>MenuItem</c>s in one file.
+    /// A floor on the demo's share of the findings scan, well under the 63 it carries so that ordinary
+    /// menu edits do not churn it — 59 of those 63 are <c>MenuItem</c>s in one file.
     /// </summary>
     /// <remarks>
     /// ⛔ <b>Asserted against the demo's own subject, not folded into a total.</b> As an addend in a
@@ -861,7 +861,7 @@ public sealed class AccessibilityCoverageTests
     {
         // ⭐ A derivation of its own, not BNXQ1002's. That gate reads the library and the demo together, and
         // over the library alone four of its names would cover nothing — the three views and Menu are placed
-        // only by the demo, whose chrome keeps its names and carries no ids. So this one is given every
+        // only by the demo, whose menu entries DemoMenuTests holds to their ids. So this one is given every
         // concrete control type the library defines: each the library's markup places must cover an element
         // there, and the rest — the views, which only a host places, and the margins, which code builds —
         // must cover none, so that a type the markup starts to place moves from one side to the other.

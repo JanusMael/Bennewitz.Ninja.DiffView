@@ -707,8 +707,12 @@ run nothing and print what the driver read, which is what makes it testable with
 - **`ActionLog` is built after the window's own `PaneContextMenuOpening` subscriptions**, because it
   wraps the menu's entries for logging in that same event: built first, it misses the demo's own
   entries (`DemoActionLogTests.A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header`).
-- **New demo items belong in a submenu.** The demo's View menu is already taller than its popup and
-  scrolls; a submenu is one more row here and its own popup to grab.
+- **A new demo item goes in the submenu of View its subject belongs to, with an `AutomationId` of its
+  own.** View's own rows are submenus and *Find…*, which is what keeps it shorter than its popup: a row
+  too many once scrolled the palette's entry out of it at 200%, and so out of the automation tree. An
+  entry's id is what the interactive pass finds it by, a submenu opened by its id before an entry in it
+  is clicked, and `DemoMenuTests.Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu`
+  holds every entry to one.
 - **A captured window is a look, not a test.** It is one machine, one variant and one moment. The
   snapshot frames under `Snapshots/` with their pixel assertions stay the evidence, per §5. This is
   for the judgement a frame cannot give — whether a thing reads right at real size, in a real window,

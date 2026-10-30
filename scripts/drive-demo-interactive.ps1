@@ -418,16 +418,18 @@ try {
         Shot 'tooltip-line-numbers' 'popup' | Out-Null
     }
 
-    # ---- the demo's View menu, which AGENTS.md section 9 says is taller than its popup ----
-    # Clicked by coordinate because the menu-bar headers carry a Name and no x:Name, so nothing
-    # derives an AutomationId for them -- unlike their entries, which all have one.
+    # ---- the demo's View menu at real DPI, whose own rows are submenus so that it fits its popup ----
+    # Opened by its id, as every entry of the demo's menus declares one (DemoMenuTests), so nothing here is
+    # found by a coordinate that a scaling moves.
     Write-Host '=== the View menu at real DPI ==='
-    if (Drive -Verbs @('mark', 'then', 'click', 'left', '96', '17', 'then', 'popup') -What 'open the View menu') {
+    if (Drive -Verbs @('mark', 'then', 'click', 'left', '--id', 'ViewMenu', 'then', 'popup') -What 'open the View menu') {
         Shot 'view-menu' 'popup' | Out-Null
     }
 
-    $palette = Probe 'ColourBlindPalette'
-    if ($palette.Read) { Assert 'the View menu is open and populated' $palette.Found 'its Colour-blind palette entry is not in the tree' }
+    # Its last row, because a menu taller than its popup scrolls its last rows out of the tree first: at
+    # 200% that is how the palette's entry went missing while it was still one of these rows.
+    $lastRow = Probe 'KeyBindingsMenu'
+    if ($lastRow.Read) { Assert 'the View menu is open and its last row is in the tree' $lastRow.Found 'its Key bindings row is not in the tree' }
     else { Unread 'whether the View menu opened' 'the probe could not run' }
 
     # Closed explicitly, whether or not it opened: a popup left over the pane is what refused the
@@ -581,12 +583,17 @@ try {
         Unread 'whether the map drag scrolled anything' ('no RangeValue at ' + $scrollBar)
     }
 
-    # ---- the colour-blind palette, which the capture half cannot reach: there is no flag for it ----
-    # LAST, because it repaints everything. Its entry has x:Name="ColourBlindPalette" and Avalonia
-    # derives an AutomationId from a Name, so it is clickable by id inside the open popup rather
-    # than by counting rows down a menu.
+    # ---- the colour-blind palette, by its own entry in View > Theme ----
+    # LAST, because it repaints everything. The --palette flag sets the same entry; this is the menu's own
+    # way to it, each step by its id in the popup the step before it opened: View, its Theme submenu, then
+    # the entry. No step counts rows down a menu or clicks a coordinate a scaling moves.
     Write-Host '=== colour-blind palette ==='
-    if (Drive -Verbs @('mark', 'then', 'click', 'left', '96', '17', 'then', 'popup') -What 'open the View menu for the palette') {
+    $opened = Drive -Verbs @('mark', 'then', 'click', 'left', '--id', 'ViewMenu', 'then', 'popup') -What 'open the View menu for the palette'
+    if ($opened) {
+        $opened = Drive -Verbs @('mark', 'then', 'click', 'left', '--id', 'ThemeMenu', 'then', 'popup') -What 'open its Theme submenu'
+    }
+
+    if ($opened) {
         $mark = LogMark
         if (Drive -Verbs @('click', 'left', '--id', 'ColourBlindPalette') -What 'tick Colour-blind palette') {
             Start-Sleep -Seconds 1
@@ -611,7 +618,7 @@ try {
         }
     }
     else {
-        $failures.Add('colour-blind palette :: the View menu never opened, so its entry was unreachable')
+        $failures.Add('colour-blind palette :: View or its Theme submenu never opened, so the entry was unreachable')
     }
 
     # The last statement of the try: anything that throws above leaves this unset, and the summary

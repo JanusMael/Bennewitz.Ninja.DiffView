@@ -5,8 +5,8 @@
 **`main` carries everything through PR #42, and CI is green on it** — PR #42 merged on a full
 10-of-10, 2026-10-29. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 977** here, `Passed!`, by a local run — twenty-one
-more than at PR #42, all of them plan 00034 steps 9 and 10's. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 981** here, `Passed!`, by a local run over the local stack — twenty-five
+more than at PR #42: plan 00034 steps 9 and 10's twenty-one, then `ReceivedFileTests`' three projects and `DemoMenuTests`. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -721,9 +721,10 @@ current, so identity and not bytes is what says a drop was safe. ⭐ **None of i
 the plan**; it came from a scratch script that burned **1,174 s of CPU** proving the first wording's
 cost defect by walking into it.
 
-⚠ The open-item list below holds **four** actionable entries — items 19, 20, 21 and 23 — with item 14
-startable beside them, and **it emptied, refilled and emptied once more inside 2026-10-13** before
-gaining them — which is the thing to take from it rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
+⚠ The open-item list below holds **one** actionable entry, item 23, whose placing is Brian's, with item 14
+startable beside it and item 19's attended run at 200% owed; and **it emptied, refilled and emptied once
+more inside 2026-10-13** before gaining the four it held until 2026-10-30 — which is the thing to take
+from it rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
 batches had landed and that **three of them changed under its own measurement**, which put two items
 on it. Both closed the same day:
 
@@ -734,15 +735,12 @@ on it. Both closed the same day:
   its code reflected none of its verdict — which is how item 17's own harness reported a pass over
   four failed assertions. Fixed, and proven from a session with no desktop at all.
 
-Item 19 was added on 2026-10-14, from the same attended run: the demo's View menu is unreachable at
-200% scaling, where four of that pass's assertions failed on coordinates rather than on anything the
-fix touched. It is decided — reorganise into submenus, per `AGENTS.md` §9's existing rule — and
-blocked only on an attended run at 200% to prove those four.
-
-Items 20 and 21 came the same way, from measurements rather than from decisions: on 2026-10-14 a
-stray `*.received.axaml` that the build compiles into the library and would ship, and on 2026-10-15
-`AGENTS.md` §9's X11 half becoming a second copy once XamlQuality PR #83 merged the lessons it
-holds. Both are recorded under *Open*, with what each fix must prove.
+Items 19, 20 and 21 came from measurements rather than from decisions: on 2026-10-14 the View menu
+unreachable at 200%, from that same attended run, and a stray `*.received.axaml` that the build compiled
+into the library and would ship; on 2026-10-15 `AGENTS.md` §9's X11 half becoming a second copy once
+XamlQuality PR #83 merged the lessons it held. All three were done on 2026-10-30 on one branch,
+`chore/the-small-items`, on Brian's word, and item 19's attended run at 200% on JANUSWAX2 is what is
+still owed of them.
 
 The documentary half is taken too: `docs/ui-automation-notes.md` is the pointer it was always going to
 become, and `AGENTS.md` §9's three affected claims are corrected.
@@ -1191,36 +1189,39 @@ wording.
     ✅ **Proven, and for free**: run from a **non-interactive SSH session**, where it cannot drive a
     desktop at all, the pass now exits **1** with a populated failure list where it previously exited
     **0**. No desktop was borrowed to establish it — the absence of one is what makes the run fail.
-19. **The demo's View menu is unreachable at 200% scaling — decided 2026-10-14, reorganise into
-    submenus.** Found by item 17's attended run on JANUSWAX2, where it cost four of that pass's
-    assertions: the menu is already taller than its popup and scrolls at 100%, and at 2× the
-    colour-blind palette entry scrolls out of the popup and is therefore **absent from the automation
-    tree**. The driver's `absent` is correct about the tree and wrong about the world, a person being
-    able to scroll to it — but the demo is what gets fixed, because the menu scrolls on the primary
-    box too and that is a defect a reader of the demo meets without driving anything.
+19. ~~The demo's View menu is unreachable at 200% scaling~~ — **regrouped 2026-10-30, on Brian's word of
+    the same day, on one branch with items 20 and 21; ⛔ the attended run at 200% on JANUSWAX2 stays
+    owed.** Found by item 17's attended run on JANUSWAX2, where it cost four of that pass's assertions:
+    the menu was taller than its popup and scrolled at 100%, and at 2× the colour-blind palette entry
+    scrolled out of the popup and so out of the automation tree. `AGENTS.md` §9 already carried the rule
+    it broke, that new demo items belong in a submenu.
 
-    `AGENTS.md` §9 already carries the rule this applies — *"New demo items belong in a submenu. The
-    demo's View menu is already taller than its popup and scrolls"* — so this is that rule reaching
-    the menu that provoked it rather than new policy. ⭐ **While in that file, the entries take
-    explicit `AutomationId`s.** Measured 2026-10-14: `MainWindow.axaml`'s `ColourBlindPalette` carries
-    an `x:Name` and an `AutomationProperties.Name` and **no `AutomationId`**, so the driver is
-    addressing an id Avalonia *derived* from the name — the silent-rename gap `AGENTS.md` §5 records,
-    live in the demo. ⚠ `fixtures/automation-ids.txt` pins the **library's** ids and none of the
-    demo's, so the fixture does not change; what does change is the `--id` paths in
-    `scripts/drive-demo-interactive.ps1`.
+    **View's own rows are now eight submenus and *Find…*** — Theme, Control, Folding, Layout, Text,
+    Comparison, Editing and Key bindings, each named for what its entries change — with Control and Key
+    bindings as they were, and Tab width and Pane font size inside Text. **Every entry of the three menus
+    declares an explicit `AutomationId`**: its `x:Name` where it has one, so a later rename of the field
+    moves no id, and a name of its own where it has none, the menu-bar headers among them and none equal
+    to an id the library places. `fixtures/automation-ids.txt` pins the library's ids and none of the
+    demo's, so it does not change. *Save right* gave up the `r` it shared with *Open right…* on the way.
+    The pass opens View by `--id ViewMenu` where it clicked (96, 17), asserts that View's last row,
+    `KeyBindingsMenu`, is in the tree, and reaches the palette as `ViewMenu`, `ThemeMenu`, then
+    `ColourBlindPalette`, each by its id in the popup the step before it opened.
 
-    ⛔ **Proving it needs an attended run at 200%**, which is JANUSWAX2's console and a person's time
-    — the four assertions are the measurement, so a local green here says nothing about them.
+    ✅ **Proven headless.** `DemoMenuTests.Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu`
+    reads each entry's attached property, never a peer, which would answer with the id its `x:Name`
+    derives. Against the old markup it failed listing all 53 entries; over the new 59 it passes. Its set,
+    `tests/DiffView.Avalonia.Tests/Mutations/demo-menu.json`, ran 5 of 5 as declared. The logged path
+    gained its submenu, `Menu: View ▸ Text ▸ Show whitespace → on`, which `DemoActionLogTests` pins, and
+    its chord test now opens every menu down to the entry it focuses, as its `Choose` already did. The
+    arithmetic in `AccessibilityCoverageTests`' comments was re-taken rather than edited: 59 `MenuItem`s,
+    59 inspected by the stock seventeen and 63 by the findings scan, where `HEAD` read 53, 53 and 57. The
+    demo's floor stays at 41, still well under its population, which is all it is there to be.
 
-    ⚠ **Not adopted, and recorded as the alternative**: teaching `drive-demo-uia.ps1` to scroll a
-    popup before reporting a part absent. It fixes a false-absence class rather than one menu, and it
-    generalises to the library's own pane menu if that grows — but per `AGENTS.md` §8 a lesson about
-    driving a desktop UI is XamlQuality's to hold first, so it goes there as a lesson and may come
-    back as a driver change.
-
-    ⭐ **Brian, 2026-10-30: do it now, on one branch with items 20 and 21.** The attended run at 200% on
-    JANUSWAX2 stays owed, and until it is made the change is proven only as far as a headless run
-    reaches.
+    ⚠ **What a headless run cannot say**: whether a click on a submenu's header opens it under
+    `SendInput`, and whether View now fits its popup at 200%. Both are the attended run's, on JANUSWAX2's
+    console and a person's time. ⚠ **Not adopted, and recorded as the alternative**: teaching
+    `drive-demo-uia.ps1` to scroll a popup before reporting a part absent, which fixes a false-absence
+    class rather than one menu; per `AGENTS.md` §8 it is a lesson for Inspections first.
 
 20. ~~A stray `*.received.axaml` is compiled into the library and shipped~~ — **fixed 2026-10-30, on
     Brian's word of the same day, on one branch with items 19 and 21.**
@@ -1397,8 +1398,8 @@ wording.
 
 Items 3, 9 and 10 are Brian's own and item 16 is shelved. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
-14 follows it, items 19, 20
-and 21 go on one branch together, and item 23's brief goes to the Inspections repository now. Item 13
+14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
+19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 13
 closed on 2026-10-30, read off a run's log rather than a date; item 22 closed on 2026-10-22, on Brian's
 decision of that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already
 closed. ⚠ XamlQuality is `Bennewitz.Ninja.Inspections` since its rename, with AssemblyQuality and
