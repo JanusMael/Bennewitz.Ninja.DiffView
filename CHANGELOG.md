@@ -8,6 +8,18 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- **`AgentBaseline`, plan 00034's consolidation tool** — `src/AgentBaseline`, not a package. `agent-baseline
+  --manifest <file>` or `--list <file>`, with `--seed <label>` and `--decisions <file>`, reviews many machines'
+  `CLAUDE.md` or `AGENTS.md` against one seed: the seed on the left as an accumulator edited by hand, each other
+  candidate on the right in turn by F8 and Shift+F8, and take, leave, drop and defer acting on the section at a
+  pane's caret. A take or a drop edits the accumulator where its own parse puts the section and is refused if it
+  would change anything else, so a reordered candidate cannot write one rule over another. The corpus is read
+  from a manifest or a path list, normalised — a document nested in a list item unwrapped, line endings LF, the
+  raw bytes kept — and pruned as it is walked: build and tool output never descended, copies of our own
+  documents named, pointer files counted. A save writes the baseline as LF to a new path, never one the corpus
+  read, with a provenance report and a decision file beside it that a later run begins from. A candidate is
+  stale only where the accumulator moved under a version of its own after the candidate was reviewed, and a save
+  over stale candidates is made twice, the first saying where.
 - Plan 00027 — the locale caveat reaches the consumer. `Bennewitz.Ninja.DiffView.Avalonia`'s package
   description now says it **ships eight machine-generated locales, which apply without
   configuration**: the blurb is what nuget search results and the package sidebar show, and it had

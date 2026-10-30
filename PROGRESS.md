@@ -70,13 +70,13 @@ the configuration the suite built, so `PackagingTests` reads it from `AssemblyCo
 rather than naming one. What survives as practice rather than as news is in *Running it*: a local
 green is evidence about one machine, and CI judges the claim.
 
-⭐ **`plans/00034` is approved, committed and frozen; steps 1 to 11 are done, step 11 with step 7, and
-the start-up none of the twelve steps names, built ahead of step 9 on Brian's word of 2026-10-29.**
+⭐ **`plans/00034` is approved, committed and frozen; all twelve of its steps are done, step 11 with
+step 7, and so is the start-up none of them names, built ahead of step 9 on Brian's word of 2026-10-29.**
 `AgentBaseline` consolidates many `CLAUDE.md`/`AGENTS.md` into one baseline: a fixed editable left
 accumulator against a cycling queue of candidates, section-shaped take / leave / drop / defer, decisions
 persisted across runs. Approved 2026-10-14 and committed as its own change before any code, so ⛔ **it
-is never edited again** — drift comes here, and superseding it means a new number. **Step 12 — the record —
-is next, and after it the real consolidation the plan is done by.** The tool opens on what its command line names now — a manifest or a path list, a
+is never edited again** — drift comes here, and superseding it means a new number. **What is left is what the plan
+is done by: one real consolidation across Brian's machines, with the baseline distributed.** The tool opens on what its command line names now — a manifest or a path list, a
 seed, and the decision file an earlier save wrote — and says what the corpus left out before the window
 opens, so the real consolidation the plan is done by can be run at all. The window's platform lifetime,
 the one part of it no headless test reaches, was run by hand the same day and opened, drew and closed.
@@ -694,6 +694,15 @@ scope, four in `startup` its refusal, and seven mutations follow the code they e
 four worktrees with the seven other sets the change owed — `corpus`, `review-session`, `review-window`,
 `section-decisions`, `staleness`, `startup` and `stores`: **365 of 365 as declared**, every declared test
 killed, in 24.8 minutes.
+
+⭐ **Step 12 is the record, and the plan's twelve steps are done.** `AGENTS.md` gains §10, AgentBaseline's
+cross-file contracts, each with the failure it prevents and the test that holds it, beside the library's nine
+sections; `CHANGELOG.md` gains the tool's first entry; and `README.md`'s layout table names `src/AgentBaseline`
+beside the three projects it listed, with the tool's command line beside the demo's. `DECISIONS.md` and this
+file were kept current by each step as it landed. ⭐ **The plan is not done by step 12**: it is done by one real
+consolidation across Brian's machines with the baseline distributed, which is what comes next, and which is
+also the trigger decision 1 names for reopening the question of a control. `DocumentationCitationTests` and
+`LocaleCaveatTests` are green over the record.
 
 ⛔ **Then checking decision 15 against the real corpus broke it three times over, which is the part
 worth keeping.** A figure for N means nothing without the exclusion rule beside it: on `C:\c\cl` with
