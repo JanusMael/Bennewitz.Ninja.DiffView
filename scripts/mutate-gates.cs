@@ -64,6 +64,7 @@ const string AssemblyGate = "tests/DiffView.Avalonia.Tests/AssemblyQualityTests.
 const string GridGate = "tests/DiffView.Avalonia.Tests/GridSlotTests.cs";
 const string CoreSource = "src/DiffView.Core/DiffSearch.cs";
 const string CoreProject = "src/DiffView.Core/DiffView.Core.csproj";
+const string UiProject = "src/DiffView.Avalonia/DiffView.Avalonia.csproj";
 const string FindBar = "src/DiffView.Avalonia/DiffFindBar.cs";
 const string SbsTheme = "src/DiffView.Avalonia/Themes/SideBySideDiffView.axaml";
 const string DemoView = "src/DiffView.Demo/MainWindow.axaml";
@@ -1096,6 +1097,46 @@ List<Mutation> mutations =
         () => Sub(ShadowControlFile, @"namespace Bennewitz\.Ninja\.DiffView\.Tests\.ShadowControlScope\.System;",
             "namespace Bennewitz.Ninja.DiffView.Tests.ShadowControlScope.Systemic;"),
         "No_shipped_namespace_shadows_a_referenced_root"),
+
+    // ---- BNAQ1005: each library grants its internals to its own tests and to nothing else. A library that
+    // takes the solution's generated grants is the regression the gate exists for, and it compiles —
+    // measured for both libraries at 2026.4.1029 — so the gate, not the build, is what refuses it.
+    new("the model takes the solution's friend grants", AssemblyClass,
+        () => Sub(CoreProject, "<SolutionFriendGrants>false</SolutionFriendGrants>",
+            "<SolutionFriendGrants>true</SolutionFriendGrants>"),
+        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+
+    new("the UI assembly takes the solution's friend grants", AssemblyClass,
+        () => Sub(UiProject, "<SolutionFriendGrants>false</SolutionFriendGrants>",
+            "<SolutionFriendGrants>true</SolutionFriendGrants>"),
+        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+
+    // Unconfigured, the rule reads no grant at all and finds nothing, which is what each floor is for.
+    new("BNAQ1005's model instance allows nothing", AssemblyClass,
+        () => Sub(AssemblyGate, @"FriendGrantRule modelGrants = new\(\[ModelTests\]\);",
+            "FriendGrantRule modelGrants = new();"),
+        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+
+    new("BNAQ1005's UI instance allows nothing", AssemblyClass,
+        () => Sub(AssemblyGate, @"FriendGrantRule uiGrants = new\(\[UiTests\]\);",
+            "FriendGrantRule uiGrants = new();"),
+        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+
+    // One list naming both test assemblies passes each library's own read, so only the controls — each
+    // instance over the other library — can see it.
+    new("BNAQ1005's model instance allows the UI's tests too", AssemblyClass,
+        () => Sub(AssemblyGate, @"FriendGrantRule modelGrants = new\(\[ModelTests\]\);",
+            "FriendGrantRule modelGrants = new([ModelTests, UiTests]);"),
+        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+
+    new("BNAQ1005's UI instance allows the model's tests too", AssemblyClass,
+        () => Sub(AssemblyGate, @"FriendGrantRule uiGrants = new\(\[UiTests\]\);",
+            "FriendGrantRule uiGrants = new([UiTests, ModelTests]);"),
+        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
+
+    new("BNAQ1005's subject is swapped for the UI assembly", AssemblyClass,
+        () => SwapSubject(5),
+        "Each_library_grants_its_internals_to_its_own_tests_and_nothing_else"),
 ];
 
 // The whole declared set: what a shard is cut from, and what a merge checks its shards against.
