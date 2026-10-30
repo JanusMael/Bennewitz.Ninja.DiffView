@@ -1268,9 +1268,10 @@ wording.
     props, so without Avalonia's glob, and reports no markup with exit code 0; and `-restore` beside
     `-getItem` restores nothing. A no-op restore costs 1.2 to 2.0 s a project here.
 
-    ⚠ **Noticed, not acted on**: CI's *Upload what the gates rejected* steps upload `docs/*.received.md`
-    and `tests/**/*.received.*`, and nothing under `src`, so a compat dictionary the audit rejects on a
-    runner is written where the upload never looks.
+    ✅ **Noticed, then acted on 2026-10-30 on Brian's word**: CI's *Upload what the gates rejected* steps
+    uploaded `docs/*.received.md` and `tests/**/*.received.*` and nothing under `src`, so a compat
+    dictionary the audit rejects on a runner was written where the upload never looked. Both steps
+    upload `src/**/*.received.*` now.
 
 21. ~~`AGENTS.md` §9's X11 half is the second copy of lessons that live in XamlQuality~~ — **reduced to
     pointers 2026-10-30, on Brian's word of the same day, on one branch with items 19 and 20.** §8's
