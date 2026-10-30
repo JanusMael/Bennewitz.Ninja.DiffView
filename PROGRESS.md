@@ -5,17 +5,20 @@
 **`main` carries everything through PR #42, and CI is green on it** — PR #42 merged on a full
 10-of-10, 2026-10-29. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 981** here, `Passed!`, by a local run over the local stack — twenty-five
-more than at PR #42: plan 00034 steps 9 and 10's twenty-one, then `ReceivedFileTests`' three projects and `DemoMenuTests`. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 982** here, `Passed!`, by a local run over the local stack — twenty-six
+more than at PR #42: plan 00034 steps 9 and 10's twenty-one, then `ReceivedFileTests`' three projects, `DemoMenuTests` and item 14's `BNAQ1005` gate. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
-**116** mutations and derives **82** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — over plan 00034 step 7's change, which moved a gate file, on 2026-10-22,
-in four worktrees — gave all 116 as declared: 112 killed by the test each names, 2 by the build and 2
-green by design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 82 guards
-tripped first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it.
+**123** mutations and derives **88** guards from the gate files; CI runs its `--guards` half on
+Linux, and the last full run — over item 14's change, which moved both pins and added `BNAQ1005`'s
+gate, on 2026-10-30, in four worktrees — gave all 123 as declared: 119 killed by the test each names,
+2 by the build and 2 green by design, with nothing survived, no-op, unexpectedly red, wrong-killer or
+aborted; all 88 guards tripped first by one of them, no `inert-at-pin` marker standing, and the
+worktrees removed after it. ⚠ It was the second run over that commit: the first lost three mutations
+in the same thirty seconds, in three of its four shards, to `MSB4166` — an MSBuild worker node ending
+under the build that held it — so the second ran with node reuse off, and `DECISIONS.md` says why.
 
 ⛔ **PR #28's Windows leg failed once on a network flake and passed on a re-run** — `git fetch` of the
 DiffPlex reference source could not reach `github.com:443` after 21 s, which killed *Fetch reference
@@ -54,9 +57,9 @@ another session's pull request, which is half of why the Linux jobs were left un
 **Plans 00001, 00003–00029, 00031 and 00033 are complete and closed**, plan 00034 is in progress
 (below), and plan 00002 was rejected on its own review before any code was written. Of the two
 parked drafts, **plan 00030 is no longer blocked, and not started**: the public per-control reading
-of `BNXQ1003` it waited on shipped in XamlQuality `2026.4.1014`, so what stands between it and a
-start is item 14 — moving the pin, which is not the small change it looks like — and a decision to
-start it. **Plan 00032 is parked on ClaudeForge** (item 10), waiting for the live-log window to be
+of `BNXQ1003` it waited on shipped in XamlQuality `2026.4.1014`, and item 14 moved the pin to
+`2026.4.1026` on 2026-10-30, so what stands between it and a start is Brian's approval of the draft.
+**Plan 00032 is parked on ClaudeForge** (item 10), waiting for the live-log window to be
 published as a package. ⛔ **Both stay untracked drafts — Brian,
 2026-10-13**, asked after a resume found them and told they are 27 KB of research with no copy
 anywhere; do not commit them and do not re-raise it. *History — plan by plan*
@@ -721,8 +724,8 @@ current, so identity and not bytes is what says a drop was safe. ⭐ **None of i
 the plan**; it came from a scratch script that burned **1,174 s of CPU** proving the first wording's
 cost defect by walking into it.
 
-⚠ The open-item list below holds **one** actionable entry, item 23, whose placing is Brian's, with item 14
-startable beside it and item 19's attended run at 200% owed; and **it emptied, refilled and emptied once
+⚠ The open-item list below holds **one** actionable entry, item 23, whose placing is Brian's, with item 19's
+attended run at 200% owed and plan 00030's draft back with him since item 14 closed; and **it emptied, refilled and emptied once
 more inside 2026-10-13** before gaining the four it held until 2026-10-30 — which is the thing to take
 from it rather than the state. It was empty that morning; XamlQuality then reported that the Windows driving
 batches had landed and that **three of them changed under its own measurement**, which put two items
@@ -764,8 +767,8 @@ photograph at all.
 
 ⛔ **Open item 10 is still parked on something outside this repository**: it waits for ClaudeForge's
 live-log window to be published as a package (`plans/00032-…md` is researched to the point of
-execution and must not be started before then). **Item 14 is no longer parked** — its release
-shipped on 2026-10-14 — but it is not the small change it looks like, and that item says why.
+execution and must not be started before then). **Item 14 closed on 2026-10-30** — both pins moved and
+every rule was re-read — and plan 00030's draft, which waited on it, is back with Brian for approval.
 
 ### What ships
 
@@ -1080,11 +1083,13 @@ wording.
     Which run was the first on Ubuntu 26 was not read; the item asked for a run's own log line naming
     it, and this one does.
 
-14. **Plan 00030 — a reference of the controls' template parts, generated from the code — waits on
-    XamlQuality.** Its *looked up* column is to come from BNXQ1003's own reading, which is private at
-    `2026.3.928`; XamlQuality was asked on 2026-10-03 to make it public (`DECISIONS.md`), and starts on it
-    once Brian confirms it there and places it in that repository's order. The draft is parked until a
-    release carries the reading, and returns then to the five tables it was asked for.
+14. ~~**Plan 00030 — a reference of the controls' template parts, generated from the code — waits on
+    XamlQuality.**~~ — **closed 2026-10-30: both pins moved and every rule was re-read, on Brian's word of
+    the same day; plan 00030's draft is back with him for approval.** Its *looked up* column is to come
+    from BNXQ1003's own reading, which is private at `2026.3.928`; XamlQuality was asked on 2026-10-03 to
+    make it public (`DECISIONS.md`), and starts on it once Brian confirms it there and places it in that
+    repository's order. The draft is parked until a release carries the reading, and returns then to the
+    five tables it was asked for.
 
     ✅ **Confirmed and planned there, 2026-10-13** (XamlQuality, by message): the plan is approved — two
     steps, the public reading and then a parts report the theme audit writes and checks — and **the
@@ -1121,6 +1126,15 @@ wording.
     item 24's grant changes as well. Plan 00030's draft comes back for approval after that. ⚠ **The
     rename moved no package id**: nuget.org has no `Bennewitz.Ninja.Inspections`, and both packages
     still publish under their own names (read 2026-10-30).
+
+    ✅ **Done 2026-10-30, on `build/the-quality-pins-move`.** Every rule both packages ship was read at
+    the old pins and the new over one commit: no rule id moved, and none of the 80 readings both pins
+    take did. `BNAQ1005` is adopted — `AssemblyQualityTests.No_library_grants_its_internals_beyond_its_own_tests`
+    holds each library to granting its internals to its own tests alone, which is `src/AGENTS.md`'s
+    first rule — and `BNXQ1010` and `BNAQ1006` are declined; `DECISIONS.md`'s *Both quality packages at
+    1026 and 1029, every rule re-read here* has the readings. The full gate run over the result, which
+    item 24's grants owed as well, gave all 123 mutations as declared and tripped all 88 guards first,
+    and the suite runs 982, healthy.
 
 15. ~~The hosting guide's id table is written by hand and checked by nothing~~ — **closed.**
     `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds

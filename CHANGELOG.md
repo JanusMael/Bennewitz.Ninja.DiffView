@@ -34,6 +34,13 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **The quality packages move to XamlQuality `2026.4.1026` and AssemblyQuality `2026.4.1029`, and
+  `BNAQ1005` is adopted.** Test-only, as before. Every rule of both was read at the old pins and the new over
+  one commit first: no rule id moved, and none of the readings the gates rest on did. `AssemblyQualityTests`
+  now holds each library to granting its internals to its own tests alone, which `src/AGENTS.md`'s first rule
+  says and nothing checked — a library that takes the solution's generated grants still compiles. `BNXQ1010`
+  and `BNAQ1006` are declined, the first having nothing here to read and the second nothing here it could
+  fail on. `--guards` lists 88, and a full `scripts/mutate-gates` run carries 123 mutations.
 - **The accessibility gate accounts for a third markup-bearing project under `src`.** `AgentBaseline`,
   plan 00034's consolidation tool, has a review window now, and `AccessibilityCoverageTests` holds its
   markup as a subject with a floor of its own, beside the library's and the demo's; both of the gate's
