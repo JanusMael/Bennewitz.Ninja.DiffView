@@ -1,0 +1,60 @@
+{
+  // A received file written beside a project's markup is handed to no markup compiler: the one line of
+  // the root Directory.Build.props that adds **/*.received.* to DefaultItemExcludes, which the Avalonia
+  // package's own glob honours, read back through MSBuild's evaluation of every project under src that
+  // holds markup. Every edit but the blinding one is to that props file, so each run rebuilds the graph.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/received-files.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.ReceivedFileTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/ReceivedFileTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a received file is globbed as markup",
+      "file": "Directory.Build.props",
+      "old": "<DefaultItemExcludes>$(DefaultItemExcludes);**/*.received.*</DefaultItemExcludes>",
+      "new": "",
+      "killer": "A_received_file_beside_the_markup_is_not_handed_to_the_markup_compiler",
+      "says": "markup glob takes"
+    },
+    {
+      "name": "only a received file at a project's own root is left out",
+      "file": "Directory.Build.props",
+      "old": ";**/*.received.*<",
+      "new": ";*.received.*<",
+      "killer": "A_received_file_beside_the_markup_is_not_handed_to_the_markup_compiler",
+      "says": "DiffView.Avalonia.csproj's markup glob takes",
+      "because": "the audit writes beside the compat dictionaries, two directories below the library's root, so the library's probe is planted there"
+    },
+    {
+      "name": "the exclusion is spelled for Verify's frames alone",
+      "file": "Directory.Build.props",
+      "old": ";**/*.received.*<",
+      "new": ";**/*.received.png<",
+      "killer": "A_received_file_beside_the_markup_is_not_handed_to_the_markup_compiler",
+      "says": "markup glob takes"
+    },
+    {
+      "name": "the reading asks for markup no project has",
+      "file": "tests/DiffView.Avalonia.Tests/ReceivedFileTests.cs",
+      "old": "private const string MarkupItem = \"AvaloniaXaml\";",
+      "new": "private const string MarkupItem = \"AvaloniaXamlProbe\";",
+      "killer": "A_received_file_beside_the_markup_is_not_handed_to_the_markup_compiler",
+      "says": "so the reading found no markup",
+      "because": "a reading that asserts only an absence passes when it reads nothing, so the markup beside the probe must trip first"
+    },
+    {
+      "name": "the exclusion's patterns are listed the other way round",
+      "file": "Directory.Build.props",
+      "old": "$(DefaultItemExcludes);**/*.received.*",
+      "new": "**/*.received.*;$(DefaultItemExcludes)",
+      "expect": "green",
+      "because": "an item is left out when any pattern of the list matches it, so the list is a union, and a union commutes"
+    }
+  ]
+}

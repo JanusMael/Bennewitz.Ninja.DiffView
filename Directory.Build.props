@@ -52,6 +52,15 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
+  <!-- A received file is what a gate rejected, written beside what it disagrees with for review —
+       Verify's frames, ReferenceAuditTests' compat dictionaries, the theme audit's report — and never
+       a source. The Avalonia package's markup glob leaves out $(DefaultItemExcludes) as the SDK's own
+       globs do, so this keeps a stray beside a theme from being compiled and embedded in any project
+       here, and the library from packing it. ReceivedFileTests reads the glob back through MSBuild. -->
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/*.received.*</DefaultItemExcludes>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Bennewitz.Ninja.AutoVersioning"
                       PrivateAssets="all"

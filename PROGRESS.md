@@ -1222,14 +1222,13 @@ wording.
     JANUSWAX2 stays owed, and until it is made the change is proven only as far as a headless run
     reaches.
 
-20. **A stray `*.received.axaml` is compiled into the library and shipped — measured 2026-10-14.**
+20. ~~A stray `*.received.axaml` is compiled into the library and shipped~~ — **fixed 2026-10-30, on
+    Brian's word of the same day, on one branch with items 19 and 21.**
     `ReferenceAuditTests` writes `<name>.received.axaml` beside a stale compat dictionary when the check
-    drifts, which lands it in `src/DiffView.Avalonia/Themes/Compat/`. `.gitignore` keeps it out of a
-    commit (`*.received.*`, and that half has always been right), but **nothing keeps it out of the
-    build**: the Avalonia SDK globs `**/*.axaml` and `DiffView.Avalonia.csproj` carries no `Remove`.
-
-    ⛔ **Proven rather than argued.** A received dictionary holding one marker key was written into that
-    directory, the project built, and the built assembly read back:
+    drifts, which lands it in `src/DiffView.Avalonia/Themes/Compat/`. `.gitignore` kept it out of a
+    commit (`*.received.*`, and that half had always been right), but **nothing kept it out of the
+    build**: the Avalonia package globs `**/*.axaml`, and no project carried a `Remove`. Measured
+    2026-10-14, a received dictionary holding one marker key written into that directory:
 
     | Reading | Result |
     |---|---|
@@ -1237,19 +1236,40 @@ wording.
     | the build output naming the file | **never** |
     | the marker key present in `DiffView.Avalonia.dll` | **yes** |
 
-    So it is compiled **and embedded**, silently — and `DiffView.Avalonia` is `IsPackable=true`, so a
-    stray left behind by one failed test run would ship a foreign resource dictionary inside the
-    published package. ⚠ The hazard predates the release that surfaced it: XamlQuality `2026.4.1014`
-    makes `report --check` and `compat --check` write `name.received.ext` on drift too, which adds a
-    second source of strays, but our own suite has always been the first.
+    So it was compiled **and embedded**, silently, in a project that is `IsPackable=true`. Our own suite
+    was the first source of strays and XamlQuality `2026.4.1014` added a second, its `report --check`
+    and `compat --check` writing `name.received.ext` on drift too; the fix below covers both.
 
-    The fix is to exclude `*.received.*` from the Avalonia item globs, with a test that proves the
-    exclusion holds — a stray written into the tree must leave the built assembly unchanged, which is
-    the assertion the measurement above already has the shape of. ⚠ `src/DiffView.Demo` globs markup
-    too, and so has `src/AgentBaseline` since plan 00034's step 7 gave it a window, so the exclusion
-    belongs wherever markup is globbed rather than in one project.
+    **The fix is one line of the root `Directory.Build.props`**: `**/*.received.*` appended to
+    `DefaultItemExcludes`. It was read in the package first, an upstream file opened on purpose:
+    Avalonia 12.1.2's `AvaloniaBuildTasks.props` globs `AvaloniaXaml` as `Include="**\*.axaml"
+    Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)"`, as the SDK's own globs do, and
+    an item's `Exclude` is expanded only once every property is final, so the one append reaches every
+    project that globs markup: the library, the demo and AgentBaseline. The SDK's own globs leave a
+    received file out of `Compile`, `EmbeddedResource` and `None` by the same line, none of which it
+    belongs in either.
 
-    ⭐ **Brian, 2026-10-30: do it now, on one branch with items 19 and 21.**
+    ✅ **Proven three ways.**
+    `ReceivedFileTests.A_received_file_beside_the_markup_is_not_handed_to_the_markup_compiler` plants a
+    probe named the way the audit names one beside each markup project's first markup file, which for
+    the library is a compat dictionary, and reads `dotnet msbuild -getItem:AvaloniaXaml`: the probe
+    absent, and the markup beside it present. It failed on all three projects before the line, on the
+    probe's assertion, and passed after it. Its set, `tests/DiffView.Avalonia.Tests/Mutations/received-files.json`,
+    ran 5 of 5 as declared: the line removed, narrowed to a project's own root and spelled for
+    Verify's frames alone are each killed in the assertion's own words, the reading blinded trips the
+    positive control first, and the patterns listed the other way round stay green. And the
+    measurement above, re-taken over the fix: the build exits 0 and names nothing, and the marker is in
+    the DLL in neither encoding, where a key of the committed compat dictionary is found there, as
+    UTF-16, by the same search.
+
+    ⚠ **The test restores each project before it reads it.** Measured in a fresh worktree, which is
+    what `mutate-behaviour --parallel` cuts: an unrestored project evaluates without its packages'
+    props, so without Avalonia's glob, and reports no markup with exit code 0; and `-restore` beside
+    `-getItem` restores nothing. A no-op restore costs 1.2 to 2.0 s a project here.
+
+    ⚠ **Noticed, not acted on**: CI's *Upload what the gates rejected* steps upload `docs/*.received.md`
+    and `tests/**/*.received.*`, and nothing under `src`, so a compat dictionary the audit rejects on a
+    runner is written where the upload never looks.
 
 21. **`AGENTS.md` §9's X11 half is now the second copy of lessons that live in XamlQuality — reduce it
     to a pointer. Unblocked 2026-10-15.** §8's rule is that `docs/avalonia-gotchas.md` and
