@@ -317,6 +317,7 @@ public sealed class DocumentationCitationTests
             }
         }
     }
+
     private static string AllTestSource()
     {
         string root = RepoPaths.Source("tests");
