@@ -93,6 +93,16 @@ jobs:
       - name: Pack ClaudeForge diagnostics into the local feed
         run: dotnet run scripts/pack-diagnostics.cs
 
+      # ⛔ Nothing publishes from a repository the family conventions reject: its documents, its
+      # description, its friend grants (docs/repository-conventions.md in Bennewitz.Ninja.Templates). A
+      # package page links back here, so the repository's own documents are part of what ships. After
+      # the local feed is packed, because the check evaluates every project after a restore; and in the
+      # preflight too, so a dispatch with the box ticked reports it before a tag does. A setting that has
+      # merely drifted does not stop a release — CI's `conventions` job reports that.
+      - name: Refuse to release a repository the conventions reject
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: dotnet run --file scripts/repo-conventions.cs -- check --release
       - name: Build
         run: dotnet build DiffView.slnx -c Release --nologo -warnaserror /p:Version=${{ env.VERSION }}
 
