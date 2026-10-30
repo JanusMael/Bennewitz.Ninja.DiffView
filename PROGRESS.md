@@ -1320,10 +1320,17 @@ wording.
     ⭐ **Decided 2026-10-22, by Brian: XamlQuality** — `DECISIONS.md`, *The converged mutation runner is a
     dotnet tool from XamlQuality*. ⛔ The move itself starts only on his word.
 
-    ⭐ **Started 2026-10-30, on Brian's word.** DiffView's part is a brief to the Inspections repository —
-    XamlQuality's since the rename, with AssemblyQuality and CodeQuality merged into it — on what this
-    runner brings: the sets, completeness, the markers, green controls, owed runs and worktree shards.
-    The tool is built there; DiffView retires its copy in a change of its own once the tool ships.
+    ⭐ **Sent 2026-10-30, on Brian's word, and received.** DiffView's part was a brief to the Inspections
+    repository — XamlQuality's since the rename, with AssemblyQuality and CodeQuality merged into it — on
+    what this runner brings: the sets, completeness, the markers, green controls, owed runs and worktree
+    shards. Its session recorded it word for word; whether it takes it on, and where in its order, is
+    Brian's to place. It corrected this item's account of `tools/mutate.cs` twice: that runner is parallel
+    already, `--workers N` giving each worker its own copy of the tree under `artifacts/mutate/<pool>/` and
+    putting a file it planted a defect in back byte for byte, checked by hash; and only a defect under
+    `src/XamlQuality/` rebuilds the library alone and swaps its assembly into the test project's output,
+    any other rebuilding that project. Its catalog is one JSON array passed by path, with no green
+    control, no completeness check, no `--owed` and no `inert-at-pin`. DiffView retires its copy in a
+    change of its own once the tool ships.
 
 24. **The family's repository conventions — measured 2026-10-29, and Brian's to schedule.** Templates'
     plans/00009 step 4 is DiffView conforming to `docs/repository-conventions.md` in
