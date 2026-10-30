@@ -88,11 +88,11 @@ jobs:
           path: ./test-results/*.trx
           retention-days: 14
 
-      # ⭐ The step that turns a red CI run into evidence. Two of this repository's gates write a
-      # "received" file beside the committed one they disagree with — the theme audit's regenerated
-      # report, and every Verify image snapshot — and CI then throws the runner away. The failure
-      # message names a file nobody outside the runner can read, which is why defect A of plan 00024
-      # went three days with three dead hypotheses and no diff to look at.
+      # ⭐ The step that turns a red CI run into evidence. Three kinds of gate here write a "received"
+      # file beside the committed one they disagree with — the theme audit's regenerated report, its
+      # compat dictionaries, which sit under src, and every Verify image snapshot — and CI then throws
+      # the runner away. The failure message names a file nobody outside the runner can read, which is
+      # why defect A of plan 00024 went three days with three dead hypotheses and no diff to look at.
       #
       # ⚠ if: failure() rather than always(): on a green run these paths do not exist, and an
       # upload-artifact step with no matching path warns. Uploading nothing, loudly, on every
@@ -104,6 +104,7 @@ jobs:
           name: received-${{ matrix.os }}
           path: |
             docs/*.received.md
+            src/**/*.received.*
             tests/**/*.received.*
           if-no-files-found: ignore
           retention-days: 14
@@ -158,11 +159,11 @@ jobs:
           path: ./test-results/*.trx
           retention-days: 14
 
-      # ⭐ The step that turns a red CI run into evidence. Two of this repository's gates write a
-      # "received" file beside the committed one they disagree with — the theme audit's regenerated
-      # report, and every Verify image snapshot — and CI then throws the runner away. The failure
-      # message names a file nobody outside the runner can read, which is why defect A of plan 00024
-      # went three days with three dead hypotheses and no diff to look at.
+      # ⭐ The step that turns a red CI run into evidence. Three kinds of gate here write a "received"
+      # file beside the committed one they disagree with — the theme audit's regenerated report, its
+      # compat dictionaries, which sit under src, and every Verify image snapshot — and CI then throws
+      # the runner away. The failure message names a file nobody outside the runner can read, which is
+      # why defect A of plan 00024 went three days with three dead hypotheses and no diff to look at.
       #
       # ⚠ if: failure() rather than always(): on a green run these paths do not exist, and an
       # upload-artifact step with no matching path warns. Uploading nothing, loudly, on every
@@ -174,6 +175,7 @@ jobs:
           name: received-culture-de-DE
           path: |
             docs/*.received.md
+            src/**/*.received.*
             tests/**/*.received.*
           if-no-files-found: ignore
           retention-days: 14
