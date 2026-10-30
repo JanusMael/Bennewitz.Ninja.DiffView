@@ -19,6 +19,35 @@
   ],
   "mutations": [
     {
+      "name": "a decision file written for another target is read",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "if (earlier is { } read && read.Target != corpus.Target)",
+      "new": "if (earlier is { } read && read.Decisions.Count < 0)",
+      "killer": "A_decision_file_written_for_another_target_is_refused_naming_both"
+    },
+    {
+      "name": "a decision file's target is compared by its file name alone",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "read.Target != corpus.Target",
+      "new": "!string.Equals(read.Target.FileName, corpus.Target.FileName, StringComparison.OrdinalIgnoreCase)",
+      "killer": "A_decision_file_written_for_another_target_is_refused_naming_both"
+    },
+    {
+      "name": "a decision file's target is compared case and all",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "read.Target != corpus.Target",
+      "new": "!string.Equals(read.Target.ToString(), corpus.Target.ToString(), StringComparison.Ordinal)",
+      "killer": "A_decision_file_written_for_another_target_is_refused_naming_both",
+      "says": "was written for agents.md"
+    },
+    {
+      "name": "the refusal names neither target",
+      "file": "src/AgentBaseline/Startup.cs",
+      "old": "was written for {read.Target}, and this corpus is for \"\n                + $\"{corpus.Target} — a review",
+      "new": "is about another target — a review\"\n                + $\"",
+      "killer": "A_decision_file_written_for_another_target_is_refused_naming_both"
+    },
+    {
       "name": "an option it does not know is read as one it does",
       "file": "src/AgentBaseline/Startup.cs",
       "old": "if (!Options.Contains(option))",
@@ -77,15 +106,15 @@
     {
       "name": "a named decision file is never read",
       "file": "src/AgentBaseline/Startup.cs",
-      "old": "request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : []",
-      "new": "[]",
+      "old": "request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : null",
+      "new": "null",
       "killer": "A_manifest_names_the_seed_and_the_decision_file_brings_every_earlier_decision"
     },
     {
       "name": "the corpus is read before the decision file",
       "file": "src/AgentBaseline/Startup.cs",
-      "old": "        IReadOnlyList<SectionDecision> earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : [];\n\n        string text = ReadText(request.CorpusPath, request.IsManifest ? \"the manifest\" : \"the path list\");\n",
-      "new": "        string text = ReadText(request.CorpusPath, request.IsManifest ? \"the manifest\" : \"the path list\");\n\n        IReadOnlyList<SectionDecision> earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : [];\n",
+      "old": "        DecisionFileContents? earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : null;\n\n        string text = ReadText(request.CorpusPath, request.IsManifest ? \"the manifest\" : \"the path list\");\n",
+      "new": "        string text = ReadText(request.CorpusPath, request.IsManifest ? \"the manifest\" : \"the path list\");\n\n        DecisionFileContents? earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : null;\n",
       "killer": "A_decision_file_named_and_not_there_is_refused_before_any_corpus_is_read",
       "because": "a mistyped decision file is refused before any corpus is walked"
     },

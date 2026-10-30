@@ -131,7 +131,7 @@ public sealed class RestartTests
             Assert.Equal(BaselineOutput.DecisionsPathFor(output), saved.DecisionsPath);
         }
 
-        return (DecisionFile.Read(BaselineOutput.DecisionsPathFor(output)), output);
+        return (DecisionFile.Read(BaselineOutput.DecisionsPathFor(output)).Decisions, output);
     }
 
     [AvaloniaFact]
@@ -153,7 +153,7 @@ public sealed class RestartTests
             BaselineOutput.Write(run, output);
         }
 
-        IReadOnlyList<SectionDecision> earlier = DecisionFile.Read(BaselineOutput.DecisionsPathFor(output));
+        IReadOnlyList<SectionDecision> earlier = DecisionFile.Read(BaselineOutput.DecisionsPathFor(output)).Decisions;
         Assert.Equal(
             [
                 new SectionDecision(DecisionKind.Rejected, SectionIdentity.Of(Of("One")), "machine 1", null),
@@ -203,7 +203,7 @@ public sealed class RestartTests
             BaselineOutput.Write(run, output);
         }
 
-        IReadOnlyList<SectionDecision> earlier = DecisionFile.Read(BaselineOutput.DecisionsPathFor(output));
+        IReadOnlyList<SectionDecision> earlier = DecisionFile.Read(BaselineOutput.DecisionsPathFor(output)).Decisions;
         string rewordedAgain = Machine1.Replace("Alpha, reworded.", "Alpha, reworded once more.", StringComparison.Ordinal);
         ReviewQueue queue = QueueOf(tree, ("machine 1", Machine1), ("machine 2", Machine1), ("machine 3", rewordedAgain));
         string later = Path.Combine(tree.MakeDirectory("Later"), "AGENTS.md");
@@ -234,7 +234,8 @@ public sealed class RestartTests
             Assert.EndsWith(
                 "## Decisions, in the order made\n\n"
                 + "One decision made before this run came with it and is not listed here: the decision file beside this "
-                + "report keeps it.\n\nNone: no section was taken, left or dropped.\n",
+                + "report keeps it.\n\nNone: no section was taken, left or dropped.\n"
+                + "\n## Staleness accepted\n\nNone: no candidate was stale when this baseline was saved.\n",
                 File.ReadAllText(BaselineOutput.ReportPathFor(later)),
                 StringComparison.Ordinal);
         }
@@ -339,7 +340,10 @@ public sealed class RestartTests
             session.Leave(SectionOf(session, "Two"));
             session.Take(SectionOf(session, "One"));
 
-            BaselineOutput.Write(session, output);
+            // Machine 2's One over machine 1's leaves machine 1 stale there, which step 10's save asks to have
+            // accepted; this test is about what the save reads of each take, so it accepts exactly that.
+            Assert.Equal([new StaleSection("One", "machine 1")], session.Staleness());
+            BaselineOutput.Write(session, output, session.Staleness());
         }
 
         SectionIdentity Of(MarkdownOutline outline, string path) => SectionIdentity.Of(outline.Sections.Single(s => s.HeadingPath == path));
@@ -361,7 +365,7 @@ public sealed class RestartTests
                 new SectionDecision(DecisionKind.Rejected, Of(machine2, "Two"), "machine 2", null),
                 new SectionDecision(DecisionKind.Taken, Of(machine2, "One"), "machine 2", "## One\n\nAlpha, as machine 2 has it."),
             ],
-            DecisionFile.Read(BaselineOutput.DecisionsPathFor(output)));
+            DecisionFile.Read(BaselineOutput.DecisionsPathFor(output)).Decisions);
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }
@@ -409,7 +413,7 @@ public sealed class RestartTests
             BaselineOutput.Write(run, first);
         }
 
-        IReadOnlyList<SectionDecision> earlier = DecisionFile.Read(BaselineOutput.DecisionsPathFor(first));
+        IReadOnlyList<SectionDecision> earlier = DecisionFile.Read(BaselineOutput.DecisionsPathFor(first)).Decisions;
         (ReviewHost again, ReviewSession next) = await OpenAsync(QueueOf(tree, ("machine 1", Machine1)), earlier);
         using (again)
         {
@@ -419,13 +423,14 @@ public sealed class RestartTests
 
             // ⭐ This run's seed carries no Three, and the earlier take of it is kept as it was read: a later
             // save reads only the takes it made against the text it writes.
-            Assert.Equal([.. earlier, taken], DecisionFile.Read(BaselineOutput.DecisionsPathFor(second)));
+            Assert.Equal([.. earlier, taken], DecisionFile.Read(BaselineOutput.DecisionsPathFor(second)).Decisions);
         }
 
         Assert.EndsWith(
             "## Decisions, in the order made\n\n"
             + "2 decisions made before this run came with it and are not listed here: the decision file beside this report "
-            + "keeps them.\n\n| # | Decision | Section | From |\n|---|---|---|---|\n| 1 | taken | Two | machine 1 |\n",
+            + "keeps them.\n\n| # | Decision | Section | From |\n|---|---|---|---|\n| 1 | taken | Two | machine 1 |\n"
+            + "\n## Staleness accepted\n\nNone: no candidate was stale when this baseline was saved.\n",
             File.ReadAllText(BaselineOutput.ReportPathFor(second)),
             StringComparison.Ordinal);
 
@@ -457,7 +462,7 @@ public sealed class RestartTests
         using (ReviewHost host = new(next))
         {
             ReviewSession session = await host.AwaitBuildAsync(() =>
-                next.Review(QueueOf(tree, ("machine 1", Machine1)), DecisionFile.Read(BaselineOutput.DecisionsPathFor(output))));
+                next.Review(QueueOf(tree, ("machine 1", Machine1)), DecisionFile.Read(BaselineOutput.DecisionsPathFor(output)).Decisions));
 
             Assert.Equal(1, session.Durable.Inherited);
             Assert.Equal(StandingKind.Rejected, session.StandingOf(SectionOf(session, "One")).Kind);

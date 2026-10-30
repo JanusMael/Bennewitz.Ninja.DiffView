@@ -10,13 +10,24 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// </summary>
 internal sealed class DecisionFileRefusedException(string message) : Exception(message);
 
+/// <summary>What a decision file holds.</summary>
+/// <param name="Target">
+/// What the decisions are about: the target of the corpus whose review saved them, as a manifest names it.
+/// </param>
+/// <param name="Decisions">The decisions, in the order made.</param>
+internal sealed record DecisionFileContents(CandidateTarget Target, IReadOnlyList<SectionDecision> Decisions);
+
 /// <summary>
 /// The durable store on disk — plan 00034 step 8: what a save writes beside the baseline, and what a
 /// later run begins from.
 /// </summary>
 /// <remarks>
 /// <para>
-/// JSON, one object: a <c>version</c>, and the <c>decisions</c> in the order made. Each names its kind
+/// JSON, one object: a <c>version</c>; the <c>target</c> and <c>scope</c> the decisions are about, as a
+/// manifest names them; and the <c>decisions</c> in the order made. ⭐ The target is Brian's of 2026-10-29,
+/// settled before the first real save wrote a file, and a drift from the plan that <c>DECISIONS.md</c>
+/// records: without it, a <c>CLAUDE.md</c> review could begin from an <c>AGENTS.md</c> review's decisions,
+/// every rule in them decided about another document. Each decision names its kind
 /// and its section by heading path and hash, decision 6's identity. A take and a leave name their source,
 /// and a take carries decision 9c's points: the text taken, which its hash is the hash of; whether it was
 /// edited; and, when it was, the result.
@@ -41,7 +52,7 @@ internal static class DecisionFile
     /// <summary>The one version this tool writes, and the one it reads.</summary>
     internal const int Version = 1;
 
-    private static readonly HashSet<string> FileKeys = ["version", "decisions"];
+    private static readonly HashSet<string> FileKeys = ["version", "target", "scope", "decisions"];
 
     private static readonly HashSet<string> DecisionKeys = ["kind", "headingPath", "hash", "source", "text", "edited", "result"];
 
@@ -55,9 +66,10 @@ internal static class DecisionFile
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    /// <summary><paramref name="decisions"/> as a decision file holds them.</summary>
-    internal static string Format(IReadOnlyList<SectionDecision> decisions)
+    /// <summary><paramref name="decisions"/>, about <paramref name="target"/>, as a decision file holds them.</summary>
+    internal static string Format(CandidateTarget target, IReadOnlyList<SectionDecision> decisions)
     {
+        ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(decisions);
 
         using MemoryStream stream = new();
@@ -65,6 +77,10 @@ internal static class DecisionFile
         {
             writer.WriteStartObject();
             writer.WriteNumber("version", Version);
+            writer.WriteString("target", target.FileName);
+
+            // No scope is written as null, not left out, as an edit made away is.
+            writer.WriteString("scope", target.Scope);
             writer.WriteStartArray("decisions");
             foreach (SectionDecision decision in decisions)
             {
@@ -78,9 +94,9 @@ internal static class DecisionFile
         return Encoding.UTF8.GetString(stream.ToArray()) + "\n";
     }
 
-    /// <summary>The decisions <paramref name="json"/> holds, in the order made.</summary>
+    /// <summary>What <paramref name="json"/> holds: its target, and its decisions in the order made.</summary>
     /// <exception cref="DecisionFileRefusedException">It is not a decision file this tool wrote; nothing is read.</exception>
-    internal static IReadOnlyList<SectionDecision> Parse(string json)
+    internal static DecisionFileContents Parse(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
 
@@ -124,21 +140,39 @@ internal static class DecisionFile
                 decisions.Add(ReadDecision(item, $"decision {decisions.Count + 1}"));
             }
 
-            return decisions;
+            string target = RequiredString(root, "target", "the decision file");
+            if (string.IsNullOrWhiteSpace(target))
+            {
+                throw Refused("the decision file's \"target\" is blank, and a target is the file its decisions are about");
+            }
+
+            if (!root.TryGetProperty("scope", out JsonElement scope))
+            {
+                throw Refused("the decision file says no \"scope\"");
+            }
+
+            string? declared = scope.ValueKind switch
+            {
+                JsonValueKind.Null => null,
+                JsonValueKind.String => scope.GetString(),
+                _ => throw Refused("the decision file's \"scope\" is not text or null"),
+            };
+
+            return new DecisionFileContents(new CandidateTarget(target, declared), decisions);
         }
     }
 
     /// <summary>
-    /// Writes <paramref name="decisions"/> to <paramref name="path"/>: whole, to a file beside it, and then
-    /// moved over it, so the file it replaces is never part written.
+    /// Writes <paramref name="decisions"/>, about <paramref name="target"/>, to <paramref name="path"/>: whole,
+    /// to a file beside it, and then moved over it, so the file it replaces is never part written.
     /// </summary>
     /// <exception cref="IOException">The file cannot be written; one that was there is as it was.</exception>
     /// <exception cref="UnauthorizedAccessException">The file may not be written; one that was there is as it was.</exception>
-    internal static void Write(string path, IReadOnlyList<SectionDecision> decisions)
+    internal static void Write(string path, CandidateTarget target, IReadOnlyList<SectionDecision> decisions)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
-        byte[] bytes = Encoding.UTF8.GetBytes(Format(decisions));
+        byte[] bytes = Encoding.UTF8.GetBytes(Format(target, decisions));
         string partial = path + ".partial";
         try
         {
@@ -154,10 +188,10 @@ internal static class DecisionFile
         }
     }
 
-    /// <summary>The decisions the file at <paramref name="path"/> holds, in the order made.</summary>
+    /// <summary>What the file at <paramref name="path"/> holds: its target, and its decisions in the order made.</summary>
     /// <exception cref="DecisionFileRefusedException">It is not a decision file this tool wrote.</exception>
     /// <exception cref="IOException">It cannot be read.</exception>
-    internal static IReadOnlyList<SectionDecision> Read(string path)
+    internal static DecisionFileContents Read(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         return Parse(File.ReadAllText(path, Encoding.UTF8));

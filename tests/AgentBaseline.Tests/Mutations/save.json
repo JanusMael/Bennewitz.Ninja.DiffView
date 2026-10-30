@@ -1,0 +1,201 @@
+// Plan 00034 step 10: the save. A save over stale candidates is made twice — the first writes nothing and says
+// where, the second over the same staleness and the same text goes ahead — and the report says each take as the
+// save reads it (decision 9c), lists the staleness accepted, and the decision file names its target.
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/SaveTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a first save over stale candidates goes ahead at once",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "if (stale.Count > 0 && !acknowledged)",
+      "new": "if (stale.Count < 0 && !acknowledged)",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it",
+      "says": "A first save over stale candidates asked for a file, or wrote one."
+    },
+    {
+      "name": "a save with nothing stale is asked about as well",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "if (stale.Count > 0 && !acknowledged)",
+      "new": "if (!acknowledged)",
+      "killer": "A_save_with_nothing_stale_is_made_once_and_its_report_says_none_was_accepted",
+      "says": "A save with nothing stale wrote nothing."
+    },
+    {
+      "name": "the warning is not remembered, so no second save accepts it",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "            warned = (stale, accumulator);\n",
+      "new": "",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it",
+      "says": "A second save over the same staleness and the same text did not save."
+    },
+    {
+      "name": "the text typed between the two saves goes unnoticed",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "\n            && string.Equals(warning.Accumulator, accumulator, StringComparison.Ordinal)",
+      "new": "",
+      "killer": "A_save_after_the_accumulator_or_the_staleness_changed_asks_again",
+      "says": "A save after the accumulator changed went ahead on the earlier warning."
+    },
+    {
+      "name": "a staleness changed between the two saves goes unnoticed",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "\n            && warning.Stale.SequenceEqual(stale)",
+      "new": "",
+      "killer": "A_save_after_the_accumulator_or_the_staleness_changed_asks_again",
+      "says": "A save after the staleness changed went ahead on the earlier warning."
+    },
+    {
+      "name": "a save that succeeded leaves its acknowledgement standing for the next",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "            warned = null;\n",
+      "new": "",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it",
+      "says": "A save went ahead on the acknowledgement of the save before it."
+    },
+    {
+      "name": "the warning does not say where the candidates are stale",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "where each carries its own version — {stale.Spoken()}. ",
+      "new": "where each carries its own version. ",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it"
+    },
+    {
+      "name": "the window tells the writer that nothing was accepted",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "BaselineOutput.Write(review, path, stale);",
+      "new": "BaselineOutput.Write(review, path);",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it",
+      "says": "A second save over the same staleness and the same text did not save."
+    },
+    {
+      "name": "the saved line keeps quiet about the staleness accepted",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "(stale.Count > 0 ? \" Its provenance lists the staleness accepted.\" : string.Empty)",
+      "new": "string.Empty",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it"
+    },
+    {
+      "name": "the saved line speaks of staleness accepted where there was none",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "(stale.Count > 0 ? \" Its provenance",
+      "new": "(stale.Count >= 0 ? \" Its provenance",
+      "killer": "A_save_with_nothing_stale_is_made_once_and_its_report_says_none_was_accepted"
+    },
+    {
+      "name": "the writer goes ahead over staleness nothing accepted",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "if (!stale.SequenceEqual(told))",
+      "new": "if (stale.Count < 0)",
+      "killer": "The_writer_refuses_staleness_unless_exactly_it_was_accepted_and_writes_nothing"
+    },
+    {
+      "name": "the writer takes any acceptance for the staleness it has",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "if (!stale.SequenceEqual(told))",
+      "new": "if (told.Count == 0 && stale.Count > 0)",
+      "killer": "The_writer_refuses_staleness_unless_exactly_it_was_accepted_and_writes_nothing"
+    },
+    {
+      "name": "the writer's refusal says what is stale twice and nothing of what was accepted",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "where accepted is {told.Spoken()}",
+      "new": "where accepted is {stale.Spoken()}",
+      "killer": "The_writer_refuses_staleness_unless_exactly_it_was_accepted_and_writes_nothing"
+    },
+    {
+      "name": "a refused save writes the baseline before it refuses",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "        IReadOnlyList<StaleSection> stale = session.Staleness();\n",
+      "new": "        PaneWriter.Write(baseline, session.Accumulator, encoding: null, LineEnding.Lf);\n        IReadOnlyList<StaleSection> stale = session.Staleness();\n",
+      "killer": "The_writer_refuses_staleness_unless_exactly_it_was_accepted_and_writes_nothing"
+    },
+    {
+      "name": "an edited take is reported as taken",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "        { Kind: DecisionKind.Taken, Edited: true } => \"taken, then edited\",\n",
+      "new": "",
+      "killer": "The_report_says_an_edited_take_was_edited_and_a_removed_one_removed_and_the_file_names_its_target"
+    },
+    {
+      "name": "a take removed by hand is reported as edited",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "        { Kind: DecisionKind.Taken, Edited: true, Result: null } => \"taken, then removed\",\n",
+      "new": "",
+      "killer": "The_report_says_an_edited_take_was_edited_and_a_removed_one_removed_and_the_file_names_its_target"
+    },
+    {
+      "name": "the report lists this run's decisions as they were made rather than as the save reads them",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "[.. kept.Skip(session.Durable.Inherited)]",
+      "new": "session.Durable.Made",
+      "killer": "The_report_says_an_edited_take_was_edited_and_a_removed_one_removed_and_the_file_names_its_target"
+    },
+    {
+      "name": "the report lists no staleness accepted",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "[.. kept.Skip(session.Durable.Inherited)], stale)",
+      "new": "[.. kept.Skip(session.Durable.Inherited)], [])",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it"
+    },
+    {
+      "name": "a stale section is reported in its candidate's column",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": ".Append(Cell(stale.Source)).Append(\" | \").Append(SectionCell(stale.HeadingPath))",
+      "new": ".Append(SectionCell(stale.HeadingPath)).Append(\" | \").Append(Cell(stale.Source))",
+      "killer": "A_save_over_stale_candidates_writes_nothing_and_says_where_and_a_second_save_accepts_it"
+    },
+    {
+      "name": "a report with nothing stale says nothing of it",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "            report.Append(\"None: no candidate was stale when this baseline was saved.\\n\");\n",
+      "new": "",
+      "killer": "A_save_with_nothing_stale_is_made_once_and_its_report_says_none_was_accepted"
+    },
+    {
+      "name": "the decision file is written for a scope of its own",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "DecisionFile.Write(decisions, session.Queue.Target, kept);",
+      "new": "DecisionFile.Write(decisions, new CandidateTarget(session.Queue.Target.FileName, \"root\"), kept);",
+      "killer": "The_report_says_an_edited_take_was_edited_and_a_removed_one_removed_and_the_file_names_its_target"
+    },
+    {
+      "name": "two candidates' staleness runs together",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "string.Join(\"; \", stale",
+      "new": "string.Join(\", \", stale",
+      "killer": "Staleness_is_said_candidate_by_candidate_with_each_ones_sections_listed"
+    },
+    {
+      "name": "three sections are listed with and between each",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "items.Count == 1 ? items[0] : $\"{string.Join(\", \", items.Take(items.Count - 1))} and {items[^1]}\"",
+      "new": "string.Join(\" and \", items)",
+      "killer": "Staleness_is_said_candidate_by_candidate_with_each_ones_sections_listed"
+    },
+    {
+      "name": "nothing stale is said as no words at all",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "return \"nothing\";",
+      "new": "return string.Empty;",
+      "killer": "Staleness_is_said_candidate_by_candidate_with_each_ones_sections_listed"
+    },
+    {
+      "name": "a stale section is named by its bare heading path, the title as an empty pair of quotes",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "MarkdownOutline.Spoken(s.HeadingPath)",
+      "new": "$\"\\\"{s.HeadingPath}\\\"\"",
+      "killer": "Staleness_is_said_candidate_by_candidate_with_each_ones_sections_listed"
+    },
+    {
+      "name": "this run's decisions are listed as a list rather than as a collection expression",
+      "file": "src/AgentBaseline/BaselineOutput.cs",
+      "old": "[.. kept.Skip(session.Durable.Inherited)]",
+      "new": "kept.Skip(session.Durable.Inherited).ToList()",
+      "expect": "green",
+      "because": "a control: a collection expression spreading a sequence holds the elements ToList takes, in the same order, so the report and the file are the same bytes — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

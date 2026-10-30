@@ -16,6 +16,49 @@
   ],
   "mutations": [
     {
+      "name": "a decision file's target and scope are keys the reader does not know",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "[\"version\", \"target\", \"scope\", \"decisions\"]",
+      "new": "[\"version\", \"decisions\"]",
+      "killer": "Every_kind_of_decision_is_written_as_the_file_holds_it_and_read_back_as_it_was",
+      "says": "has a key \"target\" it does not know"
+    },
+    {
+      "name": "a target's scope is not written",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "            writer.WriteString(\"scope\", target.Scope);\n",
+      "new": "",
+      "killer": "A_target_with_a_scope_is_written_with_it_and_read_back_as_it_was"
+    },
+    {
+      "name": "a scope read back is dropped",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "JsonValueKind.String => scope.GetString(),",
+      "new": "JsonValueKind.String => null,",
+      "killer": "A_target_with_a_scope_is_written_with_it_and_read_back_as_it_was"
+    },
+    {
+      "name": "a blank target is read as a target",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "if (string.IsNullOrWhiteSpace(target))",
+      "new": "if (target.Length == 0)",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a file naming no scope is read as naming none",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "throw Refused(\"the decision file says no \\\"scope\\\"\");",
+      "new": "scope = default;",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a scope of another kind is read as none",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "_ => throw Refused(\"the decision file's \\\"scope\\\" is not text or null\"),",
+      "new": "_ => null,",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
       "name": "an earlier run's decisions are counted as this run's",
       "file": "src/AgentBaseline/DecisionStores.cs",
       "old": "        Inherited = decisions.Count;\n",
@@ -338,7 +381,7 @@
     {
       "name": "a save writes no decision file",
       "file": "src/AgentBaseline/BaselineOutput.cs",
-      "old": "DecisionFile.Write(decisions, kept);",
+      "old": "DecisionFile.Write(decisions, session.Queue.Target, kept);",
       "new": "",
       "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them"
     },
@@ -381,8 +424,8 @@
     {
       "name": "the report lists every run's decisions as this run's",
       "file": "src/AgentBaseline/BaselineOutput.cs",
-      "old": "IReadOnlyList<SectionDecision> decisions = session.Durable.Made;",
-      "new": "IReadOnlyList<SectionDecision> decisions = session.Durable.Decisions;",
+      "old": "[.. kept.Skip(session.Durable.Inherited)]",
+      "new": "kept",
       "killer": "The_report_lists_the_decisions_this_run_made_and_the_file_keeps_every_runs_as_it_read_them"
     },
     {
@@ -395,8 +438,8 @@
     {
       "name": "the window does not say where the decisions went",
       "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
-      "old": ", and its decisions to {saved.DecisionsPath}.\");",
-      "new": ".\");",
+      "old": ", and its decisions to {saved.DecisionsPath}.\"",
+      "new": ".\"",
       "killer": "A_review_the_window_saved_is_taken_up_by_the_next_window_with_every_decision_it_made"
     },
     {

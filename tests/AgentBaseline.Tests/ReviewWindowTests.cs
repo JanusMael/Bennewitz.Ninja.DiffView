@@ -116,7 +116,8 @@ public sealed class ReviewWindowTests
             + "## Decisions, in the order made\n\n| # | Decision | Section | From |\n|---|---|---|---|\n"
             + "| 1 | taken | One | machine 1 |\n"
             + "| 2 | taken | Two | machine 2 |\n"
-            + "| 3 | dropped | Four | — |\n",
+            + "| 3 | dropped | Four | — |\n"
+            + "\n## Staleness accepted\n\nNone: no candidate was stale when this baseline was saved.\n",
             File.ReadAllText(Path.Combine(tree.PathOf("Baseline"), "AGENTS.provenance.md")));
 
         // ⛔ Decision 9: the seed machine's own file is read and never written.

@@ -15,6 +15,9 @@ public sealed class DecisionFileTests
 {
     private const string Rule = "## A rule\n\nBody — an em dash, ⛔ a sign, \"quotes\", a back\\slash & a | pipe.";
 
+    /// <summary>What the decisions are about, as a manifest naming no scope declares it.</summary>
+    private static readonly CandidateTarget Target = new("AGENTS.md", null);
+
     private static SectionDecision Taken(string headingPath, string text, string source) =>
         new(DecisionKind.Taken, new SectionIdentity(headingPath, SectionIdentity.HashOf(text)), source, text);
 
@@ -35,14 +38,16 @@ public sealed class DecisionFileTests
             new(DecisionKind.Dropped, new SectionIdentity("Four", Hash("## Four\n\nDelta.")), null, null),
         ];
 
-        string written = DecisionFile.Format(decisions);
+        string written = DecisionFile.Format(Target, decisions);
 
-        // ⭐ A rule's own characters as they are, every structural line ending LF, and an edit made away
-        // said as null rather than left out.
+        // ⭐ A rule's own characters as they are, every structural line ending LF, and an edit made away — or
+        // a target declaring no scope — said as null rather than left out.
         Assert.Equal(
             $$"""
             {
               "version": 1,
+              "target": "AGENTS.md",
+              "scope": null,
               "decisions": [
                 {
                   "kind": "taken",
@@ -87,7 +92,21 @@ public sealed class DecisionFileTests
             """.ReplaceLineEndings("\n"),
             written);
 
-        Assert.Equal(decisions, DecisionFile.Parse(written));
+        DecisionFileContents read = DecisionFile.Parse(written);
+        Assert.Equal(Target, read.Target);
+        Assert.Equal(decisions, read.Decisions);
+    }
+
+    [Fact]
+    public void A_target_with_a_scope_is_written_with_it_and_read_back_as_it_was()
+    {
+        CandidateTarget root = new("AGENTS.md", "root");
+
+        string written = DecisionFile.Format(root, []);
+
+        Assert.Equal("{\n  \"version\": 1,\n  \"target\": \"AGENTS.md\",\n  \"scope\": \"root\",\n  \"decisions\": []\n}\n", written);
+        Assert.Equal(root, DecisionFile.Parse(written).Target);
+        Assert.Empty(DecisionFile.Parse(written).Decisions);
     }
 
     /// <summary>Files this tool did not write, each with the words its refusal must carry.</summary>
@@ -108,6 +127,11 @@ public sealed class DecisionFileTests
                 { """{ "version": 2, "decisions": [] }""", "the decision file is version 2, and this tool reads version 1 alone" },
                 { """{ "version": "1", "decisions": [] }""", "the decision file is version \"1\"" },
                 { """{ "version": 1 }""", "the decision file's \"decisions\" is not a list" },
+                { """{ "version": 1, "decisions": [] }""", "the decision file says no \"target\"" },
+                { """{ "version": 1, "target": 3, "scope": null, "decisions": [] }""", "the decision file's \"target\" is not a string" },
+                { """{ "version": 1, "target": " ", "scope": null, "decisions": [] }""", "the decision file's \"target\" is blank" },
+                { """{ "version": 1, "target": "AGENTS.md", "decisions": [] }""", "the decision file says no \"scope\"" },
+                { """{ "version": 1, "target": "AGENTS.md", "scope": 2, "decisions": [] }""", "the decision file's \"scope\" is not text or null" },
                 { FileOf("3"), "decision 1 is not a JSON object" },
                 { FileOf($$"""{ {{leave}}, "weight": 1 }"""), "decision 1 has a key \"weight\" it does not know" },
                 { FileOf($$"""{ "kind": "deferred", "headingPath": "One", "hash": "{{hash}}", "source": "m" }"""), "decision 1's \"kind\" is \"deferred\"" },
@@ -145,13 +169,13 @@ public sealed class DecisionFileTests
         string path = Path.Combine(tree.MakeDirectory("Baseline"), "AGENTS.decisions.json");
         SectionDecision[] before = [Taken("One", "## One\n\nAlpha.", "machine 1")];
         SectionDecision[] after = [.. before, Taken("Two", "## Two\n\nBeta.", "machine 1")];
-        DecisionFile.Write(path, before);
+        DecisionFile.Write(path, Target, before);
         byte[] held = File.ReadAllBytes(path);
 
         // ⛔ Where the new file is written first stands a directory, so it cannot be: a write straight over
         // the file would succeed, and leave a store a later failure could have torn.
         Directory.CreateDirectory(path + ".partial");
-        Exception refused = Assert.ThrowsAny<Exception>(() => DecisionFile.Write(path, after));
+        Exception refused = Assert.ThrowsAny<Exception>(() => DecisionFile.Write(path, Target, after));
         Assert.True(refused is IOException or UnauthorizedAccessException, $"The write failed as {refused.GetType().Name}.");
         Assert.Equal(held, File.ReadAllBytes(path));
         Directory.Delete(path + ".partial");
@@ -159,14 +183,14 @@ public sealed class DecisionFileTests
         // A file that cannot be moved over — a directory where it would go — leaves no partial file behind.
         string blocked = Path.Combine(tree.MakeDirectory("Blocked"), "AGENTS.decisions.json");
         Directory.CreateDirectory(blocked);
-        Exception moved = Assert.ThrowsAny<Exception>(() => DecisionFile.Write(blocked, after));
+        Exception moved = Assert.ThrowsAny<Exception>(() => DecisionFile.Write(blocked, Target, after));
         Assert.True(moved is IOException or UnauthorizedAccessException, $"The move failed as {moved.GetType().Name}.");
         Assert.False(File.Exists(blocked + ".partial"), "A write that failed left its partial file behind.");
 
         // Unblocked, it replaces the file whole — LF, no byte-order mark — and leaves nothing beside it.
-        DecisionFile.Write(path, after);
-        Assert.Equal(after, DecisionFile.Read(path));
-        Assert.Equal(Encoding.UTF8.GetBytes(DecisionFile.Format(after)), File.ReadAllBytes(path));
+        DecisionFile.Write(path, Target, after);
+        Assert.Equal(after, DecisionFile.Read(path).Decisions);
+        Assert.Equal(Encoding.UTF8.GetBytes(DecisionFile.Format(Target, after)), File.ReadAllBytes(path));
         Assert.Equal(["AGENTS.decisions.json"], Directory.GetFileSystemEntries(Path.GetDirectoryName(path)!).Select(Path.GetFileName));
     }
 }

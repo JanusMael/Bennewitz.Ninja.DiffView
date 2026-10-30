@@ -41,6 +41,12 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// and nothing else, so hiding a decided section is not available to this app.
 /// </para>
 /// <para>
+/// ⭐ <b>A save over stale candidates is made twice</b> — Brian's choice of 2026-10-29 for decision 11, which
+/// warns rather than refuses. The first writes nothing and says which candidates are stale where; the second,
+/// over the same staleness and the same text, opens the dialog and saves, and the provenance lists what was
+/// accepted. Anything changed in between is asked about again, and a save with nothing stale is made once.
+/// </para>
+/// <para>
 /// <see cref="Startup.Open"/> starts the review the command line names in this window.
 /// </para>
 /// </remarks>
@@ -55,6 +61,12 @@ internal sealed partial class ReviewWindow : Window
     private readonly ReviewCommand[] commands;
     private ReviewSession? session;
     private MarkdownSection? sectionSpoken;
+
+    /// <summary>
+    /// The staleness the last save warned of and the accumulator it warned over — a save finding both
+    /// unchanged is decision 11's acknowledgement — or <see langword="null"/> while no warning stands.
+    /// </summary>
+    private (IReadOnlyList<StaleSection> Stale, string Accumulator)? warned;
 
     /// <summary>Builds the window with no review in it; <see cref="Review"/> starts one.</summary>
     public ReviewWindow()
@@ -203,6 +215,23 @@ internal sealed partial class ReviewWindow : Window
         // expected to fail is caught and said in the window; anything else is a defect, and reaches the
         // dispatcher as an exception from any other click would.
         ReviewSession review = session!;
+
+        // ⭐ Decision 11 warns rather than refuses. A save over stale candidates says where they are stale and
+        // writes nothing; saved again over the same staleness and the same text, it goes ahead, and anything
+        // changed in between is asked about again.
+        IReadOnlyList<StaleSection> stale = review.Staleness();
+        string accumulator = review.Accumulator;
+        bool acknowledged = warned is { } warning
+            && string.Equals(warning.Accumulator, accumulator, StringComparison.Ordinal)
+            && warning.Stale.SequenceEqual(stale);
+        if (stale.Count > 0 && !acknowledged)
+        {
+            warned = (stale, accumulator);
+            Say($"Not saved yet: the baseline changed after these were reviewed, where each carries its own version — {stale.Spoken()}. "
+                + "Save again to accept that, or review them first.");
+            return;
+        }
+
         string? path;
         try
         {
@@ -222,8 +251,10 @@ internal sealed partial class ReviewWindow : Window
 
         try
         {
-            SavedBaseline saved = BaselineOutput.Write(review, path);
-            Say($"Saved the baseline to {saved.BaselinePath}, its provenance to {saved.ReportPath}, and its decisions to {saved.DecisionsPath}.");
+            SavedBaseline saved = BaselineOutput.Write(review, path, stale);
+            warned = null;
+            Say($"Saved the baseline to {saved.BaselinePath}, its provenance to {saved.ReportPath}, and its decisions to {saved.DecisionsPath}."
+                + (stale.Count > 0 ? " Its provenance lists the staleness accepted." : string.Empty));
         }
         catch (Exception ex) when (ex is SaveRefusedException or IOException or UnauthorizedAccessException)
         {
