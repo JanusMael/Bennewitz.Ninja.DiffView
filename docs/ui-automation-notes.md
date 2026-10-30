@@ -237,10 +237,11 @@ drawn from the `LoggerConfiguration` alone, without reading the `Emit` twenty li
 - **The macOS back end** is specified in plan 00023 and not written; its permission grants are
   interactive and cannot be scripted. Open item 9.
 - **A by-hand pass at a scaling other than 100%** exercises less than it looks like it does. On a
-  console at 200% the demo is `2200x1440`, the View menu's palette entry falls outside its scrolling
-  popup and is absent from the tree, and the splitter and map drags press coordinates that belong to a
-  `1100x720` client. The driver refuses rather than misfiring, so the frames are still a look at that
-  scaling — but the gestures are not read.
+  console at 200% the demo is `2200x1440`, and the splitter and map drags press coordinates that belong
+  to a `1100x720` client. The driver refuses rather than misfiring, so the frames are still a look at
+  that scaling — but the gestures are not read. The View menu's palette entry also fell outside the
+  menu's scrolling popup there, and out of the tree: open item 19 moved View's rows into submenus and the
+  pass to opening each step by its id, which a headless run proves only until an attended one at 200%.
 - Whether `PostMessage(WM_LBUTTONDOWN/UP)` or `AttachThreadInput` can deliver a click to an unraised
   Avalonia window is **unmeasured** — by this repository, by TailBlazer and by XamlQuality, none of
   whom would guess. The caveats to test are that posted messages bypass hit-testing, do not move the

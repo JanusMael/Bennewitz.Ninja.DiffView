@@ -119,9 +119,9 @@ public sealed class DemoActionLogTests
 
             Assert.Equal(
                 [
-                    "Menu: View ▸ Show whitespace → on",
+                    "Menu: View ▸ Text ▸ Show whitespace → on",
                     "Menu: View ▸ Key bindings ▸ Next change",
-                    "Menu: View ▸ Show whitespace → off",
+                    "Menu: View ▸ Text ▸ Show whitespace → off",
                 ],
                 log.Lines("Menu:"));
         }
@@ -146,8 +146,7 @@ public sealed class DemoActionLogTests
             DiffPanePresenter left = Left(window);
 
             // Pressed where no view holds the keyboard, a chord runs nothing, so nothing is written.
-            ((MenuItem)window.ShowWhitespace.Parent!).IsSubMenuOpen = true;
-            Layout();
+            OpenDownTo(window.ShowWhitespace);
             Assert.True(window.ShowWhitespace.Focus(), "the menu item took no focus, so the chord would reach a view");
             Assert.Equal(-1, window.Diff.CurrentChangeIndex);
             Press(window, Key.F7, PhysicalKey.F7);
@@ -571,6 +570,16 @@ public sealed class DemoActionLogTests
     /// </summary>
     private static void Choose(MainWindow window, MenuItem item)
     {
+        OpenDownTo(item);
+        Assert.True(item.Focus(), $"{item.Header} took no focus, so Enter would reach something else");
+        Layout();
+        Press(window, Key.Enter, PhysicalKey.Enter);
+        Assert.False(window.MainMenu.IsOpen, "the menu is still open, so Enter did not click the item");
+    }
+
+    /// <summary>Opens every menu on the way down to <paramref name="item"/>, the outermost first.</summary>
+    private static void OpenDownTo(MenuItem item)
+    {
         Stack<MenuItem> path = new();
         for (StyledElement? at = item.Parent; at is MenuItem parent; at = parent.Parent)
         {
@@ -582,11 +591,6 @@ public sealed class DemoActionLogTests
             parent.IsSubMenuOpen = true;
             Layout();
         }
-
-        Assert.True(item.Focus(), $"{item.Header} took no focus, so Enter would reach something else");
-        Layout();
-        Press(window, Key.Enter, PhysicalKey.Enter);
-        Assert.False(window.MainMenu.IsOpen, "the menu is still open, so Enter did not click the item");
     }
 
     /// <summary>

@@ -1,0 +1,59 @@
+{
+  // Every entry of the demo's menus declares an AutomationId of its own, unique within its menu: what
+  // scripts/drive-demo-interactive.ps1 finds each entry by, read off the attached property rather than a
+  // peer, which would answer with an id derived from the entry's x:Name.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/demo-menu.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.DemoMenuTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/DemoMenuTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the palette's entry declares no id, leaving the one its x:Name derives",
+      "file": "src/DiffView.Demo/MainWindow.axaml",
+      "old": " AutomationProperties.AutomationId=\"ColourBlindPalette\"",
+      "new": "",
+      "killer": "Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu",
+      "says": "declare no AutomationId"
+    },
+    {
+      "name": "a menu-bar header declares no id",
+      "file": "src/DiffView.Demo/MainWindow.axaml",
+      "old": "<MenuItem AutomationProperties.AutomationId=\"ViewMenu\" Header=\"_View\"",
+      "new": "<MenuItem Header=\"_View\"",
+      "killer": "Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu",
+      "says": "declare no AutomationId",
+      "because": "the pass opens View by this id, and the bar's headers are where the walk starts"
+    },
+    {
+      "name": "two entries of one menu share an id",
+      "file": "src/DiffView.Demo/MainWindow.axaml",
+      "old": "AutomationProperties.AutomationId=\"VariantDark\"",
+      "new": "AutomationProperties.AutomationId=\"VariantLight\"",
+      "killer": "Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu",
+      "says": "there more than once"
+    },
+    {
+      "name": "the walk does not go down into the submenus",
+      "file": "tests/DiffView.Avalonia.Tests/DemoMenuTests.cs",
+      "old": "item.Header)}\", item.Items))",
+      "new": "item.Header)}\", Enumerable.Empty<object?>()))",
+      "killer": "Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu",
+      "says": "did not go down into the submenus",
+      "because": "a reading that asserts only an absence passes when it reads nothing, so the palette's entry, a submenu down, must trip first"
+    },
+    {
+      "name": "two entries of the Theme submenu are listed the other way round",
+      "file": "src/DiffView.Demo/MainWindow.axaml",
+      "old": "          <MenuItem x:Name=\"VariantLight\" AutomationProperties.AutomationId=\"VariantLight\" Header=\"_Light\" ToggleType=\"Radio\" GroupName=\"variant\"\n                    Click=\"OnVariantLight\" AutomationProperties.Name=\"Light theme variant\" />\n          <MenuItem x:Name=\"VariantDark\" AutomationProperties.AutomationId=\"VariantDark\" Header=\"_Dark\" ToggleType=\"Radio\" GroupName=\"variant\"\n                    Click=\"OnVariantDark\" AutomationProperties.Name=\"Dark theme variant\" />\n",
+      "new": "          <MenuItem x:Name=\"VariantDark\" AutomationProperties.AutomationId=\"VariantDark\" Header=\"_Dark\" ToggleType=\"Radio\" GroupName=\"variant\"\n                    Click=\"OnVariantDark\" AutomationProperties.Name=\"Dark theme variant\" />\n          <MenuItem x:Name=\"VariantLight\" AutomationProperties.AutomationId=\"VariantLight\" Header=\"_Light\" ToggleType=\"Radio\" GroupName=\"variant\"\n                    Click=\"OnVariantLight\" AutomationProperties.Name=\"Light theme variant\" />\n",
+      "expect": "green",
+      "because": "an id declared and an id declared twice are properties of the set of a menu's entries, and an order does not change a set"
+    }
+  ]
+}
