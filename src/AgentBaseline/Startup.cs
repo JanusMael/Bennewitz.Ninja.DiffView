@@ -100,7 +100,8 @@ internal static class Startup
     /// before any corpus is walked — and builds the queue from the seed.
     /// </summary>
     /// <exception cref="StartupRefusedException">
-    /// A file cannot be read or is no decision file, or the seed is named twice over or not at all.
+    /// A file cannot be read or is no decision file, the decision file is about another target, or the seed is
+    /// named twice over or not at all.
     /// </exception>
     /// <exception cref="CorpusRefusedException">
     /// The corpus refused its input, the seed is no candidate, or the seed is all there is to review.
@@ -109,13 +110,22 @@ internal static class Startup
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        IReadOnlyList<SectionDecision> earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : [];
+        DecisionFileContents? earlier = request.DecisionsPath is { } decisions ? ReadDecisions(decisions) : null;
 
         string text = ReadText(request.CorpusPath, request.IsManifest ? "the manifest" : "the path list");
         string directory = Path.GetDirectoryName(request.CorpusPath)!;
         Corpus corpus = Corpus.Gather(request.IsManifest
             ? CorpusRequest.FromManifest(text, directory)
             : CorpusRequest.FromPathList(text.Split('\n'), directory));
+
+        // ⭐ Decision 12 partitions a corpus by target, and the decisions it begins from are partitioned the same
+        // way: a rule decided about one document says nothing about another.
+        if (earlier is { } read && read.Target != corpus.Target)
+        {
+            throw new StartupRefusedException(
+                $"the decision file {request.DecisionsPath} was written for {read.Target}, and this corpus is for "
+                + $"{corpus.Target} — a review begins only from decisions about its own target");
+        }
 
         if (request.Seed is { } named
             && corpus.RequestedSeed is { } stated
@@ -139,7 +149,7 @@ internal static class Startup
             throw new CorpusRefusedException(why);
         }
 
-        return new StartupPlan(corpus, queue, earlier, request.DecisionsPath);
+        return new StartupPlan(corpus, queue, earlier?.Decisions ?? [], request.DecisionsPath);
     }
 
     /// <summary>
@@ -238,7 +248,7 @@ internal static class Startup
     /// </summary>
     private static string Clause(string reason) => reason.TrimEnd('.');
 
-    private static IReadOnlyList<SectionDecision> ReadDecisions(string path)
+    private static DecisionFileContents ReadDecisions(string path)
     {
         try
         {

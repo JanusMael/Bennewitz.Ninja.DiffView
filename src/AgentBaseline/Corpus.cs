@@ -86,7 +86,11 @@ internal sealed record QueuedCandidate(Candidate Candidate, DiffDiagnostics Diff
 /// <summary>The seed, and every other candidate in the order they are to be reviewed.</summary>
 /// <param name="Seed">The candidate the left starts as — never itself reviewed (decision 9b).</param>
 /// <param name="Items">The rest, ordered.</param>
-internal sealed record ReviewQueue(Candidate Seed, IReadOnlyList<QueuedCandidate> Items);
+/// <param name="Target">
+/// What every candidate is a candidate for — decision 12 — which a save writes into its decision file, so a
+/// later review of another target cannot begin from it.
+/// </param>
+internal sealed record ReviewQueue(Candidate Seed, IReadOnlyList<QueuedCandidate> Items, CandidateTarget Target);
 
 /// <summary>
 /// Every candidate for one baseline, parsed at once — plan 00034 decision 2, <i>a corpus of parsed
@@ -326,7 +330,7 @@ internal sealed class Corpus
             ? [.. queued.OrderByDescending(q => q.Changes)]
             : queued;
 
-        return new ReviewQueue(chosen, ordered);
+        return new ReviewQueue(chosen, ordered, Target);
     }
 
     /// <summary>

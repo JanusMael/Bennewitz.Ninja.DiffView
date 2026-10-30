@@ -312,6 +312,31 @@ internal sealed record DeferredSection(SectionIdentity Section, string Source);
 /// <param name="Source">The candidate's label.</param>
 internal sealed record StaleSection(string HeadingPath, string Source);
 
+/// <summary>Where a review is stale, said the one way the window and a refused save both say it.</summary>
+internal static class StaleSections
+{
+    /// <summary>
+    /// <paramref name="stale"/> candidate by candidate, in its order — <c>"machine 1" at "One" and "Two";
+    /// "machine 3" at "Two"</c> — or <c>nothing</c> when it is empty.
+    /// </summary>
+    internal static string Spoken(this IReadOnlyList<StaleSection> stale)
+    {
+        ArgumentNullException.ThrowIfNull(stale);
+        if (stale.Count == 0)
+        {
+            return "nothing";
+        }
+
+        return string.Join("; ", stale
+            .GroupBy(s => s.Source, StringComparer.Ordinal)
+            .Select(g => $"\"{g.Key}\" at {Listed([.. g.Select(s => MarkdownOutline.Spoken(s.HeadingPath))])}"));
+    }
+
+    /// <summary><paramref name="items"/> as a sentence lists them: <c>a</c>, <c>a and b</c>, <c>a, b and c</c>.</summary>
+    private static string Listed(IReadOnlyList<string> items) =>
+        items.Count == 1 ? items[0] : $"{string.Join(", ", items.Take(items.Count - 1))} and {items[^1]}";
+}
+
 /// <summary>
 /// The session store: where the review is, what it has put off, and what each candidate was reviewed against,
 /// which is what its staleness is read from — plan 00034 decision 10.

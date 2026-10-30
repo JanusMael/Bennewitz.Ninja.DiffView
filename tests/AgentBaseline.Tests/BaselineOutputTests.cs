@@ -15,7 +15,7 @@ namespace Bennewitz.Ninja.AgentBaseline.Tests;
 /// <remarks>
 /// The report is the decision log: the seed, the queue and every durable decision in the order made.
 /// Marking a take the accumulator no longer carries as it was taken — decision 9c — and the staleness a
-/// save warns of are steps 10 and 9, and nothing here asserts them.
+/// save warns of are step 10's, and <see cref="SaveTests"/> asserts them.
 /// </remarks>
 public sealed class BaselineOutputTests
 {
@@ -137,6 +137,7 @@ public sealed class BaselineOutputTests
         ];
         ReviewQueue queue = Corpus.Gather(CorpusRequest.Create(entries, seed: "seed", order: CorpusOrder.Listed))
             .Queue(cancellationToken: TestContext.Current.CancellationToken);
+        byte[] seedBytes = File.ReadAllBytes(queue.Seed.Path);
         string output = Path.Combine(tree.MakeDirectory("Baseline"), "AGENTS.md");
         (ReviewHost host, ReviewWindow window, _) = await OpenAsync(queue, () => Task.FromResult<string?>(output));
         using (host)
@@ -147,6 +148,10 @@ public sealed class BaselineOutputTests
             Click(window.SaveButton);
 
             Assert.Equal(Encoding.UTF8.GetBytes("Pasted.\nAnd a lone return.\n" + Seed), File.ReadAllBytes(output));
+
+            // ⛔ Plan 00034 step 10: the seed's own bytes are what they were — its CRLF and its byte-order mark
+            // included, which a save written back over it in the accumulator's convention would have lost.
+            Assert.Equal(seedBytes, File.ReadAllBytes(queue.Seed.Path));
         }
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
@@ -185,7 +190,8 @@ public sealed class BaselineOutputTests
                 + "## Decisions, in the order made\n\n| # | Decision | Section | From |\n|---|---|---|---|\n"
                 + "| 1 | left | *the title* | rack 3 \\| slot 2 |\n"
                 + "| 2 | taken | One | rack 3 \\| slot 2 |\n"
-                + "| 3 | dropped | Four | — |\n",
+                + "| 3 | dropped | Four | — |\n"
+                + "\n## Staleness accepted\n\nNone: no candidate was stale when this baseline was saved.\n",
                 File.ReadAllText(BaselineOutput.ReportPathFor(output)));
         }
 
@@ -212,7 +218,8 @@ public sealed class BaselineOutputTests
                 saved);
             Assert.Equal(Encoding.UTF8.GetBytes(Seed), File.ReadAllBytes(output));
             Assert.EndsWith(
-                "\n\n## Decisions, in the order made\n\nNone: no section was taken, left or dropped.\n",
+                "\n\n## Decisions, in the order made\n\nNone: no section was taken, left or dropped.\n"
+                + "\n## Staleness accepted\n\nNone: no candidate was stale when this baseline was saved.\n",
                 File.ReadAllText(saved.ReportPath),
                 StringComparison.Ordinal);
         }

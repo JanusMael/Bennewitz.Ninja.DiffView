@@ -52,9 +52,10 @@ public sealed class StartupTests
 
     /// <summary>
     /// A decision file beside a baseline under <paramref name="tree"/>, as a save writes one: machine 1's
-    /// One left out, and — when <paramref name="both"/> — machine 2's Three too.
+    /// One left out, and — when <paramref name="both"/> — machine 2's Three too, about
+    /// <paramref name="target"/> or else the manifest's own, <c>AGENTS.md</c> with no scope.
     /// </summary>
-    private static string DecisionsOf(FixtureTree tree, bool both = false)
+    private static string DecisionsOf(FixtureTree tree, bool both = false, CandidateTarget? target = null)
     {
         List<SectionDecision> decisions = [Left(OneReworded, "One", "machine 1")];
         if (both)
@@ -64,7 +65,7 @@ public sealed class StartupTests
 
         string path = tree.PathOf("Baseline/AGENTS.decisions.json");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        DecisionFile.Write(path, decisions);
+        DecisionFile.Write(path, target ?? new CandidateTarget("AGENTS.md", null), decisions);
         return path;
     }
 
@@ -126,8 +127,34 @@ public sealed class StartupTests
 
         Assert.Equal("seed", plan.Queue.Seed.Label);
         Assert.Equal(["machine 1", "machine 2"], plan.Queue.Items.Select(i => i.Candidate.Label).Order(StringComparer.Ordinal));
-        Assert.Equal(DecisionFile.Read(decisions), plan.Earlier);
+        Assert.Equal(DecisionFile.Read(decisions).Decisions, plan.Earlier);
         Assert.Equal(decisions, plan.DecisionsPath);
+    }
+
+    [Fact]
+    public void A_decision_file_written_for_another_target_is_refused_naming_both()
+    {
+        using FixtureTree tree = new();
+        string manifest = ManifestOf(tree);
+
+        // ⭐ Decisions are partitioned as decision 12 partitions a corpus: a CLAUDE.md review's file, handed to an
+        // AGENTS.md review, would begin it from rules decided about another document.
+        string claude = DecisionsOf(tree, target: new CandidateTarget("CLAUDE.md", null));
+        Assert.Equal(
+            $"the decision file {claude} was written for CLAUDE.md, and this corpus is for AGENTS.md — a review begins only "
+            + "from decisions about its own target",
+            Assert.Throws<StartupRefusedException>(() => Startup.Prepare(new StartupRequest(manifest, true, null, claude), Cancellation)).Message);
+
+        // A scope is half of a target, so the same file name declared for another scope is another target.
+        string root = DecisionsOf(tree, target: new CandidateTarget("AGENTS.md", "root"));
+        Assert.Equal(
+            $"the decision file {root} was written for AGENTS.md (root), and this corpus is for AGENTS.md — a review begins only "
+            + "from decisions about its own target",
+            Assert.Throws<StartupRefusedException>(() => Startup.Prepare(new StartupRequest(manifest, true, null, root), Cancellation)).Message);
+
+        // A file name differing only in case is the same target, as the corpus compares one.
+        string cased = DecisionsOf(tree, target: new CandidateTarget("agents.md", null));
+        Assert.Single(Startup.Prepare(new StartupRequest(manifest, true, null, cased), Cancellation).Earlier);
     }
 
     [Fact]
