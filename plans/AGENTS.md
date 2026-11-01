@@ -9,5 +9,5 @@ for what it borrows, `.review.md` for the review it was put through.
 |---|---|
 | **An approved plan is committed as its own change before any of its work, and never edited after.** Superseding one takes a new number that names it; drift goes to `DECISIONS.md` and `PROGRESS.md` | A plan is the record of what was agreed, and edited afterwards it records nothing |
 | A draft is iterated in place until it is approved | Being saved is not being settled |
-| ⛔ The parked drafts of plans 00030 and 00032 stay untracked, never committed | Brian's decision, which `PROGRESS.md` records |
+| ⛔ The parked draft of plan 00032 stays untracked, never committed | Brian's decision, which `PROGRESS.md` records. Plan 00030's draft, parked beside it, was approved on 2026-11-01 and committed |
 | An approved plan's citations are specification. A section number of the root `AGENTS.md` is an anchor, so a rewritten section keeps its number and no plan is edited to follow it | Plans cite sections and cannot change with them; `DECISIONS.md` has the rule, and `DocumentationCitationTests` reads every plan |

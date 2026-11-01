@@ -55,14 +55,13 @@ they settled a rule, `DECISIONS.md`. Newest first:
 another session's pull request, which is half of why the Linux jobs were left unpinned.
 
 **Plans 00001, 00003–00029, 00031 and 00033 are complete and closed**, plan 00034 is in progress
-(below), and plan 00002 was rejected on its own review before any code was written. Of the two
-parked drafts, **plan 00030 is no longer blocked, and not started**: the public per-control reading
-of `BNXQ1003` it waited on shipped in XamlQuality `2026.4.1014`, and item 14 moved the pin to
-`2026.4.1026` on 2026-10-30, so what stands between it and a start is Brian's approval of the draft.
-**Plan 00032 is parked on ClaudeForge** (item 10), waiting for the live-log window to be
-published as a package. ⛔ **Both stay untracked drafts — Brian,
-2026-10-13**, asked after a resume found them and told they are 27 KB of research with no copy
-anywhere; do not commit them and do not re-raise it. *History — plan by plan*
+(below), and plan 00002 was rejected on its own review before any code was written. **Plan 00030 was
+approved on 2026-11-01**, revised that day to read the public per-control reading of `BNXQ1003` that
+XamlQuality `2026.4.1014` shipped and item 14 pinned at `2026.4.1026`, and committed alone; its phase 1
+starts on a branch from `main` once the local stack's pull request merges. **Plan 00032 is parked on
+ClaudeForge** (item 10), waiting for the live-log window to be published as a package. ⛔ **It stays an
+untracked draft — Brian, 2026-10-13**, asked after a resume found it and told it is research with no copy
+anywhere; do not commit it and do not re-raise it. *History — plan by plan*
 below is each plan's account as it closed, and the per-plan tables under it are the verifications.
 
 **The three CI defects are history**, and the section of that name below is their record. The first
@@ -1428,6 +1427,11 @@ wording.
     script and not the template's xunit.v3 4.0.2: `Directory.Packages.props` says why this repository stays
     on 3.2.2, and AvaloniaUI/Avalonia#22072 is the upstream issue.
 
+    ⭐ **Sent 2026-11-01, on Brian's word: a request that the conventions set `eol=lf` for markdown**, so every
+    family repository checks its markdown out as LF. This box's `core.autocrlf` is `true`, and his global
+    `CLAUDE.md` was CRLF on all of its lines on 2026-10-30; DiffView already conforms, through its
+    `.gitattributes`' `* text=auto eol=lf`. Where it goes in that repository's order is Brian's to place.
+
 25. **The overview map docks left by default — Brian's preference, 2026-10-30.** ✅ **Done the same day, on
     `feat/the-map-docks-left`, local, stacked on item 14's branch.** `SideBySideDiffView.MinimapPlacementProperty`
     is registered as `Left`, which `DiffViewer` shares by `AddOwner`; the demo's *Overview map on the left* starts
@@ -1451,14 +1455,26 @@ wording.
     `MinimapLaneTests.Each_header_is_exactly_as_wide_as_its_pane` holds: a header exactly as wide as its pane and
     starting where it starts.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved and item 26 is backlogged. **Every other open item was
-scheduled by Brian
+27. **The mutation harnesses build with node reuse off, and the gate runs over uncommitted work — Brian,
+    2026-11-01, as a change of its own once the local stack's pull request merges.** Item 14's first full run
+    lost three mutations to `MSB4166`, an MSBuild worker node ending under the build that held it, and every
+    run since has set `MSBUILDDISABLENODEREUSE=1` by hand: `scripts/mutate-gates.cs` sets neither it nor
+    `AVALONIA_TELEMETRY_OPTOUT`, where `scripts/mutate-behaviour.cs` sets the opt-out through
+    `Dotnet.BuildEnvironment`. Both harnesses will turn node reuse off for their own builds, its cost measured
+    on a quiet box first. And `mutate-gates --parallel`, which refuses uncommitted changes under `src`,
+    `tests` or the root build files, will run over them as `mutate-behaviour --parallel` does, the checkout's
+    state written as a tree through a temporary index and loaded into each worktree. Item 25's run was made
+    that way by hand on 2026-10-31 — a commit no ref names, and a worktree detached at it — so that its
+    frames could be reviewed before anything was committed.
+
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged and item 27 waits on the stack's
+pull request. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 25 came the
 same day from Brian's preference rather than from a measurement, and is done on `feat/the-map-docks-left`,
 stacked on item 14's branch, its full gate run made. Item 26 came on 2026-11-01 from his review of item 25's
-frames. Item 13
+frames, and item 27 the same day, from the two things item 25's gate run did by hand. Item 13
 closed on 2026-10-30, read off a run's log rather than a date; item 22 closed on 2026-10-22, on Brian's
 decision of that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already
 closed. ⚠ XamlQuality is `Bennewitz.Ninja.Inspections` since its rename, with AssemblyQuality and
@@ -3100,6 +3116,7 @@ or declined**.
 | 2026-10-08 | Twelve Windows driving findings — what `docs/ui-automation-notes.md` stages |
 | 2026-10-09 | Two: a drag verb reporting success while the control did nothing; an element's UI Automation parent not being the window it is drawn in |
 | 2026-10-10 | Three: silence counted as success three times over; stock template parts advertise patterns our own peers do not; ask before borrowing the desktop |
+| 2026-11-01 | A request, not a lesson: `TemplatePartRule.ReadParts` to give an entry to a themed control whose code declares no part, which retires plan 00030's own reading of the strip's and the header's themes. Recorded there word for word, and confirmed against its source |
 
 ⚠ **Until a batch comes back as landed, this repository's copy is the only checked record of it** —
 so a lesson is removed from here when XamlQuality says it landed, never when it was sent.
