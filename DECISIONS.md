@@ -4740,3 +4740,31 @@ whichever session starts it, so anything that ends a node ends the build holding
 it was clean is consistent with node reuse being the cause, and does not prove it. It took 25.5 minutes, beside
 other sessions' builds, where four worktrees took 11.5 on a quiet box; how much of the difference is node reuse
 being off was not measured.
+
+## The overview map docks left by default
+
+Brian's preference, 2026-10-30, on first seeing AgentBaseline's review window: the map on the left, as defaults
+go. Plan 00008 made the dock a choice and kept `Right`, where the map had always been, and it registered
+`MinimapPlacementProperty` with no default at all, so the enum's zero was the default. The property is
+registered as `Left` now. `DiffViewer` shares the registration by `AddOwner`, so one line moves both views, and
+AgentBaseline, which sets nothing, follows it. The enum keeps its order, `Right` still zero, so a value a host
+stored still names the side it named.
+
+**The template still puts the map in the right-hand slot, and the tests lean on that.** Only
+`ApplyMinimapPlacement` moves it, on the template path and on a change, so a view that sets nothing now takes
+the template path with a value the template does not already show, which
+`The_map_docks_outside_the_left_pane_unless_a_host_says_otherwise` holds on both views. The two tests of a
+placement set before the template applies set `Right` now, because setting `Left` would be that test again.
+With the template already showing the map on the right, what tells that the host's `Right` was applied is the
+header spacers, which the placement alone sizes, so both assert each header over its pane. Each was proven able
+to fail: with the registration back at the enum's zero, exactly the two default tests failed, and with the
+template path's `ApplyMinimapPlacement()` taken out, all four did, among nine.
+
+**Every frame showing the map moved, 54 of the 64, and 22 of them had been stale since plan 00008.** The sweep
+`AGENTS.md` §5 describes found it. On the commit before this change, with nothing changed, those 22 already
+differed from what the code draws by 0.29 to 0.46% of their pixels, every differing pixel in the right header's
+text, which each baseline draws 8 px further right than the code does. That is plan 00008's correction of the
+header boundary, which stayed under the comparer's half a percent, so no test failed for those frames and none of
+them was regenerated; the whole-view frames rendered after plan 00008 matched exactly. The 54 were rendered in
+WSL, from a clone in its own filesystem, and reviewed by Brian before they were committed. With them in, all 64
+match what the code draws at a differing fraction of zero.

@@ -13,9 +13,9 @@ namespace Bennewitz.Ninja.DiffView;
 /// </remarks>
 public enum MinimapPlacement
 {
-    /// <summary>Outside the right pane, where the map has always been.</summary>
+    /// <summary>Outside the right pane.</summary>
     Right,
 
-    /// <summary>Outside the left pane.</summary>
+    /// <summary>Outside the left pane, where the map docks by default.</summary>
     Left,
 }

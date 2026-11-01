@@ -66,7 +66,7 @@
                   AutomationProperties.Name="The parts around the panes, and how the panes scroll">
           <MenuItem x:Name="ShowMinimap" AutomationProperties.AutomationId="ShowMinimap" Header="Show overview _map" ToggleType="CheckBox" IsChecked="True"
                     Click="OnToggleShowMinimap" AutomationProperties.Name="Show the two-lane overview map beside the panes" />
-          <MenuItem x:Name="MinimapOnLeft" AutomationProperties.AutomationId="MinimapOnLeft" Header="Overview map on the le_ft" ToggleType="CheckBox"
+          <MenuItem x:Name="MinimapOnLeft" AutomationProperties.AutomationId="MinimapOnLeft" Header="Overview map on the le_ft" ToggleType="CheckBox" IsChecked="True"
                     Click="OnToggleMinimapPlacement" AutomationProperties.Name="Dock the overview map outside the left pane instead of the right" />
           <MenuItem x:Name="ShowHeaders" AutomationProperties.AutomationId="ShowHeaders" Header="Show pane _headers" ToggleType="CheckBox" IsChecked="True"
                     Click="OnToggleShowHeaders" AutomationProperties.Name="Show the file-name headers above the panes" />

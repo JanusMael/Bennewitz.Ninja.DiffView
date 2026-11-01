@@ -34,6 +34,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **The overview map docks left by default.** `SideBySideDiffView.MinimapPlacement`, which `DiffViewer`
+  shares, was registered with no default, so the enum's zero, `Right`, was the default; it is registered as
+  `Left` now, and a host that wants the map on the right sets `MinimapPlacement="Right"`. Nothing else about
+  the map moves with it: the left lane is still the left file, and the current-block marker and the find
+  ticks still face the panes. The demo's *Overview map on the left* starts ticked, to agree with the views it
+  switches.
 - **The quality packages move to XamlQuality `2026.4.1026` and AssemblyQuality `2026.4.1029`, and
   `BNAQ1005` is adopted.** Test-only, as before. Every rule of both was read at the old pins and the new over
   one commit first: no rule id moved, and none of the readings the gates rest on did. `AssemblyQualityTests`
