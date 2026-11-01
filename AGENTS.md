@@ -345,6 +345,15 @@ no dates, no counts.
   is in place. The folds come back from the re-diff's `RefreshFolds` and from nothing else. Test
   `EditUnderFoldTests.A_revert_after_a_same_line_edit_leaves_each_fold_over_the_lines_it_covered`, which
   holds its own build on a gate so that middle state can be read at all.
+- ⛔ **A test that opens a window of its own puts every view in it on the hand-advanced clock before the
+  window shows**, as `CompositeHost`, `InlineHost`, `ViewerHost` and AgentBaseline's `ReviewHost` do. A
+  view's `StatusController` takes the view's `TimeProvider` when it is built, a finished build arms a
+  success's auto-clear on it, and a build that lands after the window closes builds a controller nothing
+  will dispose, the residue `DECISIONS.md` accepts. On the real clock that timer comes due on a pool thread,
+  and the headless host runs its UI loop on one: when the two coincide, `StatusController.DispatchToUiThread`
+  runs the clear inline, `DiffStatusStrip.State` fails `VerifyAccess` and the test host aborts mid-suite,
+  which `DemoMenuTests` did while it closed the demo's window with its build in flight. Every test that opens
+  the demo's window sets the clock on its views.
 - `InlineHost` under `tests/DiffView.Avalonia.Tests/Inline` is `CompositeHost`'s unified twin —
   the same hand-advanced clock, the same zero-time builder, the same syntax rule. A test that
   reads what a margin or a background renderer *drew* captures a frame (`Capture()`); a layout

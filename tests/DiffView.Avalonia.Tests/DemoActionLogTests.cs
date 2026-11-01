@@ -523,6 +523,7 @@ public sealed class DemoActionLogTests
         window.Viewer.Builder = CompositeHost.ZeroTimeBuilder;
         window.Diff.TimeProvider = time;
         window.Unified.TimeProvider = time;
+        window.Viewer.TimeProvider = time;
         window.Show();
         await SettleAsync(window);
         return window;

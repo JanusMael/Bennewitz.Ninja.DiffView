@@ -31,8 +31,10 @@ public sealed class SmokeSnapshotTests
 
         MainWindow window = new() { Width = 800, Height = 500 };
         // The window loads its sides on Opened; the zero-time builder keeps the strip's timings
-        // machine-independent, as every rendered frame must be.
+        // machine-independent, as every rendered frame must be, and the hand-advanced clock keeps the
+        // status's auto-clear off the real one, which a frame failing before Close() would leave armed.
         window.Diff.Builder = CompositeHost.ZeroTimeBuilder;
+        window.Diff.TimeProvider = new FakeTimeProvider();
         window.Show();
         Dispatcher.UIThread.RunJobs();
         if (window.Diff.CurrentBuild is { } build)
