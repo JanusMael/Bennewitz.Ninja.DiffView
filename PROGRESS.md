@@ -1440,12 +1440,25 @@ wording.
     and the demo's markup being gated subjects, went over its tree on 2026-10-31, before either commit was
     made, and gave all 123 mutations as declared with all 88 guards tripped first.
 
-Items 3, 9 and 10 are Brian's own and item 16 is shelved. **Every other open item was scheduled by Brian
+26. **The headers' alignment against their panes, to explore — Brian, 2026-11-01.** Reviewing item 25's frames,
+    Brian read the right header's title and its focus underline as starting a few pixels too far left, against
+    the find bar's L and R buttons and the line numbers below. They are where plan 00008 put them: each header
+    begins at its pane's left edge and its title 8 px in, where the pane's first line number sits 17 px in and its
+    text 44, measured alike on both sides; the find bar's buttons follow its search box rather than the panes, so
+    nothing lines them up with a header. He wants to explore aligning the headers differently later, a title over
+    the line numbers or over the text for instance; **backlogged on his word**. Whatever it becomes moves every
+    whole-view frame again, and it keeps or deliberately replaces the rule `AGENTS.md` §6 states and
+    `MinimapLaneTests.Each_header_is_exactly_as_wide_as_its_pane` holds: a header exactly as wide as its pane and
+    starting where it starts.
+
+Items 3, 9 and 10 are Brian's own, item 16 is shelved and item 26 is backlogged. **Every other open item was
+scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 25 came the
 same day from Brian's preference rather than from a measurement, and is done on `feat/the-map-docks-left`,
-stacked on item 14's branch, its full gate run made. Item 13
+stacked on item 14's branch, its full gate run made. Item 26 came on 2026-11-01 from his review of item 25's
+frames. Item 13
 closed on 2026-10-30, read off a run's log rather than a date; item 22 closed on 2026-10-22, on Brian's
 decision of that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already
 closed. ⚠ XamlQuality is `Bennewitz.Ninja.Inspections` since its rename, with AssemblyQuality and
