@@ -4768,3 +4768,19 @@ header boundary, which stayed under the comparer's half a percent, so no test fa
 them was regenerated; the whole-view frames rendered after plan 00008 matched exactly. The 54 were rendered in
 WSL, from a clone in its own filesystem, and reviewed by Brian before they were committed. With them in, all 64
 match what the code draws at a differing fraction of zero.
+
+**The full gate run went over the change before it was committed.** The library's and the demo's markup are
+gated subjects, so the change owed a full `scripts/mutate-gates` run, and `--parallel` cannot see uncommitted
+work: it cuts its worktrees from `HEAD` and refuses while `src` or `tests` is dirty. Brian asked for the run
+while the frames were still under review, so it went over a commit no ref names, written through an index of
+its own and holding exactly the working tree's tracked files, from a worktree detached at it. That is the tree
+the change's two commits end on, compared by hash as they were made, so the run is theirs. It gave all 123
+mutations as declared, 119 killed by the test each names, 2 by the build and 2 green by design, and tripped all
+88 guards first, with no `inert-at-pin` marker standing.
+
+**Each changed frame was also read against the frame it replaced.** Outside the map, every one of the 54 is its
+old frame moved 22 px to the right, row by row within the comparer's 8 a channel, the status strip staying where
+it was. The rest is accounted for: in the 22 stale frames the right header's title starts 8 px further left, and
+in the two find frames so does the focus underline beneath it, which is plan 00008's correction; in three menu
+frames a menu that moved with its pane overlaps the status strip, which did not move; and the overview map's menu
+opens beside the map on its new side. No colour, text or mark changed in any of them.
