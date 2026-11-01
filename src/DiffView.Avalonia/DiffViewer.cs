@@ -425,7 +425,7 @@ public class DiffViewer : TemplatedControl, IDiffSurface
     }
 
     /// <summary>
-    /// Which edge of the panes the overview map is docked against; <see cref="MinimapPlacement.Right"/>
+    /// Which edge of the panes the overview map is docked against; <see cref="MinimapPlacement.Left"/>
     /// by default. The map's lanes do not follow this — a lane names a file, not an edge — but the
     /// current-block marker does.
     /// </summary>

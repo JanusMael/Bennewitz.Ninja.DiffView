@@ -223,19 +223,50 @@ public sealed class MinimapLaneTests
     }
 
     [AvaloniaFact]
+    public async Task The_map_docks_outside_the_left_pane_unless_a_host_says_otherwise()
+    {
+        (string left, string right) = CompositeHost.SmallFixture();
+        using CompositeHost host = new(width: 900, height: 600);
+        host.Show();
+        await host.LoadAsync(left, right);
+        CompositeHost.Layout();
+
+        // Nothing is set, so this is the template path applying the default: the template itself puts
+        // the map in the right-hand slot, and only the placement moves it.
+        DiffMinimap map = host.View.Minimap!;
+        Assert.Equal(MinimapPlacement.Left, host.View.MinimapPlacement);
+        Assert.True(XOf(map, host) + map.Bounds.Width <= XOf(host.Left, host) + 1, "the map should sit outside the left pane");
+        Assert.True(map.MirrorEdges, "docked left, the panes are to the map's right");
+        AssertEachHeaderOverItsPane(host);
+    }
+
+    [AvaloniaFact]
     public async Task A_host_setting_the_placement_before_the_template_applies_is_wired_too()
     {
         (string left, string right) = CompositeHost.SmallFixture();
         using CompositeHost host = new(width: 900, height: 600);
 
-        host.View.MinimapPlacement = MinimapPlacement.Left;
+        // Right, because Left is the default and setting it would be the test above again. The template
+        // already has the map in the right-hand slot, so it is the header spacers, which the placement
+        // alone sizes, that show the template path applied what the host set.
+        host.View.MinimapPlacement = MinimapPlacement.Right;
         host.Show();
         await host.LoadAsync(left, right);
         CompositeHost.Layout();
 
         DiffMinimap map = host.View.Minimap!;
-        Assert.True(map.MirrorEdges);
-        Assert.True(XOf(map, host) + map.Bounds.Width <= XOf(host.Left, host) + 1);
+        Assert.False(map.MirrorEdges);
+        Assert.True(XOf(map, host) >= XOf(host.Right, host) + host.Right.Bounds.Width - 1, "the map should sit outside the right pane");
+        AssertEachHeaderOverItsPane(host);
+    }
+
+    /// <summary>Each header is exactly as wide as its pane and starts where it starts — the half a width cannot show.</summary>
+    private static void AssertEachHeaderOverItsPane(CompositeHost host)
+    {
+        Assert.Equal(host.Left.Bounds.Width, host.View.LeftHeader!.Bounds.Width, 1);
+        Assert.Equal(host.Right.Bounds.Width, host.View.RightHeader!.Bounds.Width, 1);
+        Assert.Equal(XOf(host.Left, host), XOf(host.View.LeftHeader!, host), 1);
+        Assert.Equal(XOf(host.Right, host), XOf(host.View.RightHeader!, host), 1);
     }
 
     private static double XOf(Visual control, CompositeHost host)

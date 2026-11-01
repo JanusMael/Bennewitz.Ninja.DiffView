@@ -146,6 +146,20 @@ public sealed class ViewerChromeTests
         AssertHeadersOverPanes(host);
     }
 
+    [AvaloniaFact]
+    public async Task The_map_docks_outside_the_left_pane_unless_a_host_says_otherwise()
+    {
+        using ViewerHost host = await LoadedAsync();
+
+        // Nothing is set, so this is the template path applying the default: the template itself puts
+        // the map in the right-hand slot, and only the placement moves it.
+        DiffMinimap map = host.View.Minimap!;
+        Assert.Equal(MinimapPlacement.Left, host.View.MinimapPlacement);
+        Assert.True(XOf(host, map) + map.Bounds.Width <= XOf(host, host.Left) + 1, "the map should sit outside the left pane");
+        Assert.True(map.MirrorEdges);
+        AssertHeadersOverPanes(host);
+    }
+
     // ── Set before the template applies — the path a host setting it in XAML takes ─────────
 
     [AvaloniaFact]
@@ -198,14 +212,17 @@ public sealed class ViewerChromeTests
     public async Task The_placement_set_before_the_template_applies_still_takes()
     {
         using ViewerHost host = new();
-        host.View.MinimapPlacement = MinimapPlacement.Left;
+        // Right, because Left is the default. The template already has the map in the right-hand slot,
+        // so it is the headers, whose spacers the placement alone sizes, that show the template path
+        // applied what the host set.
+        host.View.MinimapPlacement = MinimapPlacement.Right;
         host.Show();
         (string left, string right) = CompositeHost.SmallFixture();
         await host.LoadAsync(left, right);
 
         DiffMinimap map = host.View.Minimap!;
-        Assert.True(map.MirrorEdges);
-        Assert.True(XOf(host, map) + map.Bounds.Width <= XOf(host, host.Left) + 1);
+        Assert.False(map.MirrorEdges);
+        Assert.True(XOf(host, map) >= XOf(host, host.Right) + host.Right.Bounds.Width - 1);
         AssertHeadersOverPanes(host);
     }
 

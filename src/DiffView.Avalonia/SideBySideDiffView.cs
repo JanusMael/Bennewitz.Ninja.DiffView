@@ -163,7 +163,9 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
 
     /// <summary>Identifies the <see cref="MinimapPlacement"/> property.</summary>
     public static readonly StyledProperty<MinimapPlacement> MinimapPlacementProperty =
-        AvaloniaProperty.Register<SideBySideDiffView, MinimapPlacement>(nameof(MinimapPlacement));
+        AvaloniaProperty.Register<SideBySideDiffView, MinimapPlacement>(
+            nameof(MinimapPlacement),
+            defaultValue: MinimapPlacement.Left);
 
     /// <summary>Identifies the <see cref="ShowLineEndings"/> property.</summary>
     public static readonly StyledProperty<bool> ShowLineEndingsProperty =
@@ -589,9 +591,9 @@ public class SideBySideDiffView : TemplatedControl, IDiffSurface
     }
 
     /// <summary>
-    /// Which edge of the panes the overview map is docked against; <see cref="MinimapPlacement.Right"/>
-    /// by default, which is where it has always been. The map's lanes do not follow this — a lane
-    /// names a file, not an edge — but the current-block marker and the find ticks do.
+    /// Which edge of the panes the overview map is docked against; <see cref="MinimapPlacement.Left"/>
+    /// by default. The map's lanes do not follow this — a lane names a file, not an edge — but the
+    /// current-block marker and the find ticks do.
     /// </summary>
     public MinimapPlacement MinimapPlacement
     {

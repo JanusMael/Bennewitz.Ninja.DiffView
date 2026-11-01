@@ -5,8 +5,8 @@
 **`main` carries everything through PR #42, and CI is green on it** — PR #42 merged on a full
 10-of-10, 2026-10-29. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 982** here, `Passed!`, by a local run over the local stack — twenty-six
-more than at PR #42: plan 00034 steps 9 and 10's twenty-one, then `ReceivedFileTests`' three projects, `DemoMenuTests` and item 14's `BNAQ1005` gate. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 984** here, `Passed!`, by a local run over the local stack — twenty-eight
+more than at PR #42: plan 00034 steps 9 and 10's twenty-one, then `ReceivedFileTests`' three projects, `DemoMenuTests`, item 14's `BNAQ1005` gate and item 25's two default tests. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -1428,10 +1428,23 @@ wording.
     script and not the template's xunit.v3 4.0.2: `Directory.Packages.props` says why this repository stays
     on 3.2.2, and AvaloniaUI/Avalonia#22072 is the upstream issue.
 
+25. **The overview map docks left by default — Brian's preference, 2026-10-30.** ✅ **Done the same day, on
+    `feat/the-map-docks-left`, local, stacked on item 14's branch.** `SideBySideDiffView.MinimapPlacementProperty`
+    is registered as `Left`, which `DiffViewer` shares by `AddOwner`; the demo's *Overview map on the left* starts
+    ticked; the property's, the viewer's and the enum's docs, the hosting guide's row and the changelog say so.
+    Two tests hold the default, one per view, and the two tests of a placement set before the template applies set
+    `Right` now; each was proven able to fail. Every frame showing the map moved, 54 of the 64, rendered in WSL
+    from a clone in its own filesystem and reviewed by Brian before they were committed. 22 of them had been stale
+    since plan 00008, by less than the comparer tolerates. `DECISIONS.md`, *The overview map docks left by
+    default*, has the proofs and the stale frames. ⚠ A full `scripts/mutate-gates` run is owed over this change,
+    the library and the demo's markup being gated subjects.
+
 Items 3, 9 and 10 are Brian's own and item 16 is shelved. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
-19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 13
+19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 25 came the
+same day from Brian's preference rather than from a measurement, and is done on `feat/the-map-docks-left`,
+stacked on item 14's branch, its full gate run still owed. Item 13
 closed on 2026-10-30, read off a run's log rather than a date; item 22 closed on 2026-10-22, on Brian's
 decision of that day; items 17 and 18 closed on 2026-10-13, and items 5, 6, 12 and 15 were already
 closed. ⚠ XamlQuality is `Bennewitz.Ninja.Inspections` since its rename, with AssemblyQuality and
