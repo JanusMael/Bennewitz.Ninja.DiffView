@@ -1237,6 +1237,13 @@ wording.
     `drive-demo-uia.ps1` to scroll a popup before reporting a part absent, which fixes a false-absence
     class rather than one menu; per `AGENTS.md` §8 it is a lesson for Inspections first.
 
+    ⚠ **`DemoMenuTests` left the real clock armed on every run, found 2026-10-30.** It showed the demo's window
+    with no clock on its views and closed it with the build in flight, so the build landed after the close
+    and armed a success's auto-clear on `TimeProvider.System` that nothing disposes, `DECISIONS.md`'s accepted
+    residue on the clock the suite keeps out of its hosts. A full Windows run aborted mid-suite with the stack
+    that path produces. The test and the three others that open the demo's window now set the hand-advanced
+    clock on its views first, and `AGENTS.md` §5 says why.
+
 20. ~~A stray `*.received.axaml` is compiled into the library and shipped~~ — **fixed 2026-10-30, on
     Brian's word of the same day, on one branch with items 19 and 21.**
     `ReferenceAuditTests` writes `<name>.received.axaml` beside a stale compat dictionary when the check

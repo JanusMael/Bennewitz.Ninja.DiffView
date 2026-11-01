@@ -179,13 +179,20 @@ public sealed class DemoViewTests
         }
     }
 
-    /// <summary>The demo window, shown, its three views building with no machine's timings.</summary>
+    /// <summary>
+    /// The demo window, shown, its three views building with no machine's timings and resting on a
+    /// hand-advanced clock, so a build that lands after the window closes arms no real timer.
+    /// </summary>
     private static MainWindow Open()
     {
         MainWindow window = new() { Width = 800, Height = 500 };
         window.Diff.Builder = CompositeHost.ZeroTimeBuilder;
         window.Unified.Builder = CompositeHost.ZeroTimeBuilder;
         window.Viewer.Builder = CompositeHost.ZeroTimeBuilder;
+        FakeTimeProvider time = new();
+        window.Diff.TimeProvider = time;
+        window.Unified.TimeProvider = time;
+        window.Viewer.TimeProvider = time;
         window.Show();
         return window;
     }

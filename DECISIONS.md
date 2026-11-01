@@ -2728,6 +2728,18 @@ rather than zero: exactly one timer, and none after the clock advances past the 
 mutations exist for it alone — a success outlasting the advance, and two timers armed per message —
 because a bound nothing can violate is not a test.
 
+**It reached a test host again on 2026-10-30, through the demo's window.** `DemoMenuTests`, from item 19,
+showed the demo's window with no clock on its views and closed it without waiting for the build the demo
+starts on `Opened`, so that build was the reachable case above, on the real clock. A probe of the test's
+lifecycle read the editor's status as absent at the close and, once the queue had run, as a success on
+`SystemTimeProvider` with its auto-clear armed. A full Windows run aborted mid-suite with the stack plan
+00019 recorded, `DiffStatusStrip.State` failing `VerifyAccess` under `StatusController.DispatchToUiThread`,
+and `Failed!` over `failed: 0`. The residue stays accepted. What closes this is the rule the suite kept only
+through its hosts, now said in `AGENTS.md` §5: a test opening a window of its own puts the views in it on the
+hand-advanced clock before the window shows. `DemoMenuTests` does now, and so do the three other tests that
+open the demo's window: `DemoViewTests` had no clock on any view, `DemoActionLogTests` none on the viewer, and
+`SmokeSnapshotTests` none at all, which was safe only while no frame failed before its close.
+
 ## `ScrollSync` was already released, and the question should not have been open
 
 Plan 00020's draft listed `ScrollSync` as `IDisposable` and unchecked, and offered the answer as a

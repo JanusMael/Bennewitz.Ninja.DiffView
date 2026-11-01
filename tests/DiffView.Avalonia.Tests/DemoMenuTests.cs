@@ -27,6 +27,15 @@ public sealed class DemoMenuTests
         window.Diff.Builder = CompositeHost.ZeroTimeBuilder;
         window.Unified.Builder = CompositeHost.ZeroTimeBuilder;
         window.Viewer.Builder = CompositeHost.ZeroTimeBuilder;
+
+        // ⛔ The hand-advanced clock, set before the window shows. The demo loads its sources on Opened and
+        // nothing here waits for the build, which lands after Close() and re-creates the view's status on the
+        // view's clock; on the real one it arms an auto-clear that nothing disposes, and one that comes due on
+        // the pool thread the headless loop has just handed back aborts the test host.
+        FakeTimeProvider time = new();
+        window.Diff.TimeProvider = time;
+        window.Unified.TimeProvider = time;
+        window.Viewer.TimeProvider = time;
         window.Show();
         try
         {
