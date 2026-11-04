@@ -4784,3 +4784,30 @@ it was. The rest is accounted for: in the 22 stale frames the right header's tit
 in the two find frames so does the focus underline beneath it, which is plan 00008's correction; in three menu
 frames a menu that moved with its pane overlaps the status strip, which did not move; and the overview map's menu
 opens beside the map on its new side. No colour, text or mark changed in any of them.
+
+## The parts reference: what the plan left to the reading
+
+Plan 00030 generates `docs/template-parts.md` in `TemplatePartReferenceTests`, as approved. Four things the work
+settled that the plan did not.
+
+**`OutputDrift.Check` writes a received copy for a stale file and none for a missing one**, read off the package
+rather than assumed, so the test writes that one itself. A reference someone deleted is the same drift as one
+that moved: the failure says the fresh one is beside it, and `scripts/gen-template-parts` restores it byte for
+byte, like any other.
+
+**The drawn controls are derived, not listed.** A control with no theme in the scan is drawn, and the controls
+table says so, so the placement names only the controls a parts table shows, and a new control needs placing only
+if it is themed. What the placement check adds to the plan's is the other direction: each control a table shows
+has exactly one theme, because a table shows one, and a second in the scan would otherwise be read past in
+silence.
+
+**The anchor carries a positive control**, by §5's rule about a reading that asserts only that nothing is wrong:
+compared with a reading that read nothing, the declarations agree. So the rule must have read a theme of every
+control a table takes from it, which is every control but the two it has no entry for. A scan handed no
+assemblies trips that and writes nothing, where the comparison alone would have reached the drift and offered a
+reference with a dash in every *Looked up in code* cell.
+
+**Read against the hand tables of 2026-10-01, cell by cell by a script, two things differ, each by the plan's own
+rule.** `ChangeMarkerMargin`'s base class also names `AbstractMargin`, which the hand table wrote on the first
+margin alone, one rule now writing both rows. And `PART_Pane` follows `PART_FindBar`, the part before it in the
+unified template, where the hand table had it among the side-by-side panes.

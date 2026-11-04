@@ -8,6 +8,11 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- **`docs/template-parts.md`, a reference the code writes** — plan 00030. Every control the library defines, its
+  template parts with their elements and `AutomationId`s, and whether code looks each part up by its name, which
+  is what someone re-templating a control or driving one needs. `TemplatePartReferenceTests` generates it from what
+  the gates read, `BNXQ1003`'s reading through `TemplatePartRule.ReadParts` among them, and fails while the committed
+  file differs, so it cannot go stale. `scripts/gen-template-parts` rewrites it, and the hosting guide links to it.
 - **`AgentBaseline`, plan 00034's consolidation tool** — `src/AgentBaseline`, not a package. `agent-baseline
   --manifest <file>` or `--list <file>`, with `--seed <label>` and `--decisions <file>`, reviews many machines'
   `CLAUDE.md` or `AGENTS.md` against one seed: the seed on the left as an accumulator edited by hand, each other

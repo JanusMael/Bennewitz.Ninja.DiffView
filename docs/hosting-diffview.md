@@ -289,6 +289,11 @@ part that owns it, so scope a search to your process, then to the view, then to 
 | a pane's two margins | `LineNumbers`, `ChangeMarkers` | the pane |
 | an entry the library puts in a context menu | the name of its `DiffCommand`; `Save`, `Revert`, `GoToRow` and `HideMinimap` for the four with none | the menu |
 
+Every template part of every control, with its element, its id and whether code looks it up by its name, is in
+[the parts reference](https://github.com/JanusMael/Bennewitz.Ninja.DiffView/blob/main/docs/template-parts.md),
+which is generated from the code. A template of your own keeps the parts code looks up, and may rename or leave
+out the rest.
+
 The library cannot choose the view's id, because you may host more than one, so give it one where you
 place it:
 
