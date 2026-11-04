@@ -4,7 +4,7 @@
 
 Every control this library defines, the template parts each has, the `AutomationId` a harness finds a part by, and whether code looks the part up. Each table follows the order the template declares its parts.
 
-*Looked up in code* reads **✓** where this library's code looks the part up, the control's own or `DiffBuildController`'s, which the views hand their templates to; ***AvaloniaEdit*** where only code AvaloniaEdit defines does; and **—** where nothing does. A part nothing looks up serves only its theme's selectors and bindings, so a host's own template may rename it or leave it out. A part something looks up is found by its name, and a template without it loses whatever that code does with it.
+*Looked up in code* reads **✓** where this library's code looks the part up, the control's own or, for `SideBySideDiffView` and `DiffViewer`, `DiffBuildController`'s, which they hand their templates to; ***AvaloniaEdit*** where only code AvaloniaEdit defines does; and **—** where nothing does. A part nothing looks up serves only its theme's selectors and bindings, so a host's own template may rename it or leave it out. A part something looks up is found by its name, and a template without it loses whatever that code does with it.
 
 ## The controls
 

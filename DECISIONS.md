@@ -4787,7 +4787,7 @@ opens beside the map on its new side. No colour, text or mark changed in any of 
 
 ## The parts reference: what the plan left to the reading
 
-Plan 00030 generates `docs/template-parts.md` in `TemplatePartReferenceTests`, as approved. Four things the work
+Plan 00030 generates `docs/template-parts.md` in `TemplatePartReferenceTests`, as approved. Six things the work
 settled that the plan did not.
 
 **`OutputDrift.Check` writes a received copy for a stale file and none for a missing one**, read off the package
@@ -4797,9 +4797,18 @@ byte, like any other.
 
 **The drawn controls are derived, not listed.** A control with no theme in the scan is drawn, and the controls
 table says so, so the placement names only the controls a parts table shows, and a new control needs placing only
-if it is themed. What the placement check adds to the plan's is the other direction: each control a table shows
-has exactly one theme, because a table shows one, and a second in the scan would otherwise be read past in
-silence.
+if it is themed. The first check holds that derivation up: a templated control with no theme fails it rather than
+reading as drawn, and each control a table shows has exactly one theme in the library's markup, because a table
+shows one, and because a literal that stopped naming the library's folder would otherwise match nothing and pass.
+The margins are read off the pane's own `LeftMargins`, so *built by the pane* is the pane's answer and not a base
+class's.
+
+**The test's own reading takes every spelling Avalonia does, which the anchor alone would not have made it.** The
+rule's reading of an element is internal to its package, so a target written `{x:Type dv:Thing}` and an id written
+as a property element are read here too. The anchor holds the two readings equal only on the spellings the themes
+the rule reads actually use, and it reads nothing of the strip's or the header's, so those two spellings are
+proven by scratch mutations and not by the anchor. An independent review of the branch found both, and the two
+paths above.
 
 **The anchor carries a positive control**, by §5's rule about a reading that asserts only that nothing is wrong:
 compared with a reading that read nothing, the declarations agree. So the rule must have read a theme of every
@@ -4811,3 +4820,8 @@ reference with a dash in every *Looked up in code* cell.
 rule.** `ChangeMarkerMargin`'s base class also names `AbstractMargin`, which the hand table wrote on the first
 margin alone, one rule now writing both rows. And `PART_Pane` follows `PART_FindBar`, the part before it in the
 unified template, where the hand table had it among the side-by-side panes.
+
+**`scripts/gen-template-parts` asks nothing before it rewrites the reference.** It does more than hand over to a
+file-based app, as the wrappers beside it do, so it follows the family's script convention, a dry run, tagged
+output, exits 0, 1 and 2, and no bare `exit` under an editor's host, but for that convention's question. Running it
+is the request, the plan says it rewrites, and git holds what it replaces.
