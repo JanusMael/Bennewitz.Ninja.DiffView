@@ -86,6 +86,18 @@ public sealed class TemplatePartTests
     /// </remarks>
     private const int InspectedFloor = 20;
 
+    /// <summary>
+    /// What the rule is handed, here and for <c>docs/template-parts.md</c>: the markup under <c>src</c>, with the
+    /// model, the UI assembly and AvaloniaEdit's. One method, because two scans could disagree about what the
+    /// rule read.
+    /// </summary>
+    internal static XamlScanContext Scan() => XamlScanContext
+        .Load(RepoPaths.Source("src"))
+        .WithAssemblies(
+            typeof(FindScope).Assembly,
+            typeof(SideBySideDiffView).Assembly,
+            typeof(AvaloniaEdit.TextEditor).Assembly);
+
     [Fact]
     public void Every_template_part_a_control_looks_up_is_declared_in_its_theme()
     {
@@ -107,14 +119,7 @@ public sealed class TemplatePartTests
             + "forward cover, on the understanding that it declares none — so it is no longer inert and "
             + "the floor no longer accounts for what it contributes.");
 
-        XamlScanContext context = XamlScanContext
-            .Load(RepoPaths.Source("src"))
-            .WithAssemblies(
-                typeof(FindScope).Assembly,
-                typeof(SideBySideDiffView).Assembly,
-                typeof(AvaloniaEdit.TextEditor).Assembly);
-
-        XamlRuleResult result = new TemplatePartRule().Analyze(context);
+        XamlRuleResult result = new TemplatePartRule().Analyze(Scan());
 
         Assert.True(
             result.Inspected >= InspectedFloor,

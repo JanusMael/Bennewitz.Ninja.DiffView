@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #42, and CI is green on it** — PR #42 merged on a full
-10-of-10, 2026-10-29. *A resume names the pull request it was written for and
+**`main` carries everything through PR #43, and CI is green on it** — PR #43 merged on a full
+12-of-12, 2026-11-03. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 984** here, `Passed!`, by a local run over the local stack — twenty-eight
-more than at PR #42: plan 00034 steps 9 and 10's twenty-one, then `ReceivedFileTests`' three projects, `DemoMenuTests`, item 14's `BNAQ1005` gate and item 25's two default tests. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 985** here, `Passed!`, by a local run over plan 00030's
+branch, in `en-US` and in `de-DE` — one more than at PR #43, the test that writes the parts reference. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -57,8 +57,8 @@ another session's pull request, which is half of why the Linux jobs were left un
 **Plans 00001, 00003–00029, 00031 and 00033 are complete and closed**, plan 00034 is in progress
 (below), and plan 00002 was rejected on its own review before any code was written. **Plan 00030 was
 approved on 2026-11-01**, revised that day to read the public per-control reading of `BNXQ1003` that
-XamlQuality `2026.4.1014` shipped and item 14 pinned at `2026.4.1026`, and committed alone; its phase 1
-starts on a branch from `main` once the local stack's pull request merges. **Plan 00032 is parked on
+XamlQuality `2026.4.1014` shipped and item 14 pinned at `2026.4.1026`, and committed alone; both its
+phases are done on `docs/the-parts-reference`, local until Brian says push, and CI is what is left of them. **Plan 00032 is parked on
 ClaudeForge** (item 10), waiting for the live-log window to be published as a package. ⛔ **It stays an
 untracked draft — Brian, 2026-10-13**, asked after a resume found it and told it is research with no copy
 anywhere; do not commit it and do not re-raise it. *History — plan by plan*
@@ -1467,8 +1467,8 @@ wording.
     that way by hand on 2026-10-31 — a commit no ref names, and a worktree detached at it — so that its
     frames could be reviewed before anything was committed.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged and item 27 waits on the stack's
-pull request. **Every other open item was scheduled by Brian
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged and item 27 is next, the stack's
+pull request having merged as #43. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 25 came the
@@ -1787,6 +1787,12 @@ either.
 | 9 Syntax highlighting | done | `SyntaxHighlighting` over `AvaloniaEdit.TextMate` per pane, the grammar from the file's extension and the theme from the variant; `UseSyntaxHighlighting` on presenter and composite; an unclaimed extension is plain text, a failed install is `Degraded` with the language named and the diff untouched; trimmed publish clean with TextMateSharp on board; 12 headless, snapshot and pixel test cases |
 | 10 Scale, visibility, accessibility | done | `ScalePerfTests` on the 200k pair and the 1 MB line (numbers in *Measurements*; DiffPlex not vendored); `ShowWhitespace` / `ShowLineEndings` / `TabWidth` on presenter and composite, none of them re-priming; `PaneFontSize` / `PaneFontFamily`, which do; the mixed-line-ending notice asserted end to end; copy per pane with read-only holding against paste and typing; the focus accent under the focused pane's header on a new `DiffView.FocusAccentBrush`; a runtime sweep of every decorator's automation name; 10 headless, pixel and snapshot test cases plus 2 `Perf` measurements |
 | 11 Inline (unified) view | done | `InlineDocument`, the unified line table over the model — context rows once, a block's removals before its additions, a modified pair keeping its kind on both halves; `InlineDiffView` over a document it composes from both sides, read-only, with the renderers, margins, find bar, status strip and state machine unchanged, a number column per side, the find scope collapsed and the block extents in unified lines; the demo hosts both views; 37 unit, headless and snapshot test cases |
+
+## Plan 00030 phases
+
+| Phase | Size | Status | Notes |
+|---|---|---|---|
+| 1 The reference and its gate | M | done | `TemplatePartReferenceTests.The_committed_reference_equals_a_fresh_reading`, a class of its own and no gate file, writes `docs/template-parts.md` from `AccessibilityCoverageTests.ConcreteControls` and `ExpectedControlTypes`, both now internal, the two margins' ids off a constructed `DiffPanePresenter`, and `TemplatePartRule.ReadParts` over `TemplatePartTests.Scan`, the gate's context moved into an internal method. Read against the hand tables of 2026-10-01 by a script, every row and cell agrees and `PART_CP` reads *AvaloniaEdit*, but for the two differences `DECISIONS.md` gives, each by the plan's own rule. Seventeen scratch mutations, each as declared: the plan's seven, the file deleted, and three that show a view's own element, a view's own lookup and a part only AvaloniaEdit still looks up each fail with the fresh reference beside the committed one; the plan's two and two more trip a check and write nothing, among them a scan handed no assemblies; one lists what was not read; and a German current culture stays green. The suite, 985 = 984 + 1, is `Passed!` and healthy under `catch-crash --expect auto` in `en-US` and `de-DE`, the reference one SHA-256 before and after both with no received copy; the build is clean under `-warnaserror`, `--guards` derives 88, and `mutate-behaviour --owed main` owes no set. The full `mutate-gates` run the gate-file edits owe follows |
 
 ## Plan 00033 phases
 

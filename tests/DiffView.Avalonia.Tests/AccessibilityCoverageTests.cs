@@ -187,7 +187,7 @@ public sealed class AccessibilityCoverageTests
     /// The control type each control of ours is to a person — plan 00026's table, and the one written
     /// expectation in the peer walk. UIA's control-pattern mapping requires no pattern of any of them.
     /// </summary>
-    private static readonly Dictionary<string, AutomationControlType> ExpectedControlTypes = new(StringComparer.Ordinal)
+    internal static readonly Dictionary<string, AutomationControlType> ExpectedControlTypes = new(StringComparer.Ordinal)
     {
         [nameof(SideBySideDiffView)] = AutomationControlType.Group,
         [nameof(DiffViewer)] = AutomationControlType.Group,
@@ -722,7 +722,7 @@ public sealed class AccessibilityCoverageTests
     /// harness acts on what they draw; the exported types alone would leave them out of every requirement
     /// this derivation feeds.
     /// </remarks>
-    private static string[] ConcreteControls() =>
+    internal static string[] ConcreteControls() =>
     [
         .. typeof(SideBySideDiffView).Assembly.GetTypes()
             .Where(t => typeof(Control).IsAssignableFrom(t) && !t.IsAbstract)
