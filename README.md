@@ -190,8 +190,8 @@ theme-audit inventory reference/Semi.Avalonia/src/Semi.Avalonia/Themes/Light
 [docs/template-parts.md](docs/template-parts.md) says what each control of the library is, which template
 parts it has, the `AutomationId` a harness finds each by, and whether code looks each up by its name, which is
 what someone re-templating a control or driving one needs. `TemplatePartReferenceTests` generates it from what
-the gates read, so it cannot disagree with them, and fails while the committed file differs, writing the fresh
-one beside it as `docs/template-parts.received.md`.
+the gates read, and fails while the committed file differs, writing the fresh one beside it as
+`docs/template-parts.received.md`.
 
 A template edit regenerates it, and so may an AvaloniaEdit or XamlQuality bump:
 
