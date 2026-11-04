@@ -110,6 +110,13 @@ no dates, no counts.
   measured against its own side's line count (§7).
 - Nothing under `src/DiffView.Avalonia/Themes` references a host theme key: `theme-audit report`
   scans that directory as the "DiffView" consumer and `ReferenceAuditTests` fails on drift.
+- **A template edit regenerates `docs/template-parts.md`, and so may an AvaloniaEdit or XamlQuality bump**, the
+  same edits `theme-audit report` asks after: `TemplatePartReferenceTests.The_committed_reference_equals_a_fresh_reading`
+  fails on drift and writes the fresh reference beside the committed one, and `scripts/gen-template-parts` takes it.
+  The test has no write mode, and its two checks run first and write nothing. It reads the gates' own control set,
+  peer table and scan, and `BNXQ1003`'s reading through `TemplatePartRule.ReadParts`; that reading has no entry for
+  `DiffStatusStrip` or `DiffPaneHeader`, whose code declares no part, so their parts come from their themes in the
+  scan's markup, a reading held to the rule's wherever both read.
 - A new colour token goes into `DiffView.Tokens.axaml`, `DiffView.Tokens.ColorBlind.axaml` and
   `contrast-pairs.json` together; `ThemeResolutionTests.Every_DiffView_token_resolves_in_both_palettes`
   asserts the two palettes define the same keys.

@@ -184,3 +184,20 @@ still there:
 ```bash
 theme-audit inventory reference/Semi.Avalonia/src/Semi.Avalonia/Themes/Light
 ```
+
+## The parts reference
+
+[docs/template-parts.md](docs/template-parts.md) says what each control of the library is, which template
+parts it has, the `AutomationId` a harness finds each by, and whether code looks each up by its name, which is
+what someone re-templating a control or driving one needs. `TemplatePartReferenceTests` generates it from what
+the gates read, so it cannot disagree with them, and fails while the committed file differs, writing the fresh
+one beside it as `docs/template-parts.received.md`.
+
+A template edit regenerates it, and so may an AvaloniaEdit or XamlQuality bump:
+
+```bash
+scripts/gen-template-parts.sh
+```
+
+`scripts/gen-template-parts.ps1` does the same. It runs the test and takes the file the test wrote, so a failure
+that wrote nothing, a failed check or a broken build, moves nothing.
