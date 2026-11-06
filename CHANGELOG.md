@@ -39,6 +39,10 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **The mutation harnesses keep their builds to themselves.** Both turn MSBuild's node reuse off and hold one
+  `BuildTimestamp` for a run, where every build had recompiled every project however little had changed.
+  `mutate-gates --parallel` runs over uncommitted work rather than refusing it, a mutation's build is the test
+  project's and restores only where one is owed, and `--check` applies and reverts every mutation, building nothing.
 - **`scripts/drive-demo-interactive.ps1` reads where its drags go.** Its splitter and map drags carried coordinates
   for one scaling and one dock, so at 200% they pressed the wrong parts, and docking the map left moved both at
   every scaling. Each now reads its part's bounds from UI Automation as it runs, and `-ExpectScaling` fails a pass at
