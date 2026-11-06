@@ -43,6 +43,12 @@
     <PackageVersion Include="LayeredEditors.Avalonia.Diagnostics" Version="1.0.1" />
   </ItemGroup>
 
+  <ItemGroup Label="Analysis">
+    <!-- Microsoft.VisualStudio.Threading.Analyzers, for two of its rules; Directory.Build.props
+         says which and turns the rest off. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+  </ItemGroup>
+
   <ItemGroup Label="Tooling">
     <PackageVersion Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.916" />
     <!-- The theme and contrast analysis this repository's audit runs on. It used to be
