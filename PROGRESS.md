@@ -1523,8 +1523,13 @@ wording.
     it, 15 of 15. The three literal `TargetType` readings in `AccessibilityCoverageTests` stay, by the same choice
     of his.
 
+31. **What leaned on the move into AppKit — 2026-11-06.** DiffView stays here, so two things left as they are because
+    of the move want another look, each Brian's to call. `release.yml` goes on naming its ids rather than reading
+    `packages.push`, `DECISIONS.md` and `PackagesPushTests` saying the move replaces it with the template's. And
+    `conventions` is not a required check, item 28 saying the move would make it short-lived.
+
 Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, items 27 and 23 come next, in that
-order, and item 30 waits for a release.
+order, item 30 waits for a release, and item 31 for his word.
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the

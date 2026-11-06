@@ -15,7 +15,7 @@ too, and the root `Directory.Build.targets` links no friend grants into them (`F
 | `gen-locale-review` | Writes `docs/locale-review/<culture>.md`, and `--check` compares | after a translation changes |
 | `gen-template-parts` | Rewrites `docs/template-parts.md`: runs the test that generates it and takes the file the test wrote, and moves nothing when it wrote none. `.sh` and `.ps1` only | after a template edit, or a bump that moves the reference |
 | `measure-menu-width` | Each locale's widest menu entry against English's, in display columns | by hand |
-| `mutate-gates` | Proves the static-analysis gates able to fail; `--guards` is its standing half | CI (`--guards`), and a full run after any change to a gate file, a gated subject or a pin |
+| `mutate-gates` | Proves the static-analysis gates able to fail; `--guards` is its standing half, and `--check` proves every mutation still applies | CI (`--guards`), and a full run after any change to a gate file, a gated subject or a pin |
 | `mutate-behaviour` | Proves behaviour tests able to fail, from the sets under `tests/*/Mutations/` | after a change a set owes, `--owed <ref>` |
 | `repo-conventions` | Checks, and applies, the family's repository conventions | CI's `conventions` job, the release, and the maintainer |
 | `run-demo` | Runs the demo with its flags; `.sh` and `.ps1` only | by hand |

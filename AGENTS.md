@@ -233,15 +233,17 @@ no dates, no counts.
   revert, and contaminate every mutation after it. ⚠ **Edit nothing in the worktree while a run is in
   progress**: an edit outside `src` and `tests` reads as a mutation's stray, and is put back.
 - ⭐ **`--parallel <n>` runs the whole set in `n` worktrees at once, and judges it as one run.** It cuts `n`
-  detached worktrees from `HEAD` under the temp directory, runs a shard in each — every `n`th mutation,
+  detached worktrees from this checkout's state under the temp directory, runs a shard in each — every `n`th mutation,
   dealt round so the slow accessibility ones at the head of the list spread — has each write its verdicts
   and the guard lines it tripped first (`--emit`), and merges them into the judgement a sequential run
   makes. ⛔ **The merge refuses anything but every declared mutation exactly once**, from shards `k/n` of
   one `n` over one commit: a partial set proves only the guards it reached, so a lost shard fails the run
-  rather than shrinking it, and a `--merge` run by hand refuses unless this checkout is the commit the
+  rather than shrinking it, and a `--merge` run by hand refuses unless this checkout's state is the tree the
   shards ran over. **It never edits this checkout**, so the rule above does not bind it — edit while it
-  runs. It refuses uncommitted changes under `src`, `tests` or the root build files, which a worktree cut
-  from `HEAD` would silently leave out, and its shards skip `fetch-reference`, which no gate reads.
+  runs. What it tests is what is here, uncommitted work included: the state goes through a temporary index
+  into a tree and, where that is not `HEAD`'s, a commit no ref names, so a worktree reads as clean at the
+  state it tests and no ref moves. Its shards skip `fetch-reference`, which no gate reads, and with
+  `--throwaway` the closing rebuild, each worktree going with the run.
   Measured on the Windows box over 112 mutations: **27.8 min** sequential in this checkout, **26.6** in
   one worktree, **11.5** in four and **9.9** in eight, so four is where most of the gain is — and the
   four- and eight-worktree runs identical to the one-worktree run over the same commit in every verdict
@@ -250,6 +252,21 @@ no dates, no counts.
   mutation and not a pass: the gate was never exercised. The code moved and the mutation needs
   re-pointing. When a construct is deliberately designed out of existence, its mutation is **deleted**
   and the plan records why — a permanently unappliable mutation is not evidence.
+- ⭐ **Both harnesses keep their builds to themselves.** Each sets three things over the environment of
+  everything it starts. Avalonia's telemetry off and MSBuild's node reuse off: a reused worker node is handed to
+  whichever build asks next, in any session, so anything that ends it ends the build holding it, and one run lost
+  three mutations to `MSB4166` that way. And one `BuildTimestamp` for the run, because
+  `Bennewitz.Ninja.AutoVersioning` otherwise takes one afresh at each evaluation and hands it to the compiler, so no
+  two builds of a project agree and every build recompiles every project however little changed. ⛔ **That last one
+  makes their builds truly incremental**, which `mutate-gates`' never were, so a stale output could change a verdict
+  where recompiling everything used to hide it: a full run compared against its declarations is what says none does.
+- **A gate mutation builds the test project, not the solution**, because every gate is a class of it and it takes
+  in each assembly a gate reads, and it restores only where a restore is owed: when the edit lands in a file
+  restore reads, and on the mutation after it, because a revert leaves `obj/` describing the project as mutated,
+  which is how the first build of a run is treated too. What the edit touched is read from the tree, as what a
+  mutation may touch is, rather than declared beside it.
+- **`--check` applies and reverts each gate mutation and builds nothing**, as `mutate-behaviour`'s does for a set,
+  so a construct that moved is found in about two minutes rather than as a failed `no-op` at the end of a full run.
 - ⛔ **Reverting a mutation does not unbuild it, so the harness rebuilds on every exit it controls**
   once mutations have started, from a `finally`. A run killed outright cannot, and a
   `dotnet test --no-build` straight after one is worthless: the last mutation's assemblies sit in
