@@ -265,6 +265,23 @@ no dates, no counts.
   restore reads, and on the mutation after it, because a revert leaves `obj/` describing the project as mutated,
   which is how the first build of a run is treated too. What the edit touched is read from the tree, as what a
   mutation may touch is, rather than declared beside it.
+- **What a mutation's build pays for was measured on the quiet Windows box rather than assumed**, each figure the
+  median of one build timed alone over an edit to a gate file, a theme, the demo's markup and the model:
+
+  | A mutation's build | Over the four edits | On a gate file |
+  |---|---|---|
+  | The solution, restored, a stamp per evaluation, as it was | **9.4 s** | **9.8 s** |
+  | One stamp for the run | **8.2 s** | **4.1 s** |
+  | And the test project rather than the solution | **8.1 s** | **4.3 s** |
+  | And no restore where none is owed | **7.0 s** | **3.2 s** |
+
+  A full run in four worktrees went from **12.8 min** to **8.8**, its shards also skipping a closing rebuild, with its
+  123 verdicts and 165 first trips identical line for line, which is the test a trim here is held to. ⚠ **The largest
+  single cost was the one nobody had named**: one stamp takes **5.7 s** off a gate-file edit and **1.2 s** off any
+  other, a skipped restore **1.1 s** off either, and the test project **0.2 s** of 7.1 with no restore either way and
+  nothing on a gate file. The analyzers cost **0.3 s** of 7.6, so they stay and a mutation's build stays the build CI
+  makes. Node reuse off is the price of the rest: the first row is **6.1 s** with it on. `DECISIONS.md`, *What a
+  mutation's build pays for*.
 - **`--check` applies and reverts each gate mutation and builds nothing**, as `mutate-behaviour`'s does for a set,
   so a construct that moved is found in about two minutes rather than as a failed `no-op` at the end of a full run.
 - ⛔ **Reverting a mutation does not unbuild it, so the harness rebuilds on every exit it controls**
