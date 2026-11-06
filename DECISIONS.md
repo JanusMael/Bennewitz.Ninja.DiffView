@@ -4946,7 +4946,8 @@ has to be made again, as item 14's first was. Until now that rested on whoever s
 harness sets it now, with the telemetry opt-out and the stamp, for every build and test run it starts.
 
 **What this does not reach.** An ordinary `dotnet build` here still recompiles every project every time, because a
-harness can hold the stamp only for the builds it starts, and the repair for that belongs in AutoVersioning. And a
+harness can hold the stamp only for the builds it starts. That is AutoVersioning working as designed, a version
+stamped per build, and whether a build that changed nothing should take a new one is that package's question. And a
 lone build hides what a solution build costs beside three other shards, its three further projects compiling alongside
 the main chain, so the 0.3 s may understate what the test project saves in a full run; the two were not separated.
 
