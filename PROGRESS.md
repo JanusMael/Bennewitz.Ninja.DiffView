@@ -1493,11 +1493,12 @@ wording.
     ✅ **Done 2026-11-06 on `build/the-gate-builds-what-it-reads`, and it lands on Brian's word, the push being his.**
     Both harnesses now set node reuse off, the telemetry opt-out and one `BuildTimestamp` for themselves, and
     `mutate-gates --parallel` runs over uncommitted work. A mutation's build is the test project's and restores only
-    where one is owed, and `--check` applies and reverts every mutation in about two minutes. On the quiet box a full
+    where one is owed, and `--check` applies and reverts every mutation in under a minute. On the quiet box a full
     run in four worktrees went from **12.8 min** to **8.8**, the 123 verdicts and 165 first trips identical line for
     line, and a last run over the branch's tip, with none of the three set for it, took **9.0** and gave all
     123 as declared. `mutate-behaviour.json`, the one proof set it owes, ran 48 of 48 as declared, and the suite 990 of 990. The largest single cost was one nobody had named, `Bennewitz.Ninja.AutoVersioning`'s
-    stamp; a skipped restore is worth **1.1 s**, the test project **0.2 s**, and the analyzers cost **0.3 s** of 7.6.
+    stamp; a skipped restore is worth about **1 s**, the test project **0.3 s** of 7.2, and the analyzers cost **0.3 s** of
+    7.7. Turning node reuse off costs about **3.2 s** of a build of 9.3.
     `AGENTS.md` §5 has the table and `DECISIONS.md`, *What a mutation's build pays for*, the reasons.
 
 28. **DiffView's part of Templates' `plans/00009` step 4, which AppKit's step 8 waits on — the Templates session,
@@ -1589,7 +1590,7 @@ minutes** on the Windows box, measured on 2026-10-19 where this had said about f
 **8.8** on a quiet box on 2026-11-06, and has taken **35.6** on a busy one, in four worktrees holding
 whatever is in this checkout, which stays free to edit while it runs. A full run is owed after any change
 to a gate file, a gated subject or a pin, and CI runs only its `--guards` half. `--check` proves every
-mutation still applies in about two minutes. `AGENTS.md` §5 records what it refuses to do and why.
+mutation still applies in under a minute on a quiet box. `AGENTS.md` §5 records what it refuses to do and why.
 
 The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:

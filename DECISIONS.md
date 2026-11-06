@@ -4926,9 +4926,9 @@ cost named as a suspect. Measured on a quiet box, the largest single cost was no
 `CompilerVisibleProperty`, so it lands in each project's generated editorconfig, the compiler's inputs change, and
 `CoreCompile` runs in every project on every build, however little changed: in all four projects of the test project's
 closure on an unchanged tree, and in none with the stamp held. Both harnesses now hold one for a run. On a gate-file
-edit that takes a build from 9.8 s to 4.1, and on anything else from 9.4 to 8.2. Skipping a restore that is not owed
-is worth 1.1 s on either, about what the stamp is worth away from a gate file; the test project 0.2 s with no restore
-either way, and nothing on a gate file; the analyzers cost 0.3 s of 7.6.
+edit that takes a build from 9.8 s to 4.1, and on anything else from 9.3 to 8.3. Skipping a restore that is not owed
+is worth about 1 s on either, which is what the stamp is worth away from a gate file; the test project 0.3 s of 7.2
+with no restore either way, and nothing on a gate file; the analyzers cost 0.3 s of 7.7.
 
 **A trim stays if every verdict does.** That is the test item 27 set, so the test project stays despite its size. It
 changes no verdict and costs nothing, the solution being rebuilt once where a tree outlives the run. The analyzers
@@ -4940,15 +4940,15 @@ they agree on all 123 verdicts and all 165 first trips, line for line, at 12.8 m
 each, the new one first, and the 8.8 includes shards no longer making a closing rebuild their throwaway trees have no
 use for.
 
-**Node reuse stays off, and that is a price.** With it on, the first build above takes 6.1 s rather than 9.4. But a
+**Node reuse stays off, and that is a price.** With it on, a build as it was takes 6.1 s rather than 9.3. But a
 reused worker node is handed to whichever build asks next, in any session, and a run that loses mutations to `MSB4166`
 has to be made again, as item 14's first was. Until now that rested on whoever started the run remembering it. Each
-harness sets it now, with the telemetry opt-out and the stamp, for everything it starts.
+harness sets it now, with the telemetry opt-out and the stamp, for every build and test run it starts.
 
 **What this does not reach.** An ordinary `dotnet build` here still recompiles every project every time, because a
 harness can hold the stamp only for the builds it starts, and the repair for that belongs in AutoVersioning. And a
 lone build hides what a solution build costs beside three other shards, its three further projects compiling alongside
-the main chain, so the 0.2 s may understate what the test project saves in a full run; the two were not separated.
+the main chain, so the 0.3 s may understate what the test project saves in a full run; the two were not separated.
 
 `mutate-gates` restores on the mutation after one that edits what restore reads, because a revert leaves `obj/`
 describing the project as mutated. `mutate-behaviour` restores only for the mutation itself. No set's build edit
