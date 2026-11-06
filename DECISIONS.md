@@ -4903,3 +4903,15 @@ a full-screen window still held the foreground from the first click on: every cl
 reached that window, which is the guard working. What brought that window back was not established. After a restart,
 with nothing else open, the same steps ran clean. ⚠ `-WindowStyle Hidden` did not hide the task's console there, so
 a task shows on the screen of whoever is at the machine.
+
+## DiffView stays in its own repository
+
+Templates' `plans/00009` imported a copy of DiffView into `Bennewitz.Ninja.AppKit` on 2026-11-06, from `main` at
+PR #45, and Brian decided the same day that it comes back out: this repository stays the only home of DiffView's
+development. His intention is that DiffView will *"eventually build upon appkit and other conventions from
+templates and the inspections/quality libs"*, and that those *"aren't all yet ready to consume"*. So DiffView takes
+each of them when it is ready, rather than moving into one of them now.
+
+The items held for the import are free. What had waited for it landed here, and the commits that reached AppKit
+before this was settled are copies of it, apart from two that re-pointed proof sets at AppKit's layout and have no
+use here.
