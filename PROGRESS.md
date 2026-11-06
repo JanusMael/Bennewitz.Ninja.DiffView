@@ -2,22 +2,23 @@
 
 ## Resume
 
-**`main` carries everything through PR #45, and CI is green on it** — PR #45 merged on a full
+**`main` carries everything through PR #46, and CI is green on it** — PR #46 merged on a full
 12-of-12, 2026-11-06. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 986** here, `Passed!`, by a local run over item 28's
-branch, in `en-US` and in `de-DE` — one more than at PR #44, the test that holds `packages.push`. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 990** here, `Passed!`, by a local run over item 27's
+branch — four more than over item 28's, two in `PublicVersionTests` and two in `MutateBehaviourTests`. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **123** mutations and derives **88** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — over item 28's new analyzer pin, on 2026-11-06, in four
+Linux, and the last full run — over item 27's branch, on 2026-11-06, in four
 worktrees — gave all 123 as declared: 119 killed by the test each names, 2 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 88 guards tripped
-first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. It ran
-with node reuse off, as every run has since the first of item 14's two lost three mutations to
-`MSB4166`, an MSBuild worker node ending under the build that held it; `DECISIONS.md` says why.
+first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
+has been off for every run since the first of item 14's two lost three mutations to `MSB4166`, an MSBuild
+worker node ending under the build that held it, and each harness now sets that for itself; `DECISIONS.md`
+says why.
 
 ⛔ **PR #28's Windows leg failed once on a network flake and passed on a re-run** — `git fetch` of the
 DiffPlex reference source could not reach `github.com:443` after 21 s, which killed *Fetch reference
@@ -1489,6 +1490,16 @@ wording.
     is an unmeasured suspect. The loaded baselines are the gate at 35.6 min and all 14 sets at 64.4 min, against
     14.3 min for the gate on 2026-11-04.
 
+    ✅ **Done 2026-11-06 on `build/the-gate-builds-what-it-reads`, and it lands on Brian's word, the push being his.**
+    Both harnesses now set node reuse off, the telemetry opt-out and one `BuildTimestamp` for themselves, and
+    `mutate-gates --parallel` runs over uncommitted work. A mutation's build is the test project's and restores only
+    where one is owed, and `--check` applies and reverts every mutation in about two minutes. On the quiet box a full
+    run in four worktrees went from **12.8 min** to **8.8**, the 123 verdicts and 165 first trips identical line for
+    line, and a last run over the branch's tip, with none of the three set for it, took **9.0** and gave all
+    123 as declared. `mutate-behaviour.json`, the one proof set it owes, ran 48 of 48 as declared, and the suite 990 of 990. The largest single cost was one nobody had named, `Bennewitz.Ninja.AutoVersioning`'s
+    stamp; a skipped restore is worth **1.1 s**, the test project **0.2 s**, and the analyzers cost **0.3 s** of 7.6.
+    `AGENTS.md` §5 has the table and `DECISIONS.md`, *What a mutation's build pays for*, the reasons.
+
 28. **DiffView's part of Templates' `plans/00009` step 4, which AppKit's step 8 waits on — the Templates session,
     2026-11-04, corrected by it on 2026-11-06, both at the maintainer's asking.** Read here against GitHub and
     Templates' own documents. `conventions` is green on `main`, and of the five things first listed:
@@ -1535,9 +1546,9 @@ wording.
     `packages.push`, `DECISIONS.md` and `PackagesPushTests` saying the move replaces it with the template's. And
     `conventions` is not a required check, item 28 saying the move would make it short-lived.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, items 27 and 23 come next, in that
-order, item 30 waits for a release, and item 31 for his word. **Every other open item was scheduled by Brian
-on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 is done and lands on his
+word, item 23 follows it, item 30 waits for a release, and item 31 for his word. **Every other open item was
+scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
 same day from Brian's preference rather than from a measurement, and is done on `feat/the-map-docks-left`,
@@ -1574,11 +1585,11 @@ as success. **`--expect auto`** makes a short total a failure too: it reads the 
 is wrong in both directions the moment a test is added.
 
 **`scripts/mutate-gates.sh` proves the static-analysis gates able to fail.** A full run took **27.8
-minutes** on the Windows box, measured on 2026-10-19 where this had said about five, and
-`--parallel 4` takes **11.5** in four worktrees cut from `HEAD` and `--parallel 8` **9.9** in eight,
-leaving this checkout free to edit while it runs. A full run is owed after any change to a gate file, a
-gated subject or a pin, and CI runs only its `--guards` half. `AGENTS.md` §5 records what it refuses to
-do and why.
+minutes** on the Windows box, measured on 2026-10-19 where this had said about five. `--parallel 4` took
+**8.8** on a quiet box on 2026-11-06, and has taken **35.6** on a busy one, in four worktrees holding
+whatever is in this checkout, which stays free to edit while it runs. A full run is owed after any change
+to a gate file, a gated subject or a pin, and CI runs only its `--guards` half. `--check` proves every
+mutation still applies in about two minutes. `AGENTS.md` §5 records what it refuses to do and why.
 
 The theme audit regenerates after a ClaudeForge pin bump or a change under
 `src/DiffView.Avalonia/Themes`, in this order:

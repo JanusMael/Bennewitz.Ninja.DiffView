@@ -4915,3 +4915,42 @@ each of them when it is ready, rather than moving into one of them now.
 The items held for the import are free. What had waited for it landed here, and the commits that reached AppKit
 before this was settled are copies of it, apart from two that re-pointed proof sets at AppKit's layout and have no
 use here.
+
+## What a mutation's build pays for
+
+A gate run had reached 35.6 minutes on a loaded box, a sample of it finding 70% of the time in building, and item 27
+set out to build less: no restore, and the test project rather than the solution, with the new analyzers' compile
+cost named as a suspect. Measured on a quiet box, the largest single cost was none of the three.
+
+**It was the stamp.** `Bennewitz.Ninja.AutoVersioning` takes `BuildTimestamp` afresh at each evaluation and makes it a
+`CompilerVisibleProperty`, so it lands in each project's generated editorconfig, the compiler's inputs change, and
+`CoreCompile` runs in every project on every build, however little changed: in all four projects of the test project's
+closure on an unchanged tree, and in none with the stamp held. Both harnesses now hold one for a run. On a gate-file
+edit that takes a build from 9.8 s to 4.1, and on anything else from 9.4 to 8.2. Skipping a restore that is not owed
+is worth 1.1 s on either, about what the stamp is worth away from a gate file; the test project 0.2 s with no restore
+either way, and nothing on a gate file; the analyzers cost 0.3 s of 7.6.
+
+**A trim stays if every verdict does.** That is the test item 27 set, so the test project stays despite its size. It
+changes no verdict and costs nothing, the solution being rebuilt once where a tree outlives the run. The analyzers
+stay for the opposite reason: 0.3 s does not pay for a mutation's build differing from the one CI makes.
+
+**A held stamp makes these builds incremental for the first time**, so a stale output could change a verdict where
+recompiling everything used to hide it. So the old harness and the new ran the whole set over the same source, and
+they agree on all 123 verdicts and all 165 first trips, line for line, at 12.8 minutes and 8.8. That is one run of
+each, the new one first, and the 8.8 includes shards no longer making a closing rebuild their throwaway trees have no
+use for.
+
+**Node reuse stays off, and that is a price.** With it on, the first build above takes 6.1 s rather than 9.4. But a
+reused worker node is handed to whichever build asks next, in any session, and a run that loses mutations to `MSB4166`
+has to be made again, as item 14's first was. Until now that rested on whoever started the run remembering it. Each
+harness sets it now, with the telemetry opt-out and the stamp, for everything it starts.
+
+**What this does not reach.** An ordinary `dotnet build` here still recompiles every project every time, because a
+harness can hold the stamp only for the builds it starts, and the repair for that belongs in AutoVersioning. And a
+lone build hides what a solution build costs beside three other shards, its three further projects compiling alongside
+the main chain, so the 0.2 s may understate what the test project saves in a full run; the two were not separated.
+
+`mutate-gates` restores on the mutation after one that edits what restore reads, because a revert leaves `obj/`
+describing the project as mutated. `mutate-behaviour` restores only for the mutation itself. No set's build edit
+changes what a restore resolves — they touch `IsPackable`, `PackageId`, `PublicVersion` and `DefaultItemExcludes` — so
+nothing is wrong today, and a set whose edit does will need the same rule.
