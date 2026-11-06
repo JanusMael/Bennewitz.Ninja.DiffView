@@ -253,7 +253,7 @@ no dates, no counts.
   re-pointing. When a construct is deliberately designed out of existence, its mutation is **deleted**
   and the plan records why — a permanently unappliable mutation is not evidence.
 - ⭐ **Both harnesses keep their builds to themselves.** Each sets three things over the environment of
-  everything it starts. Avalonia's telemetry off and MSBuild's node reuse off: a reused worker node is handed to
+  every build and test run it starts. Avalonia's telemetry off and MSBuild's node reuse off: a reused worker node is handed to
   whichever build asks next, in any session, so anything that ends it ends the build holding it, and one run lost
   three mutations to `MSB4166` that way. And one `BuildTimestamp` for the run, because
   `Bennewitz.Ninja.AutoVersioning` otherwise takes one afresh at each evaluation and hands it to the compiler, so no
@@ -266,24 +266,25 @@ no dates, no counts.
   which is how the first build of a run is treated too. What the edit touched is read from the tree, as what a
   mutation may touch is, rather than declared beside it.
 - **What a mutation's build pays for was measured on the quiet Windows box rather than assumed**, each figure the
-  median of one build timed alone over an edit to a gate file, a theme, the demo's markup and the model:
+  median of one build timed alone, on an edit to a gate file or on one to a theme, the demo's markup or the model:
 
-  | A mutation's build | Over the four edits | On a gate file |
+  | A mutation's build | On a gate file | On any other edit |
   |---|---|---|
-  | The solution, restored, a stamp per evaluation, as it was | **9.4 s** | **9.8 s** |
-  | One stamp for the run | **8.2 s** | **4.1 s** |
-  | And the test project rather than the solution | **8.1 s** | **4.3 s** |
-  | And no restore where none is owed | **7.0 s** | **3.2 s** |
+  | The solution, restored, a stamp per evaluation, as it was | **9.8 s** | **9.3 s** |
+  | One stamp for the run | **4.1 s** | **8.3 s** |
+  | And the test project rather than the solution | **4.3 s** | **8.2 s** |
+  | And no restore where none is owed | **3.2 s** | **7.2 s** |
 
   A full run in four worktrees went from **12.8 min** to **8.8**, its shards also skipping a closing rebuild, with its
   123 verdicts and 165 first trips identical line for line, which is the test a trim here is held to. ⚠ **The largest
-  single cost was the one nobody had named**: one stamp takes **5.7 s** off a gate-file edit and **1.2 s** off any
-  other, a skipped restore **1.1 s** off either, and the test project **0.2 s** of 7.1 with no restore either way and
-  nothing on a gate file. The analyzers cost **0.3 s** of 7.6, so they stay and a mutation's build stays the build CI
-  makes. Node reuse off is the price of the rest: the first row is **6.1 s** with it on. `DECISIONS.md`, *What a
-  mutation's build pays for*.
+  single cost was the one nobody had named**: one stamp takes **5.7 s** off a gate-file edit and about **1 s** off any
+  other, and a skipped restore about **1 s** off either. The test project saves **0.3 s** of 7.2 with no restore either
+  way, and nothing on a gate file, and the analyzers cost **0.3 s** of 7.7, so they stay and a mutation's build stays
+  the build CI makes. Node reuse off is the price of the rest: the first row is **6.4 s** and **6.1 s** with it on.
+  `DECISIONS.md`, *What a mutation's build pays for*.
 - **`--check` applies and reverts each gate mutation and builds nothing**, as `mutate-behaviour`'s does for a set,
-  so a construct that moved is found in about two minutes rather than as a failed `no-op` at the end of a full run.
+  so a construct that moved is found in under a minute on a quiet box and two on a busy one, rather than as a failed
+  `no-op` at the end of a full run.
 - ⛔ **Reverting a mutation does not unbuild it, so the harness rebuilds on every exit it controls**
   once mutations have started, from a `finally`. A run killed outright cannot, and a
   `dotnet test --no-build` straight after one is worthless: the last mutation's assemblies sit in
