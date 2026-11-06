@@ -183,8 +183,9 @@ public sealed class DemoActionLogTests
             SelectLines(left, 9, 11);
             Press(window, Key.Right, PhysicalKey.ArrowRight, RawInputModifiers.Alt);
 
-            // The unified view's keys are its own map's.
+            // The unified view's keys are its own map's, and F7 walks the build this choice starts.
             Choose(window, window.UnifiedView);
+            await SettleAsync(window);
             DiffPanePresenter unified = window.Unified.Pane ?? throw new InvalidOperationException("The template has not applied.");
             unified.TextArea.Focus();
             Layout();
@@ -284,6 +285,7 @@ public sealed class DemoActionLogTests
 
             // The unified view's pane menu is watched too.
             Choose(window, window.UnifiedView);
+            await SettleAsync(window);
             DiffPanePresenter unified = window.Unified.Pane ?? throw new InvalidOperationException("The template has not applied.");
             Run(PaneMenu(window, unified), DiffCommand.NextChange);
 
