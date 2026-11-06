@@ -19,6 +19,8 @@
 //   dotnet run scripts/mutate-gates.cs -- --list           name them and exit, running nothing
 //   dotnet run scripts/mutate-gates.cs -- --guards         the derived guards and their markers; fails
 //                                                          on an expired marker or a throw — CI runs it
+//   dotnet run scripts/mutate-gates.cs -- --check          apply and revert each mutation, building nothing;
+//                                                          fails on one that matches nothing
 //   dotnet run scripts/mutate-gates.cs -- --only exclusion substring match on the name
 //   dotnet run scripts/mutate-gates.cs -- --force          run over a dirty tree (see below)
 //   dotnet run scripts/mutate-gates.cs -- --parallel 4     every mutation in 4 worktrees at once, judged
@@ -109,6 +111,7 @@ const string GridClass = "Bennewitz.Ninja.DiffView.Tests.GridSlotTests";
 bool list = false;
 bool force = false;
 bool guardsOnly = false;
+bool check = false;
 string? only = null;
 string? shardText = null;
 string? parallelText = null;
@@ -128,6 +131,9 @@ for (int i = 0; i < args.Length; i++)
             break;
         case "--guards":
             guardsOnly = true;
+            break;
+        case "--check":
+            check = true;
             break;
         case "--only" when i + 1 < args.Length:
             only = args[++i];
@@ -185,7 +191,9 @@ if (parallelText is not null)
 // Each of these chooses or judges the set in a way the others contradict, so a combination is refused
 // rather than resolved by a precedence nobody would guess.
 string? clash =
-    parallel is not null && (shard is not null || merge.Count > 0 || only is not null || force || list || guardsOnly)
+    check && (parallel is not null || merge.Count > 0 || emit is not null || throwaway || list || guardsOnly)
+        ? "--check builds and judges nothing; it combines with --only, --shard and --force alone"
+    : parallel is not null && (shard is not null || merge.Count > 0 || only is not null || force || list || guardsOnly)
         ? "--parallel runs every mutation and judges them together; it combines with --emit alone"
     : merge.Count > 0 && (shard is not null || only is not null || force || list || guardsOnly)
         ? "--merge judges what shards wrote; it combines with --emit alone"
@@ -1371,6 +1379,16 @@ try
             continue;
         }
 
+        // --check stops here. A construct that moved is the one thing it can find, and it finds it in seconds, where
+        // a full run reports it as a no-op at the end. mutate-behaviour's --check is the same idea.
+        if (check)
+        {
+            Console.WriteLine("    applies");
+            results[mutation.Name] = "applies";
+            Revert();
+            continue;
+        }
+
         // The gate files as this mutation left them, so a failing line can be mapped back to the clean text.
         Dictionary<string, string[]> mutatedGateText =
             cleanGateText.Keys.ToDictionary(f => f, f => File.ReadAllLines(f));
@@ -1529,7 +1547,7 @@ finally
     // `dotnet test --no-build` runs mutated code against reverted markup and reports a defect that is
     // not there. Measured: a gate read 0 where it measures 22, and the gate was briefly suspected.
     // The solution's, because a mutation's build covers less of it. A throwaway tree has no next run.
-    if (!throwaway)
+    if (!throwaway && !check)
     {
         Console.WriteLine();
         Console.WriteLine("Rebuilding, so the output agrees with the reverted source.");
@@ -1546,6 +1564,19 @@ finally
 if (rebuildFailed)
 {
     return 2;
+}
+
+if (check)
+{
+    string[] unapplied = [.. results.Where(r => r.Value != "applies").Select(r => r.Key)];
+    Console.WriteLine();
+    Console.WriteLine($"{results.Count - unapplied.Length} of {results.Count} mutation(s) apply.");
+    foreach (string name in unapplied)
+    {
+        Console.WriteLine($"  no-op  {name}");
+    }
+
+    return unapplied.Length == 0 ? 0 : 1;
 }
 
 if (emit is not null)
