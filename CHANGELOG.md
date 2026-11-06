@@ -714,6 +714,10 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Fixed
 
+- **A local build recorded no public version.** `PublicVersion` was set from `$(Version)` in
+  `Directory.Build.props`, before the SDK has given `Version` its default, so only a build handed `/p:Version=`
+  recorded one, and the comment beside it said otherwise. It is set in `Directory.Build.targets` now, so a local
+  build records the `1.0.0` it has. A release records its tag, as it always did.
 - With unchanged rows folded, the unified view kept the previous model's folds across a rebuild —
   new sources, or an option such as ignoring case that rebuilds over the same text — and the next
   layout pass threw: the pane stopped measuring, and no current change's border could be drawn. The

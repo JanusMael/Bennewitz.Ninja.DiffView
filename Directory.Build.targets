@@ -22,4 +22,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.InternalsVisibleTo.External.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.External.cs" />
   </ItemGroup>
+
+  <!-- AutoVersioning records the released version as assembly metadata; it does not set it. The
+       package version comes from the release tag as /p:Version=, so this follows it and reads
+       1.0.0 on a local build, which is what a local build is. In targets, not props: the SDK gives
+       Version its default after the props files, where this read nothing on a local build while a
+       release's global property hid that, reading the same everywhere. PublicVersionTests holds it. -->
+  <PropertyGroup>
+    <PublicVersion Condition="'$(PublicVersion)' == ''">$(Version)</PublicVersion>
+  </PropertyGroup>
 </Project>

@@ -1,0 +1,61 @@
+{
+  // What AutoVersioning records as a build's public version is that build's version: the one line of the root
+  // Directory.Build.targets that sets PublicVersion from Version, read back through MSBuild's evaluation. It
+  // sits in targets because the SDK gives Version its default after the props files. A move back takes two
+  // edits and a mutation is one, so the first mutation gives the line the behaviour it had there: nothing on
+  // a local build, the tag on a release.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/public-version.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.PublicVersionTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/PublicVersionTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a local build records nothing and a release its tag, as from the props file",
+      "file": "Directory.Build.targets",
+      "old": "Condition=\"'$(PublicVersion)' == ''\"",
+      "new": "Condition=\"'$(PublicVersion)' == '' and '$(Version)' != '$(VersionPrefix)'\"",
+      "killer": "A_local_build_records_the_version_it_has",
+      "says": "so a local build records something else",
+      "because": "VersionPrefix has the SDK's default only when no version was given, so the two differ on a release alone"
+    },
+    {
+      "name": "a release records the SDK's default rather than what it was given",
+      "file": "Directory.Build.targets",
+      "old": ">$(Version)</PublicVersion>",
+      "new": ">$(VersionPrefix)</PublicVersion>",
+      "killer": "A_release_records_the_version_it_was_given",
+      "says": "so a release records something else"
+    },
+    {
+      "name": "the reading asks for a version no project has",
+      "file": "tests/DiffView.Avalonia.Tests/PublicVersionTests.cs",
+      "old": "private const string VersionProperty = \"Version\";",
+      "new": "private const string VersionProperty = \"VersionProbe\";",
+      "killer": "A_local_build_records_the_version_it_has",
+      "says": "so the reading found nothing to compare with",
+      "because": "two empty readings are equal, so the version must be found before the two are compared"
+    },
+    {
+      "name": "the reading gives the release nothing",
+      "file": "tests/DiffView.Avalonia.Tests/PublicVersionTests.cs",
+      "old": "Evaluate($\"-p:Version={Released}\")",
+      "new": "Evaluate()",
+      "killer": "A_release_records_the_version_it_was_given",
+      "says": "so the reading never gave it"
+    },
+    {
+      "name": "the condition's two sides are the other way round",
+      "file": "Directory.Build.targets",
+      "old": "'$(PublicVersion)' == ''",
+      "new": "'' == '$(PublicVersion)'",
+      "expect": "green",
+      "because": "MSBuild's equality commutes"
+    }
+  ]
+}

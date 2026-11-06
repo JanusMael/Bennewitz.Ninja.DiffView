@@ -132,7 +132,7 @@ public sealed class ReceivedFileTests
         }
     }
 
-    private static (int Code, string Output, string Error) Dotnet(params string[] arguments)
+    internal static (int Code, string Output, string Error) Dotnet(params string[] arguments)
     {
         ProcessStartInfo start = new()
         {
