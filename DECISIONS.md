@@ -2557,6 +2557,10 @@ a detail that would otherwise have made the test fail on its own documentation.
 `NuGet/login@v1` exchanges the job's GitHub OIDC token for a short-lived nuget.org key, so there is
 no long-lived `NUGET_API_KEY` to store, leak or rotate — only a `NUGET_USER` repository secret.
 
+**Superseded 2026-09-24 — it is a repository variable.** `release.yml` reads `vars.NUGET_USER`, as every
+repository here does, and the secret that stood in for it from 2026-09-20 is deleted; `PROGRESS.md` says why. The
+README went on saying secret until 2026-11-06.
+
 The cost is a coupling that fails in an unhelpful direction: the nuget.org policy names **owner,
 repository and workflow filename**, so renaming `release.yml` later breaks publishing with an
 authentication error that never mentions filenames. The warning sits at the top of the file, where

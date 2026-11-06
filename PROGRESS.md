@@ -1508,15 +1508,20 @@ wording.
     `DiffView.Core`, `DiffView.Avalonia` and the demo's publish each do. The Templates session was told on
     2026-11-06, on Brian's word, and what `plans/00004` step 8 waits on instead is its own to read.
 
-29. **Two small fixes, held until the AppKit import finishes — Brian, 2026-11-06.** `README.md` calls `NUGET_USER`
-    a repository secret where `release.yml` reads a repository variable, and `PublicVersion`'s line in
-    `Directory.Build.props` reads `$(Version)` before anything has set it, so it belongs in
-    `Directory.Build.targets`, nothing else naming it. Neither is made yet. Item 19's change and this record sit
-    on `fix/the-pass-finds-its-drags`, local, and land with them. The three literal `TargetType` readings in
-    `AccessibilityCoverageTests` stay, by the same choice of his.
+29. **Two small fixes — Brian, 2026-11-06.** ✅ **Both made the same day on `fix/the-pass-finds-its-drags`, local,
+    and held with item 19's change until the AppKit import finishes.** `README.md` called `NUGET_USER` a repository
+    secret where `release.yml` reads a repository variable, and so did `DECISIONS.md`, which carries a superseded
+    marker now. `PublicVersion`'s line in `Directory.Build.props` read `$(Version)` before the SDK had given it a
+    default, so a local build recorded no public version at all, the comment beside it saying 1.0.0, and a
+    release's global property hid that. It is in `Directory.Build.targets` now, so a local assembly carries
+    `PublicVersion` 1.0.0 and a release its tag, as ever. `PublicVersionTests` reads both builds through MSBuild's
+    evaluation, red before the move and green after it, and `Mutations/public-version.json` proves it, all five as
+    declared; `received-files.json`, which the props file owed, and `demo-menu.json`, which item 19 owed, ran with
+    it, 15 of 15. The three literal `TargetType` readings in `AccessibilityCoverageTests` stay, by the same choice
+    of his.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, and items 29, 27 and 23 wait for the
-AppKit import, in that order. **Every other open item was scheduled by Brian
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 29 waits on its branch for the
+AppKit import to finish, and items 27 and 23 follow it, in that order. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
