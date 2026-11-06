@@ -25,17 +25,19 @@
 //                                                          as one run (see below)
 //   dotnet run scripts/mutate-gates.cs -- --shard 2/4      every 4th mutation from the 2nd: one shard
 //   dotnet run scripts/mutate-gates.cs -- --emit <file>    also write each verdict and trip, for --merge
+//   dotnet run scripts/mutate-gates.cs -- --throwaway      no closing rebuild, the tree going with the run
 //   dotnet run scripts/mutate-gates.cs -- --merge <file>   judge shards' results as one run; repeat it
 //
-// ⭐ --parallel cuts N detached worktrees from HEAD under the temp directory, runs one shard in each, and
-// judges the shards' results exactly as one run: every mutation as declared, and every guard tripped
-// first by some mutation in some shard. A shard is every Nth mutation, so the slow accessibility ones at
-// the head of the list spread rather than all landing in the first. ⛔ It refuses a merge that is not
-// every mutation exactly once — a partial set proves only the guards it reached, so a lost shard must
-// fail the run rather than shrink it. It never edits this checkout: its src, tests and bin/ stay as they
-// were, so the rule against editing while a run is in progress does not apply to it. It tests HEAD, so
-// it refuses while src or tests has uncommitted changes, which would otherwise be silently left out. The
-// shards skip fetch-reference, which no gate reads.
+// ⭐ --parallel cuts N detached worktrees from this checkout's state under the temp directory, runs one
+// shard in each, and judges the shards' results exactly as one run: every mutation as declared, and every
+// guard tripped first by some mutation in some shard. A shard is every Nth mutation, so the slow
+// accessibility ones at the head of the list spread rather than all landing in the first. ⛔ It refuses a
+// merge that is not every mutation exactly once — a partial set proves only the guards it reached, so a
+// lost shard must fail the run rather than shrink it. It never edits this checkout: its src, tests and bin/
+// stay as they were, so the rule against editing while a run is in progress does not apply to it. What it
+// tests is what is here, uncommitted work included: the state goes through a temporary index into a tree
+// and a commit no ref names, and the worktrees are cut from that, so no ref moves and each worktree reads
+// as clean. The shards skip fetch-reference, which no gate reads.
 //
 // ⛔ THIS TOOL REVERTS `src` AND `tests` BEFORE EVERY MUTATION. That is how it guarantees each
 // mutation is measured alone, and it is also how an earlier generation of these harnesses destroyed
@@ -111,6 +113,7 @@ string? only = null;
 string? shardText = null;
 string? parallelText = null;
 string? emit = null;
+bool throwaway = false;
 List<string> merge = [];
 
 for (int i = 0; i < args.Length; i++)
@@ -140,6 +143,9 @@ for (int i = 0; i < args.Length; i++)
             break;
         case "--merge" when i + 1 < args.Length:
             merge.Add(Path.GetFullPath(args[++i]));
+            break;
+        case "--throwaway":
+            throwaway = true;
             break;
         default:
             Console.Error.WriteLine($"mutate-gates: unrecognised argument '{args[i]}'.");
@@ -194,7 +200,9 @@ if (clash is not null)
 
 // ---------------------------------------------------------------- process helpers
 
-static (int Code, string Output) Run(string file, params string[] arguments)
+static (int Code, string Output) Run(string file, params string[] arguments) => RunWith(null, file, arguments);
+
+static (int Code, string Output) RunWith(IReadOnlyDictionary<string, string>? environment, string file, string[] arguments)
 {
     ProcessStartInfo info = new()
     {
@@ -206,6 +214,11 @@ static (int Code, string Output) Run(string file, params string[] arguments)
     foreach (string a in arguments)
     {
         info.ArgumentList.Add(a);
+    }
+
+    foreach ((string name, string value) in environment ?? new Dictionary<string, string>())
+    {
+        info.Environment[name] = value;
     }
 
     using Process process = Process.Start(info)!;
@@ -227,10 +240,6 @@ static (int Code, string Output) Run(string file, params string[] arguments)
 // every later mutation — a confounded result reported as a non-result. Checked after every edit, from
 // the repository's own status rather than from a list of the paths mutations were written to touch.
 string[] Scope = ["src", "tests"];
-
-// What else shapes a build besides Scope. A worktree cut from HEAD carries none of their uncommitted
-// changes, so --parallel and --merge refuse while any is dirty, as they do for Scope.
-string[] BuildInputs = ["Directory.Build.props", "Directory.Packages.props", "global.json", "NuGet.config", Solution];
 
 // --untracked-files=all rather than the default: `status.showUntrackedFiles=no` in a user's git config
 // would otherwise hide a new untracked file under src from the guard below, while `git clean -qfd`
@@ -1181,6 +1190,20 @@ if (!File.Exists(Solution))
     return 2;
 }
 
+// What every command this harness starts inherits, a shard included. Avalonia's build telemetry off: the
+// collector its build task starts before each compile outlived a build by three quarters of an hour and kept
+// the worktree it ran in. MSBuild's node reuse off: a worker node outlives its build and is handed to the next,
+// whichever session starts it, so anything that ends a node ends the build holding it, and one run lost three
+// mutations to MSB4166 that way. DECISIONS.md has both.
+Environment.SetEnvironmentVariable("AVALONIA_TELEMETRY_OPTOUT", "1");
+Environment.SetEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1");
+
+// ⭐ One build timestamp for the run. AutoVersioning otherwise takes one afresh at each evaluation and hands it
+// to the compiler, so no two builds of a project agree and every build recompiles every project, however little
+// changed. Held still, a mutation's build compiles what the mutation touched. ⛔ So a build here is incremental, as
+// a mutate-gates build never was before this: a revert must leave nothing a later build fails to notice.
+Environment.SetEnvironmentVariable("BuildTimestamp", DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture));
+
 // Read once, at the start: a judgement made after a long run reads the pins the run began with, and
 // under --parallel the checkout may be edited while the shards work.
 string pins = File.ReadAllText("Directory.Packages.props");
@@ -1256,21 +1279,10 @@ if (merge.Count > 0)
     return MergeAndJudge(merge);
 }
 
-// --parallel tests HEAD in worktrees cut from it, so anything uncommitted that shapes the build would be
-// silently left out of the run it reports on. Refused rather than reported.
+// --parallel tests this checkout's state, uncommitted work included, in worktrees cut from a commit of it.
 if (parallel is { } shardCount)
 {
-    string unsaved = Unsaved();
-    if (unsaved.Length > 0)
-    {
-        Console.Error.WriteLine("mutate-gates: --parallel tests HEAD in worktrees cut from it, and these uncommitted");
-        Console.Error.WriteLine("changes would be silently left out of the run it reports on. Commit them first:");
-        Console.Error.WriteLine();
-        Console.Error.WriteLine(unsaved);
-        return 2;
-    }
-
-    return RunInWorktrees(shardCount, Head());
+    return RunInWorktrees(shardCount, StateCommit(StateTree()));
 }
 
 string dirty = Dirty();
@@ -1296,6 +1308,10 @@ Dictionary<string, string[]> cleanGateText =
 Dictionary<(string File, int Line), List<string>> trippedBy = [];
 
 Dictionary<string, string> results = [];
+
+// ⛔ A revert does not unrestore any more than it unbuilds: a mutation that edits a project leaves obj/
+// describing the project as mutated, so the build after it restores too, as the first build always does.
+bool restoreOwed = true;
 
 bool rebuildFailed = false;
 try
@@ -1359,7 +1375,12 @@ try
         Dictionary<string, string[]> mutatedGateText =
             cleanGateText.Keys.ToDictionary(f => f, f => File.ReadAllLines(f));
 
-        (int buildCode, string buildLog) = Run("dotnet", "build", Solution, "-warnaserror", "-v", "q", "--nologo");
+        // ⭐ The test project's build rather than the solution's: every gate is a class of it, and it takes in
+        // every assembly a gate reads, so the rest of the solution costs a mutation time and decides nothing.
+        bool editsRestore = Dirty().Split('\n').Any(ReadByRestore);
+        string[] restore = restoreOwed || editsRestore ? [] : ["--no-restore"];
+        restoreOwed = editsRestore;
+        (int buildCode, string buildLog) = Run("dotnet", ["build", TestProject, "-warnaserror", "-v", "q", "--nologo", .. restore]);
         if (buildCode != 0)
         {
             string first = buildLog.Split('\n').FirstOrDefault(l => l.Contains("error", StringComparison.OrdinalIgnoreCase)) ?? "";
@@ -1507,14 +1528,18 @@ finally
     // mutation's files does not unbuild it: its assemblies stay in bin/, so the next
     // `dotnet test --no-build` runs mutated code against reverted markup and reports a defect that is
     // not there. Measured: a gate read 0 where it measures 22, and the gate was briefly suspected.
-    Console.WriteLine();
-    Console.WriteLine("Rebuilding, so the output agrees with the reverted source.");
-    (int finalBuild, _) = Run("dotnet", "build", Solution, "-v", "q", "--nologo");
-    if (finalBuild != 0)
+    // The solution's, because a mutation's build covers less of it. A throwaway tree has no next run.
+    if (!throwaway)
     {
-        Console.Error.WriteLine("mutate-gates: the tree was reverted but does not build. Check it before trusting");
-        Console.Error.WriteLine("any --no-build test run.");
-        rebuildFailed = true;
+        Console.WriteLine();
+        Console.WriteLine("Rebuilding, so the output agrees with the reverted source.");
+        (int finalBuild, _) = Run("dotnet", "build", Solution, "-v", "q", "--nologo");
+        if (finalBuild != 0)
+        {
+            Console.Error.WriteLine("mutate-gates: the tree was reverted but does not build. Check it before trusting");
+            Console.Error.WriteLine("any --no-build test run.");
+            rebuildFailed = true;
+        }
     }
 }
 
@@ -1686,9 +1711,58 @@ static IEnumerable<Mutation> ShardOf(IReadOnlyList<Mutation> all, int index, int
 // The commit checked out here.
 static string Head() => Run("git", "rev-parse", "HEAD").Output.Trim();
 
-// Uncommitted changes to anything a worktree cut from HEAD would leave out: Scope and the build inputs.
-string Unsaved() =>
-    Run("git", ["status", "--porcelain", "--untracked-files=all", "--", .. Scope, .. BuildInputs]).Output.Trim();
+// A git command that must work: its output, or the run stops here.
+static string Git(IReadOnlyDictionary<string, string>? environment, params string[] arguments)
+{
+    (int code, string output) = RunWith(environment, "git", arguments);
+    return code == 0
+        ? output
+        : throw new InvalidOperationException($"git {string.Join(' ', arguments)} failed: {output.Trim()}");
+}
+
+// This checkout's state as a git tree: HEAD, every tracked change, and each untracked file that a build or a
+// gate reads and the ignore rules let through, written through a temporary index, so that this checkout's own
+// index and every ref stay where they are. An untracked file anywhere else, a draft beside the plans, never
+// leaves here. Equal trees are equal states. scripts/mutate-behaviour.cs reads a checkout the same way.
+static string StateTree()
+{
+    string index = Path.Combine(Path.GetTempPath(), $"mutate-gates-index-{Environment.ProcessId}-{Guid.NewGuid():N}");
+    Dictionary<string, string> environment = new(StringComparer.Ordinal) { ["GIT_INDEX_FILE"] = index };
+    string[] read =
+    [
+        .. ((string[])
+        [
+            "src", "tests", "scripts", "fixtures", "Directory.Build.props", "Directory.Build.targets",
+            "Directory.Packages.props", "global.json", "NuGet.config", Solution,
+        ]).Where(p => Path.Exists(p)),
+    ];
+    try
+    {
+        Git(environment, "read-tree", "HEAD");
+        Git(environment, "add", "--update");
+        Git(environment, ["add", "--", .. read]);
+        return Git(environment, "write-tree").Trim();
+    }
+    finally
+    {
+        File.Delete(index);
+    }
+}
+
+// The commit --parallel cuts its worktrees from: HEAD while the state is HEAD's, and otherwise a commit no ref
+// names, because a worktree cut from it reads as clean, so that Dirty, Revert and Head mean there what they mean
+// anywhere. commit-tree runs no hook, reads no commit.gpgsign and moves no ref, and its identity is given here so
+// that a machine with none configured can make it.
+static string StateCommit(string tree)
+{
+    string head = Head();
+    return tree == Git(null, "rev-parse", "HEAD^{tree}").Trim()
+        ? head
+        : Git(
+            null,
+            "-c", "user.name=mutate-gates", "-c", "user.email=mutate-gates@localhost",
+            "commit-tree", tree, "-p", head, "-m", "mutate-gates: the state of a checkout at " + head).Trim();
+}
 
 static string Minutes(TimeSpan elapsed) =>
     elapsed.TotalMinutes.ToString("0.0", CultureInfo.InvariantCulture) + " min";
@@ -1815,8 +1889,8 @@ static string? ReadShards(
 }
 
 // --merge: shards' results judged as one run, against this checkout's gate files and pins — so only when
-// this checkout is the commit the shards ran over, with nothing it builds from uncommitted. Otherwise an
-// attribution would land on lines that now say something else.
+// this checkout's state is the one the shards ran over. Otherwise an attribution would land on lines that now
+// say something else.
 int MergeAndJudge(IReadOnlyList<string> files)
 {
     Dictionary<string, string> verdicts = [];
@@ -1827,13 +1901,12 @@ int MergeAndJudge(IReadOnlyList<string> files)
         return 2;
     }
 
-    string here = Head();
-    bool unsaved = Unsaved().Length > 0;
-    if (ranOver != here || unsaved)
+    string here = StateTree();
+    (int resolved, string tree) = Run("git", "rev-parse", "--verify", "--quiet", ranOver + "^{tree}");
+    if (resolved != 0 || tree.Trim() != here)
     {
-        Console.Error.WriteLine($"mutate-gates: the shards ran over {ranOver}, and this checkout is at {here}"
-            + (unsaved ? " with uncommitted changes to what the build reads" : "")
-            + ". Its gate files are not the ones the shards' trips were attributed against.");
+        Console.Error.WriteLine($"mutate-gates: the shards ran over {ranOver}, and this checkout's state is the tree {here}. "
+            + "Its gate files are not the ones the shards' trips were attributed against.");
         return 2;
     }
 
@@ -1872,7 +1945,8 @@ int RunInWorktrees(int count, string head)
         ? [Path.Combine(AppContext.BaseDirectory, System.Reflection.Assembly.GetEntryAssembly()!.GetName().Name + ".dll")]
         : [];
 
-    Console.WriteLine($"--parallel {count}: {every.Count} mutations over {head}, in worktrees under {root}");
+    string state = head == Head() ? head : $"{head}, this checkout's uncommitted state on {Head()}, which no ref names";
+    Console.WriteLine($"--parallel {count}: {every.Count} mutations over {state}, in worktrees under {root}");
     Console.WriteLine($"  each shard runs {string.Join(' ', [self, .. launcher])} --shard k/{count} --emit <file>");
     Console.WriteLine("  if this is killed, remove what it leaves with git worktree remove --force <dir>, then git worktree prune");
 
@@ -1912,7 +1986,7 @@ int RunInWorktrees(int count, string head)
                 RedirectStandardError = true,
             };
 
-            foreach (string argument in (string[])[.. launcher, "--shard", $"{k + 1}/{count}", "--emit", outcomes[k]])
+            foreach (string argument in (string[])[.. launcher, "--shard", $"{k + 1}/{count}", "--emit", outcomes[k], "--throwaway"])
             {
                 info.ArgumentList.Add(argument);
             }
@@ -2100,6 +2174,16 @@ HashSet<string> RepoStatus() =>
 bool InScope(string path) => Scope.Any(s => path.StartsWith(s + "/", StringComparison.Ordinal));
 
 static string PathOf(string statusEntry) => statusEntry[3..];
+
+// Whether a line of Dirty() names a file restore reads. Read off what the edit did rather than declared beside
+// it, as what a mutation may touch is. Only these can be dirty here: the root's build inputs lie outside Scope.
+static bool ReadByRestore(string statusLine)
+{
+    string path = statusLine.Trim();
+    return path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
+        || path.EndsWith(".props", StringComparison.OrdinalIgnoreCase)
+        || path.EndsWith(".targets", StringComparison.OrdinalIgnoreCase);
+}
 
 // Every line of `lines` that makes an assertion, restricted to one method when `method` is given. A
 // comment line never counts; an assertion anywhere else on a line does — `var x = Assert.Single(…)`

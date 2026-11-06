@@ -4,7 +4,7 @@
 # codebase that is not, which reads as coverage and is indistinguishable from success.
 # ⛔ Reverts src and tests before every mutation, so it refuses to start on a dirty tree. Commit
 # first; the commit is the revert point. Pass --list to name them, --only <text> for a subset, and
-# --parallel <n> to run every one in n worktrees cut from HEAD, which leaves this checkout untouched.
+# --parallel <n> to run every one in n worktrees of this checkout's state, which leaves it untouched.
 # Thin wrapper: the work is done by the portable .NET 10 file-based app beside this script.
 set -eu
 cd "$(dirname "$0")/.."

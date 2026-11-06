@@ -276,6 +276,28 @@ public sealed class MutateBehaviourTests
     }
 
     [Fact]
+    public void Every_build_and_test_run_the_harness_starts_has_node_reuse_off()
+    {
+        (int exitCode, string output) = Run(["--set", SetFixture("set-clean.json"), "--check"]);
+
+        // A reused worker node is handed to whichever build asks next, in any session, so anything that ends
+        // one ends the build holding it: a run of the gates lost three mutations to MSB4166 that way.
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("every build and test run is given MSBUILDDISABLENODEREUSE=1", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Every_build_and_test_run_the_harness_starts_shares_one_build_timestamp()
+    {
+        (int exitCode, string output) = Run(["--set", SetFixture("set-clean.json"), "--check"]);
+
+        // AutoVersioning otherwise takes a timestamp afresh at each evaluation and hands it to the compiler, so
+        // every build recompiles every project however little changed.
+        Assert.True(exitCode == 0, output);
+        Assert.Matches(@"every build and test run is given BuildTimestamp=\d{14}\b", output);
+    }
+
+    [Fact]
     public void A_mutation_that_names_neither_its_killer_nor_why_is_refused()
     {
         (int exitCode, string output) = Run(["--set", SetFixture("set-unreasoned.json"), "--list"]);

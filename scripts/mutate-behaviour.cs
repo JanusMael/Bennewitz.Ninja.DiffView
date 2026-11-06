@@ -1349,12 +1349,22 @@ internal static class Dotnet
     private static readonly TimeSpan RunBound = TimeSpan.FromMinutes(10);
 
     /// <summary>
-    /// What every build and test run this harness starts is given over the environment it inherits:
-    /// Avalonia's build telemetry off (DECISIONS.md, 2026-10-22). The collector its build task starts
+    /// What every build and test run this harness starts is given over the environment it inherits.
+    /// Avalonia's build telemetry off (DECISIONS.md, 2026-10-22): the collector its build task starts
     /// before each compile outlived a build by three quarters of an hour and kept the worktree it ran in.
+    /// MSBuild's node reuse off: a worker node outlives its build and is handed to the next, whichever
+    /// session starts it, so anything that ends a node ends the build holding it, and one run of the gates
+    /// lost three mutations to MSB4166 that way. One build timestamp: AutoVersioning otherwise takes one afresh
+    /// at each evaluation and hands it to the compiler, so every build recompiles every project however
+    /// little changed.
     /// </summary>
     public static IReadOnlyDictionary<string, string> BuildEnvironment { get; } =
-        new Dictionary<string, string>(StringComparer.Ordinal) { ["AVALONIA_TELEMETRY_OPTOUT"] = "1" };
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["AVALONIA_TELEMETRY_OPTOUT"] = "1",
+            ["MSBUILDDISABLENODEREUSE"] = "1",
+            ["BuildTimestamp"] = DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture),
+        };
 
     /// <param name="restore">False once a build has restored and nothing restore reads has changed since:
     /// measured, a mutation's build takes 4.5 s without it where it took 6.4.</param>
@@ -1653,7 +1663,7 @@ internal static class Source
     /// carried from anywhere; an untracked file elsewhere — a draft beside the plans — never leaves here.
     /// </summary>
     private static readonly string[] Scope =
-        ["src", "tests", "scripts", "fixtures", "Directory.Build.props", "Directory.Packages.props", "global.json", "NuGet.config", "DiffView.slnx"];
+        ["src", "tests", "scripts", "fixtures", "Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props", "global.json", "NuGet.config", "DiffView.slnx"];
 
     /// <summary>
     /// The tree this checkout's working state would commit as — HEAD, every tracked change, and each
