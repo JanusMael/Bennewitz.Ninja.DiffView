@@ -1,0 +1,89 @@
+{
+  // packages.push against what the solution packs and what the release's two publishing steps name.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/packages-push.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.PackagesPushTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/PackagesPushTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the file loses an id the solution packs",
+      "file": "packages.push",
+      "old": "Bennewitz.Ninja.DiffView.Core\n",
+      "new": "",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "Classify every packable project"
+    },
+    {
+      "name": "the file names an id nothing packs",
+      "file": "packages.push",
+      "old": "Bennewitz.Ninja.DiffView.Core\n",
+      "new": "Bennewitz.Ninja.DiffView.Core\nBennewitz.Ninja.DiffView.Probe\n",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "Classify every packable project"
+    },
+    {
+      "name": "a project becomes packable without being classified",
+      "file": "src/DiffView.Demo/DiffView.Demo.csproj",
+      "old": "<IsPackable>false</IsPackable>",
+      "new": "<IsPackable>true</IsPackable>",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "Classify every packable project"
+    },
+    {
+      "name": "a packable project's id moves",
+      "file": "src/DiffView.Core/DiffView.Core.csproj",
+      "old": "<PackageId>Bennewitz.Ninja.DiffView.Core</PackageId>",
+      "new": "<PackageId>Bennewitz.Ninja.DiffView.Model</PackageId>",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "Classify every packable project"
+    },
+    {
+      "name": "the push step stops naming an id",
+      "file": ".github/workflows/release.yml",
+      "old": "dotnet nuget push \\\n            ./packages/Release/Bennewitz.Ninja.DiffView.Core.${{ env.VERSION }}.nupkg \\\n",
+      "new": "dotnet nuget push \\\n",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "step 'Push to NuGet.org' names Bennewitz.Ninja.DiffView.Avalonia,"
+    },
+    {
+      "name": "the release step stops naming an id",
+      "file": ".github/workflows/release.yml",
+      "old": "--generate-notes \\\n            ./packages/Release/Bennewitz.Ninja.DiffView.Core.${{ env.VERSION }}.nupkg \\\n",
+      "new": "--generate-notes \\\n",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "step 'Create GitHub Release' names Bennewitz.Ninja.DiffView.Avalonia,"
+    },
+    {
+      "name": "the reading of what the solution packs finds nothing",
+      "file": "tests/DiffView.Avalonia.Tests/PackagesPushTests.cs",
+      "old": "[.. PackagingTests.PackableProjects().Select(PackageIdOf).Order(StringComparer.Ordinal)]",
+      "new": "[.. PackagingTests.PackableProjects().Take(0).Select(PackageIdOf).Order(StringComparer.Ordinal)]",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "found no packable project",
+      "because": "a reading that asserts only an agreement passes when both sides read nothing, so the positive control must trip first"
+    },
+    {
+      "name": "the reading looks for a step the release does not have",
+      "file": "tests/DiffView.Avalonia.Tests/PackagesPushTests.cs",
+      "old": "private const string PushStep = \"Push to NuGet.org\";",
+      "new": "private const string PushStep = \"Push to the feed\";",
+      "killer": "The_file_names_exactly_what_the_solution_packs_and_the_release_publishes",
+      "says": "has no step 'Push to the feed' naming a package",
+      "because": "a renamed step must fail the reading rather than leave a step held to nothing"
+    },
+    {
+      "name": "the file lists its ids the other way round",
+      "file": "packages.push",
+      "old": "Bennewitz.Ninja.DiffView.Core\nBennewitz.Ninja.DiffView.Avalonia\n",
+      "new": "Bennewitz.Ninja.DiffView.Avalonia\nBennewitz.Ninja.DiffView.Core\n",
+      "expect": "green",
+      "because": "the file is a set of ids and each comparison is of ordered sets, and a set has no order"
+    }
+  ]
+}

@@ -362,7 +362,7 @@ public sealed class PackagingTests
         return (process.ExitCode, stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult());
     }
 
-    private static List<string> PackableProjects()
+    internal static List<string> PackableProjects()
     {
         List<string> packable = [];
         foreach (string project in Directory.GetFiles(Path.Combine(RepoPaths.Root, "src"), "*.csproj", SearchOption.AllDirectories))

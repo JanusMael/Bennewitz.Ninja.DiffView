@@ -138,9 +138,10 @@ naming the owner, repository and **workflow filename**, and a `NUGET_USER` repos
 not rename `release.yml`** — the policy is bound to its filename and renaming it fails
 authentication without ever mentioning filenames.
 
-The push names its two packages and must never glob. A published package id cannot be withdrawn —
-only unlisted — so a `*.nupkg` glob is one irreversible mistake away at all times.
-`PackagingTests` fails if the glob ever returns.
+The push names its two packages, the ones `packages.push` lists, and must never glob. A published
+package id cannot be withdrawn — only unlisted — so a `*.nupkg` glob is one irreversible mistake away
+at all times. `PackagingTests` fails if the glob ever returns, and `PackagesPushTests` fails if that
+file, what the solution packs and the two publishing steps stop agreeing.
 
 ## The theme audit
 
