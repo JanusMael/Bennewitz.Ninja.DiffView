@@ -28,8 +28,7 @@
         <MenuItem AutomationProperties.AutomationId="Exit" Header="E_xit" Click="OnExit" AutomationProperties.Name="Exit" />
       </MenuItem>
       <!-- View's own rows are submenus, each named for what its entries change, and the one action, Find:
-           a row added here instead of to its submenu is what made this menu taller than its popup, so that
-           at 200% the palette's entry scrolled out of it and out of the automation tree. -->
+           a row added here instead of to its submenu is what made this menu taller than its popup. -->
       <MenuItem AutomationProperties.AutomationId="ViewMenu" Header="_View" AutomationProperties.Name="View menu">
         <MenuItem AutomationProperties.AutomationId="ThemeMenu" Header="_Theme"
                   AutomationProperties.Name="The theme variant and the palette">

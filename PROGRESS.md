@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` carries everything through PR #44, and CI is green on it** — PR #44 merged on a full
+**`main` carries everything through PR #45, and CI is green on it** — PR #45 merged on a full
 12-of-12, 2026-11-06. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
 wrong the moment it is true.* **Windows measured 986** here, `Passed!`, by a local run over item 28's
@@ -48,10 +48,10 @@ they settled a rule, `DECISIONS.md`. Newest first:
 | **PR #14** | `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds `docs/hosting-diffview.md`'s `AutomationId` table to `fixtures/automation-ids.txt` both ways, and its menu row to the rule the row states; open item 15 closes | *The hosting guide's id table, held to the fixture* |
 | **PR #15** | Plan 00031: a fold follows its lines and keeps the name it was collapsed under, so an edit under the editor's folds no longer breaks the layout before its re-diff lands; open item 12 closes | *Plan 00031 phases* |
 
-**One pull request is open, and it is not this repository's to merge**: #2,
-`conventions/repository-settings`, carrying `scripts/repo-conventions.cs` and
-`.github/repository.json` from `Bennewitz.Ninja.Templates`' own plan 00003. `DECISIONS.md` has it as
-another session's pull request, which is half of why the Linux jobs were left unpinned.
+**No pull request is open, and none will be while the AppKit import runs.** Templates began its `plans/00009`
+step 8 on 2026-11-06 from `main` at PR #45: an open pull request blocks it and each later merge costs it a
+re-verify, so on Brian's word of that day nothing merges until it finishes, and what is ready waits on its branch
+(item 29). #2, the last one open, was closed the same day, item 24 having superseded it.
 
 **Plans 00001, 00003–00031 and 00033 are complete and closed**, plan 00034 is in progress
 (below), and plan 00002 was rejected on its own review before any code was written. **Plan 00032 is parked on
@@ -1199,11 +1199,14 @@ wording.
     desktop at all, the pass now exits **1** with a populated failure list where it previously exited
     **0**. No desktop was borrowed to establish it — the absence of one is what makes the run fail.
 19. ~~The demo's View menu is unreachable at 200% scaling~~ — **regrouped 2026-10-30, on Brian's word of
-    the same day, on one branch with items 20 and 21; ⛔ the attended run at 200% on JANUSWAX2 stays
-    owed.** Found by item 17's attended run on JANUSWAX2, where it cost four of that pass's assertions:
-    the menu was taller than its popup and scrolled at 100%, and at 2× the colour-blind palette entry
-    scrolled out of the popup and so out of the automation tree. `AGENTS.md` §9 already carried the rule
-    it broke, that new demo items belong in a submenu.
+    the same day, on one branch with items 20 and 21; closed 2026-11-06 by the attended run at 200% on
+    JANUSWAX2, below.** Found by item 17's attended run on JANUSWAX2, where four of that pass's assertions
+    failed. ⛔ **The reading written here until 2026-11-06 was wrong**: that at 2× the colour-blind palette
+    entry scrolled out of the popup and so out of the automation tree. That run's `06-view-menu.png` shows
+    the **File** menu, because `click left 96 17` was a 100% coordinate sent as physical pixels, and View
+    never opened. All four failures were coordinates of one scale, two from that click and two from the
+    drags. The regrouping below stands on its own, `AGENTS.md` §9 having asked for submenus already, and
+    what reached View at 2× was its id.
 
     **View's own rows are now eight submenus and *Find…*** — Theme, Control, Folding, Layout, Text,
     Comparison, Editing and Key bindings, each named for what its entries change — with Control and Key
@@ -1231,6 +1234,17 @@ wording.
     console and a person's time. ⚠ **Not adopted, and recorded as the alternative**: teaching
     `drive-demo-uia.ps1` to scroll a popup before reporting a part absent, which fixes a false-absence
     class rather than one menu; per `AGENTS.md` §8 it is a lesson for Inspections first.
+
+    ✅ **Both answered by the attended run, 2026-11-06, exit 0.** `scripts/drive-demo-interactive.ps1` at
+    `-ExpectScaling 2` over `0ca1d54` and the change below, on JANUSWAX2, the demo itself reporting *Window:
+    1100×720 at scaling 2*: every step took, every assertion held, nothing went unread, and the frames were read
+    against what they are named for. View's nine rows fit a 416×656 popup with nothing scrolled, and a click on
+    `ThemeMenu` under `SendInput` opened its submenu in a popup of its own, where the palette's entry was ticked.
+
+    **The pass's two drags read their parts' bounds now.** Its `539,150` and `1089,90` were the other half of
+    October's failures, recorded in `DECISIONS.md` and fixed nowhere, and item 25's dock had made them wrong at
+    100% as well: `main`'s pass missed both at both scales in a rehearsal against a stand-in driver. In the run the
+    splitter drag took the left pane from 1062 to 1328 px and the map drag took the scroll from 0 to 31068.
 
     ⚠ **`DemoMenuTests` left the real clock armed on every run, found 2026-10-30.** It showed the demo's window
     with no clock on its views and closed it with the build in flight, so the build landed after the close
@@ -1354,6 +1368,7 @@ wording.
 
     ⭐ **Decided 2026-10-22, by Brian: XamlQuality** — `DECISIONS.md`, *The converged mutation runner is a
     dotnet tool from XamlQuality*. ⛔ The move itself starts only on his word.
+    ⭐ **It starts after item 27, Brian, 2026-11-06**, that item's results going to Inspections first, on his word.
 
     ⭐ **Sent 2026-10-30, on Brian's word, and received.** DiffView's part was a brief to the Inspections
     repository — XamlQuality's since the rename, with AssemblyQuality and CodeQuality merged into it — on
@@ -1463,6 +1478,13 @@ wording.
     that way by hand on 2026-10-31 — a commit no ref names, and a worktree detached at it — so that its
     frames could be reviewed before anything was committed.
 
+    ⭐ **Widened by Brian's choice of 2026-11-06, and held until the AppKit import finishes.** It also skips
+    `mutate-gates`' restore and builds only what each gate needs, each trim measured on a quiet box with gvp3
+    paused and kept only if all 123 verdicts stay identical: a mutation there takes a restore and a whole-solution
+    build, and a sample of a loaded run found 70% of it building and 26% testing. The new analyzers' compile cost
+    is an unmeasured suspect. The loaded baselines are the gate at 35.6 min and all 14 sets at 64.4 min, against
+    14.3 min for the gate on 2026-11-04.
+
 28. **DiffView's part of Templates' `plans/00009` step 4, which AppKit's step 8 waits on — the Templates session,
     2026-11-04, corrected by it on 2026-11-06, both at the maintainer's asking.** Read here against GitHub and
     Templates' own documents. `conventions` is green on `main`, and of the five things first listed:
@@ -1473,11 +1495,12 @@ wording.
       `check` passes over it. `Microsoft.VisualStudio.Threading.Analyzers` came with the sync, for `VSTHRD101` and
       `VSTHRD110`. ⛔ xunit.v3 stays at 3.2.2, for the reason `Directory.Packages.props` gives. The new pin owed
       every proof set, and all 14 ran over it, 470 mutations as declared.
-    - **#2 closed** is what is left of step 4 in this repository, and it is Brian's. Step 4 wants `gh pr list`
-      empty, and #2 is open and conflicting with `main`.
-    - **`conventions` a required check** blocks nothing: step 4 does not ask for it. Should Brian want it, it goes
-      into `requiredChecks` in `.github/repository.json` by an ordinary pull request first, because `apply`
-      builds the ruleset from that list, and `apply` then writes it, which is his.
+    - ✅ **#2 is closed**, on Brian's word of 2026-11-06, so with `conventions` green on `main` and `gh pr list`
+      empty step 4 is met. The Templates session read it clean and began AppKit's step 8 that day.
+    - **`conventions` is not a required check**, by Brian's choice of 2026-11-06: step 4 does not ask for it, and
+      the AppKit move would make it short-lived. Should he want it later, it goes into `requiredChecks` in
+      `.github/repository.json` by an ordinary pull request first, because `apply` builds the ruleset from that
+      list, and `apply` then writes it, which is his.
 
     ⛔ **`"trimming": "required"` is not to be added.** The list asked for it from `plans/00004`'s record, but
     Templates' own `plans/00008`, approved 2026-10-09, retired that key: `repo-conventions.cs` answers it with a
@@ -1485,11 +1508,18 @@ wording.
     `DiffView.Core`, `DiffView.Avalonia` and the demo's publish each do. The Templates session was told on
     2026-11-06, on Brian's word, and what `plans/00004` step 8 waits on instead is its own to read.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 is next, and what is
-left of item 28 is Brian's. **Every other open item was scheduled by Brian
+29. **Two small fixes, held until the AppKit import finishes — Brian, 2026-11-06.** `README.md` calls `NUGET_USER`
+    a repository secret where `release.yml` reads a repository variable, and `PublicVersion`'s line in
+    `Directory.Build.props` reads `$(Version)` before anything has set it, so it belongs in
+    `Directory.Build.targets`, nothing else naming it. Neither is made yet. Item 19's change and this record sit
+    on `fix/the-pass-finds-its-drags`, local, and land with them. The three literal `TargetType` readings in
+    `AccessibilityCoverageTests` stay, by the same choice of his.
+
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, and items 29, 27 and 23 wait for the
+AppKit import, in that order. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
-19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 25 came the
+19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
 same day from Brian's preference rather than from a measurement, and is done on `feat/the-map-docks-left`,
 stacked on item 14's branch, its full gate run made. Item 26 came on 2026-11-01 from his review of item 25's
 frames, and item 27 the same day, from the two things item 25's gate run did by hand. Item 13
