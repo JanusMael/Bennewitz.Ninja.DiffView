@@ -134,7 +134,7 @@ pack, runs the suite under `en-US` and `de-DE`, publishes `Bennewitz.Ninja.DiffV
 release. `workflow_dispatch` takes a version directly, for a first run that need not also be a tag.
 
 Three things it needs that no commit can supply: a remote, a nuget.org Trusted Publishing policy
-naming the owner, repository and **workflow filename**, and a `NUGET_USER` repository secret. **Do
+naming the owner, repository and **workflow filename**, and a `NUGET_USER` repository variable. **Do
 not rename `release.yml`** — the policy is bound to its filename and renaming it fails
 authentication without ever mentioning filenames.
 
