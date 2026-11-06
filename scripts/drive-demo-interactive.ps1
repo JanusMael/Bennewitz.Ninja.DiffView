@@ -54,10 +54,13 @@ The change-marker margin's tooltip exists only for a CHANGED line, so F7 runs be
 block is centred by the centring scroll (AGENTS.md section 6), which puts a changed row under the
 margin's middle. A ladder either side of centre is the fallback.
 
-The drag coordinates are client-relative to the demo's 1100x720 window and come from UI Automation
-bounds: the connector gutter spans client x 531..547 (so 539 is its middle) and the overview map
-x 1078..1100 (so 1089 is its middle). If the window is ever not 1100x720 these move, and the driver
-refuses a drag that would start or end outside the window rather than guessing.
+⛔ NO STEP CARRIES A NUMBER FOR WHERE A PART IS. Each drag reads its part's bounds from UI Automation
+as it runs, the splitter from SideBySide/Gutter and the map from SideBySide/Minimap, because every verb
+takes physical pixels, so a coordinate written here is right at one scaling and one dock only. Measured
+2026-10-13 at 200% on JANUSWAX2: the 96,17 that opened View at 100% opened File, the splitter's 539,150
+landed in the left pane's text and selected part of a line, and the map's press landed above the panes.
+All four failures of that pass were this one mistake. Docking the map left then moved both drags' parts
+at every scaling.
 
 ⛔ A DRAG THAT REPORTS SUCCESS HAS NOT NECESSARILY MOVED ANYTHING, and the splitter is where that
 bit. Measured 2026-10-08: the step reported ok while the panes stayed put, because at the scroll
@@ -72,13 +75,20 @@ PANE'S WIDTH either side rather than trusting the `ok`. ⚠ The empty column is 
 
 .EXAMPLE
 pwsh -NoProfile -File scripts/drive-demo-interactive.ps1 -Out ../scratch/item9-interactive
+
+.EXAMPLE
+pwsh -NoProfile -File scripts/drive-demo-interactive.ps1 -Out ../scratch/at-200 -ExpectScaling 2
 #>
 [CmdletBinding()]
 param(
     # Discovered, never assumed: this file's own directory is in the checkout, so the checkout is
     # its parent. DriveDemoTests fails a script that writes a repository path in.
     [string] $Repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path,
-    [Parameter(Mandatory = $true)][string] $Out
+    [Parameter(Mandatory = $true)][string] $Out,
+
+    # The scaling the demo must report, for a pass owed at one scale: 2 for 200%. Left out, the pass
+    # prints what it read and asserts nothing about it.
+    [double] $ExpectScaling = 0
 )
 
 Set-StrictMode -Version Latest
@@ -348,6 +358,25 @@ function WaitForReady {
     return $false
 }
 
+function DemoScaling {
+    <#  The scaling the demo says it is at, from the last Window line of this run's own log, or nothing
+        when this run wrote none. ⛔ The registry is no substitute: AppliedDPI is written at sign-in, so
+        it read 150% on 2026-11-06 with the panel already at 200%.  #>
+    [OutputType([double])]
+    param()
+
+    $lines = @(LogLines)
+    for ($i = $lines.Count - 1; $i -ge 0; $i--) {
+        if ($lines[$i] -like '*Starting DiffView Demo*') { return }
+        if ($lines[$i] -match 'Window: .* at scaling ([0-9.]+)') {
+            return [double]::Parse(
+                $Matches[1],
+                [System.Globalization.NumberStyles]::Float,
+                [System.Globalization.CultureInfo]::InvariantCulture)
+        }
+    }
+}
+
 Write-Host '=== launching; the demo takes the foreground from here until DONE ==='
 $report = @(& dotnet run scripts/drive-demo.cs -- launch --left $left --right $right --edit both 2>&1)
 Write-Host ($report -join "`n")
@@ -374,6 +403,18 @@ else {
 }
 
 try {
+    # ---- the scaling, in the demo's own words, because a pass owed at one scale rests on it ----
+    Write-Host '=== scaling ==='
+    $scaling = DemoScaling
+    if ($null -ne $scaling) { Write-Host ('  the demo reports scaling ' + $scaling) }
+
+    if ($ExpectScaling -gt 0) {
+        if ($null -ne $scaling) {
+            Assert ('the demo runs at scaling ' + $ExpectScaling) ($scaling -eq $ExpectScaling) ('it reports ' + $scaling)
+        }
+        else { Unread ('whether the demo runs at scaling ' + $ExpectScaling) 'its log holds no Window line for this run' }
+    }
+
     # ---- the focus accent, which is a collapsed overlay in the header and must move no row ----
     Write-Host '=== focus accent ==='
     Focus 'SideBySide/LeftPane' | Out-Null
@@ -426,8 +467,7 @@ try {
         Shot 'view-menu' 'popup' | Out-Null
     }
 
-    # Its last row, because a menu taller than its popup scrolls its last rows out of the tree first: at
-    # 200% that is how the palette's entry went missing while it was still one of these rows.
+    # Its last row, because a menu taller than its popup scrolls its last rows out of the tree first.
     $lastRow = Probe 'KeyBindingsMenu'
     if ($lastRow.Read) { Assert 'the View menu is open and its last row is in the tree' $lastRow.Found 'its Key bindings row is not in the tree' }
     else { Unread 'whether the View menu opened' 'the probe could not run' }
@@ -535,16 +575,29 @@ try {
     Shot 'split-before' | Out-Null
 
     $paneBefore = ElementRect -Path 'SideBySide/LeftPane' -DemoPid $demoPid
-    if (Drive -Verbs @('drag', 'left', '539', '150', 'to', '689', '150') -What 'drag the splitter 150px right') {
-        Start-Sleep -Milliseconds 800
-        Shot 'split-after' | Out-Null
+    $gutter = ElementRect -Path 'SideBySide/Gutter' -DemoPid $demoPid
+    $origin = ClientOrigin
+    $splitDragged = $false
+    if ($null -ne $paneBefore -and $null -ne $gutter -and $null -ne $origin) {
+        # The middle of the column, a quarter of the way down it: the same rows at any scaling, and at
+        # the head of this pair those rows are unchanged on both sides. A quarter of the pane's width is
+        # the same travel at any scaling too.
+        $fromX = $gutter.X - $origin.X + [int] ($gutter.W / 2)
+        $toX = $fromX + [int] ($paneBefore.W / 4)
+        $atY = $gutter.Y - $origin.Y + [int] ($gutter.H / 4)
+        $verbs = @('drag', 'left', [string] $fromX, [string] $atY, 'to', [string] $toX, [string] $atY)
+        $splitDragged = Drive -Verbs $verbs -What 'drag the splitter a quarter of the pane right'
+        if ($splitDragged) {
+            Start-Sleep -Milliseconds 800
+            Shot 'split-after' | Out-Null
+        }
     }
 
     # ⛔ That `ok` says the press, the walk and the release all took. It does NOT say the splitter
     # moved: nothing refuses a drag that lands on the wrong thing, which is exactly how this step
     # passed while measuring block selection. The pane's own width is the evidence.
     $paneAfter = ElementRect -Path 'SideBySide/LeftPane' -DemoPid $demoPid
-    if ($null -ne $paneBefore -and $null -ne $paneAfter) {
+    if ($splitDragged -and $null -ne $paneAfter) {
         # The message states what was OBSERVED and offers the likely cause as likely. The earlier
         # wording asserted the polygon outright, and a re-break that produced a no-op drag some other
         # way was then told a confident story about a cause that was not its own.
@@ -554,7 +607,7 @@ try {
             Write-Host ('       the left pane went from ' + $paneBefore.W + ' px to ' + $paneAfter.W + ' px')
         }
     }
-    else { Unread 'whether the splitter moved' 'the left pane bounds could not be read either side of the drag' }
+    else { Unread 'whether the splitter moved' 'the drag did not run, or the left pane could not be read after it' }
 
     # ---- the overview map's viewport box, where a press inside drags and a press outside jumps ----
     # ⛔ Its start must land INSIDE the viewport box: a press inside drags, a press outside jumps. That
@@ -564,13 +617,25 @@ try {
     $scrollBar = 'SideBySide/RightPane/PART_VerticalScrollBar'
     $scrolledBefore = Probe $scrollBar
 
-    if (Drive -Verbs @('drag', 'left', '1089', '90', 'to', '1089', '420') -What 'drag the map viewport down') {
-        Start-Sleep -Milliseconds 800
-        Shot 'map-dragged' | Out-Null
+    $map = ElementRect -Path 'SideBySide/Minimap' -DemoPid $demoPid
+    $mapDragged = $false
+    if ($null -ne $map -and $null -ne $origin) {
+        # One pixel below the map's top edge: Ctrl+Home left the viewport box at that edge, and
+        # DiffMinimap.ViewportBounds never makes it less than two units tall, so this is inside it at any
+        # scaling. Half way down the map is the same place at any scaling too.
+        $mapX = $map.X - $origin.X + [int] ($map.W / 2)
+        $pressY = $map.Y - $origin.Y + 1
+        $releaseY = $map.Y - $origin.Y + [int] ($map.H / 2)
+        $verbs = @('drag', 'left', [string] $mapX, [string] $pressY, 'to', [string] $mapX, [string] $releaseY)
+        $mapDragged = Drive -Verbs $verbs -What 'drag the map viewport down'
+        if ($mapDragged) {
+            Start-Sleep -Milliseconds 800
+            Shot 'map-dragged' | Out-Null
+        }
     }
 
     $scrolledAfter = Probe $scrollBar
-    if ($scrolledBefore.Read -and $scrolledAfter.Read -and $null -ne $scrolledBefore.Range -and $null -ne $scrolledAfter.Range) {
+    if ($mapDragged -and $scrolledBefore.Read -and $scrolledAfter.Read -and $null -ne $scrolledBefore.Range -and $null -ne $scrolledAfter.Range) {
         Assert 'the map drag scrolled the panes' ($scrolledBefore.Range -ne $scrolledAfter.Range) `
             ('the scroll bar is still at ' + $scrolledAfter.Range + ', so the press missed the viewport box and jumped nowhere')
         if ($scrolledBefore.Range -ne $scrolledAfter.Range) {
@@ -580,7 +645,7 @@ try {
     else {
         # ⚠ PART_VerticalScrollBar is AvaloniaEdit's template part, not one of ours, and nothing pins
         # it: an Avalonia upgrade may rename it, and this is where that shows.
-        Unread 'whether the map drag scrolled anything' ('no RangeValue at ' + $scrollBar)
+        Unread 'whether the map drag scrolled anything' ('the drag did not run, or no RangeValue at ' + $scrollBar)
     }
 
     # ---- the colour-blind palette, by its own entry in View > Theme ----

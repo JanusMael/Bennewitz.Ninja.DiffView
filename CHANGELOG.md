@@ -39,6 +39,11 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **`scripts/drive-demo-interactive.ps1` reads where its drags go.** Its splitter and map drags carried coordinates
+  for one scaling and one dock, so at 200% they pressed the wrong parts, and docking the map left moved both at
+  every scaling. Each now reads its part's bounds from UI Automation as it runs, and `-ExpectScaling` fails a pass at
+  any other scaling, read from the demo's own log. **Verified by an attended run at 200% on a real Windows desktop**,
+  every step and assertion holding: View's nine rows fit their popup, and a click on a submenu's header opens it.
 - **`packages.push` says what this repository publishes.** `PackagesPushTests` holds it to what the solution
   packs and to what each of the release's two publishing steps names, so a project made packable and left
   unclassified fails the suite rather than surprising nuget.org, where an id cannot be withdrawn.
