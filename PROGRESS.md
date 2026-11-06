@@ -2,17 +2,17 @@
 
 ## Resume
 
-**`main` carries everything through PR #43, and CI is green on it** — PR #43 merged on a full
-12-of-12, 2026-11-03. *A resume names the pull request it was written for and
+**`main` carries everything through PR #44, and CI is green on it** — PR #44 merged on a full
+12-of-12, 2026-11-06. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 985** here, `Passed!`, by a local run over plan 00030's
-branch, in `en-US` and in `de-DE` — one more than at PR #43, the test that writes the parts reference. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 986** here, `Passed!`, by a local run over item 28's
+branch, in `en-US` and in `de-DE` — one more than at PR #44, the test that holds `packages.push`. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **123** mutations and derives **88** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — over plan 00030's change to two gate files, on 2026-11-04, in four
+Linux, and the last full run — over item 28's new analyzer pin, on 2026-11-06, in four
 worktrees — gave all 123 as declared: 119 killed by the test each names, 2 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 88 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. It ran
@@ -53,11 +53,8 @@ they settled a rule, `DECISIONS.md`. Newest first:
 `.github/repository.json` from `Bennewitz.Ninja.Templates`' own plan 00003. `DECISIONS.md` has it as
 another session's pull request, which is half of why the Linux jobs were left unpinned.
 
-**Plans 00001, 00003–00029, 00031 and 00033 are complete and closed**, plan 00034 is in progress
-(below), and plan 00002 was rejected on its own review before any code was written. **Plan 00030 was
-approved on 2026-11-01**, revised that day to read the public per-control reading of `BNXQ1003` that
-XamlQuality `2026.4.1014` shipped and item 14 pinned at `2026.4.1026`, and committed alone; both its
-phases are done on `docs/the-parts-reference`, local until Brian says push, and CI is what is left of them. **Plan 00032 is parked on
+**Plans 00001, 00003–00031 and 00033 are complete and closed**, plan 00034 is in progress
+(below), and plan 00002 was rejected on its own review before any code was written. **Plan 00032 is parked on
 ClaudeForge** (item 10), waiting for the live-log window to be published as a package. ⛔ **It stays an
 untracked draft — Brian, 2026-10-13**, asked after a resume found it and told it is research with no copy
 anywhere; do not commit it and do not re-raise it. *History — plan by plan*
@@ -1467,26 +1464,29 @@ wording.
     frames could be reviewed before anything was committed.
 
 28. **DiffView's part of Templates' `plans/00009` step 4, which AppKit's step 8 waits on — the Templates session,
-    2026-11-04, at the maintainer's asking.** Its list of five, read here the same day against GitHub and
-    Templates' own documents. `conventions` is green on `main` (run `41651995944`, over `8ae466f`), and four of
-    the five stand:
-    - **#2 closed.** It is open and conflicting with `main`, and step 4 wants `gh pr list` empty. Brian's to
-      close, as item 24 has it.
-    - **`packages.push`.** `main` has none, and step 4 names it. It is the flat list a release pushes, read by the
-      release and by the conventions check, so the two ids `release.yml` names by hand move there.
-    - **`conventions` a required check.** `repository.json` lists five checks and `main`'s ruleset requires those
-      five. Adding it takes `apply`, which writes settings, so it is Brian's, as `.github/AGENTS.md` has it.
-    - **`scripts/repo-conventions.cs` at Templates' `2026.4.1103`**, blob `7be1c18` against this repository's
-      `6d618da`: a copy, never an edit, ⛔ keeping xunit.v3 at 3.2.2, for the reason `Directory.Packages.props` gives.
+    2026-11-04, corrected by it on 2026-11-06, both at the maintainer's asking.** Read here against GitHub and
+    Templates' own documents. `conventions` is green on `main`, and of the five things first listed:
+    - ✅ **`packages.push`** is at the root, and `PackagesPushTests` holds it to what the solution packs and to
+      what each of the release's two publishing steps names. `DECISIONS.md` says why the release goes on naming
+      them.
+    - ✅ **`scripts/repo-conventions.cs` is Templates' `2026.4.1103`**, blob `7be1c18`, a copy and not an edit, and
+      `check` passes over it. `Microsoft.VisualStudio.Threading.Analyzers` came with the sync, for `VSTHRD101` and
+      `VSTHRD110`. ⛔ xunit.v3 stays at 3.2.2, for the reason `Directory.Packages.props` gives. The new pin owed
+      every proof set, and all 14 ran over it, 470 mutations as declared.
+    - **#2 closed** is what is left of step 4 in this repository, and it is Brian's. Step 4 wants `gh pr list`
+      empty, and #2 is open and conflicting with `main`.
+    - **`conventions` a required check** blocks nothing: step 4 does not ask for it. Should Brian want it, it goes
+      into `requiredChecks` in `.github/repository.json` by an ordinary pull request first, because `apply`
+      builds the ruleset from that list, and `apply` then writes it, which is his.
 
-    ⛔ **The fifth is not to be done.** The list asks for `"trimming": "required"` in `.github/repository.json`,
-    from `plans/00004`'s record. Templates' own `plans/00008`, approved 2026-10-09, retired that key:
-    `repo-conventions.cs` answers it with a NOTE asking for its removal, and a repository trims now when one of its
-    projects says so, which `DiffView.Core`, `DiffView.Avalonia` and the demo's publish each do. So whatever
-    `plans/00004` step 8 waits on, it is not this key, and Templates' record of it is what needs reading again.
+    ⛔ **`"trimming": "required"` is not to be added.** The list asked for it from `plans/00004`'s record, but
+    Templates' own `plans/00008`, approved 2026-10-09, retired that key: `repo-conventions.cs` answers it with a
+    NOTE asking for its removal, and a repository trims now when one of its projects says so, which
+    `DiffView.Core`, `DiffView.Avalonia` and the demo's publish each do. The Templates session was told on
+    2026-11-06, on Brian's word, and what `plans/00004` step 8 waits on instead is its own to read.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 is next, the stack's
-pull request having merged as #43, and item 28 is the Templates session's list, two of its four Brian's. **Every other open item was scheduled by Brian
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 is next, and what is
+left of item 28 is Brian's. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% still owed; and item 23's brief went to the Inspections repository. Item 25 came the
@@ -1811,7 +1811,7 @@ either.
 | Phase | Size | Status | Notes |
 |---|---|---|---|
 | 1 The reference and its gate | M | done | `TemplatePartReferenceTests.The_committed_reference_equals_a_fresh_reading`, a class of its own and no gate file, writes `docs/template-parts.md` from `AccessibilityCoverageTests.ConcreteControls` and `ExpectedControlTypes`, both now internal, the two margins' ids off a constructed `DiffPanePresenter`, and `TemplatePartRule.ReadParts` over `TemplatePartTests.Scan`, the gate's context moved into an internal method. Read against the hand tables of 2026-10-01 by a script, every row and cell agrees and `PART_CP` reads *AvaloniaEdit*, but for the two differences `DECISIONS.md` gives, each by the plan's own rule. Twenty-three scratch mutations, each as declared: the plan's seven, the file deleted, three that show a view's own element, a view's own lookup and a part only AvaloniaEdit still looks up, an id written as a property element, a margin taken out of the pane and a list of what was not read each fail with the fresh reference beside the committed one; the plan's two and four more trip a check and write nothing, among them a scan handed no assemblies and a drawn control turned templated; and a target spelled `{x:Type …}` on either reading's side and a German current culture stay green. The suite, 985 = 984 + 1, is `Passed!` and healthy under `catch-crash --expect auto` in `en-US` and `de-DE`, the reference one SHA-256 before and after both with no received copy; the build is clean under `-warnaserror`, `--guards` derives 88, and `mutate-behaviour --owed main` owes no set. The full `mutate-gates --parallel 4` the gate-file edits owe ran on 2026-11-04 over the two files as they land: all 123 as declared, no `no-op` among them, so the mutations that edit the moved scan still apply, and all 88 guards tripped first, in 14.3 minutes. What came after it touches no gate file and no gated subject |
-| 2 The wrappers and the record | S | done, but for CI | `scripts/gen-template-parts.{sh,ps1}` delete any received copy, run the test, and, when it fails having written one, move it over the reference and run the test again. Each held through seven scenarios, 60 checks in all, the `.sh` under Git Bash and the `.ps1` by `pwsh -NoProfile -File`: up to date; after a template edit, the reference rewritten and the gate green; a failed check and a broken build, each with a stale copy left beside the reference, exiting 1, moving nothing and leaving no received copy; the reference deleted, which comes back byte for byte; a dry run that changes nothing; and a stray argument, exiting 2. Dot-sourced into one runspace, the `.ps1` leaves the location and its preferences as it found them. The hosting guide links to the reference by an absolute URL, `AGENTS.md` §4, `docs/AGENTS.md` and `scripts/AGENTS.md` name it, the README has a section beside the theme audit's, and `DECISIONS.md` has what the work settled. ⛔ CI on all five jobs waits on a push, which waits on Brian |
+| 2 The wrappers and the record | S | done | `scripts/gen-template-parts.{sh,ps1}` delete any received copy, run the test, and, when it fails having written one, move it over the reference and run the test again. Each held through seven scenarios, 60 checks in all, the `.sh` under Git Bash and the `.ps1` by `pwsh -NoProfile -File`: up to date; after a template edit, the reference rewritten and the gate green; a failed check and a broken build, each with a stale copy left beside the reference, exiting 1, moving nothing and leaving no received copy; the reference deleted, which comes back byte for byte; a dry run that changes nothing; and a stray argument, exiting 2. Dot-sourced into one runspace, the `.ps1` leaves the location and its preferences as it found them. The hosting guide links to the reference by an absolute URL, `AGENTS.md` §4, `docs/AGENTS.md` and `scripts/AGENTS.md` name it, the README has a section beside the theme audit's, and `DECISIONS.md` has what the work settled. All five CI jobs green on PR #44, merged 2026-11-06 |
 
 ## Plan 00033 phases
 

@@ -4825,3 +4825,43 @@ unified template, where the hand table had it among the side-by-side panes.
 file-based app, as the wrappers beside it do, so it follows the family's script convention, a dry run, tagged
 output, exits 0, 1 and 2, and no bare `exit` under an editor's host, but for that convention's question. Running it
 is the request, the plan says it rewrites, and git holds what it replaces.
+
+## The sync to Templates' `2026.4.1103`, and `packages.push`
+
+`scripts/repo-conventions.cs` is the template's blob and nothing else. It brings two rules and DiffView meets both
+as it stands: the root `.gitattributes` gives markdown `eol=lf`, and no `Bennewitz.Ninja.*` package a library or
+an app takes here adds an assembly without `IsTrimmable`. `check` passed over the copied script before anything
+else changed.
+
+**`Microsoft.VisualStudio.Threading.Analyzers` came with the sync, for two rules alone.** `VSTHRD101` and
+`VSTHRD110`, in the template's own words and at its pin, the rest off. Inspections had measured the package on this
+repository: these two were silent, and the build is clean with them on. Silence would also be what a rule switched
+off looks like, so a probe holding both shapes was built in a library, a test project and a file-based script:
+each failed naming both, and none named `VSTHRD200`, which is off. It is private, so no package carries it, and the
+gate on the model package's dependencies still holds.
+
+**The release goes on naming its ids rather than reading `packages.push`.** The template's reads them through
+`release-target.cs`, and what the convention asks is that a publishing workflow push each id by its exact file,
+which this one does. It has never run, so a publishing step rewritten here would reach its first run unproven, at
+the one moment a mistake is permanent, and this repository's move into AppKit replaces the workflow with the
+template's anyway. So three places name the ids, and `PackagesPushTests` is what makes them one fact, comparing the
+file with what the solution packs and with each of the two publishing steps. Its proof set is committed, a green
+mutation swapping the file's lines because the file is a set.
+
+**`packages.local` was not added.** Nothing here packs that is not pushed, the file would be empty, and
+`PackagesPushTests` compares the solution's packages with `packages.push` alone, so a project that is packed and
+meant to stay private fails until someone decides what it is.
+
+## A view chosen from the demo's menu starts a build, and two tests pumped for it
+
+`DemoActionLogTests.A_chord_is_written_as_the_command_it_ran_and_typing_is_never_written` failed once over the sync,
+`Expected: 0`, `Actual: -1`, on a box other work had at full load, and passed in the next run.
+The sync had nothing to do with it. Choosing the unified view hands it the sources, which starts a build on the
+thread pool, and the test pressed F7 after nothing but layout passes, the shape `AGENTS.md` §5 forbids. On a slow
+enough box F7 met a view with no changes to walk.
+
+**Repeating the run could not have shown this.** Six full runs under fixed seeds passed, because what the race
+needs is a slow thread pool and not an order. What showed it was holding the build back 1.5 s on the worker: on a
+quiet box the test then failed at that assertion with those values, and with the wait added and the hold still in
+place it passed. `A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header` had the same
+gap and could not show it, reading only the log, so it took the same wait.

@@ -39,6 +39,15 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **`packages.push` says what this repository publishes.** `PackagesPushTests` holds it to what the solution
+  packs and to what each of the release's two publishing steps names, so a project made packable and left
+  unclassified fails the suite rather than surprising nuget.org, where an id cannot be withdrawn.
+- **The family's conventions at Templates' `2026.4.1103`.** `scripts/repo-conventions.cs` is that release's copy,
+  which also checks that markdown is checked out as LF and that a trimming repository's family packages are
+  trimmable; DiffView meets both. `VSTHRD101` and `VSTHRD110` now fail the build in every project and script: an
+  async lambda given where a void delegate is expected, which ends the process on a throw, and a task nobody
+  awaits, which loses the failure. Neither fires here today. The analyzer package is private, so no package
+  carries it.
 - **The overview map docks left by default.** `SideBySideDiffView.MinimapPlacement`, which `DiffViewer`
   shares, was registered with no default, so the enum's zero, `Right`, was the default; it is registered as
   `Left` now, and a host that wants the map on the right sets `MinimapPlacement="Right"`. Nothing else about
