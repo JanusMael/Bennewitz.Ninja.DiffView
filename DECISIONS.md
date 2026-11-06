@@ -4319,6 +4319,9 @@ reintroduced exactly the defect by reading one integer.
 
 ## The demo's View menu is out of reach at 200% scaling
 
+**Superseded 2026-11-06 — View was never opened in that run.** Its frame shows the File menu, and the section
+*The View menu was never out of reach at 200%* says what it showed. What follows stands as it was written.
+
 Measured on JANUSWAX2's console at 200%, where the demo is `2200x1440`. The View menu already scrolls
 at 100% — `AGENTS.md` §9 says new demo items belong in a submenu for that reason — and at 2× the
 colour-blind palette entry falls outside the popup entirely, so it is **absent from the automation
@@ -4865,3 +4868,34 @@ needs is a slow thread pool and not an order. What showed it was holding the bui
 quiet box the test then failed at that assertion with those values, and with the wait added and the hold still in
 place it passed. `A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header` had the same
 gap and could not show it, reading only the log, so it took the same wait.
+
+## The View menu was never out of reach at 200%
+
+*The demo's View menu is out of reach at 200% scaling* read October's pass wrongly. That run's `06-view-menu.png`
+is the **File** menu. `click left 96 17` named a point on View at 100%, and every verb takes physical pixels, so at
+2× that point is on File, whose header runs to 111 px: this run read View's header at 129×64 from there.
+`ColourBlindPalette` was absent because its menu had never opened, not because it had scrolled out of one, and the
+534 px popup was File at its natural height, not a limit on anything.
+
+The other two failures were the same mistake, as that section said, and nothing acted on it. `539,150` pressed the
+left pane's text, which is why that run's frame reads *Ln 2, Col 28*, and the failure message's polygon was a guess.
+`1089,90` landed above the panes. Item 19 replaced the click with an id and left the drags, and item 25 then moved
+both their parts at every scale, so `main`'s pass could not have exited 0 at 100% either.
+
+⛔ **A number in the pass is a number at one scale and one dock.** Each drag now reads its part's bounds from UI
+Automation as it runs. A rehearsal against a stand-in driver and reader, over the left-docked layout at 1× and 2×,
+came before any desktop was borrowed: `main`'s pass missed both drags at both scales, the changed pass hit both, and
+the real run then pressed exactly the points the rehearsal predicted.
+
+**The scale is the demo's own word.** `AppliedDPI` is written at sign-in, so it read `0x90` with the panel at 200%
+until the machine restarted, and the per-monitor `DpiValue` is relative to a recommended scale. `-ExpectScaling`
+reads the demo's `Window:` line for this run alone, and fails a pass at any other scale.
+
+**A pass can start over SSH, and the foreground is the catch.** A scheduled task whose principal logs on
+`Interactive` runs in the console session with no password stored, which is how this run started and how
+`GetDpiForMonitor` read 192 from inside that session. JANUSWAX2's foreground lock is 2,147,484 s, so it never lapses
+and a demo a task starts does not take the foreground. The first attempt minimised every window as Win+M does, and
+a full-screen window still held the foreground from the first click on: every click and key was refused and nothing
+reached that window, which is the guard working. What brought that window back was not established. After a restart,
+with nothing else open, the same steps ran clean. ⚠ `-WindowStyle Hidden` did not hide the task's console there, so
+a task shows on the screen of whoever is at the machine.

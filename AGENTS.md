@@ -726,10 +726,9 @@ run nothing and print what the driver read, which is what makes it testable with
   wraps the menu's entries for logging in that same event: built first, it misses the demo's own
   entries (`DemoActionLogTests.A_context_menu_choice_is_written_as_its_verb_and_the_demo_s_own_entry_by_its_header`).
 - **A new demo item goes in the submenu of View its subject belongs to, with an `AutomationId` of its
-  own.** View's own rows are submenus and *Find…*, which is what keeps it shorter than its popup: a row
-  too many once scrolled the palette's entry out of it at 200%, and so out of the automation tree. An
-  entry's id is what the interactive pass finds it by, a submenu opened by its id before an entry in it
-  is clicked, and `DemoMenuTests.Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu`
+  own.** View's own rows are submenus and *Find…*, which is what keeps it shorter than its popup, every
+  row on screen at 200%. An entry's id is what the interactive pass finds it by, a submenu opened by its
+  id before an entry in it is clicked, and `DemoMenuTests.Every_entry_of_the_demos_menus_declares_an_id_of_its_own_unique_within_its_menu`
   holds every entry to one.
 - **A captured window is a look, not a test.** It is one machine, one variant and one moment. The
   snapshot frames under `Snapshots/` with their pixel assertions stay the evidence, per §5. This is
@@ -787,6 +786,11 @@ from opposite directions:
 
 ### On Windows
 
+- ⛔ **Every verb takes physical pixels, so a number in a pass is right at one scaling and one dock.** At
+  200% a click meant for View's header opened File, and a drag meant for the splitter selected text. A
+  part's place is read from UI Automation as the pass runs (`ElementRect`, `ClientOrigin` in
+  `scripts/drive-demo-interactive.ps1`), and `-ExpectScaling` fails a pass at any other scaling, reading the
+  demo's own `Window:` line, because `AppliedDPI` is written at sign-in and outlives a change in Settings.
 - **Parts are addressed by `AutomationId`, never by name** — the names are translated into eight
   locales. `click left --id SideBySide/LeftPane/LineNumbers`: each step is unique within the step
   before it, which is the scope `DECISIONS.md` lays down and `fixtures/automation-ids.txt` pins. The
