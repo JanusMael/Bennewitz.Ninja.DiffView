@@ -333,9 +333,23 @@
     {
       "name": "Avalonia's build telemetry is left on",
       "file": "scripts/mutate-behaviour.cs",
-      "old": "new Dictionary<string, string>(StringComparer.Ordinal) { [\"AVALONIA_TELEMETRY_OPTOUT\"] = \"1\" };",
-      "new": "new Dictionary<string, string>(StringComparer.Ordinal);",
+      "old": "[\"AVALONIA_TELEMETRY_OPTOUT\"] = \"1\",",
+      "new": "",
       "killer": "Every_build_and_test_run_the_harness_starts_has_Avalonias_telemetry_off"
+    },
+    {
+      "name": "MSBuild's node reuse is left on",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "[\"MSBUILDDISABLENODEREUSE\"] = \"1\",",
+      "new": "",
+      "killer": "Every_build_and_test_run_the_harness_starts_has_node_reuse_off"
+    },
+    {
+      "name": "each build takes a timestamp of its own",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "[\"BuildTimestamp\"] = DateTime.Now.ToString(\"yyyyMMddHHmmss\", CultureInfo.InvariantCulture),",
+      "new": "",
+      "killer": "Every_build_and_test_run_the_harness_starts_shares_one_build_timestamp"
     },
     {
       "name": "a test run may take twice as long before it is killed",

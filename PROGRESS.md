@@ -1368,6 +1368,10 @@ wording.
 
     ⭐ **Decided 2026-10-22, by Brian: XamlQuality** — `DECISIONS.md`, *The converged mutation runner is a
     dotnet tool from XamlQuality*. ⛔ The move itself starts only on his word.
+
+    ⭐ **Taken on by Inspections on 2026-11-06, by Brian's decision of that day**, as a numbered plan of its own
+    after its plans 00005 and 00006. It will read `scripts/mutate-behaviour.cs`, `docs/mutation-proofs.md` and
+    `AGENTS.md` §5 from `main` when it starts, so what item 27 learns reaches it only once item 27 has landed.
     ⭐ **It starts after item 27, Brian, 2026-11-06**, that item's results going to Inspections first, on his word.
 
     ⭐ **Sent 2026-10-30, on Brian's word, and received.** DiffView's part was a brief to the Inspections
@@ -1519,8 +1523,8 @@ wording.
     it, 15 of 15. The three literal `TargetType` readings in `AccessibilityCoverageTests` stay, by the same choice
     of his.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, and items 27 and 23 come next, in
-that order. **Every other open item was scheduled by Brian
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, items 27 and 23 come next, in that
+order, and item 30 waits for a release.
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
