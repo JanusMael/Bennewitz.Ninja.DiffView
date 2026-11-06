@@ -48,10 +48,10 @@ they settled a rule, `DECISIONS.md`. Newest first:
 | **PR #14** | `HostingGuideTests.The_guides_id_table_names_exactly_the_ids_the_fixture_pins` holds `docs/hosting-diffview.md`'s `AutomationId` table to `fixtures/automation-ids.txt` both ways, and its menu row to the rule the row states; open item 15 closes | *The hosting guide's id table, held to the fixture* |
 | **PR #15** | Plan 00031: a fold follows its lines and keeps the name it was collapsed under, so an edit under the editor's folds no longer breaks the layout before its re-diff lands; open item 12 closes | *Plan 00031 phases* |
 
-**No pull request is open, and none will be while the AppKit import runs.** Templates began its `plans/00009`
-step 8 on 2026-11-06 from `main` at PR #45: an open pull request blocks it and each later merge costs it a
-re-verify, so on Brian's word of that day nothing merges until it finishes, and what is ready waits on its branch
-(item 29). #2, the last one open, was closed the same day, item 24 having superseded it.
+**DiffView stays in this repository.** Templates imported a copy into AppKit on 2026-11-06, from `main` at PR #45,
+under its `plans/00009` step 8, and Brian decided the same day that it comes back out: `DECISIONS.md`, *DiffView
+stays in its own repository*. Nothing merged here while that ran, and what had waited landed after it. #2, the
+last pull request open, was closed the same day, item 24 having superseded it.
 
 **Plans 00001, 00003–00031 and 00033 are complete and closed**, plan 00034 is in progress
 (below), and plan 00002 was rejected on its own review before any code was written. **Plan 00032 is parked on
@@ -1478,7 +1478,7 @@ wording.
     that way by hand on 2026-10-31 — a commit no ref names, and a worktree detached at it — so that its
     frames could be reviewed before anything was committed.
 
-    ⭐ **Widened by Brian's choice of 2026-11-06, and held until the AppKit import finishes.** It also skips
+    ⭐ **Widened by Brian's choice of 2026-11-06.** It also skips
     `mutate-gates`' restore and builds only what each gate needs, each trim measured on a quiet box with gvp3
     paused and kept only if all 123 verdicts stay identical: a mutation there takes a restore and a whole-solution
     build, and a sample of a loaded run found 70% of it building and 26% testing. The new analyzers' compile cost
@@ -1508,8 +1508,7 @@ wording.
     `DiffView.Core`, `DiffView.Avalonia` and the demo's publish each do. The Templates session was told on
     2026-11-06, on Brian's word, and what `plans/00004` step 8 waits on instead is its own to read.
 
-29. **Two small fixes — Brian, 2026-11-06.** ✅ **Both made the same day on `fix/the-pass-finds-its-drags`, local,
-    and held with item 19's change until the AppKit import finishes.** `README.md` called `NUGET_USER` a repository
+29. **Two small fixes — Brian, 2026-11-06.** ✅ **Both made the same day.** `README.md` called `NUGET_USER` a repository
     secret where `release.yml` reads a repository variable, and so did `DECISIONS.md`, which carries a superseded
     marker now. `PublicVersion`'s line in `Directory.Build.props` read `$(Version)` before the SDK had given it a
     default, so a local build recorded no public version at all, the comment beside it saying 1.0.0, and a
@@ -1520,8 +1519,8 @@ wording.
     it, 15 of 15. The three literal `TargetType` readings in `AccessibilityCoverageTests` stay, by the same choice
     of his.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 29 waits on its branch for the
-AppKit import to finish, and items 27 and 23 follow it, in that order. **Every other open item was scheduled by Brian
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, and items 27 and 23 come next, in
+that order. **Every other open item was scheduled by Brian
 on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
