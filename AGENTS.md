@@ -114,10 +114,11 @@ no dates, no counts.
 - **A template edit regenerates `docs/template-parts.md`, and so may an AvaloniaEdit or XamlQuality bump**, the
   same edits `theme-audit report` asks after: `TemplatePartReferenceTests.The_committed_reference_equals_a_fresh_reading`
   fails on drift and writes the fresh reference beside the committed one, and `scripts/gen-template-parts` takes it.
-  The test has no write mode, and its two checks run first and write nothing. It reads the gates' own control set,
-  peer table and scan, and `BNXQ1003`'s reading through `TemplatePartRule.ReadParts`; that reading has no entry for
-  `DiffStatusStrip` or `DiffPaneHeader`, whose code declares no part, so their parts come from their themes in the
-  scan's markup, a reading held to the rule's wherever both read.
+  The test has no write mode, and its check runs first and writes nothing. It reads the gates' own control set,
+  peer table and scan, and `BNXQ1003`'s reading through `TemplatePartRule.ReadParts`, and nothing of its own: since
+  XamlQuality `2026.4.1109` the reading has an entry for `DiffStatusStrip` and `DiffPaneHeader` too, whose code
+  declares no part, and a reading without those entries fails the check rather than leave the two out, as
+  `tests/DiffView.Avalonia.Tests/Mutations/template-part-reference.json` proves.
 - A new colour token goes into `DiffView.Tokens.axaml`, `DiffView.Tokens.ColorBlind.axaml` and
   `contrast-pairs.json` together; `ThemeResolutionTests.Every_DiffView_token_resolves_in_both_palettes`
   asserts the two palettes define the same keys.

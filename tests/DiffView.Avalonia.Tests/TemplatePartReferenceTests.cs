@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using System.Xml.Linq;
 using Avalonia.Automation;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
@@ -24,17 +23,17 @@ namespace Bennewitz.Ninja.DiffView.Tests;
 /// derives its findings from, so the reference cannot disagree with the gate.
 /// </para>
 /// <para>
-/// ⚠ <b>One reading of its own, held to the rule's.</b> The rule has no entry for a control whose code
-/// declares no part and on whose template nothing looks one up, which is the strip and the header, so their
-/// parts come from their themes in the scan's parsed markup. That reading is made of every theme, and has to
-/// equal the rule's wherever both read. A release that gives those two an entry moves them onto the rule's
-/// reading, and nothing here changes.
+/// ⚠ <b>The strip and the header come from that reading too.</b> Their code declares no part and nothing
+/// looks one up on their templates, and since XamlQuality <c>2026.4.1109</c> the reading still gives each an
+/// entry, its themes' parts and nothing else. Until then this test read their themes from the scan's markup
+/// itself, held to the rule's reading wherever both read; that reading went with the pin that made it
+/// unnecessary, so an older XamlQuality fails the check below rather than leaving the two out.
 /// </para>
 /// <para>
 /// ⛔ <b>There is no write mode.</b> A switch that made this test rewrite the reference and pass would turn
 /// the gate off. On drift the fresh reference lands beside the committed one and
-/// <c>scripts/gen-template-parts</c> moves it over. The two checks run first and write nothing, because what
-/// a failed check would write is a wrong reference, and a received copy invites someone to accept it.
+/// <c>scripts/gen-template-parts</c> moves it over. The check runs first and writes nothing, because what a
+/// failed check would write is a wrong reference, and a received copy invites someone to accept it.
 /// </para>
 /// </remarks>
 public sealed class TemplatePartReferenceTests
@@ -52,7 +51,7 @@ public sealed class TemplatePartReferenceTests
     /// <summary>The find bar's table.</summary>
     private static readonly string[] FindBar = [nameof(DiffFindBar)];
 
-    /// <summary>The table of the two controls the rule has no entry for, the strip's parts first.</summary>
+    /// <summary>The strip's and the header's table, the strip's parts first: two controls whose code declares no part.</summary>
     private static readonly string[] StripAndHeader = [nameof(DiffStatusStrip), nameof(DiffPaneHeader)];
 
     /// <summary>The presenter's table: its own theme, then the one it applies to its text area.</summary>
@@ -64,12 +63,10 @@ public sealed class TemplatePartReferenceTests
     [AvaloniaFact]
     public void The_committed_reference_equals_a_fresh_reading()
     {
-        XamlScanContext scan = TemplatePartTests.Scan();
-        Reading reading = new(TemplatePartRule.ReadParts(scan), ThemesInMarkup(scan));
+        Reading reading = new(TemplatePartRule.ReadParts(TemplatePartTests.Scan()));
         string[] controls = AccessibilityCoverageTests.ConcreteControls();
 
         AssertEveryControlIsPlaced(reading, controls);
-        AssertTheDeclarationsAgree(reading);
 
         string fresh = Render(reading, controls);
         string committed = RepoPaths.Source(Path.Combine("docs", "template-parts.md"));
@@ -91,15 +88,16 @@ public sealed class TemplatePartReferenceTests
     }
 
     /// <summary>
-    /// The first check: every control of the set and every entry of the reading whose theme is in the
-    /// library's markup has its place. One with a theme has a table to be in, one with none really is drawn,
-    /// and each control a table shows has one theme to show, in the library's markup.
+    /// The check, made before anything is written: every control of the set and every entry of the reading
+    /// whose theme is in the library's markup has its place. One with a theme has a table to be in, one with
+    /// none really is drawn, and each control a table shows has one theme to show, in the library's markup.
     /// </summary>
     /// <remarks>
     /// A control with a theme and no table would be missing from the reference without a word, and the
-    /// controls table calls a control with no theme drawn, which of a templated control would be false. The
-    /// last assertion is what makes <see cref="LibraryMarkup"/> able to fail: a literal that stopped naming the
-    /// library's folder would match nothing in the first, and pass.
+    /// controls table calls a control with no theme drawn, which of a templated control would be false: that
+    /// is the assertion an older XamlQuality fails, its reading having no entry for the strip or the header.
+    /// The last assertion is what makes <see cref="LibraryMarkup"/> able to fail: a literal that stopped naming
+    /// the library's folder would match nothing in the first, and pass.
     /// </remarks>
     private static void AssertEveryControlIsPlaced(Reading reading, string[] controls)
     {
@@ -136,37 +134,6 @@ public sealed class TemplatePartReferenceTests
             notOneTheme.Length == 0,
             "A table shows one theme of each control, in the library's markup, and these have none, several, "
             + "or one elsewhere: " + string.Join(", ", notOneTheme));
-    }
-
-    /// <summary>
-    /// The second check: this test's reading of a theme equals the rule's wherever both read, by name,
-    /// element and id, in order. It passes over nothing only while the rule read the themes of every control
-    /// a table takes from it, which is asserted first.
-    /// </summary>
-    private static void AssertTheDeclarationsAgree(Reading reading)
-    {
-        string[] unread =
-        [
-            .. Placed
-                .Except(StripAndHeader, StringComparer.Ordinal)
-                .Except(reading.Rule.Controls.Where(c => c.Themes.Count > 0).Select(c => c.Name), StringComparer.Ordinal),
-        ];
-        Assert.True(
-            unread.Length == 0,
-            "The rule read no theme of these controls, so nothing here can be compared with its reading: "
-            + string.Join(", ", unread));
-
-        string[] disagreeing =
-        [
-            .. reading.Rule.Controls
-                .Where(c => !c.Themes.SelectMany(t => t.Declared)
-                    .SequenceEqual(reading.Markup[c.Name].SelectMany(t => t.Declared)))
-                .Select(c => c.Name),
-        ];
-        Assert.True(
-            disagreeing.Length == 0,
-            "This test's reading of these controls' themes differs from BNXQ1003's, which it is held to: "
-            + string.Join(", ", disagreeing));
     }
 
     /// <summary>The reference. Nothing in it depends on the culture or the machine: a theme by its file name, never its path.</summary>
@@ -374,62 +341,6 @@ public sealed class TemplatePartReferenceTests
     private static Type TypeOf(string control) =>
         typeof(SideBySideDiffView).Assembly.GetTypes().Single(t => t.Name == control);
 
-    /// <summary>Every theme in the scan's parsed markup, by the control it targets.</summary>
-    private static ILookup<string, ThemeParts> ThemesInMarkup(XamlScanContext scan) => scan.ParsedFiles
-        .SelectMany(file => file.Document!.Descendants()
-            .Where(e => e.Name.LocalName == "ControlTheme" && e.Attribute("TargetType") is not null)
-            .Select(theme => (
-                Target: TargetOf(theme.Attribute("TargetType")!.Value),
-                Parts: new ThemeParts(file.RelativePath, null, [.. theme.Descendants().Select(PartOf).OfType<DeclaredPart>()]))))
-        .ToLookup(t => t.Target, t => t.Parts, StringComparer.Ordinal);
-
-    /// <summary>The control a <c>TargetType</c> names, written <c>dv:Thing</c> or <c>{x:Type dv:Thing}</c>.</summary>
-    private static string TargetOf(string targetType)
-    {
-        string written = targetType.Trim();
-        if (written.StartsWith('{'))
-        {
-            written = written.TrimEnd('}').Split(' ', StringSplitOptions.RemoveEmptyEntries)[^1];
-        }
-
-        return written[(written.LastIndexOf(':') + 1)..];
-    }
-
-    /// <summary>
-    /// The part an element declares, if it declares one: its name, element and id, in every spelling Avalonia
-    /// takes. The rule's own reading of an element is internal to its package, so this one is what the second
-    /// check holds to it.
-    /// </summary>
-    private static DeclaredPart? PartOf(XElement element)
-    {
-        string? name = element.Attributes().FirstOrDefault(a => a.Name.LocalName == "Name")?.Value;
-        return name?.Length > TemplatePartRule.PartPrefix.Length
-            && name.StartsWith(TemplatePartRule.PartPrefix, StringComparison.Ordinal)
-                ? new DeclaredPart(name, element.Name.LocalName, AutomationIdOf(element))
-                : null;
-    }
-
-    /// <summary>
-    /// An element's automation id: a value in the attribute, else what the property element holds, its text or
-    /// the object it sets in braces, else the blank attribute, which hides the id the framework would derive.
-    /// </summary>
-    private static string? AutomationIdOf(XElement element)
-    {
-        const string Id = "AutomationProperties.AutomationId";
-        XAttribute? attribute = element.Attributes().FirstOrDefault(a => a.Name.LocalName == Id);
-        XElement? property = element.Elements().FirstOrDefault(
-            e => e.Name.LocalName == Id && (e.HasElements || !string.IsNullOrWhiteSpace(e.Value)));
-
-        if (!string.IsNullOrWhiteSpace(attribute?.Value) || property is null)
-        {
-            return attribute?.Value;
-        }
-
-        return string.IsNullOrWhiteSpace(property.Value)
-            ? "{" + property.Elements().First().Name.LocalName + "}"
-            : property.Value.Trim();
-    }
-
     private static string IdOf(DeclaredPart part) => part.AutomationId is { } id ? Code(id) : Absent;
 
     private static string Code(string text) => $"`{text}`";
@@ -437,12 +348,12 @@ public sealed class TemplatePartReferenceTests
     private static void Row(StringBuilder text, params IEnumerable<string> cells) =>
         text.Append("| ").AppendJoin(" | ", cells).Append(" |\n");
 
-    /// <summary>The rule's reading, and this test's own reading of every theme in the scan's markup.</summary>
-    private sealed record Reading(TemplatePartReading Rule, ILookup<string, ThemeParts> Markup)
+    /// <summary>The rule's reading, and what the tables ask of it.</summary>
+    private sealed record Reading(TemplatePartReading Rule)
     {
-        /// <summary>A control's themes: the rule's reading of them, or the markup's where it has no entry.</summary>
+        /// <summary>A control's themes as the rule read them, and none where it has no entry, as a drawn control has none.</summary>
         public IReadOnlyList<ThemeParts> ThemesOf(string control) =>
-            Rule.Controls.FirstOrDefault(c => c.Name == control)?.Themes ?? [.. Markup[control]];
+            Rule.Controls.FirstOrDefault(c => c.Name == control)?.Themes ?? [];
 
         public DeclaredPart[] PartsOf(string control) => [.. ThemesOf(control).SelectMany(t => t.Declared)];
 
