@@ -2,17 +2,17 @@
 
 ## Resume
 
-**`main` carries everything through PR #46, and CI is green on it** — PR #46 merged on a full
-12-of-12, 2026-11-06. *A resume names the pull request it was written for and
+**`main` carries everything through PR #47, and CI is green on it** — PR #47 merged on a full
+12-of-12, 2026-11-09. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 990** here, `Passed!`, by a local run over item 27's
-branch — four more than over item 28's, two in `PublicVersionTests` and two in `MutateBehaviourTests`. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 990** here, `Passed!`, by a local run over item 30's
+branch, as over item 27's — four more than over item 28's, two in `PublicVersionTests` and two in `MutateBehaviourTests`. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **123** mutations and derives **88** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — over item 27's branch, on 2026-11-06, in four
+Linux, and the last full run — over item 30's branch, on 2026-11-09, in four
 worktrees — gave all 123 as declared: 119 killed by the test each names, 2 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 88 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
@@ -1374,6 +1374,9 @@ wording.
     after its plans 00005 and 00006. It will read `scripts/mutate-behaviour.cs`, `docs/mutation-proofs.md` and
     `AGENTS.md` §5 from `main` when it starts, so what item 27 learns reaches it only once item 27 has landed.
     ⭐ **It starts after item 27, Brian, 2026-11-06**, that item's results going to Inspections first, on his word.
+    ⭐ **Item 27 landed as PR #47 on 2026-11-09, and its results reached Inspections the same day** on his word, a
+    note pointing at `AGENTS.md` §5 and `DECISIONS.md`, *What a mutation's build pays for*, so the plan is
+    Inspections' to start.
 
     ⭐ **Sent 2026-10-30, on Brian's word, and received.** DiffView's part was a brief to the Inspections
     repository — XamlQuality's since the rename, with AssemblyQuality and CodeQuality merged into it — on
@@ -1490,7 +1493,7 @@ wording.
     is an unmeasured suspect. The loaded baselines are the gate at 35.6 min and all 14 sets at 64.4 min, against
     14.3 min for the gate on 2026-11-04.
 
-    ✅ **Done 2026-11-06 on `build/the-gate-builds-what-it-reads`, and it lands on Brian's word, the push being his.**
+    ✅ **Done 2026-11-06 on `build/the-gate-builds-what-it-reads`, and landed as PR #47 on 2026-11-09, on Brian's word.**
     Both harnesses now set node reuse off, the telemetry opt-out and one `BuildTimestamp` for themselves, and
     `mutate-gates --parallel` runs over uncommitted work. A mutation's build is the test project's and restores only
     where one is owed, and `--check` applies and reverts every mutation in under a minute. On the quiet box a full
@@ -1542,13 +1545,26 @@ wording.
     Brian's to call, from an `xamlquality/` tag, and the pin that takes it drops the local reading and regenerates
     `docs/template-parts.md`.
 
+    ✅ **Done 2026-11-09 on `build/the-local-reading-retires`, on Brian's word of that day, and it lands on his word, the
+    push being his.** `2026.4.1109` is on nuget.org, read there, and the pin takes it. Raised with the local reading
+    still in place, the reading's new entries for the strip and the header equalled it and the reference came out
+    byte-identical; with that reading gone, byte-identical again, so `docs/template-parts.md` does not move. The test
+    fails its check at `2026.4.1026` now, naming both, and `Mutations/template-part-reference.json` proves it, six of
+    six as declared. A full gate run in four worktrees over this tree gave all 123 mutations as declared, 119 killed by
+    the test each names, 2 by the build and 2 green by design, and all 88 guards tripped first, in 40.8 minutes on a box
+    other work held at full load. The six proof sets on `DiffView.Avalonia.Tests` ran over it in four worktrees, 78
+    mutations as declared and every declared test killed, in 49.6 minutes under the same load; AgentBaseline's ten,
+    which the pin cannot reach, were not run. The suite ran 990 of 990 on Windows, `Passed!`, and `catch-crash` judged
+    the run healthy. `DECISIONS.md`, *Plan 00030's own reading retires with XamlQuality 2026.4.1109*.
+
 31. **What leaned on the move into AppKit — 2026-11-06.** DiffView stays here, so two things left as they are because
     of the move want another look, each Brian's to call. `release.yml` goes on naming its ids rather than reading
     `packages.push`, `DECISIONS.md` and `PackagesPushTests` saying the move replaces it with the template's. And
     `conventions` is not a required check, item 28 saying the move would make it short-lived.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 is done and lands on his
-word, item 23 follows it, item 30 waits for a release, and item 31 for his word. **Every other open item was
+Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 landed as PR #47 on
+2026-11-09, item 23 is Inspections' to start now that item 27's results have reached it, item 30 is done and
+lands on his word, and item 31 waits for his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
@@ -3203,7 +3219,6 @@ or declined**.
 | 2026-10-08 | Twelve Windows driving findings — what `docs/ui-automation-notes.md` stages |
 | 2026-10-09 | Two: a drag verb reporting success while the control did nothing; an element's UI Automation parent not being the window it is drawn in |
 | 2026-10-10 | Three: silence counted as success three times over; stock template parts advertise patterns our own peers do not; ask before borrowing the desktop |
-| 2026-11-01 | A request, not a lesson: `TemplatePartRule.ReadParts` to give an entry to a themed control whose code declares no part, which retires plan 00030's own reading of the strip's and the header's themes. Recorded there word for word, and confirmed against its source |
 
 ⚠ **Until a batch comes back as landed, this repository's copy is the only checked record of it** —
 so a lesson is removed from here when XamlQuality says it landed, never when it was sent.

@@ -4955,3 +4955,53 @@ the main chain, so the 0.3 s may understate what the test project saves in a ful
 describing the project as mutated. `mutate-behaviour` restores only for the mutation itself. No set's build edit
 changes what a restore resolves — they touch `IsPackable`, `PackageId`, `PublicVersion` and `DefaultItemExcludes` — so
 nothing is wrong today, and a set whose edit does will need the same rule.
+
+## Plan 00030's own reading retires with XamlQuality 2026.4.1109
+
+Open item 30, on Brian's word of 2026-11-09. `Bennewitz.Ninja.XamlQuality` `2026.4.1109` carries Inspections PR #123,
+the request this repository made on 2026-11-01: `TemplatePartRule.ReadParts` gives an entry to every top-level,
+non-generic type the scan loaded that a theme targets, so a themed control whose code declares no part is in the
+reading with its themes' parts and no constants or lookups. Here those are `DiffStatusStrip` and `DiffPaneHeader`, whose
+parts `TemplatePartReferenceTests` had read from their themes in the scan's markup itself, held to the rule's reading
+wherever both read. That was plan 00030's decision for the two, and the risk it named: *a release that gives a themed
+control with no code parts an entry moves those two from the local reading to the rule's*.
+
+**The pin moved first, with the local reading still in place.** At `2026.4.1109` and nothing else changed, the test's
+second check compared the rule's new entries for the strip and the header with its own reading of their themes and found
+them equal, and the committed reference came out byte-identical, the test running against that package's
+`XamlQuality.dll`, compared byte for byte. Then the local reading went, and its check with it, and the reference came out
+byte-identical again. The test reads nothing of its own now, and `docs/template-parts.md` does not move.
+
+**One check is left, and an older pin fails it.** Before anything is written the test asserts that every control is
+placed, that a templated control has a theme, and that each control a table shows has one theme, in the library's markup.
+The second of those carries the strip and the header now: at `2026.4.1026`, run by hand with the new test, it fails
+naming both, and nothing is written.
+
+**Every rule was re-opened by its source.** The two tags' XamlQuality source differs in the template-part reading, its
+report and the `parts` command, a project file that declares the library not yet trimmable, friend grants moved into the
+repository's own file, and comments; every other rule's code is unchanged. `BNXQ1003`'s own check takes the new entries
+down the branch that named the two in a skip before, and `TemplatePartTests`, which pins its skipped subjects and its
+findings, passes unchanged. Item 14 read every rule at both pins over one commit; where the source moves in one rule,
+the diff says which, and the gates' full run says the rest held.
+
+**The proof is committed.** `tests/DiffView.Avalonia.Tests/Mutations/template-part-reference.json` holds the test to
+each of its four assertions: a reading whose entries for the two go unread, the find bar left out of the tables, the
+library's markup looked for elsewhere, and two drifts, a strip part renamed in its theme and the reference edited by
+hand, beside a green control. All six ran as declared. ⚠ **Its first mutation is not the pin.** A pin moved in a set
+changes what a restore resolves, the case *What a mutation's build pays for* closes on: `mutate-behaviour` restores for
+that mutation's own build and not after its revert, so every run after it in the set or its shard would build against
+the older reading. The rule is still owed by the first set that needs a pin moved; this one leaves the new entries
+unread instead, which is what the older pin does, and the pin itself was run by hand.
+
+**Ten owed sets were not run, because the pin cannot reach them.** `--owed` reads a set's pins file as one of its
+inputs, so a moved pin owes every set, and item 28's did run all fourteen: that pin was an analyzer, and it reached every
+project. This one reaches `DiffView.Avalonia.Tests` alone, the only project whose restore resolves XamlQuality.
+AgentBaseline's ten sets build `AgentBaseline.Tests`, whose restore does not, so the only input of theirs that moved is
+the props file's text, and a run of them would rebuild what it built before.
+
+**The runs.** `--guards` lists 88 at the new pin, no marker standing. A full gate run in four worktrees over this tree
+gave all 123 mutations as declared, 119 killed by the test each names, 2 by the build and 2 green by design, and all 88
+guards tripped first, in 40.8 minutes on a box other work held at full load. The six proof sets on
+`DiffView.Avalonia.Tests` ran over it in four worktrees, 78 mutations as declared and every declared test killed, in
+49.6 minutes under the same load. The suite ran 990 of 990 on Windows, `Passed!`, and `catch-crash` judged the run
+healthy.
