@@ -1,0 +1,72 @@
+{
+  // docs/template-parts.md is what TemplatePartReferenceTests reads from the gates' own scan and BNXQ1003's
+  // reading, and its one check runs before anything is written. Since XamlQuality 2026.4.1109 that reading
+  // has an entry for the strip and the header, whose code declares no part, so the test reads nothing of its
+  // own. The first mutation leaves unread the entries 2026.4.1026 did not make, which is what that pin does,
+  // run by hand on 2026-11-09. The pin itself is no mutation here: this harness restores for a mutation's own
+  // build and not after its revert, so the runs after it would build against the older reading
+  // (DECISIONS.md, "What a mutation's build pays for").
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/template-part-reference.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.TemplatePartReferenceTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the reading's entry for a control whose code declares no part goes unread, as 2026.4.1026 made none",
+      "file": "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs",
+      "old": "Rule.Controls.FirstOrDefault(c => c.Name == control)?.Themes ?? [];",
+      "new": "Rule.Controls.FirstOrDefault(c => c.Name == control && c.Constants.Count + c.Lookups.Count > 0)?.Themes ?? [];",
+      "killer": "The_committed_reference_equals_a_fresh_reading",
+      "says": "are templated and have no theme",
+      "because": "with no entry for the strip or the header, and no reading of their themes of its own, the test must refuse to call two templated controls drawn rather than leave their parts out"
+    },
+    {
+      "name": "the find bar has a theme and no table",
+      "file": "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs",
+      "old": "[.. Views, .. FindBar, .. StripAndHeader, .. Presenter]",
+      "new": "[.. Views, .. StripAndHeader, .. Presenter]",
+      "killer": "The_committed_reference_equals_a_fresh_reading",
+      "says": "have a theme and no table"
+    },
+    {
+      "name": "the library's markup is looked for where it is not",
+      "file": "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs",
+      "old": "LibraryMarkup = \"DiffView.Avalonia/\";",
+      "new": "LibraryMarkup = \"DiffView.Avalonia.Probe/\";",
+      "killer": "The_committed_reference_equals_a_fresh_reading",
+      "says": "A table shows one theme of each control, in the library's markup",
+      "because": "a literal that names no folder matches nothing in the placement's second source and passes it, so the last assertion is the one that must trip"
+    },
+    {
+      "name": "a part of the strip is renamed in its theme",
+      "file": "src/DiffView.Avalonia/Themes/DiffStatusStrip.axaml",
+      "old": "Name=\"PART_BuildTime\"",
+      "new": "Name=\"PART_BuildClock\"",
+      "killer": "The_committed_reference_equals_a_fresh_reading",
+      "says": "is not what the code says",
+      "because": "the strip's rows come from BNXQ1003's reading of its theme now, so the rename reaches the reference through the rule"
+    },
+    {
+      "name": "the committed reference is edited by hand",
+      "file": "docs/template-parts.md",
+      "old": "`PART_Dismiss` | `Button` | `StatusDismiss`",
+      "new": "`PART_Dismiss` | `Button` | `StatusClose`",
+      "killer": "The_committed_reference_equals_a_fresh_reading",
+      "says": "is not what the code says"
+    },
+    {
+      "name": "a part count's noun is chosen by the negated test",
+      "file": "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs",
+      "old": "(parts == 1 ? \" part\" : \" parts\")",
+      "new": "(parts != 1 ? \" parts\" : \" part\")",
+      "expect": "green",
+      "because": "a conditional whose test is negated and whose branches are swapped is the same conditional"
+    }
+  ]
+}

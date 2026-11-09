@@ -39,6 +39,10 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **XamlQuality moves to `2026.4.1109`, and the parts reference reads nothing of its own.** The release's reading
+  of template parts gives a themed control whose code declares no part an entry, so `TemplatePartReferenceTests`
+  takes `DiffStatusStrip`'s and `DiffPaneHeader`'s parts from `BNXQ1003`'s reading, as it takes every other
+  control's, and no longer reads their themes itself. `docs/template-parts.md` does not move. Test-only, as before.
 - **The mutation harnesses keep their builds to themselves.** Both turn MSBuild's node reuse off and hold one
   `BuildTimestamp` for a run, where every build had recompiled every project however little had changed.
   `mutate-gates --parallel` runs over uncommitted work rather than refusing it, a mutation's build is the test

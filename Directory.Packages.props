@@ -62,8 +62,11 @@
          one commit at the old pins and the new: no id moved, and every rule this repository uses read the
          same counts, findings and skipped subjects on every subject it reads. Of the three rules new since
          928, BNAQ1005 is adopted (AssemblyQualityTests); BNXQ1010 has nothing here to read and BNAQ1006
-         nothing here it could fail on, so both are declined. DECISIONS.md has the readings. -->
-    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1026" />
+         nothing here it could fail on, so both are declined. Open item 30 moved XamlQuality to 2026.4.1109,
+         whose source differs from 1026's in one rule: BNXQ1003's reading of template parts gives every
+         themed control an entry, which retired the parts reference's own reading of two themes.
+         DECISIONS.md has the readings. -->
+    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1109" />
     <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1029" />
     <!-- Unicode's East Asian Width, for scripts/measure-menu-width.cs: a CJK glyph takes two columns,
          and .NET carries no such table. Script-only: nothing the solution builds references it. -->
