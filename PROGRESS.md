@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #47, and CI is green on it** — PR #47 merged on a full
-12-of-12, 2026-11-09. *A resume names the pull request it was written for and
+**`main` carries everything through PR #48, and CI is green on it** — PR #48 merged on a full
+12-of-12, 2026-11-10. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 990** here, `Passed!`, by a local run over item 30's
-branch, as over item 27's — four more than over item 28's, two in `PublicVersionTests` and two in `MutateBehaviourTests`. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 994** here, `Passed!`, by a local run over item 32's
+branch — four more than over item 30's, all four in `MutateBehaviourTests`. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -1545,8 +1545,8 @@ wording.
     Brian's to call, from an `xamlquality/` tag, and the pin that takes it drops the local reading and regenerates
     `docs/template-parts.md`.
 
-    ✅ **Done 2026-11-09 on `build/the-local-reading-retires`, on Brian's word of that day, and it lands on his word, the
-    push being his.** `2026.4.1109` is on nuget.org, read there, and the pin takes it. Raised with the local reading
+    ✅ **Done 2026-11-09 on `build/the-local-reading-retires`, on Brian's word of that day, and landed as PR #48 on
+    2026-11-10.** `2026.4.1109` is on nuget.org, read there, and the pin takes it. Raised with the local reading
     still in place, the reading's new entries for the strip and the header equalled it and the reference came out
     byte-identical; with that reading gone, byte-identical again, so `docs/template-parts.md` does not move. The test
     fails its check at `2026.4.1026` now, naming both, and `Mutations/template-part-reference.json` proves it, six of
@@ -1562,9 +1562,24 @@ wording.
     `packages.push`, `DECISIONS.md` and `PackagesPushTests` saying the move replaces it with the template's. And
     `conventions` is not a required check, item 28 saying the move would make it short-lived.
 
+32. **The two `mutate-behaviour` follow-ups item 30 found — Brian, 2026-11-09, *"Yes, after item 30 lands"*.** The
+    harness restored for a mutation whose edit is to what restore reads and not after its revert, so no set could move
+    a pin; and `--owed` owed every set whose pins file changed, which after item 30's pin was all sixteen, ten of them
+    beyond its reach.
+
+    ✅ **Done 2026-11-10 on `build/a-moved-pin-owes-what-it-reaches`, and it lands on Brian's word, the push being his.**
+    The build after an edit to what restore reads restores too, through `Mutation.RestoresAfter`, which the run and
+    `--list` share, and item 30's set carries the pin itself as its first mutation. `--owed` owes a set for its pins
+    only where a moved package reaches it, a marker in its tests naming it or its project's restore resolving it, and
+    owes the run where that cannot be read; over the change since before item 30 it reaches the judgement item 30 made
+    by hand. Over this tree `--owed main` chose the two sets the change owes and no other, and in four worktrees both
+    ran as declared, the harness's own 60 with every one of its 43 declared tests killed and item 30's 7 with the pin
+    among them, in 9.6 minutes. The suite ran 994 of 994 on Windows, `Passed!`, and `catch-crash` judged the run
+    healthy. `DECISIONS.md`, *mutate-behaviour restores after a revert, and a moved pin owes only what it reaches*.
+
 Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 landed as PR #47 on
-2026-11-09, item 23 is Inspections' to start now that item 27's results have reached it, item 30 is done and
-lands on his word, and item 31 waits for his word. **Every other open item was
+2026-11-09, item 23 is Inspections' to start now that item 27's results have reached it, item 30 landed as PR #48
+on 2026-11-10, item 31 waits for his word, and item 32 is done and lands on his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
