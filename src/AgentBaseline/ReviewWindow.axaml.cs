@@ -63,6 +63,12 @@ internal sealed partial class ReviewWindow : Window
     private MarkdownSection? sectionSpoken;
 
     /// <summary>
+    /// The heading path last said for the left pane's caret, or <see langword="null"/> while none is: the left's
+    /// counterpart of <see cref="sectionSpoken"/>, compared by path because the accumulator is read afresh.
+    /// </summary>
+    private string? leftSectionSaid;
+
+    /// <summary>
     /// The staleness the last save warned of and the accumulator it warned over — a save finding both
     /// unchanged is decision 11's acknowledgement — or <see langword="null"/> while no warning stands.
     /// </summary>
@@ -138,6 +144,7 @@ internal sealed partial class ReviewWindow : Window
         if (forward ? review.Next() : review.Previous())
         {
             sectionSpoken = null;
+            leftSectionSaid = null;
             ShowPosition();
             Say(string.Empty);
             return;
@@ -300,7 +307,7 @@ internal sealed partial class ReviewWindow : Window
     }
 
     /// <summary>
-    /// Follows the right pane's caret, which the view's template makes: this window applies no theme of
+    /// Follows both panes' carets, which the view's template makes: this window applies no theme of
     /// its own, so the template is applied once, and a pane a later one replaced would move no caret.
     /// </summary>
     private void OnViewTemplateApplied(object? sender, TemplateAppliedEventArgs e)
@@ -308,6 +315,11 @@ internal sealed partial class ReviewWindow : Window
         if (e.NameScope.Find<DiffPanePresenter>(SideBySideDiffView.RightPanePart) is { } right)
         {
             right.TextArea.Caret.PositionChanged += OnRightCaretMoved;
+        }
+
+        if (e.NameScope.Find<DiffPanePresenter>(SideBySideDiffView.LeftPanePart) is { } left)
+        {
+            left.TextArea.Caret.PositionChanged += OnLeftCaretMoved;
         }
     }
 
@@ -332,6 +344,34 @@ internal sealed partial class ReviewWindow : Window
         if (section is not null)
         {
             Say($"{MarkdownOutline.Spoken(section.HeadingPath)} — {review.StandingOf(section).Spoken}.");
+            leftSectionSaid = null;
+        }
+    }
+
+    /// <summary>
+    /// Names the accumulator's section at the left pane's caret, the one Drop acts on, once the caret is in a
+    /// section other than the one last said for it; and once the left has spoken, the right's next move speaks
+    /// again. A take or a drop moves this caret while it edits, and the verb's outcome is said after that, so
+    /// the section the edit left the caret in is remembered and its outcome stands.
+    /// </summary>
+    private void OnLeftCaretMoved(object? sender, EventArgs e)
+    {
+        if (session is not { } review || sender is not Caret caret)
+        {
+            return;
+        }
+
+        string? path = review.AccumulatorPathAt(caret.Line);
+        if (string.Equals(path, leftSectionSaid, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        leftSectionSaid = path;
+        if (path is not null)
+        {
+            Say($"{MarkdownOutline.Spoken(path)} — in the baseline; Drop removes it.");
+            sectionSpoken = null;
         }
     }
 

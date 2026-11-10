@@ -11,30 +11,50 @@
     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="8,4">
       <Button x:Name="PreviousButton" Content="Previous candidate"
               AutomationProperties.AutomationId="PreviousCandidate"
-              AutomationProperties.Name="Show the previous candidate on the right" />
+              AutomationProperties.Name="Show the previous candidate on the right"
+              ToolTip.Tip="Show the previous candidate on the right (Shift+F8)." />
       <Button x:Name="NextButton" Content="Next candidate"
               AutomationProperties.AutomationId="NextCandidate"
-              AutomationProperties.Name="Show the next candidate on the right" />
+              AutomationProperties.Name="Show the next candidate on the right"
+              ToolTip.Tip="Show the next candidate on the right (F8)." />
       <Button x:Name="TakeButton" Content="Take"
               AutomationProperties.AutomationId="Take"
-              AutomationProperties.Name="Take the section at the right pane's caret into the baseline" />
+              AutomationProperties.Name="Take the section at the right pane's caret into the baseline"
+              ToolTip.Tip="Take the section at the right pane's caret into the baseline: it replaces the baseline's section under the same heading, or is added where the candidate has it. Kept with the save, so later runs know." />
       <Button x:Name="LeaveButton" Content="Leave"
               AutomationProperties.AutomationId="Leave"
-              AutomationProperties.Name="Leave the section at the right pane's caret out of the baseline" />
+              AutomationProperties.Name="Leave the section at the right pane's caret out of the baseline"
+              ToolTip.Tip="Leave the section at the right pane's caret out of the baseline. The baseline is not touched, and the choice is kept with the save, so this version is not offered again." />
       <Button x:Name="DeferButton" Content="Defer"
               AutomationProperties.AutomationId="Defer"
-              AutomationProperties.Name="Put the section at the right pane's caret off for this session" />
+              AutomationProperties.Name="Put the section at the right pane's caret off for this session"
+              ToolTip.Tip="Put the section at the right pane's caret off for this session. Nothing is decided or kept, so a later run offers it again." />
       <Button x:Name="DropButton" Content="Drop"
               AutomationProperties.AutomationId="Drop"
-              AutomationProperties.Name="Drop the section at the left pane's caret from the baseline" />
+              AutomationProperties.Name="Drop the section at the left pane's caret from the baseline"
+              ToolTip.Tip="Drop the section at the left pane's caret from the baseline, the one choice that removes something the machines had. Kept with the save." />
       <Button x:Name="SaveButton" Content="Save baseline…"
               AutomationProperties.AutomationId="SaveBaseline"
-              AutomationProperties.Name="Write the baseline and its provenance to a new file" />
+              AutomationProperties.Name="Write the baseline and its provenance to a new file"
+              ToolTip.Tip="Write the baseline and the decisions behind it to a new file, never over a file the corpus read. Over stale candidates it warns first, and saving again accepts the warning." />
     </StackPanel>
 
-    <StackPanel DockPanel.Dock="Bottom" Margin="8,4" Spacing="2">
+    <StackPanel DockPanel.Dock="Bottom" Margin="8,4" Spacing="4">
       <TextBlock x:Name="PositionText" AutomationProperties.AutomationId="Position" />
-      <TextBlock x:Name="OutcomeText" AutomationProperties.AutomationId="Outcome" TextWrapping="Wrap" />
+      <!-- The section under the caret of whichever pane moved last, or what a verb just did: in a band of its
+           own, so it reads apart from the position line above it, and hidden while it has nothing to say. The
+           colours are the status strip's active pair, whose contrast DiffView's tokens already hold. -->
+      <Border x:Name="OutcomeBand"
+              Padding="8,4"
+              BorderThickness="4,0,0,0"
+              CornerRadius="2"
+              Background="{DynamicResource DiffView.StatusActiveBackgroundBrush}"
+              BorderBrush="{DynamicResource DiffView.FocusAccentBrush}"
+              IsVisible="{Binding #OutcomeText.Text, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <TextBlock x:Name="OutcomeText" AutomationProperties.AutomationId="Outcome" TextWrapping="Wrap"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource DiffView.StatusActiveForegroundBrush}" />
+      </Border>
     </StackPanel>
 
     <dv:SideBySideDiffView x:Name="View" AutomationProperties.AutomationId="Review"

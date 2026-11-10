@@ -39,6 +39,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **The review window's buttons carry tooltips, and every input control in the repository's markup is held to
+  one.** Each says what it acts on and whether the choice is kept for later runs. `TooltipCoverageTests` reads the
+  markup under `src` and fails on any button, toggle, box or picker without a tooltip.
+- **The review window names the section under whichever caret moved last**, the baseline's at the left one being
+  the section Drop acts on, in a band of its own that hides while it has nothing to say. A take's or a drop's
+  outcome stands while the caret stays in the section its edit left it in.
 - **`conventions` is a required check.** The family's repository-conventions check ran on every pull request without
   being able to block one. `.github/repository.json` lists it beside the five checks `main` already required, and
   `repo-conventions apply` writes the list to the ruleset.
