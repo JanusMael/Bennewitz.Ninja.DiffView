@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` carries everything through PR #50, and CI is green on it** — PR #50 merged on a full
+**`main` carries everything through PR #51, and CI is green on it** — PR #51 merged on a full
 12-of-12, 2026-11-10. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
 wrong the moment it is true.* **Windows measured 994** here, `Passed!`, by a local run over item 32's
@@ -1590,7 +1590,8 @@ wording.
     `ci/conventions-is-required`, `.github/repository.json` lists it, and `repo-conventions apply`, his, writes the
     list to the ruleset — until it does, the check fails on that one finding, measured on the branch. The release
     goes on naming its ids, its push step never having run. `DECISIONS.md`, *`conventions` is required, and the
-    release still names its ids*.
+    release still names its ids*. ✅ **Landed as PR #51 the same day**: Brian ran `apply`, `conventions` was re-run
+    green, and the pull request merged on all six required checks.
 
 32. **The two `mutate-behaviour` follow-ups item 30 found — Brian, 2026-11-09, *"Yes, after item 30 lands"*.** The
     harness restored for a mutation whose edit is to what restore reads and not after its revert, so no set could move
@@ -1619,11 +1620,41 @@ wording.
     busy box. `DECISIONS.md`, *CI checks that every mutation still applies*. On PR #50's own run, the first on
     Linux, they read `123 of 123 mutation(s) apply.` and `16 set(s), 0 not as declared`.
 
+34. **The review window's buttons had no tooltips, and nothing named the section Drop acts on — Brian, 2026-11-10.**
+    Reviewing the consolidation, he asked what take, leave and defer do. The window's seven buttons carried accessible
+    names and no tooltip, against his rule that every button and every other input control has one, and nothing in
+    the suite held that rule. And Drop acts on the section at the left pane's caret, which the line under the panes
+    never named. Through `/choices` he asked for the left caret's section to be named and for that line to stand
+    out, and for an overlay marking the current section to be considered.
+
+    ✅ **Done 2026-11-10 on `fix/review-window-tooltips`.** Each button has a tooltip saying what it acts on and
+    whether the choice is kept for later runs, and `TooltipCoverageTests` holds every input control in the
+    repository's markup to one, reading `src` with build output pruned and a floor per project, the library's 15
+    controls and the window's 7. The line under the panes names the section under whichever pane's caret moved last:
+    the candidate's, with what the store knows of it, or the baseline's, *"in the baseline; Drop removes it"*. A
+    take's or a drop's outcome stands while the caret stays in the section its edit left it in, as a verb's already
+    did on the right. The line stands in a band of its own, hidden while it has nothing to say, in the status strip's
+    active pair, whose contrast the tokens already hold. The window was rebuilt and reopened for him on the same
+    corpus. Four `StandingLineTests` are new and one changed, the left caret having been asserted silent;
+    `startup.json` gained eight mutations and re-pointed one, and `tooltips.json` is new. In four worktrees the five
+    sets the change owes came out 208 of 209 as declared, the survivor a reset no test could see: the test's next
+    candidate opened on a heading, so the right caret's arrival forgot the left's section before the move could.
+    Pointed at a candidate that opens on a line in no section, the test kills it, and `startup.json` came out 63 of
+    63 again, every one of its 25 declared tests killed. **The overlay is his to call**: drawn by the host it would
+    paint the other side's padding rows at a section's edges, so the recommendation is a small public range emphasis
+    in the library, which AgentBaseline sets from the caret.
+    `DECISIONS.md`, *The review window names both carets' sections, and every input control has a tooltip*.
+
+    ⛔ **`mutate-behaviour --owed` runs the sets it owes, one after another, in this checkout.** Bounded by a
+    `timeout`, a run was killed partway and left a save mutation, `stale.Count > 0` read as `< 0`, in
+    `ReviewWindow.axaml.cs`. Rebuilding each changed file from `HEAD` and the edits that made it found it, and put it
+    back. `AGENTS.md` §5 says so now.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and sent
 item 26 to be explored as frames; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is
-Inspections' to start now that item 27's results have reached it, item 30 landed as PR #48 on 2026-11-10, item 31
-is decided and its required check is on `ci/conventions-is-required`, and items 32 and 33 landed as PRs #49 and #50
-the same day. **Every other open item was
+Inspections' to start now that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and
+#50 on 2026-11-10 and item 31 as PR #51 the same day, and item 34 is done on `fix/review-window-tooltips`, its
+overlay his to call. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
