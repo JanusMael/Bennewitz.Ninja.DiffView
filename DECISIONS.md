@@ -5005,3 +5005,40 @@ guards tripped first, in 40.8 minutes on a box other work held at full load. The
 `DiffView.Avalonia.Tests` ran over it in four worktrees, 78 mutations as declared and every declared test killed, in
 49.6 minutes under the same load. The suite ran 990 of 990 on Windows, `Passed!`, and `catch-crash` judged the run
 healthy.
+
+## mutate-behaviour restores after a revert, and a moved pin owes only what it reaches
+
+Open item 32: the two follow-ups item 30 found, on Brian's word of 2026-11-09, *"Yes, after item 30 lands"*.
+
+**The build after an edit to what restore reads restores too.** *What a mutation's build pays for* closed on the gap:
+`mutate-behaviour` restored for a mutation whose edit is to what restore reads and not after its revert, which leaves
+`obj/` describing the project as the edit made it, so the build after a moved pin built against the version the pin had
+been moved to. `mutate-gates` already restored on the mutation after one. `mutate-behaviour` now does the same, through
+one helper, `Mutation.RestoresAfter`, which the run and `--list` both ask, so the listing test holds the rule. What a
+listing cannot hold is the run's call site; item 30's set holds that end to end. It carries the pin itself now, moving
+XamlQuality back to `2026.4.1026` as its first mutation, and the mutation after it fails another way at that pin, so a
+build that did not restore would read the older reading's failure as its own and go `wrong-assertion`.
+
+**A moved pin owes only what it reaches.** `--owed` owed every set whose pins file changed, which after item 30's pin was
+all sixteen, though the pin reached one test project; the ten it could not reach were left unrun on Brian's word. It
+now asks what moved and whom it reaches. What moved is the pins as git holds them at the ref against the pins as they
+are now, read as central package management reads them (`Pin.Moved`): a package pinned at another version, newly pinned
+or no longer pinned. A set is owed where a marker in its tests names a moved package, or where its project's restore
+resolves one, read from the `obj/project.assets.json` that restore wrote. A pins file that does not parse, or a project
+nothing has restored, owes the run rather than guessing. A change to a set's own file, a test file or a file a mutation
+edits owes it as before, so a set whose mutation edits the pins file, as item 30's does now, is owed by any change to it.
+Over the change since `1481475`, before item 30, it owes the six `DiffView.Avalonia.Tests` sets and none of
+AgentBaseline's ten, each with its reason: the judgement item 30 made by hand.
+
+**How it is proven.** `--owed-by` takes `<path> moves <id> …`, so the choice is tested without git, and `--moved <before>
+<after>` prints what moved between two pins files. Four tests read them —
+`MutateBehaviourTests.A_moved_pin_owes_only_the_sets_it_reaches`, `A_moved_pin_the_project_resolves_owes_its_set`,
+`A_pins_file_that_moved_nothing_owes_nothing_and_one_whose_moves_are_unknown_owes_a_run` and
+`The_packages_a_change_moved_are_each_one_repinned_added_or_removed_and_nothing_else` — and the listing test gains the
+build after a restore edit. Twelve mutations in the harness's own set aim at the new guards, and one that `Because`'s
+new shape left matching nothing is re-pointed. ⚠ `Git.MovedSince`'s `git show` is under no test: the reading over item
+30's change above is its evidence.
+
+**The runs.** Over this tree `--owed main` chose the two sets the change owes and no other, and in four worktrees both
+ran as declared, the harness's own 60 with every one of its 43 declared tests killed and item 30's 7 with the pin among
+them, in 9.6 minutes. The suite ran 994 of 994 on Windows, `Passed!`, and `catch-crash` judged the run healthy.
