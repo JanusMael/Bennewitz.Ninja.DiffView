@@ -29,6 +29,7 @@
 //   dotnet run scripts/mutate-behaviour.cs -- --set <a.json> --set <b.json>
 //                                                                        several sets, one after another, each judged on its own
 //   dotnet run scripts/mutate-behaviour.cs -- --owed <ref>               the committed sets a change since <ref> owes a run
+//   dotnet run scripts/mutate-behaviour.cs -- --moved <before> <after>   the packages a change moved between two pins files, run nothing
 //   dotnet run scripts/mutate-behaviour.cs -- --parallel 4 [--set …]     every mutation in 4 worktrees at once, judged as one run
 //   dotnet run scripts/mutate-behaviour.cs -- --set <file.json> --shard 2/4 --emit <file.tsv>
 //                                                                        one shard, its verdicts written for --merge
@@ -45,11 +46,16 @@
 // may be edited while it runs.
 //
 // ⭐ --owed <ref> runs only the sets a change owes: a set is owed when its own file, a file one of its
-// mutations edits, one of its test files or its pins changed since <ref>, committed or not. Without
-// --set it chooses among every set under tests/*/Mutations/.
+// mutations edits or one of its test files changed since <ref>, committed or not, or when its pins moved a
+// package its project's restore resolves or a marker in its tests names. Its pins changing is not enough:
+// a pin reaches only the projects that resolve its package, and the rest would rebuild what they built
+// before. Where that cannot be read — a pins file that does not parse, a project nothing has restored —
+// the set is owed. Without --set it chooses among every set under tests/*/Mutations/.
 //
 // ⚠ Two trims, each measured before it was made (2026-10-20, AgentBaseline): a mutation's build skips
-// the restore the baseline already did, 6.4 s to 4.5; and a mutation that names its killer runs only the
+// the restore the baseline already did, 6.4 s to 4.5 — unless its edit is to what restore reads, or the
+// edit of the mutation applied before it was, whose revert left obj/ describing the project as that edit
+// made it; and a mutation that names its killer runs only the
 // classes of the set's test files, 6.0 s to 1.7 for one class. A green mutation, and a red one that names
 // no killer, still run the set's whole filter: "every test stays green" must mean every test, and a red
 // with no killer is judged by whichever test fails. Narrowing can only relabel a failure — a kill outside
@@ -132,7 +138,7 @@ string? judgeSays = null;
 // ⛔ Every flag is COLLECTED here and acted on below, none of them acting from inside the loop.
 // An earlier version printed the list from inside it and returned, so `--only x --list` silently
 // listed everything: a filter that does nothing is worse than one that errors, because the output
-// looks like an answer. Only `--strayed` returns early, and it reads two files and runs nothing.
+// looks like an answer. Only `--strayed` and `--moved` return early, and each reads two files and runs nothing.
 for (int i = 0; i < args.Length; i++)
 {
     switch (args[i])
@@ -184,8 +190,9 @@ for (int i = 0; i < args.Length; i++)
             owedRef = args[++i];
             break;
 
-        // Runs no git: the changed paths are read from a file, one to a line. It is how the choice of
-        // owed sets is proven, because what git says changed is the state of whatever checkout runs it.
+        // Runs no git: the changed paths are read from a file, one to a line, and a pins file's line may say
+        // what moved in it, `<path> moves <id> …`. It is how the choice of owed sets is proven, because what
+        // git says changed is the state of whatever checkout runs it.
         case "--owed-by" when i + 1 < args.Length:
             owedBy = args[++i];
             break;
@@ -211,6 +218,15 @@ for (int i = 0; i < args.Length; i++)
                 File.ReadAllText(args[i + 1]), File.ReadAllText(args[i + 2]), args[i + 3]);
             Console.WriteLine(strayed.Length == 0 ? "nothing strayed" : strayed);
             return strayed.Length == 0 ? 0 : 1;
+
+        // Runs nothing: two pins files, before a change and after it. It is how the reading of what a change
+        // moved is proven, because what git holds at a ref is the state of whatever checkout runs it.
+        case "--moved" when i + 2 < args.Length:
+            IReadOnlySet<string> moved = Pin.Moved(Pin.HeldBy(args[i + 1]), Pin.HeldBy(args[i + 2]));
+            Console.WriteLine(moved.Count == 0
+                ? "nothing moved"
+                : string.Join(Environment.NewLine, moved.Order(StringComparer.OrdinalIgnoreCase)));
+            return 0;
 
         default:
             Console.Error.WriteLine($"mutate-behaviour: unknown argument `{args[i]}`");
@@ -293,10 +309,21 @@ if (clash is not null)
 if (owedRef is not null || owedBy is not null)
 {
     IReadOnlyList<string> changed;
+    Func<string, IReadOnlySet<string>?> movedIn;
     List<string> candidates;
     try
     {
-        changed = owedBy is not null ? [.. File.ReadAllLines(owedBy).Where(l => l.Trim().Length > 0)] : Git.Changed(repo, owedRef!);
+        if (owedBy is not null)
+        {
+            (changed, IReadOnlyDictionary<string, IReadOnlySet<string>?> moves) = Owed.ReadChanges(repo, File.ReadAllLines(owedBy));
+            movedIn = pins => moves.GetValueOrDefault(pins);
+        }
+        else
+        {
+            changed = Git.Changed(repo, owedRef!);
+            movedIn = pins => Git.MovedSince(repo, owedRef!, pins);
+        }
+
         candidates = setFiles.Count > 0 ? [.. setFiles] : [.. Owed.CommittedSets(repo)];
     }
     catch (Exception ex) when (Unreadable(ex))
@@ -308,10 +335,10 @@ if (owedRef is not null || owedBy is not null)
     setFiles.Clear();
     foreach (string candidate in candidates)
     {
-        string? because;
+        (bool Owed, string? Why) verdict;
         try
         {
-            because = Owed.Because(repo, candidate, Plan.Load(repo, candidate), changed);
+            verdict = Owed.Because(repo, candidate, Plan.Load(repo, candidate), changed, movedIn);
         }
         catch (Exception ex) when (Unreadable(ex))
         {
@@ -319,8 +346,9 @@ if (owedRef is not null || owedBy is not null)
             return 2;
         }
 
-        Console.WriteLine(because is null ? $"not owed  {candidate}" : $"owed      {candidate} — {because} changed");
-        if (because is not null)
+        string why = verdict.Why is null ? string.Empty : $" — {verdict.Why}";
+        Console.WriteLine(verdict.Owed ? $"owed      {candidate}{why}" : $"not owed  {candidate}{why}");
+        if (verdict.Owed)
         {
             setFiles.Add(candidate);
         }
@@ -465,12 +493,15 @@ if (list)
         Console.Error.WriteLine($"mutate-behaviour: the set's test files cannot be read, so each run is listed as the whole project: {ex.Message}");
     }
 
+    // In the order a run applies them, because whether a build restores depends on the mutation before it.
+    Mutation? listedBefore = null;
     foreach (Mutation m in chosen)
     {
         Console.WriteLine($"  {m.Name}");
         Console.WriteLine($"      {m.File}");
         Console.WriteLine($"      expects: {m.Describe()}");
-        Console.WriteLine($"      runs: {m.Runs(listedClasses)}");
+        Console.WriteLine($"      runs: {m.Runs(listedClasses, listedBefore)}");
+        listedBefore = m;
     }
 
     return 0;
@@ -604,6 +635,7 @@ Dictionary<string, string> killedBy = new(StringComparer.Ordinal);
 Dictionary<string, string> backups = new(StringComparer.Ordinal);
 bool started = false;
 bool restoresHeld = true;
+Mutation? applied = null;
 int index = 0;
 
 try
@@ -646,8 +678,11 @@ try
                 return 2;
             }
 
-            // The baseline restored; a mutation's build restores again only when it edits what restore reads.
-            if (!Dotnet.Build(repo, plan.Project, out string buildLog, restore: mutation.EditsTheBuild))
+            // The baseline restored. A mutation's build restores again when its edit is to what restore reads,
+            // and so does the build after it: a revert leaves obj/ describing the project as the edit made it.
+            bool restore = mutation.RestoresAfter(applied);
+            applied = mutation;
+            if (!Dotnet.Build(repo, plan.Project, out string buildLog, restore: restore))
             {
                 Console.WriteLine($"{progress} build  {mutation.Name} — the mutation does not compile");
                 results[mutation.Name] = (Reading.Unbuildable(buildLog), "build");
@@ -1137,10 +1172,13 @@ internal readonly record struct Pin(string Package, string Version)
     /// every <c>PackageVersion</c> element in any namespace, none inside a comment, and the package ids
     /// without regard to case, as NuGet's are.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> HeldBy(string path)
+    public static IReadOnlyDictionary<string, string> HeldBy(string path) => HeldIn(XDocument.Load(path));
+
+    /// <summary>The pins a props document holds, read as <see cref="HeldBy"/> reads a file's.</summary>
+    public static IReadOnlyDictionary<string, string> HeldIn(XDocument props)
     {
         Dictionary<string, string> held = new(StringComparer.OrdinalIgnoreCase);
-        foreach (XElement entry in XDocument.Load(path).Descendants().Where(e => e.Name.LocalName == "PackageVersion"))
+        foreach (XElement entry in props.Descendants().Where(e => e.Name.LocalName == "PackageVersion"))
         {
             if (entry.Attribute("Include")?.Value is { } package && entry.Attribute("Version")?.Value is { } version)
             {
@@ -1149,6 +1187,29 @@ internal readonly record struct Pin(string Package, string Version)
         }
 
         return held;
+    }
+
+    /// <summary>
+    /// The packages a change moved between two readings of a pins file: each pinned at another version, and each
+    /// pinned on one side alone. Ids without regard to case, as NuGet's are; a version compared as it is written.
+    /// </summary>
+    public static IReadOnlySet<string> Moved(IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after)
+    {
+        HashSet<string> moved = new(StringComparer.OrdinalIgnoreCase);
+        foreach ((string package, string version) in before)
+        {
+            if (!after.TryGetValue(package, out string? now) || !string.Equals(now, version, StringComparison.Ordinal))
+            {
+                moved.Add(package);
+            }
+        }
+
+        foreach (string package in after.Keys.Where(p => !before.ContainsKey(p)))
+        {
+            moved.Add(package);
+        }
+
+        return moved;
     }
 }
 
@@ -1341,6 +1402,33 @@ internal static class Git
 
         return [.. (diff.Stdout + "\n" + untracked.Stdout).Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).Distinct(StringComparer.Ordinal)];
     }
+
+    /// <summary>
+    /// The packages a change since <paramref name="since"/> moved in the pins file at <paramref name="path"/>,
+    /// relative to the repository with <c>/</c>: <see cref="Pin.Moved"/> between the file as git holds it at that
+    /// ref and as it is now, uncommitted edits included. A file that did not exist at the ref pinned nothing then,
+    /// and one that does not exist now pins nothing. Null when either side does not parse, which owes the run
+    /// rather than guessing.
+    /// </summary>
+    public static IReadOnlySet<string>? MovedSince(string repo, string since, string path)
+    {
+        Shell.Result shown = Shell.Run(repo, "git", ["show", $"{since}:{path}"]);
+        string current = Path.Combine(repo, path.Replace('/', Path.DirectorySeparatorChar));
+        try
+        {
+            IReadOnlyDictionary<string, string> before = shown.Exit == 0
+                ? Pin.HeldIn(XDocument.Parse(shown.Stdout.TrimStart('﻿')))
+                : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            IReadOnlyDictionary<string, string> after = File.Exists(current)
+                ? Pin.HeldBy(current)
+                : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            return Pin.Moved(before, after);
+        }
+        catch (XmlException)
+        {
+            return null;
+        }
+    }
 }
 
 internal static class Dotnet
@@ -1493,12 +1581,23 @@ internal sealed record Mutation(
     public IReadOnlyList<string> ClassesFrom(IReadOnlyList<string> setClasses) =>
         Class is { } named ? [named] : Expect == "red" && Killer is not null ? setClasses : [];
 
-    /// <summary>What the mutation's run builds and tests, as <c>--list</c> prints it.</summary>
-    public string Runs(IReadOnlyList<string> setClasses)
+    /// <summary>
+    /// Whether the mutation's build restores, given the mutation applied before it in the same run: when its own
+    /// edit lands in a file restore reads, and when that mutation's did, because a revert leaves <c>obj/</c>
+    /// describing the project as the edit made it — after a pin moved and moved back, the next build would
+    /// otherwise build against the version the pin was moved to. The run and <c>--list</c> both ask this, so the
+    /// listing says what the run does.
+    /// </summary>
+    public bool RestoresAfter(Mutation? previous) => EditsTheBuild || previous?.EditsTheBuild == true;
+
+    /// <summary>What the mutation's run builds and tests, as <c>--list</c> prints it, after the mutation before it.</summary>
+    public string Runs(IReadOnlyList<string> setClasses, Mutation? previous)
     {
         IReadOnlyList<string> classes = ClassesFrom(setClasses);
-        return (classes.Count > 0 ? string.Join(", ", classes) : "the whole project")
-            + (EditsTheBuild ? ", restored before it builds, the edit being to what restore reads" : ", built without a restore");
+        string build = !RestoresAfter(previous) ? "built without a restore"
+            : EditsTheBuild ? "restored before it builds, the edit being to what restore reads"
+            : "restored before it builds, the mutation before it having edited what restore reads";
+        return (classes.Count > 0 ? string.Join(", ", classes) : "the whole project") + ", " + build;
     }
 
     public string Describe()
@@ -2203,18 +2302,115 @@ internal static class Owed
         }
     }
 
-    /// <summary>
-    /// The first of a set's inputs a change touched — the set's own file, its pins, one of its test files, a
-    /// file one of its mutations edits — or null when the change owes it nothing.
-    /// </summary>
-    public static string? Because(string repo, string setFile, Plan plan, IReadOnlyList<string> changed)
-    {
-        StringComparer paths = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        string Normal(string path) =>
-            Path.GetRelativePath(repo, Path.GetFullPath(Path.Combine(repo, path.Trim().Replace('/', Path.DirectorySeparatorChar)))).Replace('\\', '/');
+    /// <summary>Paths compared as the file system compares them.</summary>
+    private static StringComparer Paths =>
+        OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
-        HashSet<string> touched = new(changed.Select(Normal), paths);
-        string[] inputs = [setFile, plan.Pins, .. plan.Tests, .. plan.Mutations.Select(m => m.File)];
-        return inputs.Select(Normal).FirstOrDefault(touched.Contains);
+    /// <summary>A path as a set or a change names it, made relative to the repository with <c>/</c>.</summary>
+    public static string Normal(string repo, string path) =>
+        Path.GetRelativePath(repo, Path.GetFullPath(Path.Combine(repo, path.Trim().Replace('/', Path.DirectorySeparatorChar)))).Replace('\\', '/');
+
+    /// <summary>
+    /// What <c>--owed-by</c> reads in place of git: a changed path to a line, and for a pins file what moved in it,
+    /// <c>&lt;path&gt; moves &lt;id&gt; …</c>, the word with no id after it saying that nothing did. A line without
+    /// the word leaves what moved unknown, as a pins file that does not parse would.
+    /// </summary>
+    public static (IReadOnlyList<string> Changed, IReadOnlyDictionary<string, IReadOnlySet<string>?> Moves) ReadChanges(
+        string repo, IEnumerable<string> lines)
+    {
+        List<string> changed = [];
+        Dictionary<string, IReadOnlySet<string>?> moves = new(Paths);
+        foreach (string line in lines.Select(l => l.Trim()).Where(l => l.Length > 0))
+        {
+            string[] words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            int at = Array.IndexOf(words, "moves");
+            string path = Normal(repo, at < 0 ? line : string.Join(' ', words[..at]));
+            changed.Add(path);
+            moves[path] = at < 0 ? null : new HashSet<string>(words[(at + 1)..], StringComparer.OrdinalIgnoreCase);
+        }
+
+        return (changed, moves);
+    }
+
+    /// <summary>
+    /// Whether a change owes a set a run, and why — or why not, where its pins changed. A change to the set's own
+    /// file, one of its test files or a file one of its mutations edits owes it. Its pins changing owes it only
+    /// where a package that moved reaches it: a marker in its tests names the package, or its project's restore
+    /// resolves it. A pin reaches nothing else, so a set it does not reach would rebuild what it built before.
+    /// What moved being unknown, or a project nothing has restored, owes the run rather than guessing.
+    /// </summary>
+    /// <param name="movedIn">What moved in a pins file, given its path as <see cref="Normal"/> makes it; null when that cannot be read.</param>
+    public static (bool Owed, string? Why) Because(
+        string repo, string setFile, Plan plan, IReadOnlyList<string> changed, Func<string, IReadOnlySet<string>?> movedIn)
+    {
+        HashSet<string> touched = new(changed.Select(p => Normal(repo, p)), Paths);
+        string[] plain = [setFile, .. plan.Tests, .. plan.Mutations.Select(m => m.File)];
+        if (plain.Select(p => Normal(repo, p)).FirstOrDefault(touched.Contains) is { } input)
+        {
+            return (true, $"{input} changed");
+        }
+
+        string pins = Normal(repo, plan.Pins);
+        if (!touched.Contains(pins))
+        {
+            return (false, null);
+        }
+
+        IReadOnlySet<string>? moved = movedIn(pins);
+        if (moved is null)
+        {
+            return (true, $"{pins} changed, and what moved in it is not known");
+        }
+
+        if (moved.Count == 0)
+        {
+            return (false, $"{pins} changed and moved no package");
+        }
+
+        HashSet<string> marked = new(
+            plan.ReadTests(repo).Tests.SelectMany(t => t.InertAt).Select(p => p.Package), StringComparer.OrdinalIgnoreCase);
+        string[] named = [.. moved.Where(marked.Contains).Order(StringComparer.OrdinalIgnoreCase)];
+        if (named.Length > 0)
+        {
+            return (true, $"{pins} moved {string.Join(", ", named)}, which a marker in its tests names");
+        }
+
+        string all = string.Join(", ", moved.Order(StringComparer.OrdinalIgnoreCase));
+        IReadOnlySet<string>? resolved = Resolved(repo, plan.Project);
+        if (resolved is null)
+        {
+            return (true, $"{pins} moved {all}, and nothing has restored {plan.Project} to say whether it resolves it");
+        }
+
+        string[] reached = [.. moved.Where(resolved.Contains).Order(StringComparer.OrdinalIgnoreCase)];
+        return reached.Length > 0
+            ? (true, $"{pins} moved {string.Join(", ", reached)}, which {plan.Project} resolves")
+            : (false, $"{pins} moved {all}, which {plan.Project} does not resolve");
+    }
+
+    /// <summary>
+    /// The package ids a project's last restore resolved, direct and transitive, read from the
+    /// <c>obj/project.assets.json</c> beside it; null when there is none, nothing having restored it here.
+    /// </summary>
+    public static IReadOnlySet<string>? Resolved(string repo, string project)
+    {
+        string directory = Path.GetDirectoryName(Path.Combine(repo, project.Replace('/', Path.DirectorySeparatorChar))) ?? repo;
+        string assets = Path.Combine(directory, "obj", "project.assets.json");
+        if (!File.Exists(assets))
+        {
+            return null;
+        }
+
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllBytes(assets));
+        HashSet<string> ids = new(StringComparer.OrdinalIgnoreCase);
+        if (document.RootElement.TryGetProperty("libraries", out JsonElement libraries))
+        {
+            foreach (JsonProperty library in libraries.EnumerateObject())
+            {
+                ids.Add(library.Name.Split('/')[0]);
+            }
+        }
+
+        return ids;
     }
 }

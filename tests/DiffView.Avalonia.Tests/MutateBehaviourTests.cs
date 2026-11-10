@@ -218,7 +218,8 @@ public sealed class MutateBehaviourTests
         // Narrowing a run to its set's test classes is a trim, taken only where it cannot pass a mutation:
         // a red one naming its killer, which those classes declare. A green one and a red one naming no
         // killer keep everything, or narrowing could hide the failure that should have reddened them. And
-        // only an edit to what restore reads costs its build a restore.
+        // an edit to what restore reads costs its build a restore, and the build after it one too: the
+        // revert left obj/ describing the project as the edit made it.
         Assert.True(exitCode == 0, output);
         Dictionary<string, string> runs = ListedRuns(output);
         Assert.Equal("SampleTests, built without a restore", runs["a red mutation naming its killer"]);
@@ -227,6 +228,9 @@ public sealed class MutateBehaviourTests
         Assert.Equal(
             "SampleTests, restored before it builds, the edit being to what restore reads",
             runs["an edit to what restore reads"]);
+        Assert.Equal(
+            "SampleTests, restored before it builds, the mutation before it having edited what restore reads",
+            runs["a mutation after an edit to what restore reads"]);
     }
 
     [Fact]
@@ -489,6 +493,100 @@ public sealed class MutateBehaviourTests
         Assert.True(exitCode == 0, output);
         Assert.Contains("owed      fixtures/mutations/set-marked.json — fixtures/mutations/marked-tests.txt changed", output, StringComparison.Ordinal);
         Assert.Contains("not owed  fixtures/mutations/set-clean.json", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_moved_pin_owes_only_the_sets_it_reaches()
+    {
+        (int exitCode, string output) = Run(
+        [
+            "--set", SetFixture("set-marked.json"),
+            "--set", SetFixture("set-pinned.json"),
+            "--set", SetFixture("set-unrestored.json"),
+            "--owed-by", SetFixture("changed-pin-fixture.txt"),
+            "--list",
+        ]);
+
+        // One pins file moves one package under three sets. A marker in set-marked's tests names it; this
+        // project, set-pinned's, resolves no such package, so a run of it would rebuild what it built before;
+        // and nothing has restored set-unrestored's, so whether it would is not known and its run is owed.
+        Assert.True(exitCode == 0, output);
+        Assert.Contains(
+            "owed      fixtures/mutations/set-marked.json — fixtures/mutations/pins.xml moved Fixture.Package, "
+            + "which a marker in its tests names",
+            output,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "not owed  fixtures/mutations/set-pinned.json — fixtures/mutations/pins.xml moved Fixture.Package, "
+            + "which tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj does not resolve",
+            output,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "owed      fixtures/mutations/set-unrestored.json — fixtures/mutations/pins.xml moved Fixture.Package, "
+            + "and nothing has restored fixtures/mutations/unrestored/Unrestored.csproj to say whether it resolves it",
+            output,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_moved_pin_the_project_resolves_owes_its_set()
+    {
+        (int exitCode, string output) = Run(
+            ["--set", SetFixture("set-pinned.json"), "--owed-by", SetFixture("changed-pin-resolved.txt"), "--list"]);
+
+        // xunit.v3 is the one real package a fixture names, and only as one this project's restore resolves,
+        // which it does for as long as these tests are xunit's: no fixture pins a real package's version.
+        Assert.True(exitCode == 0, output);
+        Assert.Contains(
+            "owed      fixtures/mutations/set-pinned.json — fixtures/mutations/pins.xml moved xunit.v3, "
+            + "which tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj resolves",
+            output,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_pins_file_that_moved_nothing_owes_nothing_and_one_whose_moves_are_unknown_owes_a_run()
+    {
+        (int nothingExit, string nothing) = Run(
+            ["--set", SetFixture("set-pinned.json"), "--owed-by", SetFixture("changed-pin-nothing.txt"), "--list"]);
+        (int unknownExit, string unknown) = Run(
+            ["--set", SetFixture("set-pinned.json"), "--owed-by", SetFixture("changed-pin-unknown.txt"), "--list"]);
+
+        // A pins file can change and pin every package where it was, a comment moving; and a change can name
+        // a pins file without saying what moved in it, as one that does not parse does. The first owes
+        // nothing. The second owes the run rather than guessing.
+        Assert.True(nothingExit == 0, nothing);
+        Assert.Contains(
+            "not owed  fixtures/mutations/set-pinned.json — fixtures/mutations/pins.xml changed and moved no package",
+            nothing,
+            StringComparison.Ordinal);
+        Assert.Contains("no set is owed a run", nothing, StringComparison.Ordinal);
+        Assert.True(unknownExit == 0, unknown);
+        Assert.Contains(
+            "owed      fixtures/mutations/set-pinned.json — fixtures/mutations/pins.xml changed, "
+            + "and what moved in it is not known",
+            unknown,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_packages_a_change_moved_are_each_one_repinned_added_or_removed_and_nothing_else()
+    {
+        (int exitCode, string output) = Run(["--moved", Fixture("pins-before.xml"), Fixture("pins-after.xml")]);
+        (int sameExit, string same) = Run(["--moved", Fixture("pins-before.xml"), Fixture("pins-before.xml")]);
+
+        // Read as central package management reads pins: an id in other case is the same package, and a
+        // package pinned inside a comment is pinned by nothing, on either side of the change.
+        Assert.True(exitCode == 0, output);
+        string[] moved =
+        [
+            .. output.Split('\n')
+                .Select(line => line.Trim())
+                .Where(line => line.StartsWith("Fixture.", StringComparison.OrdinalIgnoreCase)),
+        ];
+        Assert.Equal("Fixture.Added, Fixture.Moved, Fixture.Removed", string.Join(", ", moved));
+        Assert.True(sameExit == 0, same);
+        Assert.Contains("nothing moved", same, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -1,0 +1,11 @@
+<Project>
+  <!-- The pins before a change, beside pins-after.xml, for the reading of what a change moved. Fixture ids
+       only: no fixture leans on a package this repository really pins. -->
+  <ItemGroup>
+    <PackageVersion Include="Fixture.Moved" Version="1.0.0" />
+    <PackageVersion Include="Fixture.Removed" Version="1.0.0" />
+    <PackageVersion Include="Fixture.Kept" Version="1.0.0" />
+    <PackageVersion Include="Fixture.Recased" Version="1.0.0" />
+    <!-- <PackageVersion Include="Fixture.Commented" Version="1.0.0" /> -->
+  </ItemGroup>
+</Project>

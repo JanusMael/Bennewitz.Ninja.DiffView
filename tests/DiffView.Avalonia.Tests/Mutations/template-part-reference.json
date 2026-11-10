@@ -2,10 +2,10 @@
   // docs/template-parts.md is what TemplatePartReferenceTests reads from the gates' own scan and BNXQ1003's
   // reading, and its one check runs before anything is written. Since XamlQuality 2026.4.1109 that reading
   // has an entry for the strip and the header, whose code declares no part, so the test reads nothing of its
-  // own. The first mutation leaves unread the entries 2026.4.1026 did not make, which is what that pin does,
-  // run by hand on 2026-11-09. The pin itself is no mutation here: this harness restores for a mutation's own
-  // build and not after its revert, so the runs after it would build against the older reading
-  // (DECISIONS.md, "What a mutation's build pays for").
+  // own. The first mutation moves the pin back to 2026.4.1026, whose reading has no entry for the two; a later
+  // one leaves those entries unread in the test's own code. The harness restores after a pin's revert as it
+  // does before its edit, so every mutation after the first builds against the pin as it is here — and the
+  // second, whose check fails another way at the older pin, would say so if a build did not.
   //
   //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/template-part-reference.json
   //
@@ -17,6 +17,24 @@
     "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs"
   ],
   "mutations": [
+    {
+      "name": "the pin goes back to a reading with no entry for a control whose code declares no part",
+      "file": "Directory.Packages.props",
+      "old": "Include=\"Bennewitz.Ninja.XamlQuality\" Version=\"2026.4.1109\"",
+      "new": "Include=\"Bennewitz.Ninja.XamlQuality\" Version=\"2026.4.1026\"",
+      "killer": "The_committed_reference_equals_a_fresh_reading",
+      "says": "are templated and have no theme",
+      "because": "2026.4.1026's reading has no entry for the strip or the header and the test no longer reads their themes itself, so the check refuses to call two templated controls drawn rather than leave their parts out"
+    },
+    {
+      "name": "the library's markup is looked for where it is not",
+      "file": "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs",
+      "old": "LibraryMarkup = \"DiffView.Avalonia/\";",
+      "new": "LibraryMarkup = \"DiffView.Avalonia.Probe/\";",
+      "killer": "The_committed_reference_equals_a_fresh_reading",
+      "says": "A table shows one theme of each control, in the library's markup",
+      "because": "a literal that names no folder matches nothing in the placement's second source and passes it, so the last assertion is the one that must trip"
+    },
     {
       "name": "the reading's entry for a control whose code declares no part goes unread, as 2026.4.1026 made none",
       "file": "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs",
@@ -33,15 +51,6 @@
       "new": "[.. Views, .. StripAndHeader, .. Presenter]",
       "killer": "The_committed_reference_equals_a_fresh_reading",
       "says": "have a theme and no table"
-    },
-    {
-      "name": "the library's markup is looked for where it is not",
-      "file": "tests/DiffView.Avalonia.Tests/TemplatePartReferenceTests.cs",
-      "old": "LibraryMarkup = \"DiffView.Avalonia/\";",
-      "new": "LibraryMarkup = \"DiffView.Avalonia.Probe/\";",
-      "killer": "The_committed_reference_equals_a_fresh_reading",
-      "says": "A table shows one theme of each control, in the library's markup",
-      "because": "a literal that names no folder matches nothing in the placement's second source and passes it, so the last assertion is the one that must trip"
     },
     {
       "name": "a part of the strip is renamed in its theme",

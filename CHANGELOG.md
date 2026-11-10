@@ -39,6 +39,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **`mutate-behaviour` restores after a revert, and a moved pin owes only the sets it reaches.** A mutation that
+  edits what restore reads left `obj/` describing the project as it had made it, so the build after its revert
+  built against what the edit had changed, a moved pin's package among them; that build restores now too. And
+  `--owed` no longer owes every set when the pins file changes: only those whose project's restore resolves a
+  package that moved, or whose tests carry a marker naming one, the rest being sets that would rebuild what they
+  built before. Item 30's proof set carries the pin itself as a mutation now.
 - **XamlQuality moves to `2026.4.1109`, and the parts reference reads nothing of its own.** The release's reading
   of template parts gives a themed control whose code declares no part an entry, so `TemplatePartReferenceTests`
   takes `DiffStatusStrip`'s and `DiffPaneHeader`'s parts from `BNXQ1003`'s reading, as it takes every other

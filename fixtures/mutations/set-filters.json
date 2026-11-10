@@ -32,6 +32,13 @@
       "old": "Version=\"1.0.0\"",
       "new": "Version=\"2.0.0\"",
       "killer": "A_plain_fact"
+    },
+    {
+      "name": "a mutation after an edit to what restore reads",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Elsewhere.",
+      "killer": "A_plain_fact"
     }
   ]
 }

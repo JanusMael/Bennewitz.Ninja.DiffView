@@ -341,12 +341,15 @@ no dates, no counts.
   `MutateBehaviourTests.Every_build_and_test_run_the_harness_starts_has_Avalonias_telemetry_off`): the
   collector Avalonia's build task starts before each compile once kept a worktree for three quarters of
   an hour after its build. Anything else a build starts that holds a worktree, the harness names, with
-  how to remove it. **`--owed <ref>` runs only the sets a change owes** — one whose own file, pins, test
-  files or a file one of its mutations edits changed since the ref, committed or not — among those
-  named, or else every `tests/*/Mutations/*.json`; ⚠ it reads files rather than dependencies, so a
-  change to code no mutation edits can still owe a set a run it does not name, and it narrows the runs
-  between full ones without replacing any. Two trims, each measured before it was made: a mutation's
-  build skips the restore (6.4 s to 4.5), and a mutation naming its killer runs only the classes of the
+  how to remove it. **`--owed <ref>` runs only the sets a change owes** — one whose own file, test files
+  or a file one of its mutations edits changed since the ref, committed or not, or whose pins moved a
+  package its project's restore resolves or a marker in its tests names — among those named, or else every
+  `tests/*/Mutations/*.json`. A pins file that does not parse, or a project nothing has restored, owes the
+  run (`MutateBehaviourTests.A_moved_pin_owes_only_the_sets_it_reaches`). ⚠ It reads files rather than
+  dependencies, so a change to code no mutation edits can still owe a set a run it does not name, and it
+  narrows the runs between full ones without replacing any. Two trims, each measured before it was made: a
+  mutation's build skips the restore (6.4 s to 4.5) unless its edit, or that of the mutation applied before
+  it, is to what restore reads, and a mutation naming its killer runs only the classes of the
   set's test files (6.0 s to 1.7 for one class), a green one and a red one naming no killer keeping the
   set's whole filter so that narrowing can relabel a failure and never pass one; `--list` prints what
   each run filters to and whether its build restores, which is how both rules are held

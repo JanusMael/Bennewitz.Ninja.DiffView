@@ -263,8 +263,8 @@
     {
       "name": "no change owes any set a run",
       "file": "scripts/mutate-behaviour.cs",
-      "old": "return inputs.Select(Normal).FirstOrDefault(touched.Contains);",
-      "new": "return inputs.Select(Normal).FirstOrDefault(p => touched.Contains(p) && p.Length < 0);",
+      "old": "if (plain.Select(p => Normal(repo, p)).FirstOrDefault(touched.Contains) is { } input)",
+      "new": "if (plain.Select(p => Normal(repo, p)).FirstOrDefault(p => touched.Contains(p) && p.Length < 0) is { } input)",
       "killer": "Only_the_sets_a_change_touches_are_owed_a_run"
     },
     {
@@ -350,6 +350,90 @@
       "old": "[\"BuildTimestamp\"] = DateTime.Now.ToString(\"yyyyMMddHHmmss\", CultureInfo.InvariantCulture),",
       "new": "",
       "killer": "Every_build_and_test_run_the_harness_starts_shares_one_build_timestamp"
+    },
+    {
+      "name": "the build after an edit to what restore reads skips the restore",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "public bool RestoresAfter(Mutation? previous) => EditsTheBuild || previous?.EditsTheBuild == true;",
+      "new": "public bool RestoresAfter(Mutation? previous) => EditsTheBuild || (previous?.EditsTheBuild == true && previous.Name.Length < 0);",
+      "killer": "A_listed_mutation_says_what_its_run_filters_to_and_whether_its_build_restores"
+    },
+    {
+      "name": "a moved package a marker names owes nothing for it",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "string[] named = [.. moved.Where(marked.Contains).Order(StringComparer.OrdinalIgnoreCase)];",
+      "new": "string[] named = [.. moved.Where(p => marked.Contains(p) && p.Length < 0).Order(StringComparer.OrdinalIgnoreCase)];",
+      "killer": "A_moved_pin_owes_only_the_sets_it_reaches"
+    },
+    {
+      "name": "a moved pin reaches every project it is read against",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "string[] reached = [.. moved.Where(resolved.Contains).Order(StringComparer.OrdinalIgnoreCase)];",
+      "new": "string[] reached = [.. moved.Order(StringComparer.OrdinalIgnoreCase)];",
+      "killer": "A_moved_pin_owes_only_the_sets_it_reaches"
+    },
+    {
+      "name": "a moved pin reaches no project",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "string[] reached = [.. moved.Where(resolved.Contains).Order(StringComparer.OrdinalIgnoreCase)];",
+      "new": "string[] reached = [.. moved.Where(p => resolved.Contains(p) && p.Length < 0).Order(StringComparer.OrdinalIgnoreCase)];",
+      "killer": "A_moved_pin_the_project_resolves_owes_its_set"
+    },
+    {
+      "name": "a project nothing has restored is read as resolving nothing",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "IReadOnlySet<string>? resolved = Resolved(repo, plan.Project);",
+      "new": "IReadOnlySet<string>? resolved = Resolved(repo, plan.Project) ?? new HashSet<string>();",
+      "killer": "A_moved_pin_owes_only_the_sets_it_reaches"
+    },
+    {
+      "name": "a pins file whose moves are unknown owes nothing",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "return (true, $\"{pins} changed, and what moved in it is not known\");",
+      "new": "return (false, $\"{pins} changed, and what moved in it is not known\");",
+      "killer": "A_pins_file_that_moved_nothing_owes_nothing_and_one_whose_moves_are_unknown_owes_a_run"
+    },
+    {
+      "name": "a pins file that moved nothing owes a run",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "return (false, $\"{pins} changed and moved no package\");",
+      "new": "return (true, $\"{pins} changed and moved no package\");",
+      "killer": "A_pins_file_that_moved_nothing_owes_nothing_and_one_whose_moves_are_unknown_owes_a_run"
+    },
+    {
+      "name": "a package pinned at another version is not a move",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (!after.TryGetValue(package, out string? now) || !string.Equals(now, version, StringComparison.Ordinal))",
+      "new": "if (!after.TryGetValue(package, out string? now) || (!string.Equals(now, version, StringComparison.Ordinal) && version.Length < 0))",
+      "killer": "The_packages_a_change_moved_are_each_one_repinned_added_or_removed_and_nothing_else"
+    },
+    {
+      "name": "a package no longer pinned is not a move",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "if (!after.TryGetValue(package, out string? now) || !string.Equals(now, version, StringComparison.Ordinal))",
+      "new": "if (after.TryGetValue(package, out string? now) && !string.Equals(now, version, StringComparison.Ordinal))",
+      "killer": "The_packages_a_change_moved_are_each_one_repinned_added_or_removed_and_nothing_else"
+    },
+    {
+      "name": "a newly pinned package is not a move",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "foreach (string package in after.Keys.Where(p => !before.ContainsKey(p)))",
+      "new": "foreach (string package in after.Keys.Where(p => !before.ContainsKey(p) && p.Length < 0))",
+      "killer": "The_packages_a_change_moved_are_each_one_repinned_added_or_removed_and_nothing_else"
+    },
+    {
+      "name": "the word saying what moved is never read",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "int at = Array.IndexOf(words, \"moves\");",
+      "new": "int at = Array.IndexOf(words, \"moved-never\");",
+      "killer": "A_moved_pin_owes_only_the_sets_it_reaches"
+    },
+    {
+      "name": "a change to a set's pins owes it a run as a change to any of its files does",
+      "file": "scripts/mutate-behaviour.cs",
+      "old": "string[] plain = [setFile, .. plan.Tests, .. plan.Mutations.Select(m => m.File)];",
+      "new": "string[] plain = [setFile, plan.Pins, .. plan.Tests, .. plan.Mutations.Select(m => m.File)];",
+      "killer": "A_moved_pin_owes_only_the_sets_it_reaches"
     },
     {
       "name": "a test run may take twice as long before it is killed",
