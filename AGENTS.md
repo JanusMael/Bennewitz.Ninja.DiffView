@@ -348,7 +348,10 @@ no dates, no counts.
   `tests/*/Mutations/*.json`. A pins file that does not parse, or a project nothing has restored, owes the
   run (`MutateBehaviourTests.A_moved_pin_owes_only_the_sets_it_reaches`). ⚠ It reads files rather than
   dependencies, so a change to code no mutation edits can still owe a set a run it does not name, and it
-  narrows the runs between full ones without replacing any. Two trims, each measured before it was made: a
+  narrows the runs between full ones without replacing any. ⛔ **And it runs them, one after another in this checkout
+  unless `--parallel` is given**, so a run killed partway leaves its mutation in the tree: bounded by a `timeout` on
+  2026-11-10, one left a save mutation in `ReviewWindow.axaml.cs`, found only by rebuilding the file from `HEAD` and
+  the edits that made it. Two trims, each measured before it was made: a
   mutation's build skips the restore (6.4 s to 4.5) unless its edit, or that of the mutation applied before
   it, is to what restore reads, and a mutation naming its killer runs only the classes of the
   set's test files (6.0 s to 1.7 for one class), a green one and a red one naming no killer keeping the
