@@ -1,0 +1,25 @@
+{
+  // A set pinned by the fixture pins file whose project nothing has restored, there being no such project:
+  // whether a moved pin reaches it cannot be read, so the run is owed. Read by MutateBehaviourTests under
+  // --owed-by and --list only.
+  "project": "fixtures/mutations/unrestored/Unrestored.csproj",
+  "tests": ["fixtures/mutations/declared-tests.txt"],
+  "pins": "fixtures/mutations/pins.xml",
+  "mutations": [
+    {
+      "name": "the one place changes",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "The one place an edit applies.",
+      "new": "Somewhere else.",
+      "killer": "A_plain_fact"
+    },
+    {
+      "name": "a change that should not matter",
+      "file": "fixtures/mutations/subject.txt",
+      "old": "Nothing compiles it",
+      "new": "Nothing builds it",
+      "expect": "green",
+      "because": "the subject is read by no test"
+    }
+  ]
+}

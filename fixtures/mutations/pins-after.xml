@@ -1,0 +1,12 @@
+<Project>
+  <!-- The pins after a change, beside pins-before.xml: one package pinned at another version, one newly
+       pinned, one no longer pinned, one kept, one written in other case, and one that moved inside a
+       comment, which pins nothing. The comment itself changed too. -->
+  <ItemGroup>
+    <PackageVersion Include="Fixture.Moved" Version="2.0.0" />
+    <PackageVersion Include="Fixture.Added" Version="1.0.0" />
+    <PackageVersion Include="Fixture.Kept" Version="1.0.0" />
+    <PackageVersion Include="fixture.recased" Version="1.0.0" />
+    <!-- <PackageVersion Include="Fixture.Commented" Version="2.0.0" /> -->
+  </ItemGroup>
+</Project>

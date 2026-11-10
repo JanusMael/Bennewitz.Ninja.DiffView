@@ -107,7 +107,8 @@ naming that mutation.
 | `--set <file> --list` | Every mutation, what it expects, and what its run filters to and builds |
 | `--set <file> --check` | Every edit applies once and every killer is declared; runs nothing |
 | `--set <a> --set <b>` | Several sets, one after another, each judged on its own |
-| `--owed <ref>` | Only the sets a change owes: one whose own file, pins, test files or a file one of its mutations edits changed since the ref, committed or not — among those named, or else every set under `tests/*/Mutations/` |
+| `--owed <ref>` | Only the sets a change owes: one whose own file, test files or a file one of its mutations edits changed since the ref, committed or not, or whose pins moved a package its project's restore resolves or a marker in its tests names — among those named, or else every set under `tests/*/Mutations/` |
+| `--moved <before> <after>` | The packages a change moved between two pins files; runs nothing |
 | `--parallel <n>` | Every mutation of each set in `n` worktrees at once, judged as one run per set |
 | `--shard k/n --emit <file>` | One shard's share — every `n`th mutation from the `k`th — written down for a merge |
 | `--merge <file> …` | Shards' results judged as one run of the set |
@@ -115,6 +116,13 @@ naming that mutation.
 ⚠ `--owed` reads the files a set names, not what its tests depend on: a change to code no mutation of a
 set edits can still change what its tests see, so it narrows the runs between full ones and replaces
 none.
+
+A set's pins changing owes it a run only where a package that moved reaches it, because a pin reaches
+nothing else: a set whose project's restore resolves no moved package, and whose tests carry no marker
+naming one, would rebuild what it built before. What moved is the pins as git holds them at the ref
+against the pins as they are now, each package pinned at another version, newly pinned or no longer
+pinned; what a project resolves is read from the `obj/project.assets.json` its last restore wrote. A pins
+file that does not parse, or a project nothing has restored, owes the run rather than guessing.
 
 `--parallel` writes this checkout's state, uncommitted work included, as a git tree through a temporary
 index — no commit is made and no ref moves — cuts `n` detached worktrees from `HEAD`, loads that tree
@@ -126,7 +134,9 @@ compile once kept a worktree for three quarters of an hour after its build; anyt
 that holds a worktree, the harness names, with how to remove it.
 
 Two trims make each mutation cheaper, each measured before it was made: a mutation's build skips the
-restore the baseline already did, and a mutation that names its killer runs only the classes of the
+restore the baseline already did — unless its edit is to what restore reads, or the edit of the mutation
+applied before it was, whose revert left `obj/` describing the project as that edit made it — and a
+mutation that names its killer runs only the classes of the
 set's test files. A green mutation, and a red one with no killer, keep the set's whole filter, so
 narrowing can relabel a failure but never turn one into a pass. `--list` prints what each run filters to
 and whether its build restores.
