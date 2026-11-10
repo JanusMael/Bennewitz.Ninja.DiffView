@@ -421,7 +421,8 @@ no dates, no counts.
   `[LinuxBaseline]`; away from Linux the runner filters it out (`tests/Directory.Build.props`,
   `-p:ExcludeLinuxBaselines=false` to run it anyway), and CI prints how many it left out, because a
   filter is silent in the summary. A new frame test takes the attribute, or it fails two CI legs.
-  What looks at rendering on Windows and macOS is a by-hand run, not this suite. A pixel assertion
+  What looks at rendering on Windows is a by-hand run, not this suite, and nothing looks at it on macOS:
+  `DECISIONS.md`, *Nothing looks at macOS rendering by hand*. A pixel assertion
   beside a capture is a property rather than a picture, so it runs everywhere and must hold at every
   platform's rasterization: it reads ink as coverage (`PixelProbe.Coverage`), never as a count of
   pixels past a colour threshold, which measures one rasterizer's rounding. `MarkerChipTests` and

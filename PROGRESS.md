@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` carries everything through PR #49, and CI is green on it** — PR #49 merged on a full
+**`main` carries everything through PR #50, and CI is green on it** — PR #50 merged on a full
 12-of-12, 2026-11-10. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
 wrong the moment it is true.* **Windows measured 994** here, `Passed!`, by a local run over item 32's
@@ -84,6 +84,15 @@ the one part of it no headless test reaches, was run by hand the same day and op
 `~/.claude/CLAUDE.md` over the tailnet, read-only, into a corpus outside the repository and writes its
 manifest; Brian reviews it in the window; and nothing is written back to any machine until he has
 approved the baseline's exact text, each machine's own file backed up beside it first.
+
+⭐ **Resumed 2026-11-10, on Brian's word through `/choices`.** The corpus was gathered again, each copy's SHA-256
+equal to its original's: JANUSSER6, the seed, 21,841 bytes; JanusHalo 17,032; brianb-2025 18,324. JANUSWAX2 was
+offline, and had no global `CLAUDE.md` on 2026-10-30; the Surface Pro joins a later run, from the decision file a save
+writes. The review window is open on a tool published from `main`, two candidates against the seed. ⛔ **brianb-2025,
+a Windows machine, is reached through Windows OpenSSH and never through Git Bash's `ssh`**: only the first reaches
+1Password's agent, through its named pipe, and that agent holds the key brianb-2025 accepts. Git Bash's `ssh` offers no
+key at all and is refused, which read as brianb-2025's SSH having broken when nothing had. JanusHalo answers Tailscale
+SSH and needs no key.
 
 The three decisions that had been open were settled first. Decision 9c stores an edited take's
 **resulting text and a hash of the source section over normalised text**, per decision 6, because
@@ -746,16 +755,16 @@ become, and `AGENTS.md` §9's three affected claims are corrected.
 
 Everything else remains blocked outside this repository: **item 3** needs a nuget.org Trusted
 Publishing policy only Brian can create (the preflight exists and is deliberately not dispatched —
-*"there should be no nuget yet"*); **item 9** is skipped by his instruction; **item 10** waits on
+*"there should be no nuget yet"*); **item 9** was dropped by his word of 2026-11-10; **item 10** waits on
 ClaudeForge; **item 13** waits on GitHub rather than on its date — measured on 2026-10-19 itself,
 both of PR #33's Linux legs still ran on `ubuntu-24.04`; **item 16** is shelved with its spike built
 and never run. Item 6 closed with PR #28. ⚠ **Do not read a short actionable list as a
 finished project**, and ⛔ **do not read the empty one that preceded it as a settled state** — a peer
 repository's measurement refilled it within the day, without a line of this repository changing.
 
-**The macOS by-hand run is all that is left of open item 9** — and it needs a Mac, so it
-is scheduled rather than picked up, and **skipped by instruction on 2026-10-13**. The **Windows half
-is discharged**: the capture pass and the
+**Open item 9 is closed — its macOS by-hand run was dropped on Brian's word of 2026-11-10**, CI's macOS leg
+accepted as enough, having been **skipped by instruction since 2026-10-13**. The **Windows half
+was discharged**: the capture pass and the
 interactive pass both ran, and what they found is in that item and in `DECISIONS.md`. An instrument is
 not a run, and the run is what pays — it found a half-localized surface no gate in the suite can see,
 two driver steps that reported success and did nothing, and a palette the capture half could not
@@ -763,8 +772,9 @@ photograph at all.
 
 ⛔ **Open item 10 is still parked on something outside this repository**: it waits for ClaudeForge's
 live-log window to be published as a package (`plans/00032-…md` is researched to the point of
-execution and must not be started before then). **Item 14 closed on 2026-10-30** — both pins moved and
-every rule was re-read — and plan 00030's draft, which waited on it, is back with Brian for approval.
+execution and must not be started before then). Read again on 2026-11-10, with AppServices at `2026.4.1110`,
+the window is still app code in ClaudeForge. **Item 14 closed on 2026-10-30** — both pins moved and
+every rule was re-read — and plan 00030, which waited on it, has since closed.
 
 ### What ships
 
@@ -845,6 +855,9 @@ wording.
    are MIT, carry their metadata and readme, and pack at a caldate the release tag supplies. The
    remote exists. **One precondition remains, and it is Brian's**: a nuget.org Trusted Publishing
    policy naming owner, repository and workflow filename.
+
+   ⭐ **Kept on hold — Brian, 2026-11-10**, asked again through `/choices`: nothing uses the packages yet, and a
+   published id can be unlisted but never withdrawn.
 
    ✅ **`NUGET_USER` is a repository VARIABLE, as in every repository here — done 2026-09-24.** It
    reads `JanusMael`, the value each sibling repository carries, and `release.yml` reads
@@ -942,7 +955,8 @@ wording.
    today's markup and still catches a child that asks the spacer for more room, so its blinding floor
    moved from the rule's count to the grid children the scan holds.
 
-9. **Windows and macOS by-hand demo runs**, owed since plan 00001 phase 10. The suite passes on those
+9. ~~**Windows and macOS by-hand demo runs**~~ — **closed 2026-11-10: Windows discharged, macOS dropped.** Owed since
+   plan 00001 phase 10. The suite passes on those
    platforms now, without its Linux-only baselines, which makes these runs the only look anything
    takes at rendering there.
 
@@ -969,6 +983,11 @@ wording.
    deliberately does not write it, because Accessibility and Screen Recording are per-application
    grants that cannot be scripted; `DECISIONS.md`, *Plan 00023 phase 5*, has why, and whoever does
    that run writes the back end then. **This item stays open for macOS alone.**
+
+   ✅ **Closed 2026-11-10 — Brian, through `/choices`: *"Drop it"***, over the recommendation to keep it as a gate on
+   the first publish. CI's macOS leg, the suite less its Linux frame baselines, is accepted as enough: nothing looks
+   at macOS rendering by hand, and the driver gets no macOS back end. `DECISIONS.md`, *Nothing looks at macOS
+   rendering by hand*.
 
    What the Windows run produced, none of it visible to any gate in the suite:
 
@@ -1474,6 +1493,9 @@ wording.
     `MinimapLaneTests.Each_header_is_exactly_as_wide_as_its_pane` holds: a header exactly as wide as its pane and
     starting where it starts.
 
+    ⭐ **Brian, 2026-11-10, through `/choices`: explore it now, as frames only** — two or three alignments rendered
+    side by side for him to choose from, nothing in the library or its baselines moving until he has.
+
 27. **The mutation harnesses build with node reuse off, and the gate runs over uncommitted work — Brian,
     2026-11-01, as a change of its own once the local stack's pull request merges.** Item 14's first full run
     lost three mutations to `MSB4166`, an MSBuild worker node ending under the build that held it, and every
@@ -1515,11 +1537,13 @@ wording.
       `VSTHRD110`. ⛔ xunit.v3 stays at 3.2.2, for the reason `Directory.Packages.props` gives. The new pin owed
       every proof set, and all 14 ran over it, 470 mutations as declared.
     - ✅ **#2 is closed**, on Brian's word of 2026-11-06, so with `conventions` green on `main` and `gh pr list`
-      empty step 4 is met. The Templates session read it clean and began AppKit's step 8 that day.
+      empty step 4 is met. The Templates session read it clean and began AppKit's step 8 that day. Its branch,
+      `conventions/repository-settings`, was deleted on 2026-11-10, on his word, PR #2's page keeping its commits.
     - **`conventions` is not a required check**, by Brian's choice of 2026-11-06: step 4 does not ask for it, and
       the AppKit move would make it short-lived. Should he want it later, it goes into `requiredChecks` in
       `.github/repository.json` by an ordinary pull request first, because `apply` builds the ruleset from that
-      list, and `apply` then writes it, which is his.
+      list, and `apply` then writes it, which is his. ⭐ **He wanted it on 2026-11-10** (item 31), and it goes that
+      way.
 
     ⛔ **`"trimming": "required"` is not to be added.** The list asked for it from `plans/00004`'s record, but
     Templates' own `plans/00008`, approved 2026-10-09, retired that key: `repo-conventions.cs` answers it with a
@@ -1562,6 +1586,12 @@ wording.
     `packages.push`, `DECISIONS.md` and `PackagesPushTests` saying the move replaces it with the template's. And
     `conventions` is not a required check, item 28 saying the move would make it short-lived.
 
+    ✅ **Decided 2026-11-10 by Brian, through `/choices`.** `conventions` becomes a required check: on
+    `ci/conventions-is-required`, `.github/repository.json` lists it, and `repo-conventions apply`, his, writes the
+    list to the ruleset — until it does, the check fails on that one finding, measured on the branch. The release
+    goes on naming its ids, its push step never having run. `DECISIONS.md`, *`conventions` is required, and the
+    release still names its ids*.
+
 32. **The two `mutate-behaviour` follow-ups item 30 found — Brian, 2026-11-09, *"Yes, after item 30 lands"*.** The
     harness restored for a mutation whose edit is to what restore reads and not after its revert, so no set could move
     a pin; and `--owed` owed every set whose pins file changed, which after item 30's pin was all sixteen, ten of them
@@ -1581,17 +1611,19 @@ wording.
     `mutate-gates --guards` and nothing else of either harness, so a change that moved the code a mutation edits left
     that mutation matching nothing until the next full run, which is made by hand.
 
-    ✅ **Done 2026-11-10 on `ci/every-mutation-still-applies`, and it lands on his word, the push being his.**
+    ✅ **Done 2026-11-10 on `ci/every-mutation-still-applies`, and landed as PR #50 that day, Brian merging it.**
     `build-and-test` on Linux runs `mutate-gates --check` after `--guards`, and `mutate-behaviour --check` over its
     built-in set and every committed one. Run as CI's bash runs it, with `-eo pipefail`, the second step passes over
     this tree, all 17 sets without a fault; with one set mutation's text made to match nothing it fails naming that
     mutation, and the gates' check fails the same way, 122 of 123, naming its. The gates' check took 2.4 minutes on a
-    busy box. `DECISIONS.md`, *CI checks that every mutation still applies*.
+    busy box. `DECISIONS.md`, *CI checks that every mutation still applies*. On PR #50's own run, the first on
+    Linux, they read `123 of 123 mutation(s) apply.` and `16 set(s), 0 not as declared`.
 
-Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 landed as PR #47 on
-2026-11-09, item 23 is Inspections' to start now that item 27's results have reached it, item 30 landed as PR #48
-on 2026-11-10, item 31 waits for his word, item 32 landed as PR #49 the same day, and item 33 is done and lands
-on his word. **Every other open item was
+Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and sent
+item 26 to be explored as frames; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is
+Inspections' to start now that item 27's results have reached it, item 30 landed as PR #48 on 2026-11-10, item 31
+is decided and its required check is on `ci/conventions-is-required`, and items 32 and 33 landed as PRs #49 and #50
+the same day. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
