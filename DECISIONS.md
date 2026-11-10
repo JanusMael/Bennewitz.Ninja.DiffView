@@ -5096,3 +5096,32 @@ the Mac must give, and plan 00023 left its back end to whoever made that run.
 rasterization and differ on any other. Its pixel assertions read ink as coverage and hold at every platform's
 rasterization, so a property of a drawing is checked on macOS; how a frame looks there is not. The driver keeps its
 two back ends, X11 and Windows, and gets no third.
+
+## The review window names both carets' sections, and every input control has a tooltip
+
+Open item 34, on Brian's word of 2026-11-10, while he reviewed the consolidation. The review window's buttons had no
+tooltip, against his rule for every button and every other input control, and the line under the panes named the
+section at the right pane's caret alone, while Drop acts at the left's.
+
+**The line names the section under whichever caret moved last.** Each pane remembers the section it last said, the
+right by the section itself and the left by its heading path, the accumulator being read afresh. When one pane speaks
+it forgets what the other said, so the other's next move speaks again even within the section it was in. A move to
+another candidate forgets both, because its arrival can land the right caret on a line in no section, which says
+nothing and so forgets nothing.
+
+**No flag for a verb's own caret move.** A take or a drop edits the accumulator, and AvaloniaEdit moves the left
+caret as the edit lands, raising the move before the edit returns. The verb's outcome is said after that, so it
+replaces whatever the move said, and the move leaves the section it landed in remembered, which is what keeps a
+drop's outcome standing while the caret stays there. A flag to silence that move was written and taken out: it
+changed nothing a person sees but the remembering, and for the worse.
+
+**The band is the status strip's active pair.** `DiffView.StatusActiveBackgroundBrush` behind
+`DiffView.StatusActiveForegroundBrush`, a pair whose contrast the tokens already hold, with a
+`DiffView.FocusAccentBrush` bar beside it, so the line reads apart from the position line above it; and it hides while
+it has nothing to say.
+
+**The tooltip rule reads markup.** `TooltipCoverageTests` reads the `.axaml` under `src`, build output pruned as the
+walk descends, and counts a tooltip given as the attribute or as the property element. A control built in code is not
+read, and a tooltip a style setter gave would read as missing, which no markup here does. It floors each project that
+holds input controls, because a reading that finds nothing missing passes when it reads nothing. A rule every
+repository of the family should keep belongs in XamlQuality, and it goes there on Brian's word.

@@ -1,0 +1,51 @@
+{
+  // Every input control the repository writes in markup carries a tooltip: TooltipCoverageTests, Brian's rule
+  // of 2026-11-10. Two edits take a tooltip away, one from the review window and one from the library's find
+  // bar; one blinds the scan, which finds markup by its extension; and one swaps two attributes, which XML
+  // gives no order.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/tooltips.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.TooltipCoverageTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/TooltipCoverageTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the review window's take button loses its tooltip",
+      "file": "src/AgentBaseline/ReviewWindow.axaml",
+      "old": "ToolTip.Tip=\"Take the section",
+      "new": "Tag=\"Take the section",
+      "killer": "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip",
+      "says": "TakeButton"
+    },
+    {
+      "name": "the find bar's next button loses its tooltip",
+      "file": "src/DiffView.Avalonia/Themes/DiffFindBar.axaml",
+      "old": "                      ToolTip.Tip=\"{TemplateBinding NextName}\"\n",
+      "new": "",
+      "killer": "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip",
+      "says": "PART_Next"
+    },
+    {
+      "name": "the scan looks for markup by an extension nothing has",
+      "file": "tests/DiffView.Avalonia.Tests/TooltipCoverageTests.cs",
+      "old": "\"*.axaml\"",
+      "new": "\"*.xaml\"",
+      "killer": "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip",
+      "says": "is not reading what it should",
+      "because": "a reading that asserts only an absence passes when it reads nothing, so the floor must trip first"
+    },
+    {
+      "name": "the take button's name and content swap places in its tag",
+      "file": "src/AgentBaseline/ReviewWindow.axaml",
+      "old": "<Button x:Name=\"TakeButton\" Content=\"Take\"",
+      "new": "<Button Content=\"Take\" x:Name=\"TakeButton\"",
+      "expect": "green",
+      "because": "XML gives a start tag's attributes no order, so a button with two of them swapped is the same button"
+    }
+  ]
+}

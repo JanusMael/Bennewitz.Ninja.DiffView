@@ -8,7 +8,9 @@ namespace Bennewitz.Ninja.AgentBaseline.Tests;
 
 /// <summary>
 /// The line under the panes says what the durable store knows about the section at the right pane's caret
-/// — Brian's choice of 2026-10-29, beside the start-up that brings a decision file to the window.
+/// — Brian's choice of 2026-10-29, beside the start-up that brings a decision file to the window — and, since
+/// his of 2026-11-10, names the baseline's section at the left pane's caret, the one Drop acts on: whichever
+/// caret moved last, in a band of its own.
 /// </summary>
 /// <remarks>
 /// Every caret is put where a click in the text would put it and every verb is clicked through its peer,
@@ -67,9 +69,9 @@ public sealed class StandingLineTests
         ReviewHost.PutCaret(host.Right, 9);
         Assert.Equal("\"Three\" — not decided yet.", window.OutcomeText.Text);
 
-        // ⭐ The left pane's caret is not the reading, so the line stays as it was.
+        // ⭐ The left pane's caret names the baseline's own section, the one Drop acts on — Brian, 2026-11-10.
         ReviewHost.PutCaret(host.Left, 5);
-        Assert.Equal("\"Three\" — not decided yet.", window.OutcomeText.Text);
+        Assert.Equal("\"One\" — in the baseline; Drop removes it.", window.OutcomeText.Text);
     }
 
     [AvaloniaFact]
@@ -138,5 +140,95 @@ public sealed class StandingLineTests
         // ⭐ The title is the section the line last said before the moves, and it is said again.
         ReviewHost.PutCaret(host.Right, 2);
         Assert.Equal("the title — not decided yet.", window.OutcomeText.Text);
+    }
+
+    [AvaloniaFact]
+    public async Task Whichever_pane_s_caret_moved_last_is_the_one_the_line_names()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, OneReworded);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        ReviewHost.PutCaret(host.Right, 5);
+        Assert.Equal("\"One\" — not decided yet.", window.OutcomeText.Text);
+
+        ReviewHost.PutCaret(host.Left, 9);
+        Assert.Equal("\"Three\" — in the baseline; Drop removes it.", window.OutcomeText.Text);
+
+        // Still in One, but the left spoke last, so the right's move speaks again.
+        ReviewHost.PutCaret(host.Right, 4);
+        Assert.Equal("\"One\" — not decided yet.", window.OutcomeText.Text);
+
+        // And the other way round: still in Three, the left speaks again.
+        ReviewHost.PutCaret(host.Left, 8);
+        Assert.Equal("\"Three\" — in the baseline; Drop removes it.", window.OutcomeText.Text);
+    }
+
+    [AvaloniaFact]
+    public async Task A_drops_outcome_stands_while_the_left_caret_moves_within_the_section_the_drop_left_it_in()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, OneReworded);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        ReviewHost.PutCaret(host.Left, 9);
+        Click(window.DropButton);
+        Assert.Equal("Dropped \"Three\" from the baseline.", window.OutcomeText.Text);
+
+        // Taking Three away moved the caret into One, which is remembered as said: the outcome stands while the
+        // caret stays in One, as a verb's does on the right, and goes when it leaves.
+        ReviewHost.PutCaret(host.Left, 5);
+        Assert.Equal("Dropped \"Three\" from the baseline.", window.OutcomeText.Text);
+        ReviewHost.PutCaret(host.Left, 1);
+        Assert.Equal("the title — in the baseline; Drop removes it.", window.OutcomeText.Text);
+    }
+
+    [AvaloniaFact]
+    public async Task After_a_move_the_left_caret_names_its_section_again()
+    {
+        using FixtureTree tree = new();
+
+        // The second candidate opens on a line in no section, so the right caret says nothing as it arrives, and
+        // only the move itself can forget the section the left last said.
+        ReviewQueue queue = QueueOf(tree, OneReworded, Preamble);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        ReviewHost.PutCaret(host.Left, 9);
+        Assert.Equal("\"Three\" — in the baseline; Drop removes it.", window.OutcomeText.Text);
+
+        await host.AwaitBuildAsync(() => host.Press(host.Right, Key.F8, RawInputModifiers.None, PhysicalKey.F8));
+        Assert.Equal(string.Empty, window.OutcomeText.Text);
+
+        // Still in Three, but the move cleared the line: the left's next move says it again.
+        ReviewHost.PutCaret(host.Left, 8);
+        Assert.Equal("\"Three\" — in the baseline; Drop removes it.", window.OutcomeText.Text);
+    }
+
+    [AvaloniaFact]
+    public async Task The_line_stands_in_a_band_shown_only_while_it_has_something_to_say()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, OneReworded, ThreeReworded);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        Assert.False(window.OutcomeBand.IsVisible, "An empty band was shown before anything was said.");
+
+        ReviewHost.PutCaret(host.Right, 5);
+        Assert.True(window.OutcomeBand.IsVisible, "The band stayed hidden while the line said something.");
+
+        // The status strip's active pair, whose contrast DiffView's tokens already hold.
+        Assert.Same(window.FindResource("DiffView.StatusActiveBackgroundBrush"), window.OutcomeBand.Background);
+        Assert.Same(window.FindResource("DiffView.StatusActiveForegroundBrush"), window.OutcomeText.Foreground);
+
+        await host.AwaitBuildAsync(() => host.Press(host.Right, Key.F8, RawInputModifiers.None, PhysicalKey.F8));
+        Assert.False(window.OutcomeBand.IsVisible, "The band stayed on screen after a move cleared the line.");
     }
 }

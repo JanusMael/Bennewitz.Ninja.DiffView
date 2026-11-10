@@ -2,7 +2,9 @@
   // The start-up plan 00034 names in no step, built ahead of step 9 on Brian's word of 2026-10-29: the
   // command line, the plan it reads, what is said before the window opens, the window opened on it, and
   // the line under the panes that says what the durable store knows about the section at the right
-  // pane's caret. Every test in the two files is held to it: a full run fails while any is killed by none.
+  // pane's caret — and, since 2026-11-10, names the baseline's section at the left one, whichever moved
+  // last, in a band of its own. Every test in the two files is held to it: a full run fails while any is
+  // killed by none.
   //
   //   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/startup.json
   //
@@ -393,8 +395,8 @@
     {
       "name": "a move leaves the line remembering what it last said",
       "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
-      "old": "            sectionSpoken = null;\n            ShowPosition();",
-      "new": "            ShowPosition();",
+      "old": "            sectionSpoken = null;\n            leftSectionSaid = null;",
+      "new": "            leftSectionSaid = null;",
       "killer": "Coming_back_to_a_candidate_says_the_section_the_caret_enters_there_again"
     },
     {
@@ -403,6 +405,62 @@
       "old": "{review.StandingOf(section).Spoken}",
       "new": "{section.Title}",
       "killer": "The_line_says_what_the_store_knows_of_the_section_the_right_pane_caret_enters"
+    },
+    {
+      "name": "the left pane's caret is not followed",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "left.TextArea.Caret.PositionChanged += OnLeftCaretMoved;",
+      "new": "left.TextArea.Caret.PositionChanged -= OnLeftCaretMoved;",
+      "killer": "Whichever_pane_s_caret_moved_last_is_the_one_the_line_names"
+    },
+    {
+      "name": "the left's line leaves Drop out",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": " — in the baseline; Drop removes it.",
+      "new": " — in the baseline.",
+      "killer": "Whichever_pane_s_caret_moved_last_is_the_one_the_line_names"
+    },
+    {
+      "name": "the right stays silent in its section once the left has spoken",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Drop removes it.\");\n            sectionSpoken = null;",
+      "new": "Drop removes it.\");",
+      "killer": "Whichever_pane_s_caret_moved_last_is_the_one_the_line_names"
+    },
+    {
+      "name": "the left stays silent in its section once the right has spoken",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Spoken}.\");\n            leftSectionSaid = null;",
+      "new": "Spoken}.\");",
+      "killer": "Whichever_pane_s_caret_moved_last_is_the_one_the_line_names"
+    },
+    {
+      "name": "the left forgets the section it last said",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "        leftSectionSaid = path;\n",
+      "new": "",
+      "killer": "A_drops_outcome_stands_while_the_left_caret_moves_within_the_section_the_drop_left_it_in"
+    },
+    {
+      "name": "a move leaves the left remembering what it last said",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "            leftSectionSaid = null;\n            ShowPosition();",
+      "new": "            ShowPosition();",
+      "killer": "After_a_move_the_left_caret_names_its_section_again"
+    },
+    {
+      "name": "the band shows only while the line is empty",
+      "file": "src/AgentBaseline/ReviewWindow.axaml",
+      "old": "StringConverters.IsNotNullOrEmpty",
+      "new": "StringConverters.IsNullOrEmpty",
+      "killer": "The_line_stands_in_a_band_shown_only_while_it_has_something_to_say"
+    },
+    {
+      "name": "the band is painted the header's colour",
+      "file": "src/AgentBaseline/ReviewWindow.axaml",
+      "old": "Background=\"{DynamicResource DiffView.StatusActiveBackgroundBrush}\"",
+      "new": "Background=\"{DynamicResource DiffView.HeaderBackgroundBrush}\"",
+      "killer": "The_line_stands_in_a_band_shown_only_while_it_has_something_to_say"
     },
     {
       "name": "a counted noun's arms swap with its negated test",
