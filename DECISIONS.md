@@ -5125,3 +5125,33 @@ walk descends, and counts a tooltip given as the attribute or as the property el
 read, and a tooltip a style setter gave would read as missing, which no markup here does. It floors each project that
 holds input controls, because a reading that finds nothing missing passes when it reads nothing. A rule every
 repository of the family should keep belongs in XamlQuality, and it goes there on Brian's word.
+
+## A run killed partway is put right by the next one
+
+Open item 35, on Brian's word of 2026-11-10, after a `mutate-behaviour --owed` run bounded by a `timeout` was killed
+partway through item 34's proof and left a save mutation in `ReviewWindow.axaml.cs`. The harness reverts each edit
+from a snapshot of the file it took first, which is what lets it run over uncommitted work; a killed run reverts
+nothing, and the snapshot's path, printed before the first edit, was read by nobody.
+
+**A note per checkout, beside the snapshots.** `Journal` keeps `run.json` in the checkout's own directory under the
+temp directory: the process that holds the checkout, by its id and its start time, because an id is reused, and the
+edit in flight, if any, with its file, its snapshot and a hash of the bytes before and after. A run notes that it holds
+the checkout before its baseline, notes each edit before writing it, clears the edit once its revert is read back, and
+lets the checkout go on every exit it controls, unless an edit is still in flight.
+
+**What the next run does with it, before it builds anything.** With no note, it goes on. A live process's note refuses
+it, a second run in one checkout being how the killed run's edit came to be overlooked. A dead one's note with no edit
+in flight is cleared, and so is one whose edit was already put back. A file as the dead run left it gets its snapshot
+written back, but only a snapshot whose hash is the original's. A file that has changed since, or a snapshot that is
+not the original, is named and left for a person, because writing either back could take someone's work.
+`--parallel` reads the note before it captures this checkout as a tree, so a parallel run never proves an edit a dead
+run left.
+
+**Not in the modes that only read.** `--judge`, `--check`, `--list`, `--kills` and the other seams never read the note:
+the harness's own tests run them inside a worktree a shard is mutating, where the shard's live note would refuse them
+and every mutation would read as killed.
+
+**Proven through seams.** A run killed at the right moment is not something a test can arrange, so `--edit-in-flight`
+does what a run does to a file before it builds a mutation, through the same `Journal.Apply`, and stops there;
+`--recover` does what a run does first; and `--journal-path` says where the note is, so a test can rewrite it. Five
+tests drive them, and the harness's own set holds each to a mutation.

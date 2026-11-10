@@ -39,6 +39,9 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **`mutate-behaviour` puts right what a killed run left.** A run notes the edit it has in flight before writing it,
+  and the next run reads the note before it builds anything: an edit a dead run left is put back from its snapshot,
+  and a second run is refused while one holds the checkout.
 - **The review window's buttons carry tooltips, and every input control in the repository's markup is held to
   one.** Each says what it acts on and whether the choice is kept for later runs. `TooltipCoverageTests` reads the
   markup under `src` and fails on any button, toggle, box or picker without a tooltip.

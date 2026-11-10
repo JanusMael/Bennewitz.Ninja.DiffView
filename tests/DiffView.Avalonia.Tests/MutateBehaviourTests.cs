@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json.Nodes;
 
 namespace Bennewitz.Ninja.DiffView.Tests;
 
@@ -632,6 +634,138 @@ public sealed class MutateBehaviourTests
             .Select(line => line.Trim())];
 
     /// <summary>Each listed mutation's <c>runs:</c> line, by the name it is listed under.</summary>
+    [Fact]
+    public void A_run_killed_mid_mutation_has_its_edit_put_back_by_the_next_run()
+    {
+        using Note note = Note.LeftInFlight();
+
+        (int exitCode, string output) = Run(["--recover", note.Checkout]);
+
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("put back from", output, StringComparison.Ordinal);
+        Assert.Equal(Note.Original, File.ReadAllText(note.Subject));
+        Assert.False(File.Exists(note.Path), "The note outlived the edit it named.");
+    }
+
+    [Fact]
+    public void A_run_that_finds_another_live_run_editing_the_checkout_refuses_to_start()
+    {
+        using Note note = Note.LeftInFlight();
+        note.NameThisProcess();
+
+        (int exitCode, string output) = Run(["--recover", note.Checkout]);
+
+        Assert.True(exitCode == 2, output);
+        Assert.Contains("another run is editing this checkout", output, StringComparison.Ordinal);
+        Assert.Equal(Note.Mutated, File.ReadAllText(note.Subject));
+        Assert.True(File.Exists(note.Path), "A live run's note was cleared.");
+    }
+
+    [Fact]
+    public void A_file_changed_since_a_run_died_on_it_is_left_alone_and_named()
+    {
+        using Note note = Note.LeftInFlight();
+        File.WriteAllText(note.Subject, "someone else's\n");
+
+        (int exitCode, string output) = Run(["--recover", note.Checkout]);
+
+        Assert.True(exitCode == 2, output);
+        Assert.Contains("has changed since a run that died", output, StringComparison.Ordinal);
+        Assert.Equal("someone else's\n", File.ReadAllText(note.Subject));
+        Assert.True(File.Exists(note.Path), "The note of a file nobody put right was cleared.");
+    }
+
+    [Fact]
+    public void An_edit_the_dead_run_had_already_put_back_only_clears_its_note()
+    {
+        using Note note = Note.LeftInFlight();
+        File.WriteAllText(note.Subject, Note.Original);
+
+        (int exitCode, string output) = Run(["--recover", note.Checkout]);
+
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("had already put", output, StringComparison.Ordinal);
+        Assert.Equal(Note.Original, File.ReadAllText(note.Subject));
+        Assert.False(File.Exists(note.Path), "The note of an edit already put back was kept.");
+    }
+
+    [Fact]
+    public void A_snapshot_that_is_not_the_original_is_never_written_back()
+    {
+        using Note note = Note.LeftInFlight();
+        File.WriteAllText(note.Backup, "not what the file held\n");
+
+        (int exitCode, string output) = Run(["--recover", note.Checkout]);
+
+        Assert.True(exitCode == 2, output);
+        Assert.Contains("is not what the file held before", output, StringComparison.Ordinal);
+        Assert.Equal(Note.Mutated, File.ReadAllText(note.Subject));
+    }
+
+    /// <summary>
+    /// A checkout of a test's own holding one file a run left mid-mutation, as <c>--edit-in-flight</c> leaves it: the
+    /// file edited, its snapshot kept and the note naming both. Disposing of it removes the checkout and its directory
+    /// under the temp directory, where the note and the snapshot are.
+    /// </summary>
+    private sealed class Note : IDisposable
+    {
+        public const string Original = "original\n";
+
+        public const string Mutated = "mutated\n";
+
+        private Note(string checkout, string subject, string path)
+        {
+            Checkout = checkout;
+            Subject = subject;
+            Path = path;
+        }
+
+        public string Checkout { get; }
+
+        public string Subject { get; }
+
+        public string Path { get; }
+
+        /// <summary>The snapshot the note names.</summary>
+        public string Backup => JsonNode.Parse(File.ReadAllText(Path))!["edit"]!["backup"]!.GetValue<string>();
+
+        public static Note LeftInFlight()
+        {
+            string checkout = Directory.CreateTempSubdirectory("mutate-behaviour-note-").FullName;
+            string subject = System.IO.Path.Combine(checkout, "Subject.cs");
+            string replacement = System.IO.Path.Combine(checkout, "replacement.txt");
+            File.WriteAllText(subject, Original);
+            File.WriteAllText(replacement, Mutated);
+
+            (int located, string path) = Run(["--journal-path", checkout]);
+            Assert.True(located == 0, path);
+            (int edited, string output) = Run(["--edit-in-flight", checkout, subject, replacement]);
+            Assert.True(edited == 0, output);
+            Assert.Equal(Mutated, File.ReadAllText(subject));
+            return new Note(checkout, subject, path.Trim());
+        }
+
+        /// <summary>Makes the note name this test's own process, which is running.</summary>
+        public void NameThisProcess()
+        {
+            JsonObject json = JsonNode.Parse(File.ReadAllText(Path))!.AsObject();
+            using Process self = Process.GetCurrentProcess();
+            json["pid"] = self.Id;
+            json["started"] = self.StartTime.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+            File.WriteAllText(Path, json.ToJsonString());
+        }
+
+        public void Dispose()
+        {
+            Directory.Delete(Checkout, recursive: true);
+            string kept = System.IO.Path.GetDirectoryName(Path)!;
+            if (Directory.Exists(kept))
+            {
+                Directory.Delete(kept, recursive: true);
+            }
+        }
+    }
+
     private static Dictionary<string, string> ListedRuns(string output)
     {
         Dictionary<string, string> runs = new(StringComparer.Ordinal);
