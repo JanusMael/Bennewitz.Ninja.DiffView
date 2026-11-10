@@ -39,6 +39,9 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **`conventions` is a required check.** The family's repository-conventions check ran on every pull request without
+  being able to block one. `.github/repository.json` lists it beside the five checks `main` already required, and
+  `repo-conventions apply` writes the list to the ruleset.
 - **CI checks that every mutation still applies.** Beside `mutate-gates --guards`, the Linux job runs both harnesses'
   `--check`, `mutate-behaviour`'s over every committed proof set, so a change that moves the code a mutation edits
   fails its own pull request rather than the next full run.
