@@ -39,6 +39,9 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **CI checks that every mutation still applies.** Beside `mutate-gates --guards`, the Linux job runs both harnesses'
+  `--check`, `mutate-behaviour`'s over every committed proof set, so a change that moves the code a mutation edits
+  fails its own pull request rather than the next full run.
 - **`mutate-behaviour` restores after a revert, and a moved pin owes only the sets it reaches.** A mutation that
   edits what restore reads left `obj/` describing the project as it had made it, so the build after its revert
   built against what the edit had changed, a moved pin's package among them; that build restores now too. And

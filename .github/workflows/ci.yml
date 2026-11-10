@@ -80,6 +80,25 @@ jobs:
         if: ${{ !cancelled() && runner.os == 'Linux' }}
         run: dotnet run scripts/mutate-gates.cs -- --guards
 
+      # ⛔ The harnesses' other standing half: every mutation still applies. A change that moves the code a
+      # mutation edits leaves that mutation matching nothing, which a full run fails as a no-op — but a full
+      # run is made by hand, so until then the proof it stands for is gone without a word. Each of these
+      # applies and reverts every edit and builds nothing: the gates' mutations, then every committed proof
+      # set's and the harness's built-in one, whose check also judges each inert-at-pin marker against the
+      # set's pins. It proves no test able to fail; a full run does that. One OS, as above.
+      - name: Every gate mutation still applies
+        if: ${{ !cancelled() && runner.os == 'Linux' }}
+        run: dotnet run scripts/mutate-gates.cs -- --check
+
+      - name: Every proof set still applies
+        if: ${{ !cancelled() && runner.os == 'Linux' }}
+        shell: bash
+        run: |
+          sets=()
+          for file in tests/*/Mutations/*.json; do sets+=(--set "$file"); done
+          dotnet run scripts/mutate-behaviour.cs -- --check
+          dotnet run scripts/mutate-behaviour.cs -- --check "${sets[@]}"
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7

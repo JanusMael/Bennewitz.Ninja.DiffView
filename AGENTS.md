@@ -219,7 +219,7 @@ no dates, no counts.
   a pin.** A full run takes minutes and CI does not make one. What CI runs is `--guards`, on Linux in
   `build-and-test` — the standing half, in seconds: it lists the derived guards, judges each marker
   against the current pin, and exits non-zero on an expired marker or a gate-file `throw`. It proves no
-  guard.
+  guard. Beside it CI runs `--check`, below, which proves none either.
 - **Two mutations must stay green, and that is asserted**: `PrivateAssets="all"` hides a used type
   from the nuspec gate, and Roslyn emits no reference for an unused package, so `BNAQ1003` and the
   nuspec gate are each blind to exactly what the other catches. A red there is `unexpected-red` and
@@ -285,7 +285,8 @@ no dates, no counts.
   `DECISIONS.md`, *What a mutation's build pays for*.
 - **`--check` applies and reverts each gate mutation and builds nothing**, as `mutate-behaviour`'s does for a set,
   so a construct that moved is found in under a minute on a quiet box and two on a busy one, rather than as a failed
-  `no-op` at the end of a full run.
+  `no-op` at the end of a full run. CI runs both on Linux after `--guards`, `mutate-behaviour`'s over every committed
+  set and its built-in one, so a change that moves the code a mutation edits fails its own pull request.
 - ⛔ **Reverting a mutation does not unbuild it, so the harness rebuilds on every exit it controls**
   once mutations have started, from a `finally`. A run killed outright cannot, and a
   `dotnet test --no-build` straight after one is worthless: the last mutation's assemblies sit in
