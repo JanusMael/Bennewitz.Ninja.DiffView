@@ -89,7 +89,9 @@
 // compared, so this runs over uncommitted work — AGENTS.md §5 has a new test proven able to fail
 // before it is committed. The snapshot is on disk as well, under the temp directory, and its path is
 // printed before the first edit of that file, because a run killed mid-mutation leaves the file
-// mutated and a revert from git would take the uncommitted work with it.
+// mutated and a revert from git would take the uncommitted work with it. The next run puts it back
+// itself: a note of the edit in flight is kept beside the snapshots and read before anything is
+// built, and a second run is refused while one edits the checkout — `Journal`.
 //
 // ⛔ What a mutation may touch is DERIVED, not trusted: the whole repository's status, with a hash of
 // every file it lists, is compared before and after every edit, and anything changed outside the
@@ -138,7 +140,8 @@ string? judgeSays = null;
 // ⛔ Every flag is COLLECTED here and acted on below, none of them acting from inside the loop.
 // An earlier version printed the list from inside it and returned, so `--only x --list` silently
 // listed everything: a filter that does nothing is worse than one that errors, because the output
-// looks like an answer. Only `--strayed` and `--moved` return early, and each reads two files and runs nothing.
+// looks like an answer. Only the seams return early, `--strayed`, `--moved` and the note's three, and none of them
+// builds anything or runs a test.
 for (int i = 0; i < args.Length; i++)
 {
     switch (args[i])
@@ -227,6 +230,21 @@ for (int i = 0; i < args.Length; i++)
                 ? "nothing moved"
                 : string.Join(Environment.NewLine, moved.Order(StringComparer.OrdinalIgnoreCase)));
             return 0;
+
+        // Runs no harness: where the note a run keeps of a checkout lives, so a test can read and rewrite it.
+        case "--journal-path" when i + 1 < args.Length:
+            Console.WriteLine(Journal.PathFor(Path.GetFullPath(args[i + 1])));
+            return 0;
+
+        // Runs no harness: what a run does first, reading the note a run left and putting right what it names. It is
+        // how the guard is proven, because a run killed at the right moment is not something a test can arrange.
+        case "--recover" when i + 1 < args.Length:
+            return Journal.Recover(Path.GetFullPath(args[i + 1]), Console.Out);
+
+        // Runs no harness: what a run does to a file just before it builds a mutation, and nothing after: the
+        // snapshot, the note and the edit, left as a run killed mid-mutation leaves them.
+        case "--edit-in-flight" when i + 3 < args.Length:
+            return Journal.EditAndStop(Path.GetFullPath(args[i + 1]), Path.GetFullPath(args[i + 2]), Path.GetFullPath(args[i + 3]));
 
         default:
             Console.Error.WriteLine($"mutate-behaviour: unknown argument `{args[i]}`");
@@ -419,6 +437,13 @@ if (parallel is { } worktrees)
         runs.Add((each, eachPlan, eachDeclared));
     }
 
+    // The tree a parallel run proves is this checkout's state, so an edit a killed run left here would be proven
+    // against: the note is read first, as a run's own is.
+    if (Journal.Recover(repo, Console.Out) is not 0)
+    {
+        return 2;
+    }
+
     return Parallel.Run(repo, runs, worktrees);
 }
 
@@ -595,6 +620,17 @@ if (ownRunner is not null)
     return 2;
 }
 
+// ⛔ A run killed partway cannot revert its edit. Before this one builds anything it reads the note a run keeps of the
+// checkout: another live run refuses it, and an edit a dead run left is put back from its snapshot. Then this run notes
+// that it holds the checkout, and lets it go on every exit it controls unless an edit is still in flight.
+if (Journal.Recover(repo, Console.Out) is not 0)
+{
+    return 2;
+}
+
+Journal.Begin(repo);
+AppDomain.CurrentDomain.ProcessExit += (_, _) => Journal.End(repo);
+
 // The state this run is over, taken before anything is edited: a shard's merge must find every shard
 // over the one tree --parallel gave them.
 string? ranOver = emit is null ? null : Source.Tree(repo);
@@ -663,7 +699,8 @@ try
         }
 
         string statusBefore = Git.Fingerprint(repo);
-        File.WriteAllBytes(path, encoding.GetPreamble().Concat(encoding.GetBytes(before.Replace(mutation.Old, mutation.New, StringComparison.Ordinal))).ToArray());
+        byte[] mutated = encoding.GetPreamble().Concat(encoding.GetBytes(before.Replace(mutation.Old, mutation.New, StringComparison.Ordinal))).ToArray();
+        Journal.Apply(repo, path, backups[path], original, mutated, mutation.Name);
         started = true;
 
         try
@@ -705,6 +742,10 @@ try
             {
                 restoresHeld = false;
                 Console.Error.WriteLine($"mutate-behaviour: the revert of {mutation.File} did not take — restore it from {backups[path]}");
+            }
+            else
+            {
+                Journal.Settled(repo);
             }
         }
     }
@@ -1311,14 +1352,17 @@ internal static class Snapshot
     /// </summary>
     public static string Keep(string repo, string path, byte[] original)
     {
-        string checkout = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(repo)))[..12];
-        string directory = Path.Combine(Path.GetTempPath(), "mutate-behaviour", checkout);
+        string directory = DirectoryFor(repo);
         Directory.CreateDirectory(directory);
         string hash = Convert.ToHexString(SHA256.HashData(original))[..12];
         string backup = Path.Combine(directory, $"{Path.GetFileName(path)}.{hash}.orig");
         File.WriteAllBytes(backup, original);
         return backup;
     }
+
+    /// <summary>The directory of <paramref name="repo"/>'s own under the temp directory: its snapshots, and its note.</summary>
+    public static string DirectoryFor(string repo) =>
+        Path.Combine(Path.GetTempPath(), "mutate-behaviour", Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(repo)))[..12]);
 
     /// <summary>
     /// The text of <paramref name="bytes"/>, and an encoding that writes it back with the same
@@ -1330,6 +1374,218 @@ internal static class Snapshot
         encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: marked);
         text = new UTF8Encoding(false).GetString(bytes, marked ? 3 : 0, bytes.Length - (marked ? 3 : 0));
     }
+}
+
+/// <summary>
+/// The note a run keeps while it edits a checkout: the process that holds it, and the edit it has in flight, if any. A
+/// run killed partway cannot revert its edit, so the next run reads the note before it builds anything: a live run's
+/// note refuses it, and a dead run's edit is put back from its snapshot.
+/// </summary>
+/// <remarks>
+/// It lives beside the snapshots, in the checkout's own directory under the temp directory, so two worktrees never share
+/// one. It is written and read by hand rather than by a serializer, so nothing here asks for reflection, and written
+/// whole to a side file and moved over the old one, so a kill mid-write leaves one note or the other, never half.
+/// </remarks>
+internal static class Journal
+{
+    /// <summary>Where the note for <paramref name="checkout"/> lives.</summary>
+    public static string PathFor(string checkout) => Path.Combine(Snapshot.DirectoryFor(checkout), "run.json");
+
+    /// <summary>Notes that this process holds <paramref name="checkout"/>, with nothing in flight.</summary>
+    public static void Begin(string checkout) => Write(checkout, null);
+
+    /// <summary>Notes the edit, then writes it: a kill between the two leaves a note that names it.</summary>
+    public static void Apply(string checkout, string file, string backup, byte[] original, byte[] mutated, string mutation)
+    {
+        Write(checkout, new Edit(file, backup, Hash(original), Hash(mutated), mutation));
+        File.WriteAllBytes(file, mutated);
+    }
+
+    /// <summary>Notes that the edit in flight was reverted.</summary>
+    public static void Settled(string checkout) => Write(checkout, null);
+
+    /// <summary>Lets <paramref name="checkout"/> go, unless an edit is still in flight, which the next run must see.</summary>
+    public static void End(string checkout)
+    {
+        string path = PathFor(checkout);
+        try
+        {
+            if (File.Exists(path) && Read(path).Edit is null)
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            // An exit that cannot read its own note leaves it to the next run, which says what it found.
+        }
+    }
+
+    /// <summary>
+    /// What a run does to a file just before it builds a mutation, and nothing after: the snapshot, the note and the
+    /// edit, left as a run killed mid-mutation leaves them.
+    /// </summary>
+    public static int EditAndStop(string checkout, string file, string replacement)
+    {
+        byte[] original = File.ReadAllBytes(file);
+        string backup = Snapshot.Keep(checkout, file, original);
+        Begin(checkout);
+        Apply(checkout, file, backup, original, File.ReadAllBytes(replacement), "an edit left in flight");
+        Console.WriteLine($"left {file} edited and its note standing, as a run killed mid-mutation leaves them");
+        return 0;
+    }
+
+    /// <summary>
+    /// Reads the note a run left on <paramref name="checkout"/> and puts right what it can: 0 when there was none or
+    /// what it named is put right, 2 when this run must not go on, with what to do said on <paramref name="output"/>.
+    /// </summary>
+    public static int Recover(string checkout, TextWriter output)
+    {
+        string path = PathFor(checkout);
+        if (!File.Exists(path))
+        {
+            return 0;
+        }
+
+        Note note;
+        try
+        {
+            note = Read(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or FormatException or KeyNotFoundException or InvalidOperationException)
+        {
+            output.WriteLine($"mutate-behaviour: the note at {path} cannot be read ({ex.Message}): check the files a run here was editing, then delete it");
+            return 2;
+        }
+
+        if (Alive(note.Pid, note.Started))
+        {
+            output.WriteLine($"mutate-behaviour: another run is editing this checkout, process {note.Pid.ToString(CultureInfo.InvariantCulture)}: wait for it to finish, or stop it, before starting this one");
+            return 2;
+        }
+
+        if (note.Edit is not { } edit)
+        {
+            File.Delete(path);
+            output.WriteLine("mutate-behaviour: a run here ended without letting the checkout go, with no edit in flight; its note is cleared");
+            return 0;
+        }
+
+        if (!File.Exists(edit.File))
+        {
+            output.WriteLine($"mutate-behaviour: a run that died was editing {edit.File} with `{edit.Mutation}`, and the file is gone: put it back from {edit.Backup}, then delete {path}");
+            return 2;
+        }
+
+        string now = Hash(File.ReadAllBytes(edit.File));
+        if (now == edit.Original)
+        {
+            File.Delete(path);
+            output.WriteLine($"mutate-behaviour: a run that died had already put {edit.File} back from `{edit.Mutation}`; its note is cleared");
+            return 0;
+        }
+
+        if (now != edit.Mutated)
+        {
+            output.WriteLine($"mutate-behaviour: {edit.File} has changed since a run that died left `{edit.Mutation}` in it, and holds neither that edit nor what was there before: compare it with {edit.Backup}, put it right by hand, then delete {path}");
+            return 2;
+        }
+
+        byte[] kept = File.Exists(edit.Backup) ? File.ReadAllBytes(edit.Backup) : [];
+        if (Hash(kept) != edit.Original)
+        {
+            output.WriteLine($"mutate-behaviour: a run that died left `{edit.Mutation}` in {edit.File}, and the snapshot at {edit.Backup} is not what the file held before: put it right from git or by hand, then delete {path}");
+            return 2;
+        }
+
+        File.WriteAllBytes(edit.File, kept);
+        File.Delete(path);
+        output.WriteLine($"mutate-behaviour: a run that died left `{edit.Mutation}` in {edit.File}; put back from {edit.Backup}");
+        return 0;
+    }
+
+    private static void Write(string checkout, Edit? edit)
+    {
+        string path = PathFor(checkout);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using Process self = Process.GetCurrentProcess();
+        using MemoryStream buffer = new();
+        using (Utf8JsonWriter json = new(buffer, new JsonWriterOptions { Indented = true }))
+        {
+            json.WriteStartObject();
+            json.WriteNumber("pid", self.Id);
+            json.WriteString("started", self.StartTime.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
+            if (edit is null)
+            {
+                json.WriteNull("edit");
+            }
+            else
+            {
+                json.WriteStartObject("edit");
+                json.WriteString("file", edit.File);
+                json.WriteString("backup", edit.Backup);
+                json.WriteString("original", edit.Original);
+                json.WriteString("mutated", edit.Mutated);
+                json.WriteString("mutation", edit.Mutation);
+                json.WriteEndObject();
+            }
+
+            json.WriteEndObject();
+        }
+
+        string side = path + ".tmp";
+        File.WriteAllBytes(side, buffer.ToArray());
+        File.Move(side, path, overwrite: true);
+    }
+
+    private static Note Read(string path)
+    {
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllBytes(path));
+        JsonElement root = document.RootElement;
+        JsonElement edit = root.GetProperty("edit");
+        return new Note(
+            root.GetProperty("pid").GetInt32(),
+            DateTime.Parse(root.GetProperty("started").GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind).ToUniversalTime(),
+            edit.ValueKind == JsonValueKind.Null
+                ? null
+                : new Edit(
+                    edit.GetProperty("file").GetString()!,
+                    edit.GetProperty("backup").GetString()!,
+                    edit.GetProperty("original").GetString()!,
+                    edit.GetProperty("mutated").GetString()!,
+                    edit.GetProperty("mutation").GetString()!));
+    }
+
+    private static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes));
+
+    /// <summary>
+    /// Whether the process that wrote a note still runs: the same id started at the same moment, because an id is
+    /// reused. A process that cannot be read is taken as running, which refuses rather than overwrites.
+    /// </summary>
+    private static bool Alive(int pid, DateTime started)
+    {
+        try
+        {
+            using Process process = Process.GetProcessById(pid);
+            return Math.Abs((process.StartTime.ToUniversalTime() - started).TotalSeconds) < 2;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return true;
+        }
+    }
+
+    private sealed record Edit(string File, string Backup, string Original, string Mutated, string Mutation);
+
+    private sealed record Note(int Pid, DateTime Started, Edit? Edit);
 }
 
 internal static class Git
