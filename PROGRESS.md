@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` carries everything through PR #48, and CI is green on it** — PR #48 merged on a full
+**`main` carries everything through PR #49, and CI is green on it** — PR #49 merged on a full
 12-of-12, 2026-11-10. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
 wrong the moment it is true.* **Windows measured 994** here, `Passed!`, by a local run over item 32's
@@ -11,8 +11,8 @@ total is deliberately not written down**: it is read off CI's own summary, never
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
-**123** mutations and derives **88** guards from the gate files; CI runs its `--guards` half on
-Linux, and the last full run — over item 30's branch, on 2026-11-09, in four
+**123** mutations and derives **88** guards from the gate files; CI runs its `--guards` half and its
+`--check` on Linux, and the last full run — over item 30's branch, on 2026-11-09, in four
 worktrees — gave all 123 as declared: 119 killed by the test each names, 2 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 88 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
@@ -1567,7 +1567,7 @@ wording.
     a pin; and `--owed` owed every set whose pins file changed, which after item 30's pin was all sixteen, ten of them
     beyond its reach.
 
-    ✅ **Done 2026-11-10 on `build/a-moved-pin-owes-what-it-reaches`, and it lands on Brian's word, the push being his.**
+    ✅ **Done 2026-11-10 on `build/a-moved-pin-owes-what-it-reaches`, and landed as PR #49 that day, Brian merging it.**
     The build after an edit to what restore reads restores too, through `Mutation.RestoresAfter`, which the run and
     `--list` share, and item 30's set carries the pin itself as its first mutation. `--owed` owes a set for its pins
     only where a moved package reaches it, a marker in its tests naming it or its project's restore resolving it, and
@@ -1577,9 +1577,21 @@ wording.
     among them, in 9.6 minutes. The suite ran 994 of 994 on Windows, `Passed!`, and `catch-crash` judged the run
     healthy. `DECISIONS.md`, *mutate-behaviour restores after a revert, and a moved pin owes only what it reaches*.
 
+33. **Both harnesses' `--check` in CI — Brian, 2026-11-10, *"Both --check runs in CI (Recommended)"*.** CI ran
+    `mutate-gates --guards` and nothing else of either harness, so a change that moved the code a mutation edits left
+    that mutation matching nothing until the next full run, which is made by hand.
+
+    ✅ **Done 2026-11-10 on `ci/every-mutation-still-applies`, and it lands on his word, the push being his.**
+    `build-and-test` on Linux runs `mutate-gates --check` after `--guards`, and `mutate-behaviour --check` over its
+    built-in set and every committed one. Run as CI's bash runs it, with `-eo pipefail`, the second step passes over
+    this tree, all 17 sets without a fault; with one set mutation's text made to match nothing it fails naming that
+    mutation, and the gates' check fails the same way, 122 of 123, naming its. The gates' check took 2.4 minutes on a
+    busy box. `DECISIONS.md`, *CI checks that every mutation still applies*.
+
 Items 3, 9 and 10 are Brian's own, item 16 is shelved, item 26 is backlogged, item 27 landed as PR #47 on
 2026-11-09, item 23 is Inspections' to start now that item 27's results have reached it, item 30 landed as PR #48
-on 2026-11-10, item 31 waits for his word, and item 32 is done and lands on his word. **Every other open item was
+on 2026-11-10, item 31 waits for his word, item 32 landed as PR #49 the same day, and item 33 is done and lands
+on his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
@@ -1620,7 +1632,7 @@ is wrong in both directions the moment a test is added.
 minutes** on the Windows box, measured on 2026-10-19 where this had said about five. `--parallel 4` took
 **8.8** on a quiet box on 2026-11-06, and has taken **35.6** on a busy one, in four worktrees holding
 whatever is in this checkout, which stays free to edit while it runs. A full run is owed after any change
-to a gate file, a gated subject or a pin, and CI runs only its `--guards` half. `--check` proves every
+to a gate file, a gated subject or a pin, and CI runs its `--guards` half and its `--check`, which proves every
 mutation still applies in under a minute on a quiet box. `AGENTS.md` §5 records what it refuses to do and why.
 
 The theme audit regenerates after a ClaudeForge pin bump or a change under

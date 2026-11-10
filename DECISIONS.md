@@ -5042,3 +5042,27 @@ new shape left matching nothing is re-pointed. ⚠ `Git.MovedSince`'s `git show`
 **The runs.** Over this tree `--owed main` chose the two sets the change owes and no other, and in four worktrees both
 ran as declared, the harness's own 60 with every one of its 43 declared tests killed and item 30's 7 with the pin among
 them, in 9.6 minutes. The suite ran 994 of 994 on Windows, `Passed!`, and `catch-crash` judged the run healthy.
+
+## CI checks that every mutation still applies
+
+Open item 33, on Brian's word of 2026-11-10. A full gate run is owed after a change to a gate file, a gated subject or a
+pin, and a proof set is owed a run when `--owed` says so, but both runs are made by hand, and between them a change that
+moves the code a mutation edits leaves that mutation matching nothing. Its proof is then gone without a word: the next
+full run fails it as a `no-op`, whenever that is. CI ran `mutate-gates --guards` and nothing else of either harness,
+and `--guards` judges each gate's markers and finds a `throw` but cannot see a mutation that stopped applying.
+
+**Both checks run on Linux, after `--guards`.** `mutate-gates --check` applies and reverts each of its mutations and
+builds nothing, and `mutate-behaviour --check` does the same for the harness's built-in set and every committed one,
+judging each `inert-at-pin` marker against its set's pins as it goes. Neither proves a test or a guard able to fail;
+that stays a full run's. They run on one OS because they read files, and on `!cancelled()` so a red test step does not
+hide them, as the guards do.
+
+**What they cost.** The gates' check took 38 s on a quiet Windows box under item 27 and 2.4 minutes on a busy one here;
+every set's together took seconds once the script was built. ⚠ The gates' check refuses a dirty `src` or `tests`, as
+their run does, so it relies on the build and the tests before it writing only where git ignores: a local build and
+suite left both clean.
+
+**Proven both ways by hand.** The step's script, run as CI's bash runs it with `-eo pipefail`, passes over this tree,
+all 17 sets without a fault. With item 30's set's strip rename made to match nothing it fails naming that mutation, and
+with the gates' BNAQ1004 control mutation made to match nothing their check fails, 122 of 123 applying, naming it. Both
+edits were to the mutations' definitions, outside what either harness reverts, and both were restored from git.
