@@ -54,17 +54,38 @@ public sealed class ViewerStateTests
 
         AssertOneSet(views, "shown with nothing to compare", ":empty", ":banner-none");
 
-        // Assigned and not yet applied: the build is on a worker until the dispatcher is pumped.
-        foreach (View view in views)
+        // Assigned and not yet applied: each build is held on a gate until :building is read. A build whose task has
+        // finished by the time the controller awaits it is completed inline, on this thread, before the assignment
+        // returns, so a fast build on a thread descheduled between the two would be :ready already. That is how this
+        // step went red on main's Culture Leg on 2026-11-10 (PROGRESS.md item 37).
+        using ManualResetEventSlim gate = new(initialState: false);
+        Func<PaneSource, PaneSource, DiffOptions, CancellationToken, DiffBuildResult> held = (l, r, options, token) =>
         {
-            view.Assign(left, right);
+            gate.Wait(token);
+            return CompositeHost.ZeroTimeBuilder(l, r, options, token);
+        };
+        var builders = (editor.View.Builder, viewer.View.Builder, unified.View.Builder);
+        (editor.View.Builder, viewer.View.Builder, unified.View.Builder) = (held, held, held);
+        try
+        {
+            foreach (View view in views)
+            {
+                view.Assign(left, right);
+            }
+
+            AssertOneSet(views, "building", ":building", ":banner-none");
+        }
+        finally
+        {
+            gate.Set();
         }
 
-        AssertOneSet(views, "building", ":building", ":banner-none");
         foreach (View view in views)
         {
             await view.Wait();
         }
+
+        (editor.View.Builder, viewer.View.Builder, unified.View.Builder) = builders;
 
         AssertOneSet(views, "ready", ":ready", ":banner-none");
 
@@ -179,10 +200,18 @@ public sealed class ViewerStateTests
     public async Task A_viewer_that_is_never_shown_builds_to_ready()
     {
         (string left, string right) = CompositeHost.SmallFixture();
+
+        // Held on a gate until Building is read: a build already finished when the controller awaits it is completed
+        // inline, before the assignment returns (PROGRESS.md item 37).
+        using ManualResetEventSlim gate = new(initialState: false);
         DiffViewer viewer = new()
         {
             TimeProvider = new FakeTimeProvider(),
-            Builder = CompositeHost.ZeroTimeBuilder,
+            Builder = (l, r, options, token) =>
+            {
+                gate.Wait(token);
+                return CompositeHost.ZeroTimeBuilder(l, r, options, token);
+            },
         };
         List<DiffBuildCompletedEventArgs> completed = [];
         viewer.BuildCompleted += (_, e) => completed.Add(e);
@@ -191,6 +220,7 @@ public sealed class ViewerStateTests
         viewer.RightSource = right;
         Assert.Equal(DiffViewState.Building, viewer.State);
         Task build = viewer.CurrentBuild ?? throw new InvalidOperationException("Assigning both sources started no build.");
+        gate.Set();
         await build;
         ViewerHost.Layout();
 

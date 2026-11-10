@@ -5155,3 +5155,25 @@ and every mutation would read as killed.
 does what a run does to a file before it builds a mutation, through the same `Journal.Apply`, and stops there;
 `--recover` does what a run does first; and `--journal-path` says where the note is, so a test can rewrite it. Five
 tests drive them, and the harness's own set holds each to a mutation.
+
+## A state before a build lands is read with the build held
+
+Open item 37, on Brian's word of 2026-11-10 that races found are fixed. `main`'s Culture Leg went red on `99dd297` in
+`ViewerStateTests.All_three_views_carry_the_same_pseudo_classes_through_the_same_states`, the editor `:ready` where the
+test asserted `:building` straight after assigning its sources.
+
+**The mechanism is the library's, and by design.** `DiffBuildController.RunBuildAsync` awaits `Task.Run` with
+`ConfigureAwait(false)`, and an await of a task already finished continues on the thread it is on. On the UI thread
+`Dispatcher.UIThread.CheckAccess()` is then true, so the build is completed inline, before the assignment that started
+it returns. A small fixture's build finishes while the UI thread is descheduled between starting it and awaiting it,
+which a slow runner does. That the dispatcher cannot run between two statements keeps nothing still here: the
+completion never waits for the dispatcher.
+
+**A test that reads a state before a build lands holds the build on a gate**, releasing it once the state is read, as
+`EditUnderFoldTests` already did. Three tests read `Building` that way, and all three hold their builds now. It is the
+converse of the rule `AGENTS.md` §5 states, that a build is awaited and never pumped for, and it is stated beside it.
+
+**Proven by making it happen.** A 300 ms sleep put in the library between starting the build and awaiting it makes the
+completion inline every time: the three tests failed as they stood, the first with the message `main` had shown, and
+passed with their gates; then the sleep came out. A race is not proven absent by running a test until it passes, but
+it can be made to happen on demand.
