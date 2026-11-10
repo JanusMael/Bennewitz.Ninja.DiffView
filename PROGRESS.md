@@ -2,11 +2,12 @@
 
 ## Resume
 
-**`main` carries everything through PR #51, and CI is green on it** — PR #51 merged on a full
+**`main` carries everything through PR #52, and CI is green on it** — PR #52 merged on a full
 12-of-12, 2026-11-10. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 999** here, `Passed!`, by a local run over item 34's
-branch — five more than over item 32's, four in `StandingLineTests` and `TooltipCoverageTests`' one. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 1004** here, `Passed!`, by a local run over item 35's
+branch — five more than over item 34's, all five in `MutateBehaviourTests`. ⚠ `main`'s first run after #52 went red
+in the Culture Leg on a race in `ViewerStateTests`, item 37, fixed here; the job passed when re-run. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
@@ -1496,6 +1497,11 @@ wording.
     ⭐ **Brian, 2026-11-10, through `/choices`: explore it now, as frames only** — two or three alignments rendered
     side by side for him to choose from, nothing in the library or its baselines moving until he has.
 
+    ⭐ **Brian, 2026-11-10, after the frames: layout F.** What jarred him was the focus underline against the find
+    bar's buttons, not the titles, so he asked to see it from the line numbers' first digit too. He chose the title
+    and the underline both starting there, 6 px in and flush, the underline clearing the find bar's L button. It moves
+    every whole-view frame, rendered in WSL and reviewed by him before they are committed, as item 25's were.
+
 27. **The mutation harnesses build with node reuse off, and the gate runs over uncommitted work — Brian,
     2026-11-01, as a change of its own once the local stack's pull request merges.** Item 14's first full run
     lost three mutations to `MSB4166`, an MSBuild worker node ending under the build that held it, and every
@@ -1650,11 +1656,48 @@ wording.
     `ReviewWindow.axaml.cs`. Rebuilding each changed file from `HEAD` and the edits that made it found it, and put it
     back. `AGENTS.md` §5 says so now.
 
-Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and sent
-item 26 to be explored as frames; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is
-Inspections' to start now that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and
-#50 on 2026-11-10 and item 31 as PR #51 the same day, and item 34 is done on `fix/review-window-tooltips`, its
-overlay his to call. **Every other open item was
+    The tooltip rule went to XamlQuality the same evening, on his word, as a rule for every repository of the family.
+    It is in that repository's backlog, its place there his to set, and `TooltipCoverageTests` stands until it ships.
+
+35. **A killed `mutate-behaviour` run left its edit in the tree — Brian, 2026-11-10, *"Build the guard"*.** Item 34's
+    proof found it the hard way: the harness reverts each edit from a snapshot, but a run killed partway reverts
+    nothing, and the snapshot it printed was read by no one.
+
+    ✅ **Done 2026-11-10 on `build/a-killed-run-is-put-right`.** A run keeps a note of the checkout beside its
+    snapshots: the process holding it, and the edit in flight, noted before the edit is written and cleared after a
+    revert that held. Before it builds anything a run reads the note: another live run refuses it, an edit a dead run
+    left is put back from its snapshot, and a file changed since, or a snapshot that is not the original, is named and
+    left for a person. `--parallel` reads it too, before it captures this checkout's state. Five `MutateBehaviourTests`
+    drive it through three seams, `--journal-path`, `--recover` and `--edit-in-flight`, the last leaving a file as a run
+    killed mid-mutation leaves it. The harness's own set gained six mutations and came out 66 of 66 as declared in four
+    worktrees, every one of its 48 declared tests killed, in 42 minutes beside another session's proof runs.
+    `DECISIONS.md`, *A run killed partway is put right by the next one*.
+
+36. **The section the review window's caret is in, marked in the panes — Brian, 2026-11-10.** He asked for an overlay
+    marking the current section to be considered, and chose through `/choices` to build it in the library: a small
+    public way to emphasise a range of lines in a pane, drawn under the text by its text bands, which AgentBaseline sets
+    from the caret. A host cannot draw it right, aligned rows carrying the other file's padding, which only the library
+    tells from text. A plan comes first, the change being public API.
+
+37. **Three tests read the building state with nothing holding the builds — found on `main`, 2026-11-10.**
+    `ViewerStateTests.All_three_views_carry_the_same_pseudo_classes_through_the_same_states` went red in `main`'s
+    Culture Leg on `99dd297`, the editor already `:ready` where it asserted `:building`, though #52 touched nothing it
+    reads; the job passed when re-run. The controller awaits its build's task, and a task already finished by then
+    completes the build inline, on the UI thread, before the assignment that started it returns. Two more tests read
+    it the same way: `ViewerStateTests.A_viewer_that_is_never_shown_builds_to_ready` and
+    `SideBySideDiffViewTests.Changing_an_option_rebuilds_and_preserves_caret_selection_scroll_and_undo_in_both_panes`.
+
+    ✅ **Fixed the same day, on Brian's word that races found are fixed.** Each holds its build on a gate until the
+    building state is read, as `EditUnderFoldTests` holds its own. Proven by making the race happen: with a 300 ms
+    sleep put in the library between starting a build and awaiting it, the three failed as they stood, the first with
+    `main`'s own message, and passed with their gates; then the sleep came out. `AGENTS.md` §5 states the rule.
+    `DECISIONS.md`, *A state before a build lands is read with the build held*.
+
+Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
+item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
+that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
+and 34 as PRs #51 and #52 the same day, items 35 and 37 are done on `build/a-killed-run-is-put-right`, and item 36
+waits for its plan. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
