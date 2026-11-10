@@ -398,6 +398,14 @@ no dates, no counts.
   is in place. The folds come back from the re-diff's `RefreshFolds` and from nothing else. Test
   `EditUnderFoldTests.A_revert_after_a_same_line_edit_leaves_each_fold_over_the_lines_it_covered`, which
   holds its own build on a gate so that middle state can be read at all.
+- ⛔ **And a state a build has not reached yet is read with the build held on a gate.** `RunBuildAsync` awaits
+  its build's task with `ConfigureAwait(false)`, and an await of a task already finished continues where it
+  is: on the UI thread that is inline, so a build can complete before the assignment that started it
+  returns, and a small fixture's does when the runner descheduled the thread between the two. `main`'s
+  Culture Leg went red that way on 2026-11-10, and the three tests that read `Building` straight after an
+  assignment now hold their builds until they have read it, as the test above does. Test
+  `ViewerStateTests.All_three_views_carry_the_same_pseudo_classes_through_the_same_states`; `DECISIONS.md`,
+  *A state before a build lands is read with the build held*.
 - ⛔ **A test that opens a window of its own puts every view in it on the hand-advanced clock before the
   window shows**, as `CompositeHost`, `InlineHost`, `ViewerHost` and AgentBaseline's `ReviewHost` do. A
   view's `StatusController` takes the view's `TimeProvider` when it is built, a finished build arms a

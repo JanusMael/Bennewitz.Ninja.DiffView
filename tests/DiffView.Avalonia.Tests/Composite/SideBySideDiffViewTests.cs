@@ -187,9 +187,18 @@ public sealed class SideBySideDiffViewTests
         double scroll = host.Left.VerticalOffset;
         Assert.True(scroll > 0);
 
+        // The rebuild is held on a gate until Building is read: a build already finished when the controller awaits it
+        // is completed inline, before the option's assignment returns (PROGRESS.md item 37).
+        using ManualResetEventSlim gate = new(initialState: false);
+        host.View.Builder = (l, r, options, token) =>
+        {
+            gate.Wait(token);
+            return CompositeHost.ZeroTimeBuilder(l, r, options, token);
+        };
         host.View.IgnoreWhitespace = true;
         Assert.Equal(DiffViewState.Building, host.View.State);
         Assert.True(host.View.IsStale);
+        gate.Set();
         await host.WaitForBuildAsync();
 
         Assert.Equal(DiffViewState.Ready, host.View.State);
