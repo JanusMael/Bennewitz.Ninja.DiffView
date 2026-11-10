@@ -5084,3 +5084,15 @@ the push step has never run, so a rewrite would reach its first run unproven at 
 permanent, and the move would replace the workflow anyway. The second is gone and the first is enough, publishing
 being on hold besides, which Brian kept so the same day (open item 3). `PackagesPushTests` goes on making the three
 places that name the ids one fact.
+
+## Nothing looks at macOS rendering by hand
+
+Open item 9, closed by Brian's word of 2026-11-10 through `/choices`, *"Drop it"*, over the recommendation to keep it
+as a gate on the first publish. Plan 00001 phase 10 owed a by-hand run of the demo on Windows and macOS. Windows was
+discharged on 2026-10-08. macOS had no instrument, because Accessibility and Screen Recording are grants someone at
+the Mac must give, and plan 00023 left its back end to whoever made that run.
+
+**What stands in its place is CI's macOS leg**: the whole suite less its `[LinuxBaseline]` frames, which are Linux's
+rasterization and differ on any other. Its pixel assertions read ink as coverage and hold at every platform's
+rasterization, so a property of a drawing is checked on macOS; how a frame looks there is not. The driver keeps its
+two back ends, X11 and Windows, and gets no third.
