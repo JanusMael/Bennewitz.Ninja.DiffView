@@ -5,8 +5,8 @@
 **`main` carries everything through PR #51, and CI is green on it** — PR #51 merged on a full
 12-of-12, 2026-11-10. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 994** here, `Passed!`, by a local run over item 32's
-branch — four more than over item 30's, all four in `MutateBehaviourTests`. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 999** here, `Passed!`, by a local run over item 34's
+branch — five more than over item 32's, four in `StandingLineTests` and `TooltipCoverageTests`' one. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
