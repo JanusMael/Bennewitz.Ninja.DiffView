@@ -235,9 +235,9 @@ jobs:
   # package first: the check evaluates every project after a restore, and the demo restores from the
   # local feed that pack fills, so without it the demo's friend grants cannot be read.
   #
-  # ⚠ Not a required check until it is green, when .github/repository.json lists it and
-  # `repo-conventions apply` writes the ruleset: required while red, it would block every pull
-  # request. Renaming the job after that means changing the list and running apply in one change.
+  # ⚠ A required check since 2026-11-10, on Brian's word, joining once it was green on main:
+  # .github/repository.json lists it, and `repo-conventions apply` writes that list to the ruleset.
+  # Renaming the job means changing the list and running apply in one change.
   conventions:
     runs-on: ubuntu-latest
     permissions:

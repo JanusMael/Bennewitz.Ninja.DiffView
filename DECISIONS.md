@@ -5066,3 +5066,21 @@ suite left both clean.
 all 17 sets without a fault. With item 30's set's strip rename made to match nothing it fails naming that mutation, and
 with the gates' BNAQ1004 control mutation made to match nothing their check fails, 122 of 123 applying, naming it. Both
 edits were to the mutations' definitions, outside what either harness reverts, and both were restored from git.
+
+## `conventions` is required, and the release still names its ids
+
+Open item 31, on Brian's word of 2026-11-10, through `/choices`. Two things had been left as they were because
+DiffView was moving into AppKit, whose template would have replaced them, and DiffView stays here.
+
+**`conventions` joins the required checks.** It was left out on 2026-11-06 because the move would have made it
+short-lived, and it has been green on `main` since. `.github/repository.json` lists it beside the five, and
+`repo-conventions apply`, which is Brian's, writes the list to the ruleset. ⚠ The check compares GitHub's settings
+with that file: until `apply` runs it fails on one finding, that the ruleset lacks `conventions`, measured on this
+change at the token depth CI runs; once it has run, a setting changed by hand on GitHub turns it red and blocks every
+pull request. A setting changes through the file and `apply`.
+
+**The release goes on naming its ids.** *The sync to Templates' `2026.4.1103`, and `packages.push`* gave two reasons:
+the push step has never run, so a rewrite would reach its first run unproven at the one moment a mistake is
+permanent, and the move would replace the workflow anyway. The second is gone and the first is enough, publishing
+being on hold besides, which Brian kept so the same day (open item 3). `PackagesPushTests` goes on making the three
+places that name the ids one fact.
