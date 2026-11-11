@@ -15,7 +15,9 @@ namespace Bennewitz.Ninja.DiffView.Tests.Composite;
 /// Syntax highlighting is off unless a test asks for it, for the same reason: a grammar's colours
 /// arrive from TextMateSharp's own thread, so a frame captured without waiting for them is a
 /// coin toss. The tests that want colour pass <c>syntax: true</c> and wait through
-/// <see cref="PumpUntilAsync"/>.
+/// <see cref="PumpUntilAsync"/>: for the line they read, or, to capture a whole frame, for
+/// <see cref="DiffPanePresenter.SyntaxTokenized"/> on both panes and then a redraw, because a line
+/// built before its tokens arrive stays plain whatever the line above it shows.
 /// </remarks>
 internal sealed class CompositeHost : IDisposable
 {

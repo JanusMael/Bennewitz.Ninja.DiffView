@@ -760,6 +760,12 @@ public class DiffPanePresenter : TextEditor
     /// <summary>Replaces the grammar install; a test seam for provoking a syntax fault.</summary>
     internal Action<SyntaxGrammar>? SyntaxInstallerForTesting { get; set; }
 
+    /// <summary>
+    /// Whether the grammar has given every line of the pane its tokens; a test seam, so a test that captures a whole
+    /// frame waits for every line's colours rather than one line's. <c>false</c> while the pane is plain text.
+    /// </summary>
+    internal bool SyntaxTokenized => _syntax?.HasTokenizedEveryLine() == true;
+
     /// <summary>Primes now when the pane is laid out, otherwise on its next layout.</summary>
     internal void RequestPrime()
     {
