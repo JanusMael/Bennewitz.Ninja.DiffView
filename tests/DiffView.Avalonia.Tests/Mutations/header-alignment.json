@@ -1,0 +1,68 @@
+{
+  // A header's title and its focus underline start at its pane's first digit, open item 26's layout F:
+  // HeaderAlignmentTests. Two edits put the header back where it was, two move the numbers and leave the header,
+  // one in a side's gutter and one in the unified view's second column, and one blinds the margin's reading of
+  // where it drew them, which the test's floor must catch; the green one swaps two attributes, which XML gives no
+  // order.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/header-alignment.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.HeaderAlignmentTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/HeaderAlignmentTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the header's title starts 8 px in again",
+      "file": "src/DiffView.Avalonia/Themes/DiffPaneHeader.axaml",
+      "old": "<Setter Property=\"Padding\" Value=\"6,4,8,4\" />",
+      "new": "<Setter Property=\"Padding\" Value=\"8,4\" />",
+      "killer": "Each_editor_header_starts_its_title_and_its_underline_at_its_panes_first_digit",
+      "says": "title starts at"
+    },
+    {
+      "name": "the focus underline starts at the header's edge again",
+      "file": "src/DiffView.Avalonia/Themes/DiffPaneHeader.axaml",
+      "old": "Margin=\"6,0,0,0\"",
+      "new": "Margin=\"0,0,0,0\"",
+      "killer": "Each_viewer_header_starts_its_title_and_its_underline_at_its_panes_first_digit",
+      "says": "underline starts at"
+    },
+    {
+      "name": "the numbers move 4 px further in and the headers stay",
+      "file": "src/DiffView.Avalonia/Margins/DiffLineNumberMargin.cs",
+      "old": "private const double HorizontalPadding = 6;",
+      "new": "private const double HorizontalPadding = 10;",
+      "killer": "Each_editor_header_starts_its_title_and_its_underline_at_its_panes_first_digit",
+      "says": "title starts at"
+    },
+    {
+      "name": "the unified gutter draws its left column a gap further right than it measured it",
+      "file": "src/DiffView.Avalonia/Margins/DiffLineNumberMargin.cs",
+      "old": "? right - ColumnGap - Format(new string('9', _rightDigits), foreground).Width",
+      "new": "? right - Format(new string('9', _rightDigits), foreground).Width",
+      "killer": "The_unified_views_left_header_starts_its_title_at_the_left_sides_first_digit",
+      "says": "title starts at"
+    },
+    {
+      "name": "the margin stops saying where it drew its first digit",
+      "file": "src/DiffView.Avalonia/Margins/DiffLineNumberMargin.cs",
+      "old": "        LastColumnLeft = leftColumnRight - Format(new string('9', _digits), foreground).Width;\n",
+      "new": "",
+      "killer": "Each_editor_header_starts_its_title_and_its_underline_at_its_panes_first_digit",
+      "says": "reports no first digit",
+      "because": "a reading that holds two numbers together passes when neither was read, so the floor must trip first"
+    },
+    {
+      "name": "the underline's height and margin swap places in its tag",
+      "file": "src/DiffView.Avalonia/Themes/DiffPaneHeader.axaml",
+      "old": "Height=\"2\"\n                    Margin=\"6,0,0,0\"",
+      "new": "Margin=\"6,0,0,0\"\n                    Height=\"2\"",
+      "expect": "green",
+      "because": "XML gives a start tag's attributes no order, so an underline with two of them swapped is the same underline"
+    }
+  ]
+}

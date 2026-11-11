@@ -83,6 +83,13 @@ internal sealed class DiffLineNumberMargin : DiffMargin
     /// </summary>
     public double LastColumnRight { get; private set; }
 
+    /// <summary>
+    /// Where the last frame's widest number began in the column it aligned its numbers to: the first digit, which
+    /// is the left side's in a unified pane. The header above the pane starts its title and its focus underline
+    /// here, and this is what holds them to the numbers as drawn rather than to a padding copied from them.
+    /// </summary>
+    public double LastColumnLeft { get; private set; }
+
     /// <summary>The tooltip for <paramref name="lineNumber"/>: the line on the other side that shares its row, or that there is none.</summary>
     public override string? TooltipFor(int lineNumber)
     {
@@ -184,6 +191,7 @@ internal sealed class DiffLineNumberMargin : DiffMargin
         // A copy arrow takes a number's cell, so it is offered only where the other side can
         // receive the copy: a read-only pair shows every number it has ever shown.
         LastColumnRight = leftColumnRight;
+        LastColumnLeft = leftColumnRight - Format(new string('9', _digits), foreground).Width;
         bool offersCopy = Owner.CanCopyOut && !metadata.IsUnified && metadata.Document is not null;
         IBrush arrowBrush = Owner.Palette[DiffBrush.GutterArrow];
         double rowHeight = textView.DefaultLineHeight;

@@ -14,7 +14,9 @@
   <ControlTheme x:Key="{x:Type dv:DiffPaneHeader}" TargetType="dv:DiffPaneHeader">
     <Setter Property="Background" Value="{DynamicResource DiffView.HeaderBackgroundBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource DiffView.HeaderForegroundBrush}" />
-    <Setter Property="Padding" Value="8,4" />
+    <!-- 6 px in on the left is where the pane's line numbers begin, DiffLineNumberMargin's
+         HorizontalPadding, so the title stands over the first digit of the numbers below it. -->
+    <Setter Property="Padding" Value="6,4,8,4" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Template">
       <ControlTemplate>
@@ -22,9 +24,11 @@
           <Grid>
             <!-- The focus accent is an overlay on the header's bottom edge: collapsed it
                  measures nothing, so a pane taking focus moves no row and no pixel outside
-                 the header itself. -->
+                 the header itself. It starts where the title does, over the numbers' first
+                 digit, which keeps it clear of the find bar's buttons above. -->
             <Border Name="PART_FocusAccent"
                     Height="2"
+                    Margin="6,0,0,0"
                     VerticalAlignment="Bottom"
                     IsVisible="False"
                     Background="{DynamicResource DiffView.FocusAccentBrush}" />
