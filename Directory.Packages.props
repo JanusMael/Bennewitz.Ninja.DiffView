@@ -47,6 +47,11 @@
     <!-- Microsoft.VisualStudio.Threading.Analyzers, for two of its rules; Directory.Build.props
          says which and turns the rest off. -->
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+    <!-- Bennewitz.Ninja.CodeQuality, every rule at its default; Directory.Build.props references it.
+         A move re-opens every rule, as the quality packages' moves do, and scripts/mutate-gates holds a
+         build kill for each rule that can fire in a shipped assembly, so the full run a move owes says
+         whether each still fires. -->
+    <PackageVersion Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1104" />
   </ItemGroup>
 
   <ItemGroup Label="Tooling">

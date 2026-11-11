@@ -326,6 +326,15 @@ static bool AddAvaloniaReference(string attributes = "")
     return true;
 }
 
+// A type under a namespace whose last segment shadows a referenced root, nested where nothing resolves a
+// qualified name through it, so it compiles. Suppressed, the shadow carries the pragma a source would need to
+// get it past BNCQ1004, and the compiled assembly holds it all the same, which is what BNAQ1004 reads.
+static string PlantedShadow(string root, string access, bool suppressed) =>
+    (suppressed ? "#pragma warning disable BNCQ1004\n" : "")
+    + $"namespace Bennewitz.Ninja.DiffView.MutationProbeScope.{root}\n{{\n"
+    + "    /// <summary>Planted by scripts/mutate-gates.cs.</summary>\n"
+    + $"    {access} static class PlantedShadow\n    {{\n    }}\n}}\n";
+
 // Swap the nth `Scan("DiffView.Core")` to the UI assembly. ⚠ The nth, not the first: a harness that
 // only ever swaps the first occurrence tests one subject guard three times and the other two never.
 static bool SwapSubject(int nth)
@@ -1081,18 +1090,23 @@ List<Mutation> mutations =
     // the shadowing segment sits under a namespace nothing else is inside, so nothing resolves a
     // qualified name through it. Public in the model; internal in the UI assembly, because a rule that
     // reads public types only would miss it there.
+    // ⭐ Since CodeQuality, BNCQ1004 refuses a shadow at the build, so a plain one is the compiler's to kill and
+    // the first two are that proof. What reaches BNAQ1004 is a shadow whose warning was suppressed in the
+    // source, which the compiled assembly carries all the same: the two after them.
     new("a model namespace shadows a referenced root", AssemblyClass,
-        () => Write(CoreProbe,
-            "namespace Bennewitz.Ninja.DiffView.MutationProbeScope.DiffPlex\n{\n"
-            + "    /// <summary>Planted by scripts/mutate-gates.cs.</summary>\n"
-            + "    public static class PlantedShadow\n    {\n    }\n}\n"),
-        "No_shipped_namespace_shadows_a_referenced_root"),
+        () => Write(CoreProbe, PlantedShadow("DiffPlex", "public", suppressed: false)),
+        "BNCQ1004", Expect.Build),
 
     new("an internal UI namespace shadows a referenced root", AssemblyClass,
-        () => Write(UiProbe,
-            "namespace Bennewitz.Ninja.DiffView.MutationProbeScope.Avalonia\n{\n"
-            + "    /// <summary>Planted by scripts/mutate-gates.cs.</summary>\n"
-            + "    internal static class PlantedShadow\n    {\n    }\n}\n"),
+        () => Write(UiProbe, PlantedShadow("Avalonia", "internal", suppressed: false)),
+        "BNCQ1004", Expect.Build),
+
+    new("a model namespace shadows a referenced root behind a suppressed BNCQ1004", AssemblyClass,
+        () => Write(CoreProbe, PlantedShadow("DiffPlex", "public", suppressed: true)),
+        "No_shipped_namespace_shadows_a_referenced_root"),
+
+    new("an internal UI namespace shadows a referenced root behind a suppressed BNCQ1004", AssemblyClass,
+        () => Write(UiProbe, PlantedShadow("Avalonia", "internal", suppressed: true)),
         "No_shipped_namespace_shadows_a_referenced_root"),
 
     new("BNAQ1004 is handed nothing to read", AssemblyClass,
@@ -1154,6 +1168,39 @@ List<Mutation> mutations =
     new("BNAQ1005's subject is swapped for the UI assembly", AssemblyClass,
         () => SwapSubject(5),
         "No_library_grants_its_internals_beyond_its_own_tests"),
+
+    // ---- CodeQuality, a rule the build applies rather than a gate the suite runs: each rule on here that can
+    // fire in a shipped assembly, planted where the test project's build compiles it, must be what refuses it.
+    // A rule gone quiet lets its shape build, and the mutation then survives, which is how a pin move that
+    // silenced one would show. BNCQ1004 is held above, beside BNAQ1004. BNCQ1001 is off by its default, and
+    // BNCQ1005 to BNCQ1007 are inert, no compilation here being able to name System.Reactive.
+    new("a JsonNode appears on the model's public surface", AssemblyClass,
+        () => AddPublicMember("    /// <summary>Planted.</summary>\n    public static System.Text.Json.Nodes.JsonNode? Leak() => null;"),
+        "BNCQ1002", Expect.Build),
+
+    new("a gate the model takes is released outside a finally", AssemblyClass,
+        () => AddPublicMember(
+            "    /// <summary>Planted.</summary>\n"
+            + "    public static void Gate(System.Threading.SemaphoreSlim gate)\n    {\n"
+            + "        gate.Wait();\n        System.Console.WriteLine();\n        gate.Release();\n    }"),
+        "BNCQ1008", Expect.Build),
+
+    new("a timer callback in the model is not wholly inside a try/catch", AssemblyClass,
+        () => AddPublicMember(
+            "    /// <summary>Planted.</summary>\n"
+            + "    public static System.Threading.Timer Start() => new(_ => System.Console.WriteLine(), null, 0, 1000);"),
+        "BNCQ1009", Expect.Build),
+
+    new("a DispatcherTimer's Tick handler in the UI assembly is not wholly inside a try/catch", AssemblyClass,
+        () => Write(UiProbe,
+            "namespace Bennewitz.Ninja.DiffView;\n\n"
+            + "/// <summary>Planted by scripts/mutate-gates.cs.</summary>\n"
+            + "internal static class MutationProbe\n{\n"
+            + "    internal static global::Avalonia.Threading.DispatcherTimer Probe()\n    {\n"
+            + "        global::Avalonia.Threading.DispatcherTimer timer = new();\n"
+            + "        timer.Tick += (_, _) => System.Console.WriteLine();\n"
+            + "        return timer;\n    }\n}\n"),
+        "BNCQ3001", Expect.Build),
 ];
 
 // The whole declared set: what a shard is cut from, and what a merge checks its shards against.
@@ -1407,12 +1454,13 @@ try
             string detail = first.Trim();
             Console.WriteLine($"    killed by the BUILD: {detail}");
 
-            // ⛔ A build kill is only a result for the two mutations that exist to be one. For every other,
+            // ⛔ A build kill is only a result for the mutations that exist to be one. For every other,
             // the compiler stopped the mutation before the gate could see it, so the gate never ran and a
             // pass here would be manufactured. The harness's own AddPublicMember comment records how easily
-            // this happens: one new analyzer under -warnaserror silently retires five of these.
+            // this happens: one new analyzer under -warnaserror silently retires five of these, and
+            // CodeQuality's BNCQ1004 made BNAQ1004's two plain shadows kills of its own, declared as such.
             //
-            // ⭐ And for the two that ARE meant to be killed here, the DIAGNOSTIC must be the one the claim
+            // ⭐ And for those that ARE meant to be killed here, the DIAGNOSTIC must be the one the claim
             // rests on. The "no parse-error assertion" decision rests on the XAML compiler specifically;
             // accepting any non-zero exit certified it on whatever happened to fail — one new analyzer, or
             // a CS1591 on either edited file, and AVLN1001 never fires while the mutation still reads as

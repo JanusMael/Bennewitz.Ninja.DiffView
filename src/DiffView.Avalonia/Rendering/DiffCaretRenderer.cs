@@ -26,7 +26,13 @@ internal sealed class DiffCaretRenderer : GuardedBackgroundRenderer
         : base(owner, KnownLayer.Caret, nameof(DiffCaretRenderer))
     {
         _timer = new DispatcherTimer { Interval = BlinkInterval };
+
+        // BNCQ3001 is suppressed here, and only here: OnTick flips a flag and invalidates the text view's
+        // measure, on the dispatcher's own thread, and neither throws on any input. DECISIONS.md, *CodeQuality
+        // joins the analyzers*.
+#pragma warning disable BNCQ3001
         _timer.Tick += OnTick;
+#pragma warning restore BNCQ3001
     }
 
     /// <summary>Whether the caret is drawn right now: focused, and in the visible phase of the blink.</summary>
