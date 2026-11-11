@@ -30,7 +30,7 @@ no dates, no counts.
 | The unified view's pane document is the exception to the rule above, and the only one: `InlineDiffView` composes it from both sides and rewrites it when the model changes, which is why that pane is read-only and why its sides' documents stay off screen | An edit lands in a document that is half one file and half the other, or the composed text stops matching the unified table | `InlineDiffView.ComposeUnifiedText`; §7 |
 | Syntax highlighting is a foreground: TextMate colours the tokens and nothing else, so the row fills, the word pieces, the match highlights and the selection all compose over it | Colours fight, or a grammar hides the diff | `SyntaxHighlighting` installs `AvaloniaEdit.TextMate` and sets a grammar and a theme only; test `SyntaxSnapshotTests.Syntax_colour_and_the_inserted_fill_compose_on_the_same_row` |
 | A grammar is chosen from `DiffPanePresenter.SyntaxFileName`'s extension; no extension, or one no grammar claims, is plain text and **not** a fault | A `.txt` pair puts the control in `Degraded`, or an unknown file throws | `SyntaxHighlighting.GrammarFor`; tests `SyntaxTests.An_extension_no_grammar_claims_leaves_plain_text_and_the_state_stays_ready`, `SyntaxTests.A_source_with_no_name_at_all_stays_plain_text` |
-| No namespace this repository authors carries a segment matching the root namespace of an assembly it references | C# walks enclosing namespaces before global, so `Avalonia.Media.Color` resolves to *our* `…DiffView.Avalonia.Media.Color` and fails with CS0234; every use needs `global::` until the segment is renamed | `BNAQ1004` with `IncludingInternalTypes()` over both shipped assemblies, test `AssemblyQualityTests.No_shipped_namespace_shadows_a_referenced_root`, which replaced plan 00017's hand-rolled test in plan 00028; and `DiffCommand`'s cref, which stops compiling — the compiler holds half of this |
+| No namespace this repository authors carries a segment matching the root namespace of an assembly it references | C# walks enclosing namespaces before global, so `Avalonia.Media.Color` resolves to *our* `…DiffView.Avalonia.Media.Color` and fails with CS0234; every use needs `global::` until the segment is renamed | `BNCQ1004`, which refuses such a segment at the build in every project and script, `ShadowControl.cs` suppressing it at its one line because the shadow is that file's point; `BNAQ1004` with `IncludingInternalTypes()` over both shipped assemblies, test `AssemblyQualityTests.No_shipped_namespace_shadows_a_referenced_root`, which replaced plan 00017's hand-rolled test in plan 00028, for what a suppression would let through; and `DiffCommand`'s cref, which stops compiling |
 | The release pushes the packages it names, never a `*.nupkg` glob | A glob publishes whatever the solution happens to produce, irreversibly, on the first release that adds a packable project — `src/ThemeAudit` was that project until the analysis moved to `Bennewitz.Ninja.XamlQuality` | `.github/workflows/release.yml`; test `PackagingTests.The_release_workflow_names_the_packages_it_pushes` |
 | `packages.push` names exactly what the solution packs and what each of the release's two publishing steps names | A project made packable and never classified is found on nuget.org, where an id cannot be withdrawn; or a step publishes less than the file says | `packages.push`, `.github/workflows/release.yml`; test `PackagesPushTests.The_file_names_exactly_what_the_solution_packs_and_the_release_publishes` |
 | The package version is the git tag, carried by `/p:Version=` into **both** build and pack | `dotnet pack --no-build` reuses the build's output, so a version given to one and not the other packs the wrong thing silently; with neither, a release publishes `1.0.0` at a version that can never be reused | `.github/workflows/release.yml`; test `PackagingTests.The_release_workflow_carries_the_tag_version_into_build_and_pack` |
@@ -190,6 +190,12 @@ no dates, no counts.
   into that) — and a **test-host abort**, no summary outcome or `Failed!` with no failing test, per the
   bullet below (`aborted`). Each fails the run; an uncompared expectation would make `killed` mean only
   "the filtered class went not-`Passed!`".
+- **A rule the compiler applies is proven by a build kill naming its id.** The XAML compiler's `AVLN1001` is
+  what the accessibility gate's decision to assert no parse rests on; CodeQuality's rules that can fire in a
+  shipped assembly each plant their shape where the test project's build compiles it, so a release that silenced
+  one shows as a survivor rather than as a build that stayed quiet. Where a rule has a counterpart a gate applies
+  to the compiled assembly, `BNCQ1004` beside `BNAQ1004`, the plain shape is the build's kill and the same shape
+  behind a `#pragma` that suppresses the rule is the gate's, because a suppression is how one would ship.
 - ⭐ **A guard is proven only when a mutation makes it the FIRST assertion to fail**, because a test
   stops there and "killed by the test it names" says nothing about the assertions after that one. The
   harness derives every assertion in the gate files (`GateFiles`, plus the nuspec gate's method),
@@ -220,6 +226,11 @@ no dates, no counts.
   `build-and-test` — the standing half, in seconds: it lists the derived guards, judges each marker
   against the current pin, and exits non-zero on an expired marker or a gate-file `throw`. It proves no
   guard. Beside it CI runs `--check`, below, which proves none either.
+- ⚠ **`MSB4236`, *The SDK 'Microsoft.NET.Sdk' specified could not be found*, part-way through a run is the .NET SDK
+  being serviced under it, not a verdict.** On a Patch Tuesday Microsoft Update replaced SDK `10.0.403` by
+  `10.0.404` while `mutate-behaviour --parallel 4` ran: every build started during the swap failed in a fraction of
+  a second, which read as mutations not as declared and as shards that left no result, and builds started after it
+  worked again. The installer's events in the Application log say when; run again what the window reached.
 - **Two mutations must stay green, and that is asserted**: `PrivateAssets="all"` hides a used type
   from the nuspec gate, and Roslyn emits no reference for an unused package, so `BNAQ1003` and the
   nuspec gate are each blind to exactly what the other catches. A red there is `unexpected-red` and

@@ -39,6 +39,14 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **CodeQuality joins the analyzers, and AssemblyQuality moves to `2026.4.1031`.** `Bennewitz.Ninja.CodeQuality`
+  `2026.4.1104` runs in every project and script beside the threading analyzers, every rule at its default, so a
+  namespace segment that shadows a referenced root, a leak-prone type on a visible surface, a gate released outside a
+  `finally`, and a callback or a `DispatcherTimer` tick that nothing catches each fail the build. It found five sites
+  and no defect, each suppressed at its own line with its reason, and it is private, so no package carries it.
+  AssemblyQuality's release throws on a scan whose collectible load context is unloading, which no scan here uses.
+  `scripts/mutate-gates` carries 129 mutations, eight of them killed by the build: the XAML compiler's two, and one
+  for each CodeQuality rule that can fire in a shipped assembly, `BNCQ1004` in each library.
 - **`mutate-behaviour` puts right what a killed run left.** A run notes the edit it has in flight before writing it,
   and the next run reads the note before it builds anything: an edit a dead run left is put back from its snapshot,
   and a second run is refused while one holds the checkout.
