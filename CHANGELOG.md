@@ -39,6 +39,11 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **`BNCQ1001` is on everywhere.** CodeQuality's rule against a visible method that lets its caller leave the
+  cancellation token out, off by the package's default, fails the build in every project and script. It reports
+  nothing in the libraries, whose entry points already require their token; the one site it found is the test
+  project's control for the assembly gate's own rule, suppressed at its line. `scripts/mutate-gates` carries 130
+  mutations, nine of them killed by the build.
 - **CodeQuality joins the analyzers, and AssemblyQuality moves to `2026.4.1031`.** `Bennewitz.Ninja.CodeQuality`
   `2026.4.1104` runs in every project and script beside the threading analyzers, every rule at its default, so a
   namespace segment that shadows a referenced root, a leak-prone type on a visible surface, a gate released outside a
