@@ -124,10 +124,14 @@ public sealed class AssemblyQualityTests
     /// </summary>
     public static class TokenDefaultControl
     {
+        // BNCQ1001, the compile-time half of the same rule, refuses this default at the build, and is suppressed
+        // here alone: the default is the control, and only a compiled one can be read by the instance it controls.
+#pragma warning disable BNCQ1001
         /// <summary>Never called; its signature is the whole point.</summary>
         public static void Defaults(CancellationToken cancellationToken = default)
         {
         }
+#pragma warning restore BNCQ1001
     }
 
     [Fact]

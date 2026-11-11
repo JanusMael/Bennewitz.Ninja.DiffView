@@ -1064,10 +1064,20 @@ List<Mutation> mutations =
 
     // ---- BNAQ1001. A NEW method, because re-ordering the existing signature back would break 71 call
     // sites and be killed by the build, testing nothing.
+    // ⭐ Since BNCQ1001 is on, the build refuses a defaulted token first, so the plain one is its kill, and the same
+    // method behind a suppressed BNCQ1001 is what reaches BNAQ1001's gate, as BNCQ1004's shadows reach BNAQ1004's.
     new("a public method defaults its cancellation token", AssemblyClass,
         () => AddPublicMember(
             "    /// <summary>Planted.</summary>\n"
             + "    public static void Probe(CancellationToken cancellationToken = default)\n    {\n    }"),
+        "BNCQ1001", Expect.Build),
+
+    new("a public method defaults its cancellation token behind a suppressed BNCQ1001", AssemblyClass,
+        () => AddPublicMember(
+            "#pragma warning disable BNCQ1001\n"
+            + "    /// <summary>Planted.</summary>\n"
+            + "    public static void Probe(CancellationToken cancellationToken = default)\n    {\n    }\n"
+            + "#pragma warning restore BNCQ1001"),
         "No_public_entry_point_defaults_its_cancellation_token"),
 
     new("BNAQ1001 is handed nothing to read", AssemblyClass,
@@ -1172,7 +1182,7 @@ List<Mutation> mutations =
     // ---- CodeQuality, a rule the build applies rather than a gate the suite runs: each rule on here that can
     // fire in a shipped assembly, planted where the test project's build compiles it, must be what refuses it.
     // A rule gone quiet lets its shape build, and the mutation then survives, which is how a pin move that
-    // silenced one would show. BNCQ1004 is held above, beside BNAQ1004. BNCQ1001 is off by its default, and
+    // silenced one would show. BNCQ1004 and BNCQ1001 are held above, beside BNAQ1004 and BNAQ1001, and
     // BNCQ1005 to BNCQ1007 are inert, no compilation here being able to name System.Reactive.
     new("a JsonNode appears on the model's public surface", AssemblyClass,
         () => AddPublicMember("    /// <summary>Planted.</summary>\n    public static System.Text.Json.Nodes.JsonNode? Leak() => null;"),
@@ -1458,7 +1468,8 @@ try
             // the compiler stopped the mutation before the gate could see it, so the gate never ran and a
             // pass here would be manufactured. The harness's own AddPublicMember comment records how easily
             // this happens: one new analyzer under -warnaserror silently retires five of these, and
-            // CodeQuality's BNCQ1004 made BNAQ1004's two plain shadows kills of its own, declared as such.
+            // CodeQuality made BNAQ1004's two plain shadows and BNAQ1001's planted token kills of its own, declared
+            // as such.
             //
             // ⭐ And for those that ARE meant to be killed here, the DIAGNOSTIC must be the one the claim
             // rests on. The "no parse-error assertion" decision rests on the XAML compiler specifically;
