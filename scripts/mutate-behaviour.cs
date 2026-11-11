@@ -2355,8 +2355,12 @@ internal static partial class Parallel
                         }
                     }
 
+                    // BNCQ1009 is suppressed for these two alone: Record writes the line to the shard's log under
+                    // a lock and matches a regex against it, and neither throws on any line a shard prints.
+#pragma warning disable BNCQ1009
                     process.OutputDataReceived += Record;
                     process.ErrorDataReceived += Record;
+#pragma warning restore BNCQ1009
                     process.Start();
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();

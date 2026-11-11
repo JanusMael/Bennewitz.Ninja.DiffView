@@ -80,4 +80,16 @@
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
   </ItemGroup>
+
+  <!-- Bennewitz.Ninja.CodeQuality, every rule at its default, open item 38: the compile-time halves of
+       AssemblyQuality's BNAQ1002 and BNAQ1004, and the family's rules for a throw nothing catches, in a
+       callback, a timer's tick or a gate left taken. Its findings fail the build here, in the tests and
+       in the scripts. Five sites are suppressed, each at its own line with its reason, and DECISIONS.md
+       lists them. BNCQ1001 is off by its default, and the System.Reactive rules have nothing here to
+       read. Private: nothing a package ships carries it. -->
+  <ItemGroup>
+    <PackageReference Include="Bennewitz.Ninja.CodeQuality"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
 </Project>

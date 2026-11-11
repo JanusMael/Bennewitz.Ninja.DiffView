@@ -110,8 +110,12 @@ public sealed class AssemblyQualityTests
     /// </summary>
     public static class StockLeakControl
     {
+        // BNCQ1002, the compile-time half of the same rule, refuses this leak at the build, and is suppressed
+        // here alone: the leak is the control, and only a compiled one can be read by the instance it controls.
+#pragma warning disable BNCQ1002
         /// <summary>Never called; its signature is the whole point.</summary>
         public static System.Text.Json.Nodes.JsonNode? Leaks() => null;
+#pragma warning restore BNCQ1002
     }
 
     /// <summary>
