@@ -115,6 +115,31 @@ internal sealed class SyntaxHighlighting
         return true;
     }
 
+    /// <summary>
+    /// Whether the tokenizer has given every line of the document its tokens. A line is coloured from the tokens it
+    /// has when it is built, and TextMateSharp tokenizes on its own thread, so a line built before its own arrive is
+    /// drawn plain until something redraws it. <c>false</c> while nothing is installed. The tokenizer writes the lines
+    /// this reads, so a caller waiting for <c>true</c> asks again rather than trusting one answer.
+    /// </summary>
+    internal bool HasTokenizedEveryLine()
+    {
+        if (_installation?.EditorModel is not { } lines)
+        {
+            return false;
+        }
+
+        int count = lines.GetSize();
+        for (int index = 0; index < count; index++)
+        {
+            if (lines.Get(index) is not { IsInvalid: false, Tokens: not null })
+            {
+                return false;
+            }
+        }
+
+        return count > 0;
+    }
+
     /// <summary>Dark themes get Dark+, everything else Light+: the variant decides, never the diff palette.</summary>
     private static ThemeName ThemeNameFor(ThemeVariant variant)
     {

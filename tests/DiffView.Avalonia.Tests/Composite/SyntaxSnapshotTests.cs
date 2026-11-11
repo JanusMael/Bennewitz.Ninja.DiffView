@@ -46,6 +46,17 @@ public sealed class SyntaxSnapshotTests
             using CompositeHost host = new(width: 900, height: 600, syntax: true);
             host.Show();
             await host.LoadAsync(left, right);
+
+            // A line is coloured from the tokens it has when it is built, and TextMateSharp tokenizes on its own
+            // thread: a line built before its tokens arrive stays plain until a redraw reaches it, and the colouring
+            // transformer skips that redraw for a line outside the range it last saw. One line's colours say nothing
+            // about the next, so the frame waits for every line of both panes to have its tokens, then has every
+            // visible line built again.
+            Assert.True(
+                await CompositeHost.PumpUntilAsync(() => host.Left.SyntaxTokenized && host.Right.SyntaxTokenized),
+                "every line of both panes should be tokenized");
+            host.Left.TextArea.TextView.Redraw();
+            host.Right.TextArea.TextView.Redraw();
             Assert.True(
                 await CompositeHost.PumpUntilAsync(
                     () => SyntaxProbe.IsColoured(host.Left, line) && SyntaxProbe.IsColoured(host.Right, line)),
