@@ -5177,3 +5177,73 @@ converse of the rule `AGENTS.md` §5 states, that a build is awaited and never p
 completion inline every time: the three tests failed as they stood, the first with the message `main` had shown, and
 passed with their gates; then the sleep came out. A race is not proven absent by running a test until it passes, but
 it can be made to happen on demand.
+
+## CodeQuality joins the analyzers, and AssemblyQuality moves to 2026.4.1031
+
+Open item 38, from Brian's direction of 2026-11-06 that DiffView builds on the Inspections libraries once each is
+ready to consume. Inspections releases three families apart, each under its own tag with its package id unchanged:
+XamlQuality was at its latest, AssemblyQuality was one release behind, and CodeQuality was not used.
+
+**AssemblyQuality `2026.4.1031` was read by its source, as item 30 read XamlQuality's.** Seven commits separate its
+tag from `2026.4.1029`'s, and one moves a rule: Inspections #110 has `BNAQ1004`'s reading of referenced namespaces
+and `BNAQ1006` throw `InvalidOperationException` when a reference will not load because the scanned assembly's
+collectible load context is unloading, where both had recorded a skip and so compared against nothing. Every scan
+here is of an assembly the test process loaded into its default context, which is not collectible, so neither the
+throw nor the skip it replaces can arise. The rest is the release's tests, documents, packaging and scripts.
+
+**CodeQuality `2026.4.1104` runs in every project and script.** The root `Directory.Build.props` references it beside
+the threading analyzers, with `PrivateAssets="all"` so that no package carries it, and every rule is at the package's
+default, so a finding fails the build. It found five sites. None is a defect, and each is suppressed by a
+`#pragma warning disable` and `restore` around the one line reported, with its reason above it, so a second finding
+in the same file still fails. No rule is switched off for a file or a project.
+
+| Rule | Where | Why it stands |
+|---|---|---|
+| `BNCQ3001` | `DiffCaretRenderer`'s constructor, `_timer.Tick += OnTick` | `OnTick` flips a flag and calls `TextView.InvalidateLayer`, which AvaloniaEdit implements as `InvalidateMeasure`, on the dispatcher's own thread: nothing in it throws on any input |
+| `BNCQ1009` ×2 | `scripts/mutate-behaviour.cs`, a shard's `OutputDataReceived` and `ErrorDataReceived` | `Record` writes the line to the shard's log under a lock and matches a generated regex against it, and throws on no line a shard prints |
+| `BNCQ1002` | `AssemblyQualityTests.StockLeakControl.Leaks` | The leak is the control for `BNAQ1002`'s stock half, which must find it in the compiled test assembly, so it has to compile |
+| `BNCQ1004` | `ShadowControl.cs`'s namespace | The shadow is `BNAQ1004`'s control, for the same reason |
+
+Inspections had measured the package on this repository at `fc747eb` on 2026-11-02 and judged the first three sites
+the same way, in its `PROGRESS.md` under plan 00005 step 4. Its earlier reading of the other rules stopped at the test
+project's step that fetches the reference sources, so it never met the two controls. `scripts/mutate-gates.cs` gives a
+shard's output to a handler of the same shape and is not reported, because it hands the handler over through a local
+of delegate type, which `BNCQ1009` does not follow. The handler is as safe as the other two, so nothing is owed here;
+the gap is the rule's.
+
+**Three things stay at the package's defaults, each for a reason.** `BNCQ1001` is off: on, it would report
+`DiffDocumentBuilder.Build` and `DiffSearch.Find`, each an overload without a token beside one with it, which is a
+decision about the model's public API, and it would kill the gate harness's *a public method defaults its
+cancellation token* at the build, before `BNAQ1001`'s gate could see it. `BNCQ1002`'s namespaces stay
+`System.Text.Json.Nodes` and `Newtonsoft.Json.Linq`: DiffPlex on the model's surface is `BNAQ1002`'s, held with its
+controls, and naming it here as well would move that gate's mutations to the build. And `BNCQ1005` to `BNCQ1007` have
+nothing here to read, no project's restore resolving System.Reactive.
+
+**Each rule that is on was shown to fire everywhere, as the threading analyzers were.** A scratch probe holding one
+shape per rule went into each of the seven projects and into a file-based script under `scripts/`, was built, and was
+removed. Every project and the script reported `BNCQ1002`, `BNCQ1004`, `BNCQ1008` and `BNCQ1009`, and every project
+whose restore resolves Avalonia, which is all but `DiffView.Core` and its tests, reported `BNCQ3001` too.
+
+**In the shipped assemblies the proof is committed.** `BNCQ1004` refuses at the build the shadow `BNAQ1004` reads after
+it, so the gate harness's two plain shadows can no longer reach the gate. They are declared the build's kills now, by
+`BNCQ1004`, and two more plant the same shadows behind a `#pragma` that suppresses it, which is what a source would
+have to do to ship one, so `BNAQ1004`'s guards are still tripped first. Four more plant the shape of each other rule
+that can fire in a shipped assembly, `BNCQ1002`, `BNCQ1008` and `BNCQ1009` in the model and `BNCQ3001` in the UI
+assembly, and declare the build their killer, so a release that silenced one would show as a survivor in the full run
+every pin move owes. The harness carries 129 mutations, eight of them the build's.
+
+**The gates on the packages' dependencies still hold.** The analyzer is private, so the nuspec gate reads the
+dependencies it read before, and `AssemblyQualityTests` passes at the new pin.
+
+**The runs.** A full gate run over the change, in four worktrees, gave all 129 mutations as declared, 119 killed by
+the test each names, 8 by the build and 2 green by design, and tripped all 88 guards first, in 26 minutes. `--owed
+main` owed all 17 committed proof sets, the analyzer reaching every project and `scripts/mutate-behaviour.cs` owing the
+harness's own. In four worktrees eight of them came out as declared before Microsoft Update replaced the .NET SDK under
+the run, and `AGENTS.md` §5 says how that reads; the other nine ran again on the new SDK, as declared. Between them,
+508 mutations came out as declared and every declared test was killed, `outline.json`'s two inert at the current pin.
+Those runs were over the change on PR #52's `main`. Rebased onto PR #53, which touched no gate file, gated subject or
+pin, it owed no further gate run, and `--owed` from the proven tree named the three sets whose inputs had moved: the
+harness's own, which #53 rewrote, and the two whose mutations edit the props files the item's renumbering touched. In
+four worktrees they came out as declared, 78 mutations with every declared test killed, in 19 minutes. The solution
+and every script build clean under warnings as errors on both SDKs, and the suite ran 1004 of 1004 on Windows,
+`Passed!`, which `catch-crash` judged healthy.

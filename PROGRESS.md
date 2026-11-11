@@ -2,19 +2,19 @@
 
 ## Resume
 
-**`main` carries everything through PR #52, and CI is green on it** — PR #52 merged on a full
-12-of-12, 2026-11-10. *A resume names the pull request it was written for and
+**`main` carries everything through PR #53, and CI is green on it** — PR #53 merged on a full
+12-of-12, Brian merging it, 2026-11-11. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 1004** here, `Passed!`, by a local run over item 35's
-branch — five more than over item 34's, all five in `MutateBehaviourTests`. ⚠ `main`'s first run after #52 went red
-in the Culture Leg on a race in `ViewerStateTests`, item 37, fixed here; the job passed when re-run. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 1004** here, `Passed!`, by a local run over item 38's
+branch, as over item 35's: CodeQuality adds no test. ⚠ `main`'s first run after #52 went red
+in the Culture Leg on a race in `ViewerStateTests`, item 37, which PR #53 fixed; the job passed when re-run. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
-**123** mutations and derives **88** guards from the gate files; CI runs its `--guards` half and its
-`--check` on Linux, and the last full run — over item 30's branch, on 2026-11-09, in four
-worktrees — gave all 123 as declared: 119 killed by the test each names, 2 by the build and 2 green by
+**129** mutations and derives **88** guards from the gate files; CI runs its `--guards` half and its
+`--check` on Linux, and the last full run — over item 38's branch, on 2026-11-10, in four
+worktrees — gave all 129 as declared: 119 killed by the test each names, 8 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 88 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
 has been off for every run since the first of item 14's two lost three mutations to `MSB4166`, an MSBuild
@@ -1663,7 +1663,8 @@ wording.
     proof found it the hard way: the harness reverts each edit from a snapshot, but a run killed partway reverts
     nothing, and the snapshot it printed was read by no one.
 
-    ✅ **Done 2026-11-10 on `build/a-killed-run-is-put-right`.** A run keeps a note of the checkout beside its
+    ✅ **Done 2026-11-10 on `build/a-killed-run-is-put-right`, and landed as PR #53 on 2026-11-11, Brian merging
+    it.** A run keeps a note of the checkout beside its
     snapshots: the process holding it, and the edit in flight, noted before the edit is written and cleared after a
     revert that held. Before it builds anything a run reads the note: another live run refuses it, an edit a dead run
     left is put back from its snapshot, and a file changed since, or a snapshot that is not the original, is named and
@@ -1687,17 +1688,38 @@ wording.
     it the same way: `ViewerStateTests.A_viewer_that_is_never_shown_builds_to_ready` and
     `SideBySideDiffViewTests.Changing_an_option_rebuilds_and_preserves_caret_selection_scroll_and_undo_in_both_panes`.
 
-    ✅ **Fixed the same day, on Brian's word that races found are fixed.** Each holds its build on a gate until the
+    ✅ **Fixed the same day, on Brian's word that races found are fixed, and landed as PR #53 on 2026-11-11.**
+    Each holds its build on a gate until the
     building state is read, as `EditUnderFoldTests` holds its own. Proven by making the race happen: with a 300 ms
     sleep put in the library between starting a build and awaiting it, the three failed as they stood, the first with
     `main`'s own message, and passed with their gates; then the sleep came out. `AGENTS.md` §5 states the rule.
     `DECISIONS.md`, *A state before a build lands is read with the build held*.
 
+38. **The Inspections packages, caught up — Brian's direction of 2026-11-06.** DiffView takes its analyzer packages
+    from `JanusMael/Bennewitz.Ninja.Inspections`, which now releases XamlQuality, AssemblyQuality and CodeQuality
+    apart, each under its own tag with its id unchanged. XamlQuality was at its latest, `2026.4.1109`;
+    AssemblyQuality was a release behind, at `2026.4.1029`; and CodeQuality, the compile-time halves of
+    AssemblyQuality's rules beside the family's rules for a throw nothing catches, was not used.
+
+    ✅ **Done 2026-11-10 on `build/codequality-joins-the-analyzers`, rebased onto PR #53 on 2026-11-11, and it lands
+    on his word, the push being his.** AssemblyQuality is at `2026.4.1031`, whose one rule change cannot arise here,
+    every scan reading the default load context. CodeQuality `2026.4.1104` runs in every project and script with every
+    rule at its default, and found five sites and no defect, each suppressed at its own line with its reason.
+    `mutate-gates` carries 129 mutations: its two plain shadows are `BNCQ1004`'s kills now, two more keep `BNAQ1004`'s
+    guards tripped first behind a suppression, and four make each other rule that can fire in a shipped assembly a
+    build kill. A full gate run in four worktrees gave all 129 as declared and tripped all 88 guards first, in 26
+    minutes. The 17 proof sets the change owes came out as declared, 508 mutations with every declared test killed,
+    nine of them run again after Microsoft Update replaced the .NET SDK under the first run; after the rebase the three
+    sets that PR #53 and the renumbering reached ran again, 78 mutations as declared with every declared test killed.
+    The suite ran 1004 of 1004 on Windows, `Passed!`, and `catch-crash` judged the run healthy. Left for his word:
+    `BNCQ1001`, off by its default, and telling Inspections that `BNCQ1009` does not follow a handler handed over
+    through a local. `DECISIONS.md`, *CodeQuality joins the analyzers, and AssemblyQuality moves to 2026.4.1031*.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
-and 34 as PRs #51 and #52 the same day, items 35 and 37 are done on `build/a-killed-run-is-put-right`, and item 36
-waits for its plan. **Every other open item was
+and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11, item 36 waits for its plan,
+and item 38 is done on `build/codequality-joins-the-analyzers` and lands on his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
