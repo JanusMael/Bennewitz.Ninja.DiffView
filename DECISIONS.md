@@ -5247,3 +5247,41 @@ harness's own, which #53 rewrote, and the two whose mutations edit the props fil
 four worktrees they came out as declared, 78 mutations with every declared test killed, in 19 minutes. The solution
 and every script build clean under warnings as errors on both SDKs, and the suite ran 1004 of 1004 on Windows,
 `Passed!`, which `catch-crash` judged healthy.
+
+## BNCQ1001 is on everywhere
+
+Open item 39, Brian's choice of 2026-11-11 through `/choices`, over the recommendation to switch it on for the two
+libraries alone. `BNCQ1001` reports a visible method that lets its caller leave the cancellation token out: a token
+with a default value, or an overload without the token beside a same-named sibling that takes it. CodeQuality ships
+it off, as a policy rather than a defect, and this repository's policy was already `BNAQ1001`'s, which holds the
+model's public entry points to a token the caller writes.
+
+**It was measured before it was switched on, and proven to run.** Over the two libraries it reported nothing:
+`DiffDocumentBuilder.Build` and `DiffSearch.Find` take their token ahead of an optional `options` parameter and have
+no token-less sibling, the shape the rule's documentation names as the fix, so the two findings Inspections' record
+holds for DiffView from November are not today's. A planted public method defaulting its token was reported, so the
+silence was the rule's and not its absence. Over every project and every file-based script it reported one site:
+
+| Rule | Where | Why it stands |
+|---|---|---|
+| `BNCQ1001` | `AssemblyQualityTests.TokenDefaultControl.Defaults` | The default is `BNAQ1001`'s control, which its instance must find in the compiled test assembly, so it has to compile |
+
+It is suppressed by a `#pragma` around its one line with its reason above it, as the controls for `BNAQ1002` and
+`BNAQ1004` are. The switch is one line in the root `.editorconfig`, which every project and script reads; the props
+files' comments say so.
+
+**The gate harness follows `BNCQ1004`'s pattern.** The planted defaulted token, *a public method defaults its
+cancellation token*, is refused by the build now, so it is declared `BNCQ1001`'s build kill, and a twin plants the
+same method behind a suppressed `BNCQ1001`, which is what a source would need to ship one, so `BNAQ1001`'s guards are
+still tripped first. The harness carries 130 mutations, 9 of them the build's. No proof set's edit plants a token,
+so the rule moves no set's verdict; `--owed` named the two whose mutations edit the props files.
+
+**Inspections was told the same day**, in a message to its session on Brian's word: `BNCQ1009` does not follow a
+handler handed over through a local of delegate type, which is why `scripts/mutate-gates.cs` is not reported where
+`scripts/mutate-behaviour.cs` is, and `BNCQ1001` reads nothing in DiffView's libraries where its record holds two.
+
+**The runs.** A full gate run over this tree in four worktrees gave all 130 mutations as declared, 119 killed by the
+test each names, 9 by the build and 2 green by design, and tripped all 88 guards first, in 19 minutes. The two sets
+`--owed` named came out as declared, 12 mutations with every declared test killed. The solution and every script build
+clean under warnings as errors, and the suite ran 1004 of 1004 on Windows, `Passed!`, which `catch-crash` judged
+healthy.

@@ -194,8 +194,9 @@ no dates, no counts.
   what the accessibility gate's decision to assert no parse rests on; CodeQuality's rules that can fire in a
   shipped assembly each plant their shape where the test project's build compiles it, so a release that silenced
   one shows as a survivor rather than as a build that stayed quiet. Where a rule has a counterpart a gate applies
-  to the compiled assembly, `BNCQ1004` beside `BNAQ1004`, the plain shape is the build's kill and the same shape
-  behind a `#pragma` that suppresses the rule is the gate's, because a suppression is how one would ship.
+  to the compiled assembly, `BNCQ1004` beside `BNAQ1004` and `BNCQ1001` beside `BNAQ1001`, the plain shape is the
+  build's kill and the same shape behind a `#pragma` that suppresses the rule is the gate's, because a suppression
+  is how one would ship.
 - ⭐ **A guard is proven only when a mutation makes it the FIRST assertion to fail**, because a test
   stops there and "killed by the test it names" says nothing about the assertions after that one. The
   harness derives every assertion in the gate files (`GateFiles`, plus the nuspec gate's method),
