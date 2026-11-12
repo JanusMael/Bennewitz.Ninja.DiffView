@@ -73,8 +73,12 @@
          themed control an entry, which retired the parts reference's own reading of two themes. Open
          item 38 moved AssemblyQuality to 2026.4.1031, whose source differs from 1029's in one guard: a
          scan whose collectible load context is unloading throws, and every scan here reads the test
-         process's default context, which is not collectible. DECISIONS.md has the readings. -->
-    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1109" />
+         process's default context, which is not collectible. Open item 40 moved XamlQuality to
+         2026.4.1111, whose rules differ from 1109's by one new rule, BNXQ1011, which TooltipCoverageTests
+         runs in place of its own scan; its theme audit now resolves an alias where Avalonia does, which
+         moved one key of the Fluent compat dictionary to Fluent's own value. DECISIONS.md has the
+         readings. -->
+    <PackageVersion Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1111" />
     <PackageVersion Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
     <!-- Unicode's East Asian Width, for scripts/measure-menu-width.cs: a CJK glyph takes two columns,
          and .NET carries no such table. Script-only: nothing the solution builds references it. -->

@@ -66,6 +66,7 @@ const string A11yGate = "tests/DiffView.Avalonia.Tests/AccessibilityCoverageTest
 const string PartsGate = "tests/DiffView.Avalonia.Tests/TemplatePartTests.cs";
 const string AssemblyGate = "tests/DiffView.Avalonia.Tests/AssemblyQualityTests.cs";
 const string GridGate = "tests/DiffView.Avalonia.Tests/GridSlotTests.cs";
+const string TooltipGate = "tests/DiffView.Avalonia.Tests/TooltipCoverageTests.cs";
 const string CoreSource = "src/DiffView.Core/DiffSearch.cs";
 const string CoreProject = "src/DiffView.Core/DiffView.Core.csproj";
 const string UiProject = "src/DiffView.Avalonia/DiffView.Avalonia.csproj";
@@ -99,7 +100,7 @@ const string PackagingGate = "tests/DiffView.Avalonia.Tests/PackagingTests.cs";
 // assertion to fail under at least one mutation. A mutation proves only the assert it trips first —
 // a test stops there — so "killed by the test it names" says nothing about the asserts after it.
 // PackagingTests is shared with checks this plan does not own, so only the nuspec gate's method is in.
-string[] GateFiles = [A11yGate, PartsGate, AssemblyGate, GridGate];
+string[] GateFiles = [A11yGate, PartsGate, AssemblyGate, GridGate, TooltipGate];
 (string File, string Method) NuspecGate = (PackagingGate, "The_model_package_declares_exactly_the_dependencies_it_should");
 
 const string A11yClass = "Bennewitz.Ninja.DiffView.Tests.AccessibilityCoverageTests";
@@ -107,6 +108,7 @@ const string PartsClass = "Bennewitz.Ninja.DiffView.Tests.TemplatePartTests";
 const string AssemblyClass = "Bennewitz.Ninja.DiffView.Tests.AssemblyQualityTests";
 const string PackagingClass = "Bennewitz.Ninja.DiffView.Tests.PackagingTests";
 const string GridClass = "Bennewitz.Ninja.DiffView.Tests.GridSlotTests";
+const string TooltipClass = "Bennewitz.Ninja.DiffView.Tests.TooltipCoverageTests";
 
 bool list = false;
 bool force = false;
@@ -917,6 +919,44 @@ List<Mutation> mutations =
     new("BNXQ1008 meets the status strip in a row of no size", GridClass,
         () => Sub(SbsTheme, @"RowDefinitions=""Auto,Auto,Auto,\*,Auto""", @"RowDefinitions=""Auto,Auto,Auto,*,0"""),
         "No_control_is_hidden_by_a_slot_of_no_size_alone"),
+
+    // ---- BNXQ1011, open item 40: XamlQuality 2026.4.1111's tooltip rule, which TooltipCoverageTests runs in place
+    // of the scan it held from 2026-11-10, proven until then by a set of mutate-behaviour's. Skipped is asserted
+    // first, then each subject's floor, then the accounting, then the findings.
+    new("BNXQ1011 meets a style that may give the take button the tooltip it lost", TooltipClass,
+        () => Sub(BaselineWindow, @"\s*ToolTip\.Tip=""Take the section[^""]*""", "")
+              && Sub(BaselineWindow, @"(Width=""1280"" Height=""800"">)",
+                  "$1\n  <Window.Styles>\n    <Style Selector=\"Button\">\n      <Setter Property=\"ToolTip.Tip\" Value=\"A button\" />\n    </Style>\n  </Window.Styles>"),
+        "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip"),
+
+    new("BNXQ1011's library subject points at markup-free ground", TooltipClass,
+        () => Sub(TooltipGate, @"""DiffView\.Avalonia""", @"""DiffView.Core"""),
+        "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip"),
+
+    new("BNXQ1011's review window subject points at markup-free ground", TooltipClass,
+        () => Sub(TooltipGate, @"""AgentBaseline""", @"""DiffView.Core"""),
+        "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip"),
+
+    // A floor is satisfied by a subject that has swallowed the whole scan; the accounting is not.
+    new("BNXQ1011's library subject swallows the whole scan", TooltipClass,
+        () => Sub(TooltipGate,
+            @"XamlScanContext\.Load\(Path\.Combine\(all\.Root, ""DiffView\.Avalonia""\)\)",
+            "XamlScanContext.Load(all.Root)"),
+        "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip"),
+
+    new("the review window's take button loses its tooltip", TooltipClass,
+        () => Sub(BaselineWindow, @"ToolTip\.Tip=""Take the section", @"Tag=""Take the section"),
+        "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip"),
+
+    // A part of a ControlTheme's template, which is where every input control of the library's is written.
+    new("the find bar's next button loses its tooltip", TooltipClass,
+        () => Sub(FindBarTheme, @"\s*ToolTip\.Tip=""\{TemplateBinding NextName\}""", ""),
+        "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip"),
+
+    // What the scan it replaced passed: a tooltip attribute that is there and says nothing.
+    new("a review window button's tooltip is left blank", TooltipClass,
+        () => Sub(BaselineWindow, @"ToolTip\.Tip=""Show the next candidate on the right \(F8\)\.""", @"ToolTip.Tip="" """),
+        "Every_input_control_the_repository_writes_in_markup_carries_a_tooltip"),
 
     // ---- The parse-error claim. The a11y gate deliberately has NO assertion that markup parsed,
     // because every rule iterates ParsedFiles and silently drops a file that did not — so such an
