@@ -5019,6 +5019,11 @@ listing cannot hold is the run's call site; item 30's set holds that end to end.
 XamlQuality back to `2026.4.1026` as its first mutation, and the mutation after it fails another way at that pin, so a
 build that did not restore would read the older reading's failure as its own and go `wrong-assertion`.
 
+**Superseded 2026-11-12 — the set moves the pin no longer.** `TooltipCoverageTests` compiles against `BNXQ1011` since
+open item 40, and no version before `2026.4.1111` has it, so the pin moved back to `2026.4.1026` was refused by the
+build before the check could run. The mutation went. The listing test still holds `Mutation.RestoresAfter`, and
+nothing holds the run's call site end to end: *BNXQ1011 holds the tooltips, and XamlQuality moves to 2026.4.1111*.
+
 **A moved pin owes only what it reaches.** `--owed` owed every set whose pins file changed, which after item 30's pin was
 all sixteen, though the pin reached one test project; the ten it could not reach were left unrun on Brian's word. It
 now asks what moved and whom it reaches. What moved is the pins as git holds them at the ref against the pins as they
@@ -5125,6 +5130,10 @@ walk descends, and counts a tooltip given as the attribute or as the property el
 read, and a tooltip a style setter gave would read as missing, which no markup here does. It floors each project that
 holds input controls, because a reading that finds nothing missing passes when it reads nothing. A rule every
 repository of the family should keep belongs in XamlQuality, and it goes there on Brian's word.
+
+**Superseded 2026-11-12 — the scan, not the rule.** XamlQuality `2026.4.1111` shipped the rule as `BNXQ1011`, and
+`TooltipCoverageTests` runs it in place of this scan, reading the same controls and a blank tooltip besides: *BNXQ1011
+holds the tooltips, and XamlQuality moves to 2026.4.1111*.
 
 ## A run killed partway is put right by the next one
 
@@ -5345,3 +5354,59 @@ later line's away and built the pane again before telling the tokenizer: the old
 lines' colours differed from their settled ones and `SyntaxTokenized` was false. Told, the tokenizer brought the
 tokens back, and the new wait returned only with every visible line's colours as they settle. The frames rendered
 again with the fix, beside the whole suite running on Windows, all match at a differing fraction of zero.
+
+## BNXQ1011 holds the tooltips, and XamlQuality moves to 2026.4.1111
+
+Open item 40, Brian's word of 2026-11-12. Inspections shipped the rule item 34 sent it on 2026-11-10 as `BNXQ1011`, in
+XamlQuality `2026.4.1111`: every input control written in markup declares a tooltip, which `TooltipCoverageTests` had
+held through a scan of its own since that day.
+
+**The release was read by its source, as items 30 and 38 read theirs.** Between the two tags the rules differ by the
+new `InputTooltipRule` and the `Tooltips` reading it uses, and no other rule's source moved, so every other gate reads
+at `2026.4.1111` what it read at `2026.4.1109`, and each passed at the new pin. The rest of the library's change is the
+theme audit's: a key resolves where Avalonia resolves it, and a redefinition a theme never sees is reported.
+
+**`BNXQ1011` reads what the scan read.** The scan looked for seventeen input controls by local name and took a tooltip
+as `ToolTip.Tip`, an attribute or a property element. The rule looks for the same seventeen, leaves `MenuItem` out as
+the scan did, and takes a tooltip in any framework's spelling. Over `src` it inspects 22 controls, the library's 15,
+each in a control theme's template, and the review window's 7, the demo's two files holding none, with no finding and
+nothing skipped: the scan's own populations. Where the two differ, the rule is the stricter. A blank tooltip is reported
+as empty, which the scan passed; a property element that sets nothing is no tooltip; and a control with no tooltip of
+its own that a style or a theme in the scan may give one is named in `Skipped`, which the test asserts empty first.
+Neither sees a control built in code or a tooltip set in code.
+
+**The test keeps its name and its floors, and gains an accounting.** It asserts `Skipped` empty, the library's floor of
+15 and the review window's of 7, that the three subjects account for the whole scan, and then no finding. The scan
+counted a control by the project its file sits in, so no subject could swallow another. The rule counts a scan, so
+each subject is a scan of its own derived from the one root, and the accounting refuses a subject grown past its own,
+which no floor can see, as `AccessibilityCoverageTests` measured of its floors.
+
+**Its proof moves to the gate harness.** A test that runs a XamlQuality rule is a static-analysis gate, so
+`TooltipCoverageTests.cs` is a gate file, each assertion in it a guard some mutation must trip first, and the behaviour
+set that proved the scan, `Mutations/tooltips.json`, goes. Seven mutations replace its four. A style that may give the
+take button the tooltip it lost trips `Skipped`; each subject pointed at markup-free ground trips its floor; the
+library's subject swallowing the scan trips the accounting; and the take button losing its tooltip, the find bar's
+next button losing its own in a control theme's template, and a review window button's tooltip left blank each trip
+the findings. The harness carries 137 mutations and derives 93 guards.
+
+**The audit moved one key of the Fluent compat dictionary, and the new value is the right one.**
+`FluentKeys.Semi.axaml` copies each key Fluent defines and Semi lacks, and it had copied
+`TextControlBorderThemeThicknessFocused` as `0`. That is the value Fluent's `ComboBox` template gives its own editable
+text box, in that box's resources. Fluent's own, in `Accents/BaseResources.xaml`, is `2`, the border its `TextBox` and
+`CalendarDatePicker` take when focused. The release resolves a key where Avalonia does, a definition a template holds
+redefining nothing outside it, so the dictionary carries `2` in both variants, and a host that merges it under Semi gets
+a focused Fluent-styled text box's border back. No theme of this library's reads the key, nor AvaloniaEdit's, and the
+find bar's text box takes the host's own theme, so nothing DiffView draws moves. `docs/theme-audit.md` gains the section
+for redefinitions a theme never sees, which examines 114 keys the Fluent controls redefine under Semi's variants, with
+the dictionaries and without, and finds none; and the digest of the Semi compat target moved with the dictionary,
+which is why the report was taken from a run after the dictionary's.
+
+**The runs**, each over this tree rebased onto PR #56, which landed first. A full gate run in four worktrees gave all
+137 mutations as declared, 126 killed by the test each names, 9 by the build and 2 green by design, and tripped all 93
+guards first, the new gate's five each by the mutation written for it, in 15 minutes. `--owed` against `main` owed the
+seven proof sets of `DiffView.Avalonia.Tests`, whose restore resolves XamlQuality, and none of `AgentBaseline.Tests`,
+whose restore does not. In four worktrees they came out as declared, 102 mutations with every one of their 57 declared
+tests killed, in 20 minutes. Item 30's set ran without its pin mutation: a run over the earlier base found the build
+refusing it, as the note under *mutate-behaviour restores after a revert* says. The solution and every script build
+clean under warnings as errors, and the suite ran 1007 of 1007 on Windows, `Passed!`, which `catch-crash` judged
+healthy.

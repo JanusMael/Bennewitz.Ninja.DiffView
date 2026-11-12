@@ -111,6 +111,10 @@ no dates, no counts.
   measured against its own side's line count (§7).
 - Nothing under `src/DiffView.Avalonia/Themes` references a host theme key: `theme-audit report`
   scans that directory as the "DiffView" consumer and `ReferenceAuditTests` fails on drift.
+- **A XamlQuality bump may move the compat dictionaries under `Themes/Compat` and `docs/theme-audit.md`**, which
+  `ReferenceAuditTests` compares with a fresh run, writing each fresh file beside its stale one as `.received`. ⚠ The
+  report's digest covers the dictionaries, so a report taken before a dictionary moved is stale again: take the
+  dictionaries first and the report from a run after theirs, the order the test's own message gives.
 - **A template edit regenerates `docs/template-parts.md`, and so may an AvaloniaEdit or XamlQuality bump**, the
   same edits `theme-audit report` asks after: `TemplatePartReferenceTests.The_committed_reference_equals_a_fresh_reading`
   fails on drift and writes the fresh reference beside the committed one, and `scripts/gen-template-parts` takes it.
