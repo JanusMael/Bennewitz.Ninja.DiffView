@@ -59,6 +59,10 @@
       <SolidColorBrush x:Key="DiffView.FindMatchBrush" Color="#80FFD54F" />
       <SolidColorBrush x:Key="DiffView.FindCurrentMatchBrush" Color="#99FF8F00" />
 
+      <!-- A range a host marks: a fill over each marked line's row, over the row tints and
+           under the selection and the find highlights -->
+      <SolidColorBrush x:Key="DiffView.EmphasisBrush" Color="#1F3949AB" />
+
       <!-- Headers and status strip -->
       <SolidColorBrush x:Key="DiffView.HeaderBackgroundBrush" Color="#F3F4F6" />
       <SolidColorBrush x:Key="DiffView.FocusAccentBrush" Color="#1565C0" />
@@ -124,6 +128,10 @@
       <!-- Find -->
       <SolidColorBrush x:Key="DiffView.FindMatchBrush" Color="#59FFB300" />
       <SolidColorBrush x:Key="DiffView.FindCurrentMatchBrush" Color="#80FF8F00" />
+
+      <!-- A range a host marks: a fill over each marked line's row, over the row tints and
+           under the selection and the find highlights -->
+      <SolidColorBrush x:Key="DiffView.EmphasisBrush" Color="#2A5C6BC0" />
 
       <!-- Headers and status strip -->
       <SolidColorBrush x:Key="DiffView.HeaderBackgroundBrush" Color="#2A2A2E" />

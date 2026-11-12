@@ -40,8 +40,8 @@ _none_
 
 | Consumer | Directories | Files | References | Distinct keys | Own keys | Digest | Audited against |
 |---|---|---:|---:|---:|---:|---|---|
-| DiffView | `src/DiffView.Avalonia/Themes` | 10 | 79 | 18 | 51 | `4b5680656f1f` | all |
-| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 10 | 79 | 18 | 51 | `4b5680656f1f` | all |
+| DiffView | `src/DiffView.Avalonia/Themes` | 10 | 79 | 18 | 52 | `9b0cb2489567` | all |
+| DiffView (colour-blind palette) | `src/DiffView.Avalonia/Themes` | 10 | 79 | 18 | 52 | `9b0cb2489567` | all |
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `60346377b215` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `76fecb00930b` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d20b807c8919` | Fluent, Semi, Semi + compat |
@@ -824,7 +824,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Fluent
 
-42 pairs × 2 variants: 84 pass, 0 below the floor, 0 not measurable.
+43 pairs × 2 variants: 86 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -838,6 +838,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 |
@@ -873,7 +874,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Simple
 
-42 pairs × 2 variants: 84 pass, 0 below the floor, 0 not measurable.
+43 pairs × 2 variants: 86 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -887,6 +888,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 |
@@ -922,7 +924,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Semi
 
-42 pairs × 6 variants: 252 pass, 0 below the floor, 0 not measurable.
+43 pairs × 6 variants: 258 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -936,6 +938,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 | 7.72 | 11.27 | 7.72 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 | 6.43 | 13.85 | 6.43 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 | 5.21 | 9.95 | 5.21 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 | 12.33 | 13.68 | 12.33 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 | 4.76 | 4.54 | 4.76 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 | 14.63 | 16.54 | 14.63 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 | 7.53 | 5.75 | 7.53 | 7.53 |
@@ -971,7 +974,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView under Semi + compat
 
-42 pairs × 6 variants: 252 pass, 0 below the floor, 0 not measurable.
+43 pairs × 6 variants: 258 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -985,6 +988,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 | 7.72 | 11.27 | 7.72 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 | 6.43 | 13.85 | 6.43 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 | 5.21 | 9.95 | 5.21 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 | 12.33 | 13.68 | 12.33 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 | 4.76 | 4.54 | 4.76 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 | 14.63 | 16.54 | 14.63 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 | 7.53 | 5.75 | 7.53 | 7.53 |
@@ -1020,7 +1024,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Fluent
 
-42 pairs × 2 variants: 84 pass, 0 below the floor, 0 not measurable.
+43 pairs × 2 variants: 86 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -1034,6 +1038,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 |
@@ -1069,7 +1074,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Simple
 
-42 pairs × 2 variants: 84 pass, 0 below the floor, 0 not measurable.
+43 pairs × 2 variants: 86 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark |
 |---|---|---:|---:|---:|
@@ -1083,6 +1088,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 |
@@ -1118,7 +1124,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Semi
 
-42 pairs × 6 variants: 252 pass, 0 below the floor, 0 not measurable.
+43 pairs × 6 variants: 258 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -1132,6 +1138,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 | 7.72 | 11.27 | 7.72 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 | 6.43 | 13.85 | 6.43 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 | 5.21 | 9.95 | 5.21 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 | 12.33 | 13.68 | 12.33 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 | 4.76 | 4.54 | 4.76 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 | 14.63 | 16.54 | 14.63 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 | 7.53 | 5.75 | 7.53 | 7.53 |
@@ -1167,7 +1174,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 
 ### DiffView (colour-blind palette) under Semi + compat
 
-42 pairs × 6 variants: 252 pass, 0 below the floor, 0 not measurable.
+43 pairs × 6 variants: 258 pass, 0 below the floor, 0 not measurable.
 
 | Foreground | Background | Floor | Light | Dark | Aquatic | Desert | Dusk | NightSky |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -1181,6 +1188,7 @@ WCAG 2.x contrast ratio per pair and variant, the background composited over its
 | `DiffView.PaneForegroundBrush` | `DiffView.SelectionBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 11.27 | 7.72 | 7.72 | 11.27 | 7.72 | 7.72 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.85 | 6.43 | 6.43 | 13.85 | 6.43 | 6.43 |
 | `DiffView.PaneForegroundBrush` | `DiffView.FindCurrentMatchBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 9.95 | 5.21 | 5.21 | 9.95 | 5.21 | 5.21 |
+| `DiffView.PaneForegroundBrush` | `DiffView.EmphasisBrush` over `DiffView.PaneBackgroundBrush` | 4.5 | 13.68 | 12.33 | 12.33 | 13.68 | 12.33 | 12.33 |
 | `DiffView.LineNumberForegroundBrush` | `DiffView.GutterBackgroundBrush` | 4.5 | 4.54 | 4.76 | 4.76 | 4.54 | 4.76 | 4.76 |
 | `DiffView.CaretBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 16.54 | 14.63 | 14.63 | 16.54 | 14.63 | 14.63 |
 | `DiffView.CurrentBlockBorderBrush` | `DiffView.PaneBackgroundBrush` | 3.0 | 5.75 | 7.53 | 7.53 | 5.75 | 7.53 | 7.53 |

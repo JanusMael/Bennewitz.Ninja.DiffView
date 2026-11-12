@@ -15,6 +15,9 @@
     { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.SelectionBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "selected text" },
     { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.FindMatchBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text in a find match" },
     { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.FindCurrentMatchBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text in the current find match" },
+    // A range a host marks is drawn over the row tints as well as over the pane, which one `over` key cannot
+    // express: DECISIONS.md records the text's ratio in every layering the fill sits in.
+    { "foreground": "DiffView.PaneForegroundBrush", "background": "DiffView.EmphasisBrush", "over": "DiffView.PaneBackgroundBrush", "floor": 4.5, "purpose": "text in a range a host marks" },
     { "foreground": "DiffView.LineNumberForegroundBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 4.5, "purpose": "line numbers" },
 
     // Non-text UI on the pane and gutter.
