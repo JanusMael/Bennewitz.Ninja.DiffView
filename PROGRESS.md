@@ -2,19 +2,19 @@
 
 ## Resume
 
-**`main` carries everything through PR #54** — PR #54 merged on a full 12-of-12, Brian merging it,
-2026-11-11. On `main` its macOS leg failed once at the upload of its test results, GitHub's artifact service
-answering with a page where it owed JSON, every build and test step green. *A resume names the pull request it was written for and
+**`main` carries everything through PR #55** — PR #55 merged on a full 12-of-12, Brian merging it,
+2026-11-12. On `main` its first run's macOS leg never started, GitHub finding no macOS runner to take it, and every
+other job passed; PR #54's macOS leg, which failed once on `main` at the upload of its test results, passed when it
+was run again. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 1004** here, `Passed!`, by a local run over item 39's
-branch, as over item 38's: neither adds a test. ⚠ `main`'s first run after #52 went red
-in the Culture Leg on a race in `ViewerStateTests`, item 37, which PR #53 fixed; the job passed when re-run. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 1007** here, `Passed!`, by a local run over item 26's
+branch — three more than over item 39's, all three in `HeaderAlignmentTests`. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
 **130** mutations and derives **88** guards from the gate files; CI runs its `--guards` half and its
-`--check` on Linux, and the last full run — over item 39's branch, on 2026-11-11, in four
+`--check` on Linux, and the last full run — over item 26's branch, on 2026-11-12, in four
 worktrees — gave all 130 as declared: 119 killed by the test each names, 9 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 88 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
@@ -1503,6 +1503,27 @@ wording.
     and the underline both starting there, 6 px in and flush, the underline clearing the find bar's L button. It moves
     every whole-view frame, rendered in WSL and reviewed by him before they are committed, as item 25's were.
 
+    ✅ **Done 2026-11-11, on `feat/the-headers-start-at-the-first-digit`.** The header's theme starts its title 6 px
+    in, its `Padding` now `6,4,8,4`, and its focus underline at the same place, `PART_FocusAccent`'s `Margin`
+    `6,0,0,0`: where `DiffLineNumberMargin` begins its widest number, its `HorizontalPadding`. The margin says where it
+    drew that first digit, `LastColumnLeft`, as `LastColumnRight` says where it aligned the numbers, and
+    `HeaderAlignmentTests` holds each title and underline to it in the editor and the viewer, and in the unified view
+    the left header's title, that view's one pane lighting no underline. `Mutations/header-alignment.json` proves the
+    three tests, 6 of 6 as declared. 62 of the 64 Linux frames moved, every changed pixel inside the header row,
+    rendered in WSL and reviewed by Brian before they were committed. The full gate run went over the finished
+    branch, 130 of 130 as declared with all 88 guards tripped first. `DECISIONS.md`, *The headers start at the
+    numbers' first digit*.
+
+    ✅ **A race the frames' confirmation found, fixed the same day on Brian's word that races found are fixed.**
+    Rendered again beside a full gate run, `SyntaxSnapshotTests`' C# light frame came out with lines of both panes in
+    their plain colour, 1.47% of its pixels: the test captured once line 1 of each pane was coloured, and TextMate
+    colours a line from the tokens it has when the line is built, on its own thread. The frame now waits for
+    `DiffPanePresenter.SyntaxTokenized` on both panes, every line having its tokens, and builds every visible line
+    again before it captures. Proven by building that state on purpose in an experiment since removed: line 1
+    keeping its tokens and every later line built without them satisfied the old wait and not the new one, which
+    returned only with every line's colours as they settle. `DECISIONS.md`, *A colourised frame waits for every
+    line's tokens*.
+
 27. **The mutation harnesses build with node reuse off, and the gate runs over uncommitted work — Brian,
     2026-11-01, as a change of its own once the local stack's pull request merges.** Item 14's first full run
     lost three mutations to `MSB4166`, an MSBuild worker node ending under the build that held it, and every
@@ -1722,7 +1743,8 @@ wording.
     whether Inspections should hear of `BNCQ1009`'s gap. He chose `BNCQ1001` on in every project and script, over the
     two libraries alone, the note to the Inspections session, and the work done in that session once #54 landed.
 
-    ✅ **Done 2026-11-11 on `build/no-caller-leaves-a-token-out`, and it lands on his word, the push being his.** The
+    ✅ **Done 2026-11-11 on `build/no-caller-leaves-a-token-out`, and landed as PR #55 on 2026-11-12, Brian merging
+    it.** The
     root `.editorconfig` switches `BNCQ1001` on, and every project and script together report one site,
     `AssemblyQualityTests.TokenDefaultControl`, `BNAQ1001`'s control, suppressed at its line with its reason as the
     other controls are. The gate harness's planted defaulted token is `BNCQ1001`'s build kill now, and the same method
@@ -1735,8 +1757,8 @@ Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
-same day, item 36 waits for its plan, and item 39 is done on `build/no-caller-leaves-a-token-out` and lands on his
-word. **Every other open item was
+same day, item 39 landed as PR #55 on 2026-11-12, item 26 is done on `feat/the-headers-start-at-the-first-digit`,
+and item 36 waits for its plan. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the

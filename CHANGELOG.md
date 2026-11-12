@@ -39,6 +39,9 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **A header's title and its focus underline start where its pane's line numbers do**, at the first digit, 6 px in.
+  The title stood 8 px in and the underline began at the pane's edge, under the find bar's left-hand buttons. A host
+  that restyles the header's `Padding` moves the title alone.
 - **`BNCQ1001` is on everywhere.** CodeQuality's rule against a visible method that lets its caller leave the
   cancellation token out, off by the package's default, fails the build in every project and script. It reports
   nothing in the libraries, whose entry points already require their token; the one site it found is the test

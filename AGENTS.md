@@ -158,6 +158,10 @@ no dates, no counts.
   `:pane-focused` pseudo-class, `DiffView.FocusAccentBrush`), never a border thickness: an
   unfocused header must lay out exactly as it did before it existed, so focus moves no row.
   `DiffBuildController.UpdateCaret` and `UpdateHeader` are the two places that set it.
+- **A header's title and its focus accent start at its pane's first digit**, 6 px in: the header theme's `Padding`
+  and `PART_FocusAccent`'s `Margin` each repeat `DiffLineNumberMargin`'s `HorizontalPadding`, which the theme cannot
+  read. Nothing binds the three, so a change to one is a change to all three; the tests of `HeaderAlignmentTests`
+  read `DiffLineNumberMargin.LastColumnLeft` and fail on whichever moves alone.
 - The **syntax** theme follows `ActualThemeVariant` and nothing else: `ThemeName.DarkPlus` under
   Dark, `ThemeName.LightPlus` otherwise (`SyntaxHighlighting.ThemeNameFor`), re-applied from
   `DiffPanePresenter.OnThemeVariantChanged`. The colour-blind palette is a `DiffView.*` matter and
@@ -396,7 +400,11 @@ no dates, no counts.
   reason it keeps the caret from blinking: TextMateSharp tokenizes on its own thread, so a frame
   captured without waiting is a coin toss. A test that wants colour waits on
   `CompositeHost.PumpUntilAsync` with a `SyntaxProbe` condition — the built runs' foregrounds,
-  which are readable the moment the line is rebuilt — never on a sleep.
+  which are readable the moment the line is rebuilt — never on a sleep. ⛔ **A test that captures a
+  whole frame waits for every line, not one**: `DiffPanePresenter.SyntaxTokenized` on each pane, then a
+  `Redraw()` of each. The colouring transformer colours a line from the tokens it has when the line is
+  built and skips the redraw for a line outside the range it last saw, so one line's colours say
+  nothing about the next: `SyntaxSnapshotTests` captured lines of both panes plain that way on a loaded box.
 - ⛔ **A build is awaited, never pumped for.** `DiffBuildController.RunBuildAsync` runs the diff on the
   thread pool and posts its outcome to the dispatcher, so one `CompositeHost.Layout()` lands a build
   only when the pool happened to finish first: green on a fast desk, intermittently red on a slower
@@ -485,7 +493,8 @@ no dates, no counts.
 - A reported rectangle cannot show that a drawing is where it should be, because a drawing that
   strays reports where it strayed to. Where position matters, assert it against something the
   decorator does not choose: `DiffLineNumberMargin.LastColumnRight` names the edge the numbers
-  were aligned to, which is why a copy arrow shifted four pixels survived every other assertion.
+  were aligned to, which is why a copy arrow shifted four pixels survived every other assertion,
+  and `LastColumnLeft` where the widest of them begins, which the headers are held to.
 - `AccessibilityCoverageTests` derives its element set from the library — every public `Control` it
   ships, less `Excluded`, plus the framework names in `LiveFrameworkElements` and `ForwardCover` — so
   every pane in a view carries `AutomationProperties.Name` and a new public control is covered the

@@ -5285,3 +5285,63 @@ test each names, 9 by the build and 2 green by design, and tripped all 88 guards
 `--owed` named came out as declared, 12 mutations with every declared test killed. The solution and every script build
 clean under warnings as errors, and the suite ran 1004 of 1004 on Windows, `Passed!`, which `catch-crash` judged
 healthy.
+
+## The headers start at the numbers' first digit
+
+Open item 26, Brian's choice of 2026-11-10 from frames rendered to choose between: layout F. Plan 00008 put each
+header's title 8 px in from its pane's edge and its focus underline at the edge itself, and against the find bar's L
+and R buttons above it he read the underline as starting too far left. Both now start where the pane's line numbers
+begin, 6 px in, the number margin's `HorizontalPadding`: the title over the first digit of the widest number, the
+underline flush beneath it and clear of the L button.
+
+**The theme says 6, and a test holds it to the margin.** The header's theme cannot read the margin's padding, a
+private constant of an internal class, so it repeats the number, once in the title's padding and once in the
+underline's margin. What keeps the three together is `HeaderAlignmentTests`, which reads where the margin drew its
+first digit, `DiffLineNumberMargin.LastColumnLeft`, set from the frame as `LastColumnRight` is, rather than holding a 6
+of its own: numbers that moved without the header fail it, and one of its mutations moves them 4 px to show it. A host
+that restyles the header's `Padding` moves the title and not the underline, which the template places itself.
+
+**The unified view is asked about one title.** Its two headers share the width above one pane, so only the left one
+stands over the gutter, whose first column is the left side's numbers, and its pane lights neither header's
+underline. A mutation that draws that first column a gap further right than the margin measured it is killed by that
+test, the side panes having no second column to move it.
+
+**62 of the 64 Linux frames moved, and none of them would have failed.** The sweep `AGENTS.md` §5 describes found
+them: over PR #53's `main` all 64 equal their baselines at a differing fraction of zero, and with the change 62
+differ, by 0.033 to 0.495% of their pixels, every differing pixel inside the header row. That is under the comparer's
+half a percent, so each baseline would have stayed green while it depicted the old header, the trap item 25 found in 22
+frames. The 62 were rendered in WSL, from a clone in its own filesystem, and reviewed by Brian before they were
+committed, and with them in all 64 match at zero. The two that did not move are `PresenterSnapshotTests`' frames of a
+bare pane, which has no header.
+
+**The full gate run went over the change, and again over the finished branch**, the header's theme being a gated
+subject: over PR #53's `main` all 123 mutations as declared, in 23 minutes on a busy box, and over PR #55's, with
+items 38 and 39's analyzers and the race fix below, all 130, 119 killed by the test each names, 9 by the build and 2
+green by design, in 9 minutes, with all 88 guards tripped first both times, in four worktrees. The theme-audit
+report moved by its hash of the themes folder and by nothing else.
+
+## A colourised frame waits for every line's tokens
+
+Found while item 26's frames were confirmed, and fixed the same day on Brian's word that races found are fixed. The
+sweep that rendered every frame again ran beside a full gate run, and `SyntaxSnapshotTests`' C# light frame came out
+1.47% unlike the frame the first sweep had rendered: lines of both panes in the panes' plain colour, `#1C1F23`,
+where the baseline has Light+'s keyword blue, identifier blue, function brown and control purple. The old baseline
+and the new one agree there, so the render was the odd one.
+
+**The test waited for one line.** It captured once line 1 of each pane carried more than one colour. TextMate's
+colouring transformer colours a line from the tokens it has when the line is built: a line built before its tokens
+arrive is drawn plain, and the tokenizer's notice that they have arrived is a redraw the transformer posts, which it
+skips for a line outside the range it last saw. On a quiet box the tokenizer runs ahead of the layout and every line
+is coloured; on a loaded one it does not, and line 1 says nothing about the lines below it.
+
+**The wait is for every line now.** `DiffPanePresenter.SyntaxTokenized`, an internal seam beside
+`SyntaxInstallerForTesting`, is true once every line of the pane's TextMate model has its tokens, read through the
+installation's public `EditorModel`. The frame waits for it on both panes, has both panes build every visible line
+again, and captures: a line built after its tokens exist is coloured, by the transformer's own code. The other syntax
+tests read the line they wait for, and the demo's smoke frame colours nothing, its fixtures being `.txt`.
+
+**Proven by building the state on purpose.** An experiment, removed afterwards, left line 1 its tokens, took every
+later line's away and built the pane again before telling the tokenizer: the old wait was satisfied while the visible
+lines' colours differed from their settled ones and `SyntaxTokenized` was false. Told, the tokenizer brought the
+tokens back, and the new wait returned only with every visible line's colours as they settle. The frames rendered
+again with the fix, beside the whole suite running on Windows, all match at a differing fraction of zero.
