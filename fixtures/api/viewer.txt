@@ -33,6 +33,7 @@ Field       StyledProperty`1 GutterNameProperty
 Field       StyledProperty`1 IgnoreCaseProperty
 Field       StyledProperty`1 IgnoreWhitespaceProperty
 Field       StyledProperty`1 IsCaretBlinkEnabledProperty
+Field       StyledProperty`1 LeftEmphasisProperty
 Field       StyledProperty`1 LeftHeaderNameProperty
 Field       StyledProperty`1 LeftPaneNameProperty
 Field       StyledProperty`1 LeftSourceProperty
@@ -41,6 +42,7 @@ Field       StyledProperty`1 MinimapNameProperty
 Field       StyledProperty`1 MinimapPlacementProperty
 Field       StyledProperty`1 PaneFontFamilyProperty
 Field       StyledProperty`1 PaneFontSizeProperty
+Field       StyledProperty`1 RightEmphasisProperty
 Field       StyledProperty`1 RightHeaderNameProperty
 Field       StyledProperty`1 RightPaneNameProperty
 Field       StyledProperty`1 RightSourceProperty
@@ -91,6 +93,8 @@ Method      Int32 get_MaxWordDiffLineLength()
 Method      Int32 get_TabWidth()
 Method      MinimapPlacement get_MinimapPlacement()
 Method      Nullable`1 get_FocusedSide()
+Method      Nullable`1 get_LeftEmphasis()
+Method      Nullable`1 get_RightEmphasis()
 Method      Nullable`1 get_UnchangedContextRows()
 Method      PaneSource get_LeftSource()
 Method      PaneSource get_RightSource()
@@ -126,6 +130,7 @@ Method      Void set_GutterName(String)
 Method      Void set_IgnoreCase(Boolean)
 Method      Void set_IgnoreWhitespace(Boolean)
 Method      Void set_IsCaretBlinkEnabled(Boolean)
+Method      Void set_LeftEmphasis(Nullable`1)
 Method      Void set_LeftHeaderName(String)
 Method      Void set_LeftPaneName(String)
 Method      Void set_LeftSource(PaneSource)
@@ -135,6 +140,7 @@ Method      Void set_MinimapName(String)
 Method      Void set_MinimapPlacement(MinimapPlacement)
 Method      Void set_PaneFontFamily(FontFamily)
 Method      Void set_PaneFontSize(Double)
+Method      Void set_RightEmphasis(Nullable`1)
 Method      Void set_RightHeaderName(String)
 Method      Void set_RightPaneName(String)
 Method      Void set_RightSource(PaneSource)
@@ -186,6 +192,8 @@ Property    Int32 MaxWordDiffLineLength get set
 Property    Int32 TabWidth get set
 Property    MinimapPlacement MinimapPlacement get set
 Property    Nullable`1 FocusedSide get
+Property    Nullable`1 LeftEmphasis get set
+Property    Nullable`1 RightEmphasis get set
 Property    Nullable`1 UnchangedContextRows get set
 Property    PaneSource LeftSource get set
 Property    PaneSource RightSource get set
