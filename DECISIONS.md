@@ -5410,3 +5410,51 @@ tests killed, in 20 minutes. Item 30's set ran without its pin mutation: a run o
 refusing it, as the note under *mutate-behaviour restores after a revert* says. The solution and every script build
 clean under warnings as errors, and the suite ran 1007 of 1007 on Windows, `Passed!`, which `catch-crash` judged
 healthy.
+
+## A range a host marks is shaded indigo
+
+Plan 00035 step 1. `DiffView.EmphasisBrush` is indigo 600 at 12%, `#1F3949AB`, in Light and indigo 400 at 16.5%,
+`#2A5C6BC0`, in Dark, and the same in the colour-blind palette, a mark being no diff kind. `DiffBrushes` falls back to
+the Light value, as it does for every token.
+
+**Indigo is the hue the text area leaves without a meaning.** The kinds take green, red and orange, or blue, vermillion
+and reddish purple in the colour-blind palette; the selection takes azure, the find highlights yellow and amber, and
+the padding grey. A grey shade went first: over white, black at 6% is `#F0F0F0` where a padding row is `#F1F1F1`, so a
+marked section would run on into the padding beside it. Eight hues were swept in each variant at every opacity from 5%
+to 20%, holding text in every layering below to 4.6 and a marked row at least 8 from an unmarked one (CIE76 ΔE): 92 of
+the 160 values passed in Light and 32 in Dark, where indigo kept the most contrast at the same visibility, violet and
+purple next. The focus underline's own blue, `#64B5F6` at 16%, took text in the colour-blind Dark palette to 4.21.
+That the colour-blind palette's inserted rows are blue costs a reader nothing, since that palette tells no kind by
+colour alone: the marker margin draws each changed row's glyph, and an unchanged row under the mark carries none.
+
+**The contract scores one layering, and this records the rest.** The pair added to `contrast-pairs.json` scores text
+over the shade over the pane: 13.68 in Light and 12.33 in Dark, under every theme and variant the audit reads. A pair
+takes one `over` key, and the shade is drawn over the row tints and the word pieces and under the selection and the
+find highlights, so those layerings were composited here, a layer at a time at 8 bits a channel, which reproduces the
+audit's figure for every single-layer pair. A word piece is taken over a modified row, where the renderer draws it.
+
+| Text over | Light | Dark | Colour-blind Light | Colour-blind Dark |
+|---|---:|---:|---:|---:|
+| the shade | 13.68 | 12.33 | 13.68 | 12.33 |
+| the shade over an inserted row | 11.34 | 9.19 | 11.20 | 8.74 |
+| the shade over a deleted row | 10.95 | 9.87 | 11.49 | 8.88 |
+| the shade over a modified row | 11.65 | 8.61 | 11.45 | 8.43 |
+| the shade over an inserted word | 7.56 | 5.42 | 7.40 | 4.86 |
+| the shade over a deleted word | 7.02 | 5.99 | 7.90 | 4.90 |
+| the selection over the shade | 9.82 | 6.83 | 9.82 | 6.83 |
+| a find match over the shade | 12.51 | 5.73 | 12.51 | 5.73 |
+| the current find match over the shade | 9.06 | 4.80 | 9.06 | 4.80 |
+
+The lowest is the current find match in a marked range in Dark, 4.80, from 5.21 without the shade. The colour-blind
+Dark word pieces start nearest the floor, at 4.97 and 4.86 with no shade, and end at 4.86 and 4.90, the shade being
+darker there than the deleted piece's composite. The current block's border, which the shade is drawn over, stands at
+4.93 in Light and 5.64 in Dark against a marked row, over its floor of 3.0.
+
+**It reads as a row tint does, and quieter than the selection.** A marked row sits 9.7 from an unmarked one in Light,
+at the low end of the row tints' 9.9 to 12.8, and 11.7 in Dark, below the tints' 16.4 to 25.6 and above the padding's
+8.6, the contrast in Dark allowing no more. A marked changed row sits 8.8 to 13.5 from the same row unmarked, so the
+mark reads over every kind. The selection sits 26.9 and 35.6 from the pane.
+
+**The audit moved by the token and by nothing else.** `theme-audit compat` rewrote both compat dictionaries unchanged,
+and `theme-audit report` counts 52 own keys where it counted 51 and 43 pairs where it counted 42, each at or above its
+floor, the digest of the themes folder moving with them.
