@@ -2,21 +2,19 @@
 
 ## Resume
 
-**`main` carries everything through PR #55** — PR #55 merged on a full 12-of-12, Brian merging it,
-2026-11-12. On `main` its first run's macOS leg never started, GitHub finding no macOS runner to take it, and every
-other job passed; PR #54's macOS leg, which failed once on `main` at the upload of its test results, passed when it
-was run again. *A resume names the pull request it was written for and
+**`main` carries everything through PR #56** — PR #56 merged on a full 12-of-12, Brian merging it,
+2026-11-12, and `main`'s run over it passed. *A resume names the pull request it was written for and
 not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 1007** here, `Passed!`, by a local run over item 26's
-branch — three more than over item 39's, all three in `HeaderAlignmentTests`. ⛔ **The Linux
+wrong the moment it is true.* **Windows measured 1007** here, `Passed!`, by a local run over item 40's
+branch, as over item 26's: item 40 adds no test. ⛔ **The Linux
 total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
 **745** once reached this document against a measured **769**. Each leg lists by name the baselines it
 left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries
-**130** mutations and derives **88** guards from the gate files; CI runs its `--guards` half and its
-`--check` on Linux, and the last full run — over item 26's branch, on 2026-11-12, in four
-worktrees — gave all 130 as declared: 119 killed by the test each names, 9 by the build and 2 green by
-design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 88 guards tripped
+**137** mutations and derives **93** guards from the gate files; CI runs its `--guards` half and its
+`--check` on Linux, and the last full run — over item 40's branch, on 2026-11-12, in four
+worktrees — gave all 137 as declared: 126 killed by the test each names, 9 by the build and 2 green by
+design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 93 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
 has been off for every run since the first of item 14's two lost three mutations to `MSB4166`, an MSBuild
 worker node ending under the build that held it, and each harness now sets that for itself; `DECISIONS.md`
@@ -1503,7 +1501,8 @@ wording.
     and the underline both starting there, 6 px in and flush, the underline clearing the find bar's L button. It moves
     every whole-view frame, rendered in WSL and reviewed by him before they are committed, as item 25's were.
 
-    ✅ **Done 2026-11-11, on `feat/the-headers-start-at-the-first-digit`.** The header's theme starts its title 6 px
+    ✅ **Done 2026-11-11, on `feat/the-headers-start-at-the-first-digit`, and landed as PR #56 on 2026-11-12, Brian
+    merging it.** The header's theme starts its title 6 px
     in, its `Padding` now `6,4,8,4`, and its focus underline at the same place, `PART_FocusAccent`'s `Margin`
     `6,0,0,0`: where `DiffLineNumberMargin` begins its widest number, its `HorizontalPadding`. The margin says where it
     drew that first digit, `LastColumnLeft`, as `LastColumnRight` says where it aligned the numbers, and
@@ -1680,6 +1679,7 @@ wording.
 
     The tooltip rule went to XamlQuality the same evening, on his word, as a rule for every repository of the family.
     It is in that repository's backlog, its place there his to set, and `TooltipCoverageTests` stands until it ships.
+    It shipped as `BNXQ1011` in XamlQuality `2026.4.1111`, and item 40 put it in the scan's place.
 
 35. **A killed `mutate-behaviour` run left its edit in the tree — Brian, 2026-11-10, *"Build the guard"*.** Item 34's
     proof found it the hard way: the harness reverts each edit from a snapshot, but a run killed partway reverts
@@ -1753,12 +1753,30 @@ wording.
     declared test killed. The suite ran 1004 of 1004 on Windows, `Passed!`, and `catch-crash` judged the run healthy.
     The note reached the Inspections session the same day. `DECISIONS.md`, *BNCQ1001 is on everywhere*.
 
+40. **XamlQuality's tooltip rule in place of our own scan — Brian's word of 2026-11-12.** Inspections shipped the rule
+    item 34 sent it as `BNXQ1011`, in XamlQuality `2026.4.1111`, and its session sent word on 2026-11-11. Brian gave
+    adopting it to the catch-up session: move the pin, put the rule in the place of `TooltipCoverageTests`' scan on a
+    branch of its own, and push only on his word.
+
+    ✅ **Done 2026-11-12 on `test/the-tooltip-rule-replaces-its-test`, and it lands on his word, the push being his.**
+    XamlQuality is at `2026.4.1111`, whose rules differ from `2026.4.1109`'s by the new one alone.
+    `TooltipCoverageTests` runs `BNXQ1011` and reads what its scan read, 15 input controls in the library and 7 in the
+    review window, nothing found or skipped, and reports a blank tooltip besides, which the scan passed. Its guards are
+    the gate harness's now, seven mutations tripping its five first, and the behaviour set that proved the scan went.
+    The release's audit moved one key of the Semi compat dictionary to Fluent's own value,
+    `TextControlBorderThemeThicknessFocused` from `0` to `2`, and its report gained a section that finds nothing.
+    Every run was taken over the branch rebased onto PR #56, which landed first. A full gate run in four worktrees
+    gave all 137 as declared and tripped all 93 guards first, in 15 minutes; the seven proof sets the pin owes came out
+    as declared, 102 mutations with every declared test killed, item 30's without the mutation that moved the pin
+    back, which the build refuses now; and the suite ran 1007 of 1007 on Windows, `Passed!`, which `catch-crash` judged
+    healthy. `DECISIONS.md`, *BNXQ1011 holds the tooltips, and XamlQuality moves to 2026.4.1111*.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
-same day, item 39 landed as PR #55 on 2026-11-12, item 26 is done on `feat/the-headers-start-at-the-first-digit`,
-and item 36 waits for its plan. **Every other open item was
+same day, items 39 and 26 landed as PRs #55 and #56 on 2026-11-12, item 36 waits for its plan, and item 40 is done on
+`test/the-tooltip-rule-replaces-its-test` and lands on his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the

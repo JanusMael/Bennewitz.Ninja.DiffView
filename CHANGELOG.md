@@ -39,6 +39,13 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Changed
 
+- **XamlQuality moves to `2026.4.1111`, and `BNXQ1011` holds every input control to its tooltip.**
+  `TooltipCoverageTests` runs the release's rule in place of its own scan of the markup: the same seventeen input
+  controls, a tooltip in any framework's spelling, and a blank one reported, which the scan passed. Its guards are
+  proven by `scripts/mutate-gates`, which carries 137 mutations, and the behaviour set that proved the scan goes.
+  Item 30's proof set no longer moves the pin itself, the test project compiling against `BNXQ1011`, which no earlier
+  version has. `docs/theme-audit.md` gains the audit's section for redefinitions a theme never sees, which finds none. The package
+  is test-only, as before; the one thing it moved that ships is under *Fixed*.
 - **A header's title and its focus underline start where its pane's line numbers do**, at the first digit, 6 px in.
   The title stood 8 px in and the underline began at the pane's edge, under the find bar's left-hand buttons. A host
   that restyles the header's `Padding` moves the title alone.
@@ -759,6 +766,10 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Fixed
 
+- **The Semi compat dictionary gives a focused Fluent text box its border.** `FluentKeys.Semi.axaml` had copied
+  Fluent's `TextControlBorderThemeThicknessFocused` as `0`, the value Fluent's `ComboBox` gives its own editable text
+  box, where Fluent's theme sets `2`, so under Semi a Fluent-styled `TextBox` or `CalendarDatePicker` lost its border
+  when focused. XamlQuality `2026.4.1111`'s audit resolves the key where Avalonia does, and the dictionary carries `2`.
 - **A local build recorded no public version.** `PublicVersion` was set from `$(Version)` in
   `Directory.Build.props`, before the SDK has given `Version` its default, so only a build handed `/p:Version=`
   recorded one, and the comment beside it said otherwise. It is set in `Directory.Build.targets` now, so a local
