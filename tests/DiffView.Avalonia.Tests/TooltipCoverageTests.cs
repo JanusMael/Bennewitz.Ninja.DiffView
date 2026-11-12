@@ -1,88 +1,82 @@
-using System.Xml;
-using System.Xml.Linq;
+using Bennewitz.Ninja.XamlQuality;
+using Bennewitz.Ninja.XamlQuality.Rules;
 
 namespace Bennewitz.Ninja.DiffView.Tests;
 
 /// <summary>
 /// Every button and every other input control the repository writes in markup carries a tooltip: Brian's rule,
-/// held here since 2026-11-10, when the review window was found with seven buttons and not one tooltip. Read from
-/// the markup under <c>src</c>, each project's build output pruned as the walk descends rather than visited.
+/// held here since 2026-11-10, when the review window was found with seven buttons and not one tooltip.
 /// </summary>
 /// <remarks>
-/// A tooltip counts where markup gives it, as the attribute or as the property element. A control built in code
-/// is not markup and is not read here, and a tooltip a style setter gave would be read as missing, which no
-/// markup of this repository does.
+/// <para>
+/// <c>BNXQ1011</c>, from <c>Bennewitz.Ninja.XamlQuality</c> <c>2026.4.1111</c>, which Inspections shipped on this
+/// repository's asking and which took over from this class's own scan of the markup in open item 40. It reads the
+/// seventeen input controls that scan read, by local name, and leaves out a <c>MenuItem</c>, whose header is its
+/// label. A tooltip counts in any framework's spelling, as an attribute or as a property element that sets
+/// something, and a blank one is reported as empty, which the scan it replaced passed. A control in a
+/// <c>ControlTheme</c>'s template is checked where it is written, which is where every input control of the
+/// library's is.
+/// </para>
+/// <para>
+/// ⛔ <b>Only markup.</b> A control built in code, or a tooltip set in code, is not seen, as it was not before.
+/// </para>
 /// </remarks>
 public sealed class TooltipCoverageTests
 {
-    /// <summary>The controls a person presses, ticks, picks from or types into.</summary>
-    private static readonly HashSet<string> InputControls = new(StringComparer.Ordinal)
-    {
-        "AutoCompleteBox", "Button", "CalendarDatePicker", "CheckBox", "ComboBox", "DatePicker", "DropDownButton",
-        "NumericUpDown", "RadioButton", "RepeatButton", "Slider", "SplitButton", "TextBox", "TimePicker",
-        "ToggleButton", "ToggleSplitButton", "ToggleSwitch",
-    };
+    /// <summary>
+    /// The input controls in the library's markup: its find bar's, its status strip's and each view's banner action.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>A floor at the population, as the scan this class held set it.</b> A control taken away trips it as
+    /// surely as markup the scan stopped reaching, so the floor moves in the change that takes one away.
+    /// </remarks>
+    private const int LibraryFloor = 15;
 
-    /// <summary>Build output, which holds copies of the markup and is never descended.</summary>
-    private static readonly HashSet<string> Pruned = new(StringComparer.OrdinalIgnoreCase) { "bin", "obj" };
-
-    private const string Xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+    /// <summary>The review window's seven buttons: a floor of the same kind as <see cref="LibraryFloor"/>.</summary>
+    private const int BaselineFloor = 7;
 
     [Fact]
     public void Every_input_control_the_repository_writes_in_markup_carries_a_tooltip()
     {
-        string src = RepoPaths.Source("src");
-        Dictionary<string, int> read = new(StringComparer.Ordinal);
-        List<string> missing = [];
-        foreach (string file in MarkupUnder(src))
-        {
-            string relative = Path.GetRelativePath(src, file);
-            string project = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0];
-            IEnumerable<XElement> controls = XDocument.Load(file, LoadOptions.SetLineInfo)
-                .Descendants()
-                .Where(e => InputControls.Contains(e.Name.LocalName));
-            foreach (XElement control in controls)
-            {
-                read[project] = read.GetValueOrDefault(project) + 1;
-                bool tooltip = control.Attributes().Any(a => a.Name.LocalName == "ToolTip.Tip")
-                    || control.Elements().Any(e => e.Name.LocalName == "ToolTip.Tip");
-                if (!tooltip)
-                {
-                    string name = control.Attribute(XName.Get("Name", Xaml))?.Value ?? control.Attribute("Name")?.Value ?? "with no name";
-                    missing.Add($"{relative}:{((IXmlLineInfo)control).LineNumber} {control.Name.LocalName} {name}");
-                }
-            }
-        }
+        // ⛔ Each subject is derived from the one root, and the three account for the whole scan, as in
+        // AccessibilityCoverageTests: a floor is satisfied by a subject that has swallowed the scan, and the
+        // accounting below is false of one.
+        XamlScanContext all = XamlScanContext.Load(RepoPaths.Source("src"));
+        InputTooltipRule rule = new();
+        XamlRuleResult result = rule.Analyze(all);
 
-        // ⭐ A reading that finds nothing missing because it read nothing is no reading: the library's markup and
-        // the review window's each hold input controls, and each is held to having been read.
-        int library = read.GetValueOrDefault("DiffView.Avalonia");
-        int baseline = read.GetValueOrDefault("AgentBaseline");
-        Assert.True(library >= 15, $"The scan read {library} input controls in DiffView.Avalonia's markup, which holds 15: it is not reading what it should.");
-        Assert.True(baseline >= 7, $"The scan read {baseline} input controls in AgentBaseline's markup, which holds 7: it is not reading what it should.");
-        Assert.True(missing.Count == 0, $"Input controls with no tooltip:{Environment.NewLine}{string.Join(Environment.NewLine, missing)}");
-    }
+        // ⛔ Skipped FIRST. A control with no tooltip of its own that a style or a theme in the scan may give one is
+        // named there rather than checked, and a tooltip a selector may or may not deliver is not one to count on.
+        Assert.True(
+            result.Skipped.Count == 0,
+            "BNXQ1011 found input controls with no tooltip of their own that a style or a theme may give one, which "
+            + "markup cannot decide, so it could not check them. Give each a tooltip of its own:" + Environment.NewLine
+            + string.Join(Environment.NewLine, result.Skipped.Select(s => "  " + s)));
 
-    /// <summary>Every <c>.axaml</c> under <paramref name="directory"/>, build output pruned as the walk descends.</summary>
-    private static IEnumerable<string> MarkupUnder(string directory)
-    {
-        foreach (string file in Directory.EnumerateFiles(directory, "*.axaml"))
-        {
-            if (!file.EndsWith(".received.axaml", StringComparison.OrdinalIgnoreCase))
-            {
-                yield return file;
-            }
-        }
+        int library = rule.Analyze(XamlScanContext.Load(Path.Combine(all.Root, "DiffView.Avalonia"))).Inspected;
+        Assert.True(
+            library >= LibraryFloor,
+            $"BNXQ1011 inspected {library} input controls in the library's markup, which holds {LibraryFloor}: the scan "
+            + "is not reading what it should, and a clean result would mean nothing.");
 
-        foreach (string child in Directory.EnumerateDirectories(directory))
-        {
-            if (!Pruned.Contains(Path.GetFileName(child)))
-            {
-                foreach (string file in MarkupUnder(child))
-                {
-                    yield return file;
-                }
-            }
-        }
+        int baseline = rule.Analyze(XamlScanContext.Load(Path.Combine(all.Root, "AgentBaseline"))).Inspected;
+        Assert.True(
+            baseline >= BaselineFloor,
+            $"BNXQ1011 inspected {baseline} input controls in the review window's markup, which holds {BaselineFloor}: "
+            + "the scan is not reading what it should, and a clean result would mean nothing.");
+
+        int demo = rule.Analyze(XamlScanContext.Load(Path.Combine(all.Root, "DiffView.Demo"))).Inspected;
+        Assert.True(
+            library + demo + baseline == result.Inspected,
+            $"The library's {library} input controls, the demo's {demo} and the review window's {baseline} do not "
+            + $"account for the {result.Inspected} the whole scan inspected. More means one subject has swallowed "
+            + "another, which no floor can see; fewer means markup under src that no subject holds, which wants a "
+            + "subject and a floor of its own.");
+
+        Assert.True(
+            result.Findings.Count == 0,
+            "Input controls with no tooltip, or an empty one, so nothing tells the person pointing at them what they "
+            + "do:" + Environment.NewLine
+            + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
     }
 }
