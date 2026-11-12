@@ -1,0 +1,107 @@
+{
+  // A range a host marks is shaded row by row, plan 00035: EmphasisTests, the presenter's half. Five edits put the
+  // shade somewhere other than the marked lines' own rows, one draws nothing where it reports a row, one reads the
+  // range a line early and one lets its end wrap past int.MaxValue, one shades a fold only when the range holds the
+  // fold's first line, one draws the shade under the row tints, one leaves a faulted renderer off after a new model,
+  // and one reports a fault under another name; the green one swaps the two halves of an or.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/emphasis.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.Presenter.EmphasisTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/Presenter/EmphasisTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the shade starts at the padding above a line rather than at the line's own row",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "line.VisualTop - scrollY + padding.Above * lineHeight",
+      "new": "line.VisualTop - scrollY",
+      "killer": "The_shade_covers_exactly_the_marked_lines_rows_and_no_padding_row",
+      "says": "is shaded at"
+    },
+    {
+      "name": "the shade stays where it was when the pane scrolls",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "line.VisualTop - scrollY + padding.Above",
+      "new": "line.VisualTop + padding.Above",
+      "killer": "The_shade_covers_exactly_the_marked_lines_rows_and_no_padding_row",
+      "says": "is shaded at"
+    },
+    {
+      "name": "the shade stops half way across the text area",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "padding.Above * lineHeight, width, lineHeight);",
+      "new": "padding.Above * lineHeight, width / 2, lineHeight);",
+      "killer": "The_shade_covers_exactly_the_marked_lines_rows_and_no_padding_row",
+      "says": "is shaded at"
+    },
+    {
+      "name": "a row is reported shaded and nothing is drawn",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "            drawingContext.FillRectangle(brush, row);\n",
+      "new": "",
+      "killer": "The_shade_covers_exactly_the_marked_lines_rows_and_no_padding_row",
+      "says": "the shade over"
+    },
+    {
+      "name": "the range is read as 1-based, so the shade starts a line early",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "long first = (long)range.Start + 1;",
+      "new": "long first = (long)range.Start;",
+      "killer": "The_shade_covers_exactly_the_marked_lines_rows_and_no_padding_row",
+      "says": "where it should shade"
+    },
+    {
+      "name": "a count carrying the end past int.MaxValue wraps round to a range that shades nothing",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "long last = (long)range.Start + range.Count;",
+      "new": "long last = range.Start + range.Count;",
+      "killer": "A_range_past_the_end_shades_the_lines_there_are_and_throws_nothing",
+      "says": "a count carrying the end past int.MaxValue shaded lines"
+    },
+    {
+      "name": "a fold's row is shaded only when the range holds the fold's first line",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "if (lastLine < first || firstLine > last)",
+      "new": "if (firstLine < first || firstLine > last)",
+      "killer": "A_fold_reaching_into_the_range_shades_its_placeholders_row",
+      "says": "a range inside the fold shaded"
+    },
+    {
+      "name": "the shade is drawn under the row tints",
+      "file": "src/DiffView.Avalonia/DiffPanePresenter.cs",
+      "old": "        TextArea.TextView.BackgroundRenderers.Add(_backgroundRenderer);\n        // The emphasis shares KnownLayer.Background with the row fills and is drawn after them, so\n        // a marked changed row still shows its kind through the shade.\n        TextArea.TextView.BackgroundRenderers.Add(_emphasisRenderer);\n",
+      "new": "        TextArea.TextView.BackgroundRenderers.Add(_emphasisRenderer);\n        TextArea.TextView.BackgroundRenderers.Add(_backgroundRenderer);\n",
+      "killer": "The_shade_covers_exactly_the_marked_lines_rows_and_no_padding_row",
+      "says": "the emphasis is background renderer"
+    },
+    {
+      "name": "a new model leaves a faulted emphasis renderer off",
+      "file": "src/DiffView.Avalonia/DiffPanePresenter.cs",
+      "old": "        _emphasisRenderer.Reset();\n",
+      "new": "",
+      "killer": "A_throwing_renderer_reports_once_disables_itself_and_a_new_model_turns_it_back_on",
+      "says": "a new model left the emphasis renderer disabled"
+    },
+    {
+      "name": "a fault is reported under a name that is not the renderer's",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": ": base(owner, KnownLayer.Background, nameof(EmphasisRenderer))",
+      "new": ": base(owner, KnownLayer.Background, \"Emphasis\")",
+      "killer": "A_throwing_renderer_reports_once_disables_itself_and_a_new_model_turns_it_back_on",
+      "says": "the fault names"
+    },
+    {
+      "name": "the two halves of the test that skips a line swap places",
+      "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
+      "old": "if (lastLine < first || firstLine > last)",
+      "new": "if (firstLine > last || lastLine < first)",
+      "expect": "green",
+      "because": "an or of two comparisons with no side effects commutes, so the same visual lines are skipped"
+    }
+  ]
+}
