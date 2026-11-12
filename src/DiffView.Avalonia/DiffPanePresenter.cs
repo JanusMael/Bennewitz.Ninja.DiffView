@@ -83,6 +83,7 @@ public class DiffPanePresenter : TextEditor
     private readonly FoldPlaceholderGenerator _foldGenerator;
     private readonly PaddingHeightPrimer _primer = new();
     private readonly DiffLineBackgroundRenderer _backgroundRenderer;
+    private readonly EmphasisRenderer _emphasisRenderer;
     private readonly SearchMatchRenderer _searchRenderer;
     private readonly DiffSelectionRenderer _selectionRenderer;
     private readonly DiffCaretRenderer _caretRenderer;
@@ -95,6 +96,7 @@ public class DiffPanePresenter : TextEditor
     private bool _syntaxDisabled;
     private WordDiffLookup? _wordDiffLookup;
     private ChangeBlock? _currentBlock;
+    private LineRange? _emphasis;
     private RowProjection? _projection;
     private IReadOnlyList<FindMatch> _searchMatches = [];
     private FindMatch? _currentSearchMatch;
@@ -154,10 +156,14 @@ public class DiffPanePresenter : TextEditor
         TextArea.TextView.ElementGenerators.Add(_foldGenerator);
 
         _backgroundRenderer = new DiffLineBackgroundRenderer(this);
+        _emphasisRenderer = new EmphasisRenderer(this);
         _searchRenderer = new SearchMatchRenderer(this);
         _selectionRenderer = new DiffSelectionRenderer(this);
         _caretRenderer = new DiffCaretRenderer(this);
         TextArea.TextView.BackgroundRenderers.Add(_backgroundRenderer);
+        // The emphasis shares KnownLayer.Background with the row fills and is drawn after them, so
+        // a marked changed row still shows its kind through the shade.
+        TextArea.TextView.BackgroundRenderers.Add(_emphasisRenderer);
         // The search and selection renderers share KnownLayer.Selection and are drawn in list
         // order: matches first, so a selected match still reads as selected.
         TextArea.TextView.BackgroundRenderers.Add(_searchRenderer);
@@ -624,6 +630,27 @@ public class DiffPanePresenter : TextEditor
     }
 
     /// <summary>
+    /// The range of this side's lines the host marks, 0-based, which the emphasis renderer shades; <c>null</c> for
+    /// none. The view assigns its <c>LeftEmphasis</c> or <c>RightEmphasis</c>. The range is the host's: the pane never
+    /// writes it, never moves it with an edit and keeps it across a new document, and lines past the document's end
+    /// are not there to shade.
+    /// </summary>
+    internal LineRange? Emphasis
+    {
+        get => _emphasis;
+        set
+        {
+            if (_emphasis == value)
+            {
+                return;
+            }
+
+            _emphasis = value;
+            TextArea.TextView.InvalidateLayer(KnownLayer.Background);
+        }
+    }
+
+    /// <summary>
     /// The folds in force, which the background renderer places the current block's border
     /// through; <c>null</c> when nothing is folded. A row is a pixel only once it is a visible row,
     /// and which rows are hidden is the hosting view's to say: it assigns this with the pane's
@@ -732,6 +759,8 @@ public class DiffPanePresenter : TextEditor
 
     internal DiffLineBackgroundRenderer BackgroundRenderer => _backgroundRenderer;
 
+    internal EmphasisRenderer EmphasisRenderer => _emphasisRenderer;
+
     internal SearchMatchRenderer SearchRenderer => _searchRenderer;
 
     internal DiffCaretRenderer CaretRenderer => _caretRenderer;
@@ -759,6 +788,12 @@ public class DiffPanePresenter : TextEditor
 
     /// <summary>Replaces the grammar install; a test seam for provoking a syntax fault.</summary>
     internal Action<SyntaxGrammar>? SyntaxInstallerForTesting { get; set; }
+
+    /// <summary>Replaces the range the emphasis renderer reads; a test seam for provoking a renderer fault.</summary>
+    internal Func<LineRange?>? EmphasisSourceForTesting { get; set; }
+
+    /// <summary>The range the emphasis renderer shades: <see cref="Emphasis"/>, unless a test replaced its source.</summary>
+    internal LineRange? EmphasisToDraw => EmphasisSourceForTesting is { } source ? source() : _emphasis;
 
     /// <summary>
     /// Whether the grammar has given every line of the pane its tokens; a test seam, so a test that captures a whole
@@ -802,6 +837,7 @@ public class DiffPanePresenter : TextEditor
         _caretNormalisationDisabled = false;
         _generator.Reset();
         _backgroundRenderer.Reset();
+        _emphasisRenderer.Reset();
         _searchRenderer.Reset();
         _selectionRenderer.Reset();
         _caretRenderer.Reset();
