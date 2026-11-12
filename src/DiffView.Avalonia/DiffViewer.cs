@@ -167,6 +167,14 @@ public class DiffViewer : TemplatedControl, IDiffSurface
     public static readonly StyledProperty<FontFamily?> PaneFontFamilyProperty =
         SideBySideDiffView.PaneFontFamilyProperty.AddOwner<DiffViewer>();
 
+    /// <summary>Identifies the <see cref="LeftEmphasis"/> property.</summary>
+    public static readonly StyledProperty<LineRange?> LeftEmphasisProperty =
+        SideBySideDiffView.LeftEmphasisProperty.AddOwner<DiffViewer>();
+
+    /// <summary>Identifies the <see cref="RightEmphasis"/> property.</summary>
+    public static readonly StyledProperty<LineRange?> RightEmphasisProperty =
+        SideBySideDiffView.RightEmphasisProperty.AddOwner<DiffViewer>();
+
     /// <summary>Identifies the <see cref="LeftPaneName"/> property.</summary>
     public static readonly StyledProperty<string> LeftPaneNameProperty =
         SideBySideDiffView.LeftPaneNameProperty.AddOwner<DiffViewer>();
@@ -472,6 +480,32 @@ public class DiffViewer : TemplatedControl, IDiffSurface
     {
         get => GetValue(PaneFontFamilyProperty);
         set => SetValue(PaneFontFamilyProperty, value);
+    }
+
+    /// <summary>
+    /// A range of the left side's lines the host marks, 0-based, or <c>null</c> — the default — for none. The left
+    /// pane shades each marked line's row, over the row tints and under the selection, and never the padding the
+    /// right side's lines put above a line; a fold reaching into the range shades its row. The range is the host's:
+    /// the control never writes it and keeps it across a new <see cref="LeftSource"/>. Lines past the document's end
+    /// are not shaded.
+    /// </summary>
+    public LineRange? LeftEmphasis
+    {
+        get => GetValue(LeftEmphasisProperty);
+        set => SetValue(LeftEmphasisProperty, value);
+    }
+
+    /// <summary>
+    /// A range of the right side's lines the host marks, 0-based, or <c>null</c> — the default — for none. The right
+    /// pane shades each marked line's row, over the row tints and under the selection, and never the padding the
+    /// left side's lines put above a line; a fold reaching into the range shades its row. The range is the host's:
+    /// the control never writes it and keeps it across a new <see cref="RightSource"/>. Lines past the document's end
+    /// are not shaded.
+    /// </summary>
+    public LineRange? RightEmphasis
+    {
+        get => GetValue(RightEmphasisProperty);
+        set => SetValue(RightEmphasisProperty, value);
     }
 
     /// <summary>The left pane's automation name, from <see cref="DiffViewStrings"/>.</summary>

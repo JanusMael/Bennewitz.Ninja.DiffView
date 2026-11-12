@@ -810,6 +810,7 @@ internal sealed class DiffBuildController
         pane.SyntaxFileName = SyntaxFileNameOf(side == DiffSide.Left ? LeftSource : RightSource);
         ApplyDisplayOptions(pane);
         ApplyPaneFont(pane);
+        pane.Emphasis = side == DiffSide.Left ? LeftEmphasis : RightEmphasis;
         // The left bar is hidden and the right one reflects both: after priming the extents are equal.
         pane.VerticalScrollBarVisibility = side == DiffSide.Left ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Auto;
         pane.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
@@ -1514,6 +1515,10 @@ internal sealed class DiffBuildController
 
     internal MinimapPlacement MinimapPlacement => Control.GetValue(SideBySideDiffView.MinimapPlacementProperty);
 
+    internal LineRange? LeftEmphasis => Control.GetValue(SideBySideDiffView.LeftEmphasisProperty);
+
+    internal LineRange? RightEmphasis => Control.GetValue(SideBySideDiffView.RightEmphasisProperty);
+
     // ── The two documents ──────────────────────────────────────────────────────────────────
 
     // The storage is the controller's; the notification is the surface's, because the editor
@@ -1995,6 +2000,20 @@ internal sealed class DiffBuildController
                  || change.Property == SideBySideDiffView.PaneFontFamilyProperty)
         {
             ForEachPane(ApplyPaneFont);
+        }
+        else if (change.Property == SideBySideDiffView.LeftEmphasisProperty)
+        {
+            if (_leftPane is not null)
+            {
+                _leftPane.Emphasis = LeftEmphasis;
+            }
+        }
+        else if (change.Property == SideBySideDiffView.RightEmphasisProperty)
+        {
+            if (_rightPane is not null)
+            {
+                _rightPane.Emphasis = RightEmphasis;
+            }
         }
         else if (change.Property == SideBySideDiffView.ShowHeadersProperty
                  || change.Property == SideBySideDiffView.ShowStatusStripProperty)

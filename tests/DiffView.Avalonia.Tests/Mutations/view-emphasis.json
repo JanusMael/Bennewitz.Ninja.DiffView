@@ -1,0 +1,68 @@
+{
+  // A host's range of each side's lines reaches that side's pane on both of AGENTS.md §6's paths, on the editor and
+  // on the viewer, and stays the host's, plan 00035: EmphasisViewTests. Two edits break the template path, one by
+  // swapping the sides and one by leaving the panes unset; two break the path a change takes, one by handing the
+  // left pane the right's range and one by leaving the right's branch unreachable; and one has a new document forget
+  // the range. The green one swaps two member declarations, which no caller sees the order of. That the viewer's
+  // two are the editor's own registrations is SharedRegistrationTests', which reads every property it carries.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/view-emphasis.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.Composite.EmphasisViewTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/Composite/EmphasisViewTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the template path hands each pane the other side's range",
+      "file": "src/DiffView.Avalonia/DiffBuildController.cs",
+      "old": "pane.Emphasis = side == DiffSide.Left ? LeftEmphasis : RightEmphasis;",
+      "new": "pane.Emphasis = side == DiffSide.Left ? RightEmphasis : LeftEmphasis;",
+      "killer": "The_editors_ranges_set_before_the_template_applies_reach_their_own_panes",
+      "says": "the editor, before the template"
+    },
+    {
+      "name": "the template path leaves both panes without the range a host set before it",
+      "file": "src/DiffView.Avalonia/DiffBuildController.cs",
+      "old": "        pane.Emphasis = side == DiffSide.Left ? LeftEmphasis : RightEmphasis;\n",
+      "new": "",
+      "killer": "The_viewers_ranges_set_before_the_template_applies_reach_their_own_panes",
+      "says": "the viewer, before the template"
+    },
+    {
+      "name": "a change to the left range hands the left pane the right's",
+      "file": "src/DiffView.Avalonia/DiffBuildController.cs",
+      "old": "                _leftPane.Emphasis = LeftEmphasis;",
+      "new": "                _leftPane.Emphasis = RightEmphasis;",
+      "killer": "The_editors_ranges_set_after_load_reach_their_own_panes_and_are_shaded",
+      "says": "the editor, after load"
+    },
+    {
+      "name": "a change to the right range is matched as the left's, whose branch answered first, and reaches no pane",
+      "file": "src/DiffView.Avalonia/DiffBuildController.cs",
+      "old": "        else if (change.Property == SideBySideDiffView.RightEmphasisProperty)",
+      "new": "        else if (change.Property == SideBySideDiffView.LeftEmphasisProperty)",
+      "killer": "The_viewers_ranges_set_after_load_reach_their_own_panes_and_are_shaded",
+      "says": "the viewer, after load"
+    },
+    {
+      "name": "a new document forgets the range its pane was given",
+      "file": "src/DiffView.Avalonia/DiffPanePresenter.cs",
+      "old": "        _foldGenerator.SetFolds([]);\n        RequestPrime();\n",
+      "new": "        _foldGenerator.SetFolds([]);\n        Emphasis = null;\n        RequestPrime();\n",
+      "killer": "The_range_is_the_hosts_so_an_edit_and_a_new_source_leave_it_where_it_was",
+      "says": "after a new source the pane's range is"
+    },
+    {
+      "name": "the two ranges' accessors swap places in the controller",
+      "file": "src/DiffView.Avalonia/DiffBuildController.cs",
+      "old": "    internal LineRange? LeftEmphasis => Control.GetValue(SideBySideDiffView.LeftEmphasisProperty);\n\n    internal LineRange? RightEmphasis => Control.GetValue(SideBySideDiffView.RightEmphasisProperty);\n",
+      "new": "    internal LineRange? RightEmphasis => Control.GetValue(SideBySideDiffView.RightEmphasisProperty);\n\n    internal LineRange? LeftEmphasis => Control.GetValue(SideBySideDiffView.LeftEmphasisProperty);\n",
+      "expect": "green",
+      "because": "a class's members have no order the code that reads them can see"
+    }
+  ]
+}
