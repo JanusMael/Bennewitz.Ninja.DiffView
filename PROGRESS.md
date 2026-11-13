@@ -1702,6 +1702,15 @@ wording.
     from the caret. A host cannot draw it right, aligned rows carrying the other file's padding, which only the library
     tells from text. A plan comes first, the change being public API.
 
+    ⏳ **Plan 00035, approved 2026-11-12, builds it on `feat/a-host-marks-a-range-of-lines`, not yet pushed.** A
+    shaded row rather than the text bands asked for, decision 4: two lines' bands leave a gap between them, rows touch.
+    From step 3's frames Brian chose the fill plus a 2 px bar down the glyph column's outer edge, which reverses the
+    plan's dismissed mark in the gutter and is in `DECISIONS.md` as his. Committed there: the approval, the token
+    (step 1), the presenter's renderer (step 2), the views' two properties (step 3's code), the bar, the library's
+    record (step 4) and AgentBaseline's marks (step 5). Open: the two emphasis frames, rendered on Linux at the bar's
+    commit and with Brian for his last look, committed only on his word; then the owed proof sets, a full gate run,
+    the suite, the record and his look at the review window.
+
 37. **Three tests read the building state with nothing holding the builds — found on `main`, 2026-11-10.**
     `ViewerStateTests.All_three_views_carry_the_same_pseudo_classes_through_the_same_states` went red in `main`'s
     Culture Leg on `99dd297`, the editor already `:ready` where it asserted `:building`, though #52 touched nothing it

@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using AvaloniaEdit.Editing;
 using Bennewitz.Ninja.DiffView;
+using Bennewitz.Ninja.DiffView.Core;
 
 namespace Bennewitz.Ninja.AgentBaseline;
 
@@ -143,6 +144,10 @@ internal sealed partial class ReviewWindow : Window
         ReviewSession review = session!;
         if (forward ? review.Next() : review.Previous())
         {
+            // The right shows another candidate, whose lines a mark there never named, and the mark goes with the
+            // line it agrees with, on either side.
+            View.LeftEmphasis = null;
+            View.RightEmphasis = null;
             sectionSpoken = null;
             leftSectionSaid = null;
             ShowPosition();
@@ -203,7 +208,7 @@ internal sealed partial class ReviewWindow : Window
     private void OnDrop()
     {
         ReviewSession review = session!;
-        if (review.AccumulatorPathAt(CaretLine(SideBySideDiffView.LeftPanePart)) is not { } path)
+        if (review.AccumulatorSectionAt(CaretLine(SideBySideDiffView.LeftPanePart))?.HeadingPath is not { } path)
         {
             Say("Nothing to drop: the caret in the left pane is above its first heading, in no section.");
             return;
@@ -324,8 +329,8 @@ internal sealed partial class ReviewWindow : Window
     }
 
     /// <summary>
-    /// Says what the durable store knows about the candidate's section at the right pane's caret, once the
-    /// caret is in a section other than the one last said.
+    /// Marks the candidate's section at the right pane's caret, and says what the durable store knows about
+    /// it once the caret is in a section other than the one last said.
     /// </summary>
     private void OnRightCaretMoved(object? sender, EventArgs e)
     {
@@ -335,6 +340,7 @@ internal sealed partial class ReviewWindow : Window
         }
 
         MarkdownSection? section = review.CandidateSectionAt(caret.Line);
+        Mark(DiffSide.Right, section);
         if (ReferenceEquals(section, sectionSpoken))
         {
             return;
@@ -349,10 +355,11 @@ internal sealed partial class ReviewWindow : Window
     }
 
     /// <summary>
-    /// Names the accumulator's section at the left pane's caret, the one Drop acts on, once the caret is in a
-    /// section other than the one last said for it; and once the left has spoken, the right's next move speaks
-    /// again. A take or a drop moves this caret while it edits, and the verb's outcome is said after that, so
-    /// the section the edit left the caret in is remembered and its outcome stands.
+    /// Marks the accumulator's section at the left pane's caret, the one Drop acts on, and names it once the
+    /// caret is in a section other than the one last said for it; and once the left has spoken, the right's next
+    /// move speaks again. A take or a drop moves this caret while it edits, and the verb's outcome is said after
+    /// that, so the section the edit left the caret in is remembered and its outcome stands. The mark is read
+    /// again on every move, typing included, because typing can move a section's end under the same heading.
     /// </summary>
     private void OnLeftCaretMoved(object? sender, EventArgs e)
     {
@@ -361,7 +368,9 @@ internal sealed partial class ReviewWindow : Window
             return;
         }
 
-        string? path = review.AccumulatorPathAt(caret.Line);
+        MarkdownSection? section = review.AccumulatorSectionAt(caret.Line);
+        Mark(DiffSide.Left, section);
+        string? path = section?.HeadingPath;
         if (string.Equals(path, leftSectionSaid, StringComparison.Ordinal))
         {
             return;
@@ -373,6 +382,18 @@ internal sealed partial class ReviewWindow : Window
             Say($"{MarkdownOutline.Spoken(path)} — in the baseline; Drop removes it.");
             sectionSpoken = null;
         }
+    }
+
+    /// <summary>
+    /// Marks <paramref name="section"/> in <paramref name="side"/>'s pane, from its heading to its last line of
+    /// text, and clears the other pane's: the mark is in the pane whose caret moved last, so it and the line
+    /// under the panes name one section. A caret in no section, the preamble's among them, marks nothing.
+    /// </summary>
+    private void Mark(DiffSide side, MarkdownSection? section)
+    {
+        LineRange? range = section is null ? null : new LineRange(section.FirstLine - 1, section.ContentLastLine - section.FirstLine + 1);
+        View.LeftEmphasis = side == DiffSide.Left ? range : null;
+        View.RightEmphasis = side == DiffSide.Right ? range : null;
     }
 
     /// <summary>

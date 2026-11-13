@@ -146,11 +146,10 @@ internal sealed class ReviewSession
     internal MarkdownSection? CandidateSectionAt(int line) => SectionAt(Current.Candidate.Document.Outline, line);
 
     /// <summary>
-    /// The heading path of the accumulator's section that governs 1-based <paramref name="line"/> of the
-    /// left pane, read from a parse of the left's live text, or <see langword="null"/> for a line in no
-    /// section.
+    /// The accumulator's section that governs 1-based <paramref name="line"/> of the left pane, read from a
+    /// parse of the left's live text, or <see langword="null"/> for a line in no section.
     /// </summary>
-    internal string? AccumulatorPathAt(int line) => SectionAt(MarkdownOutline.Read(view.LeftDocument.Text), line)?.HeadingPath;
+    internal MarkdownSection? AccumulatorSectionAt(int line) => SectionAt(MarkdownOutline.Read(view.LeftDocument.Text), line);
 
     /// <summary>
     /// Shows the next candidate. At the last there is none, so nothing moves and the answer is

@@ -3,8 +3,8 @@
   // command line, the plan it reads, what is said before the window opens, the window opened on it, and
   // the line under the panes that says what the durable store knows about the section at the right
   // pane's caret — and, since 2026-11-10, names the baseline's section at the left one, whichever moved
-  // last, in a band of its own. Every test in the two files is held to it: a full run fails while any is
-  // killed by none.
+  // last, in a band of its own, and since plan 00035 shades that section in its pane. Every test in the two
+  // files is held to it: a full run fails while any is killed by none.
   //
   //   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/startup.json
   //
@@ -461,6 +461,62 @@
       "old": "Background=\"{DynamicResource DiffView.StatusActiveBackgroundBrush}\"",
       "new": "Background=\"{DynamicResource DiffView.HeaderBackgroundBrush}\"",
       "killer": "The_line_stands_in_a_band_shown_only_while_it_has_something_to_say"
+    },
+    {
+      "name": "the right caret marks nothing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "        Mark(DiffSide.Right, section);\n",
+      "new": "",
+      "killer": "The_mark_follows_the_caret_that_moved_last_and_leaves_the_other_pane_unmarked",
+      "says": "after the right caret went into One"
+    },
+    {
+      "name": "a mark leaves the other pane's in place",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "View.LeftEmphasis = side == DiffSide.Left ? range : null;",
+      "new": "View.LeftEmphasis = side == DiffSide.Left ? range : View.LeftEmphasis;",
+      "killer": "The_mark_follows_the_caret_that_moved_last_and_leaves_the_other_pane_unmarked",
+      "says": "after the right caret moved within One"
+    },
+    {
+      "name": "a mark runs on through the blank lines that end its section",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "section.ContentLastLine - section.FirstLine + 1",
+      "new": "section.LastLine - section.FirstLine + 1",
+      "killer": "A_mark_runs_from_its_sections_heading_to_its_last_line_of_text",
+      "says": "after the right caret went to One's last line, a blank one"
+    },
+    {
+      "name": "a mark starts a line below its heading",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "new LineRange(section.FirstLine - 1, ",
+      "new": "new LineRange(section.FirstLine, ",
+      "killer": "A_mark_runs_from_its_sections_heading_to_its_last_line_of_text",
+      "says": "after the right caret went to One's last line, a blank one"
+    },
+    {
+      "name": "a caret in no section keeps the mark it had",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "LineRange? range = section is null ? null : ",
+      "new": "LineRange? range = section is null ? (side == DiffSide.Left ? View.LeftEmphasis : View.RightEmphasis) : ",
+      "killer": "A_caret_in_no_section_marks_nothing_in_either_pane",
+      "says": "after the right caret went above the first heading"
+    },
+    {
+      "name": "a move to another candidate leaves the marks where they were",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "            View.LeftEmphasis = null;\n            View.RightEmphasis = null;\n            sectionSpoken = null;",
+      "new": "            sectionSpoken = null;",
+      "killer": "A_move_to_another_candidate_clears_the_mark_on_either_side",
+      "says": "after a move to the next candidate"
+    },
+    {
+      "name": "the left mark is read again only when the caret's heading path changes",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "        Mark(DiffSide.Left, section);\n        string? path = section?.HeadingPath;\n        if (string.Equals(path, leftSectionSaid, StringComparison.Ordinal))\n        {\n            return;\n        }\n\n        leftSectionSaid = path;\n",
+      "new": "        string? path = section?.HeadingPath;\n        if (string.Equals(path, leftSectionSaid, StringComparison.Ordinal))\n        {\n            return;\n        }\n\n        Mark(DiffSide.Left, section);\n        leftSectionSaid = path;\n",
+      "killer": "Typing_that_moves_a_sections_end_under_its_heading_moves_the_mark_with_it",
+      "says": "after a rule was typed under One's"
     },
     {
       "name": "a counted noun's arms swap with its negated test",
