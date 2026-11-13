@@ -48,6 +48,7 @@
     { "foreground": "DiffView.SelectionArrowBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "selection arrow outline in the gutter" },
     { "foreground": "DiffView.SelectionArrowFillBrush", "background": "DiffView.SelectionArrowBrush", "floor": 1.5, "purpose": "selection arrow fill inside its own outline" },
     { "foreground": "DiffView.ConnectorBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "connector in the gutter" },
+    { "foreground": "DiffView.EmphasisBarBrush", "background": "DiffView.GutterBackgroundBrush", "floor": 3.0, "purpose": "emphasis bar in the glyph column" },
 
     // Drawn on the host's own page surface: minimap ticks, connectors, the block border.
     { "foreground": "DiffView.MarkerInsertedBrush", "background": "$Page", "floor": 3.0, "purpose": "inserted tick on the host page" },

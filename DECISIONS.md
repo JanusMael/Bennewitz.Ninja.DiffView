@@ -5458,3 +5458,26 @@ mark reads over every kind. The selection sits 26.9 and 35.6 from the pane.
 **The audit moved by the token and by nothing else.** `theme-audit compat` rewrote both compat dictionaries unchanged,
 and `theme-audit report` counts 52 own keys where it counted 51 and 43 pairs where it counted 42, each at or above its
 floor, the digest of the themes folder moving with them.
+
+## A marked range has a bar in the glyph column
+
+Plan 00035, Brian's choice of 2026-11-13 from the frames step 3 puts to him. The shade alone did not read to him as
+indigo over green: over a row the diff has tinted, a translucent fill turns the tint into a new colour rather than
+looking laid over it, and a stronger fill is capped in Dark by the text it sits under, 4.73 at 20%. Shown the shade, a
+stronger shade, and the shade with a solid bar, on a frame whose marks end inside a block of added lines and one of
+deleted lines, he chose the bar; shown five places for it in the glyph column, the outer edge at 2 px.
+
+**It reverses one of the plan's dismissed alternatives**, *a mark in the gutter as well*, which held that the gutter's
+columns belong to the numbers, the copy arrows, the change markers and the modified-since-load bar. The bar takes
+nothing from them: the chips leave 2 px clear at each edge of the glyph column, the modified-since-load bar fills the
+inner one, and the emphasis bar fills the outer one, so it touches no chip or glyph and the orange bar never covers it.
+At the inner edge it would share the orange bar's place, which covers a 2 px bar on any edited line.
+
+**`DiffView.EmphasisBarBrush` is opaque, in the shade's hue**: `#3949AB` in Light, 7.03 against the gutter, and
+`#7986CB` in Dark, 4.44, where the shade's own `#5C6BC0` reads 3.15, too near the 3.0 floor of non-text UI. Its pair
+holds it to that floor against the gutter under every theme the audit reads.
+
+**The shade and the bar decide which rows are marked in one place**, `EmphasisRenderer.Marks`. The margin reads the
+presenter's emphasis itself rather than the renderer's test seam, so a fault provoked there stays the renderer's alone.
+That the margin is repainted when the range changes, like the background layer's invalidation, is beyond what a
+captured frame can show, AGENTS.md §5, and no mutation of it is in a set.

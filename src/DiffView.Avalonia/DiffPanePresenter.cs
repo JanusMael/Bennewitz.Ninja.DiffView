@@ -647,6 +647,7 @@ public class DiffPanePresenter : TextEditor
 
             _emphasis = value;
             TextArea.TextView.InvalidateLayer(KnownLayer.Background);
+            _changeMarkerMargin.InvalidateVisual();
         }
     }
 

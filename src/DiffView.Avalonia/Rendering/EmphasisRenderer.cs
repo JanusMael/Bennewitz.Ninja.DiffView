@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Media;
 using AvaloniaEdit.Rendering;
+using Bennewitz.Ninja.DiffView.Core;
 
 namespace Bennewitz.Ninja.DiffView;
 
@@ -17,7 +18,7 @@ internal readonly record struct EmphasisRow(int FirstLineNumber, int LastLineNum
 /// lines and is never shaded. A fold is one visual line spanning its run, so a fold reaching into the range shades its
 /// row; lines past the document's end are not there to shade. Draws on <see cref="KnownLayer.Background"/> after the
 /// <see cref="DiffLineBackgroundRenderer"/>: over the row tints and the current block's border, under the find
-/// matches, the selection and the text.
+/// matches, the selection and the text. The <see cref="ChangeMarkerMargin"/> runs a bar beside the same rows.
 /// </summary>
 internal sealed class EmphasisRenderer : GuardedBackgroundRenderer
 {
@@ -31,6 +32,20 @@ internal sealed class EmphasisRenderer : GuardedBackgroundRenderer
     /// <summary>The rows of the last frame, in order.</summary>
     public IReadOnlyList<EmphasisRow> LastDrawn => _lastDrawn;
 
+    /// <summary>
+    /// Whether <paramref name="line"/> carries a line of <paramref name="range"/>: a visual line spans its first
+    /// document line to its last, which differ only for a fold, so a fold reaching into the range is marked whole. The
+    /// one place the shade and the bar beside it decide which rows are marked.
+    /// </summary>
+    internal static bool Marks(LineRange range, VisualLine line)
+    {
+        // The range's lines, 1-based and inclusive, as the visual lines number theirs. In longs, because a host may
+        // hand over any two ints, and a start near the top of the range plus a count would wrap round to nothing.
+        long first = (long)range.Start + 1;
+        long last = (long)range.Start + range.Count;
+        return line.LastDocumentLine.LineNumber >= first && line.FirstDocumentLine.LineNumber <= last;
+    }
+
     protected override void DrawCore(TextView textView, DrawingContext drawingContext)
     {
         _lastDrawn.Clear();
@@ -40,19 +55,13 @@ internal sealed class EmphasisRenderer : GuardedBackgroundRenderer
             return;
         }
 
-        // The range's lines, 1-based and inclusive, as the visual lines number theirs. In longs, because a host may
-        // hand over any two ints, and a start near the top of the range plus a count would wrap round to nothing.
-        long first = (long)range.Start + 1;
-        long last = (long)range.Start + range.Count;
         double lineHeight = textView.DefaultLineHeight;
         double scrollY = textView.ScrollOffset.Y;
         IBrush brush = Owner.Palette[DiffBrush.Emphasis];
 
         foreach (VisualLine line in textView.VisualLines)
         {
-            int firstLine = line.FirstDocumentLine.LineNumber;
-            int lastLine = line.LastDocumentLine.LineNumber;
-            if (lastLine < first || firstLine > last)
+            if (!Marks(range, line))
             {
                 continue;
             }
@@ -60,7 +69,7 @@ internal sealed class EmphasisRenderer : GuardedBackgroundRenderer
             PaddingSpec padding = DiffLineBackgroundRenderer.PaddingOf(line);
             Rect row = new(0, line.VisualTop - scrollY + padding.Above * lineHeight, width, lineHeight);
             drawingContext.FillRectangle(brush, row);
-            _lastDrawn.Add(new EmphasisRow(firstLine, lastLine, row));
+            _lastDrawn.Add(new EmphasisRow(line.FirstDocumentLine.LineNumber, line.LastDocumentLine.LineNumber, row));
         }
     }
 }

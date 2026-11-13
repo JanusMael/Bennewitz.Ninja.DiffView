@@ -73,6 +73,8 @@
       <!-- A range a host marks: a fill over each marked line's row, over the row tints and
            under the selection and the find highlights -->
       <SolidColorBrush x:Key="DiffView.EmphasisBrush" Color="#1F3949AB" />
+      <!-- And a bar down the glyph column beside the marked rows: opaque, scored against the gutter -->
+      <SolidColorBrush x:Key="DiffView.EmphasisBarBrush" Color="#3949AB" />
 
       <!-- Headers and status strip -->
       <SolidColorBrush x:Key="DiffView.HeaderBackgroundBrush" Color="#F3F4F6" />
@@ -143,6 +145,8 @@
       <!-- A range a host marks: a fill over each marked line's row, over the row tints and
            under the selection and the find highlights -->
       <SolidColorBrush x:Key="DiffView.EmphasisBrush" Color="#2A5C6BC0" />
+      <!-- And a bar down the glyph column beside the marked rows: opaque, scored against the gutter -->
+      <SolidColorBrush x:Key="DiffView.EmphasisBarBrush" Color="#7986CB" />
 
       <!-- Headers and status strip -->
       <SolidColorBrush x:Key="DiffView.HeaderBackgroundBrush" Color="#2A2A2E" />

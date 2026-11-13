@@ -9,7 +9,8 @@ namespace Bennewitz.Ninja.DiffView;
 /// <summary>
 /// A one-character strip beside the line numbers: <c>+</c> for an inserted line, <c>−</c> for a
 /// deleted one, <c>≠</c> for a modified one, in the marker brush of the kind, at the line's text
-/// band; nothing for an unchanged line and nothing over padding space. One vocabulary of
+/// band; nothing for an unchanged line and nothing over padding space. Beside a range a host marks, a bar runs down
+/// the strip's outer edge. One vocabulary of
 /// mathematical operators, drawn semibold, so the kind is scannable down the gutter without
 /// relying on colour alone — see <see cref="GlyphFor"/> for why these three. The tooltip follows the pointer
 /// and, over a modified row whose line was too long for word-level pieces, says so.
@@ -20,6 +21,12 @@ internal sealed class ChangeMarkerMargin : DiffMargin
 
     /// <summary>The width of the modified-since-load bar down the margin's inner edge.</summary>
     private const double ModifiedBarWidth = 2;
+
+    /// <summary>
+    /// The width of the emphasis bar down the margin's outer edge: the clearance the chips leave there, as the
+    /// modified-since-load bar fills theirs at the inner edge.
+    /// </summary>
+    private const double EmphasisBarWidth = 2;
 
     /// <summary>
     /// The weight the markers are drawn at. A line number is read one at a time; a marker is
@@ -36,6 +43,7 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     private readonly List<(int LineNumber, DiffLineKind Kind)> _lastRendered = [];
     private readonly List<int> _lastModified = [];
     private readonly List<(Rect Bounds, DiffLineKind Kind)> _lastChips = [];
+    private readonly List<(int LineNumber, Rect Bounds)> _lastEmphasisBars = [];
 
     public ChangeMarkerMargin(DiffPanePresenter owner)
         : base(owner, nameof(ChangeMarkerMargin), DiffViewStrings.ChangeMarkersMarginName, "ChangeMarkers")
@@ -53,6 +61,9 @@ internal sealed class ChangeMarkerMargin : DiffMargin
     /// carries on past the viewport reports a rectangle that extends beyond it.
     /// </summary>
     public IReadOnlyList<(Rect Bounds, DiffLineKind Kind)> LastChips => _lastChips;
+
+    /// <summary>The emphasis bars of the last frame, one a marked row, in order, with the line each row is.</summary>
+    public IReadOnlyList<(int LineNumber, Rect Bounds)> LastEmphasisBars => _lastEmphasisBars;
 
     /// <summary>The marker glyph for <paramref name="kind"/>; <c>null</c> for an unchanged line.</summary>
     /// <remarks>
@@ -136,6 +147,7 @@ internal sealed class ChangeMarkerMargin : DiffMargin
         _lastRendered.Clear();
         _lastModified.Clear();
         _lastChips.Clear();
+        _lastEmphasisBars.Clear();
         PaneMetadata metadata = Owner.Metadata;
         double rowHeight = textView.DefaultLineHeight;
 
@@ -149,6 +161,7 @@ internal sealed class ChangeMarkerMargin : DiffMargin
         }
 
         RenderChips(context, metadata, rows, rowHeight);
+        RenderEmphasisBar(context, rows, rowHeight);
 
         foreach (Row row in rows)
         {
@@ -223,6 +236,32 @@ internal sealed class ChangeMarkerMargin : DiffMargin
             context.DrawRectangle(Owner.Palette.MarkerChipFor(kind), null, chip, radius, radius);
             _lastChips.Add((chip, kind));
             i = last + 1;
+        }
+    }
+
+    /// <summary>
+    /// The bar down the margin's outer edge beside every row of the range the host marks, the pane's emphasis. Over a
+    /// row the diff has tinted, the shade in the text only shifts the tint, so the bar is what shows the range's extent
+    /// whatever its rows' kinds. It fills the clearance the chips leave at the outer edge, as the modified-since-load
+    /// bar fills theirs at the inner one, and a row is the line's own, as the shade's is. It reads the emphasis itself,
+    /// not the renderer's test seam, so a fault provoked in the renderer stays the renderer's.
+    /// </summary>
+    private void RenderEmphasisBar(DrawingContext context, List<Row> rows, double rowHeight)
+    {
+        if (Owner.Emphasis is not { Count: > 0 } range)
+        {
+            return;
+        }
+
+        IBrush brush = Owner.Palette[DiffBrush.EmphasisBar];
+        foreach (Row row in rows)
+        {
+            if (EmphasisRenderer.Marks(range, row.Line))
+            {
+                Rect bar = new(0, row.RowTop, EmphasisBarWidth, rowHeight);
+                context.FillRectangle(brush, bar);
+                _lastEmphasisBars.Add((row.Number, bar));
+            }
         }
     }
 

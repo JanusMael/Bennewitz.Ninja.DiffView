@@ -69,14 +69,15 @@ public sealed class EmphasisTests
         }
 
         // Nothing else moved: the text above the range, the padding row between lines 7 and 8, the text below the
-        // range, and the gutter beside it.
+        // range, and the line numbers beside it. The glyph column's bar is the next test's.
         Point paneOrigin = host.ToWindow((Control)pane, new Point(0, 0));
+        double glyphColumn = host.ToWindow(pane.ChangeMarkerMargin, new Point(0, 0)).X;
         PixelRect[] untouched =
         [
             PixelProbe.Inside(origin.X, origin.Y, origin.X + width, origin.Y + rows[0].Top),
             PixelProbe.Inside(origin.X, origin.Y + rows[0].Bottom, origin.X + width, origin.Y + rows[1].Top),
             PixelProbe.Inside(origin.X, origin.Y + rows[2].Bottom, origin.X + width, origin.Y + view.Bounds.Height),
-            PixelProbe.Inside(paneOrigin.X, origin.Y + rows[0].Top, origin.X, origin.Y + rows[2].Bottom),
+            PixelProbe.Inside(paneOrigin.X, origin.Y + rows[0].Top, glyphColumn, origin.Y + rows[2].Bottom),
         ];
         foreach (PixelRect area in untouched)
         {
@@ -221,6 +222,67 @@ public sealed class EmphasisTests
         }
 
         AssertShaded(pane, [7], "line 7, after the fold");
+        Assert.Empty(pane.Faults);
+        host.Dispose();
+        TestLogSink.AssertNoWarnings();
+    }
+
+    [AvaloniaFact]
+    public void The_bar_runs_down_the_glyph_columns_outer_edge_beside_the_marked_rows_alone()
+    {
+        TestLogSink.Instance.Clear();
+        using PresenterHost host = PresenterHost.Small();
+        host.Show();
+        DiffPanePresenter pane = host.Left;
+        TextView view = pane.TextArea.TextView;
+        ChangeMarkerMargin margin = pane.ChangeMarkerMargin;
+
+        using WriteableBitmap before = host.Capture();
+        pane.Emphasis = new LineRange(6, 3);
+        using WriteableBitmap after = host.Capture();
+
+        // Beside lines 7 to 9 and nowhere else, the padding row above line 8 included: each bar is its line's own row,
+        // read from the height tree and the model's padding, at the margin's outer edge, two pixels wide.
+        int[] lines = [.. margin.LastEmphasisBars.Select(b => b.LineNumber)];
+        Assert.True(lines.SequenceEqual([7, 8, 9]), $"the bar runs beside lines [{string.Join(", ", lines)}]");
+        double lineHeight = view.DefaultLineHeight;
+        double scroll = view.ScrollOffset.Y;
+        foreach ((int line, Rect bar) in margin.LastEmphasisBars)
+        {
+            Rect expected = new(0, host.RowTopOfLine(pane, line) - scroll, 2, lineHeight);
+            Assert.True(
+                Math.Abs(bar.Left - expected.Left) < Tolerance && Math.Abs(bar.Top - expected.Top) < Tolerance
+                    && Math.Abs(bar.Width - expected.Width) < Tolerance && Math.Abs(bar.Height - expected.Height) < Tolerance,
+                $"line {line}'s bar is at {bar}, and its row's edge is {expected}");
+        }
+
+        // Painted in its own token, and the rest of the column as it was: the chips and glyphs beside the bar, and the
+        // edge beside the padding row.
+        Point column = host.ToWindow(margin, new Point(0, 0));
+        Color token = PresenterHost.Token("DiffView.EmphasisBarBrush");
+        int x = (int)Math.Floor(column.X + 1);
+        foreach ((int line, Rect bar) in margin.LastEmphasisBars)
+        {
+            int y = (int)(column.Y + bar.Top + lineHeight / 2);
+            Color painted = PixelProbe.At(after, x, y);
+            Assert.True(PresenterHost.Near(painted, token), $"line {line}'s bar is {painted}, where its token is {token}");
+        }
+
+        double top = column.Y + margin.LastEmphasisBars[0].Bounds.Top;
+        double bottom = column.Y + margin.LastEmphasisBars[^1].Bounds.Bottom;
+        double paddingTop = column.Y + view.GetVisualTopByDocumentLine(8) - scroll;
+        PixelRect[] untouched =
+        [
+            PixelProbe.Inside(column.X + 2, top, column.X + margin.Bounds.Width, bottom),
+            PixelProbe.Inside(column.X, paddingTop + 1, column.X + 2, paddingTop + lineHeight - 1, inset: 0),
+        ];
+        foreach (PixelRect area in untouched)
+        {
+            Assert.True(area.Width > 0 && area.Height > 0, $"{area} is empty, so it would show nothing");
+            (int count, PixelPoint? first) = PixelProbe.Differing(before, after, area);
+            Assert.True(count == 0, $"{count} pixels of the glyph column moved in {area}, the first at {first}");
+        }
+
         Assert.Empty(pane.Faults);
         host.Dispose();
         TestLogSink.AssertNoWarnings();
