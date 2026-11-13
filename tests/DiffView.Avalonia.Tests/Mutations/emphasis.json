@@ -3,7 +3,9 @@
   // shade somewhere other than the marked lines' own rows, one draws nothing where it reports a row, one reads the
   // range a line early and one lets its end wrap past int.MaxValue, one shades a fold only when the range holds the
   // fold's first line, one draws the shade under the row tints, one leaves a faulted renderer off after a new model,
-  // and one reports a fault under another name; the green one swaps the two halves of an or.
+  // and one reports a fault under another name. Five break the bar down the glyph column beside the marked rows: the
+  // edge it runs down, the padding it would reach over, its paint, its token and the rows it runs beside. The green one
+  // swaps the two halves of an and.
   //
   //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/emphasis.json
   //
@@ -66,8 +68,8 @@
     {
       "name": "a fold's row is shaded only when the range holds the fold's first line",
       "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
-      "old": "if (lastLine < first || firstLine > last)",
-      "new": "if (firstLine < first || firstLine > last)",
+      "old": "line.LastDocumentLine.LineNumber >= first && ",
+      "new": "line.FirstDocumentLine.LineNumber >= first && ",
       "killer": "A_fold_reaching_into_the_range_shades_its_placeholders_row",
       "says": "a range inside the fold shaded"
     },
@@ -96,12 +98,52 @@
       "says": "the fault names"
     },
     {
-      "name": "the two halves of the test that skips a line swap places",
+      "name": "the bar runs down the column's inner edge",
+      "file": "src/DiffView.Avalonia/Margins/ChangeMarkerMargin.cs",
+      "old": "Rect bar = new(0, row.RowTop, EmphasisBarWidth, rowHeight);",
+      "new": "Rect bar = new(Bounds.Width - EmphasisBarWidth, row.RowTop, EmphasisBarWidth, rowHeight);",
+      "killer": "The_bar_runs_down_the_glyph_columns_outer_edge_beside_the_marked_rows_alone",
+      "says": "'s bar is at"
+    },
+    {
+      "name": "the bar reaches up over the padding above a line",
+      "file": "src/DiffView.Avalonia/Margins/ChangeMarkerMargin.cs",
+      "old": "Rect bar = new(0, row.RowTop, EmphasisBarWidth, rowHeight);",
+      "new": "Rect bar = new(0, row.RowTop - rowHeight, EmphasisBarWidth, 2 * rowHeight);",
+      "killer": "The_bar_runs_down_the_glyph_columns_outer_edge_beside_the_marked_rows_alone",
+      "says": "'s bar is at"
+    },
+    {
+      "name": "a bar is reported and nothing is painted",
+      "file": "src/DiffView.Avalonia/Margins/ChangeMarkerMargin.cs",
+      "old": "                context.FillRectangle(brush, bar);\n",
+      "new": "",
+      "killer": "The_bar_runs_down_the_glyph_columns_outer_edge_beside_the_marked_rows_alone",
+      "says": "where its token is"
+    },
+    {
+      "name": "the bar is painted in the shade's translucent brush rather than its own",
+      "file": "src/DiffView.Avalonia/Margins/ChangeMarkerMargin.cs",
+      "old": "IBrush brush = Owner.Palette[DiffBrush.EmphasisBar];",
+      "new": "IBrush brush = Owner.Palette[DiffBrush.Emphasis];",
+      "killer": "The_bar_runs_down_the_glyph_columns_outer_edge_beside_the_marked_rows_alone",
+      "says": "where its token is"
+    },
+    {
+      "name": "the bar runs beside every row",
+      "file": "src/DiffView.Avalonia/Margins/ChangeMarkerMargin.cs",
+      "old": "if (EmphasisRenderer.Marks(range, row.Line))",
+      "new": "if (row.Number > 0)",
+      "killer": "The_bar_runs_down_the_glyph_columns_outer_edge_beside_the_marked_rows_alone",
+      "says": "the bar runs beside lines"
+    },
+    {
+      "name": "the two halves of the test that marks a line swap places",
       "file": "src/DiffView.Avalonia/Rendering/EmphasisRenderer.cs",
-      "old": "if (lastLine < first || firstLine > last)",
-      "new": "if (firstLine > last || lastLine < first)",
+      "old": "return line.LastDocumentLine.LineNumber >= first && line.FirstDocumentLine.LineNumber <= last;",
+      "new": "return line.FirstDocumentLine.LineNumber <= last && line.LastDocumentLine.LineNumber >= first;",
       "expect": "green",
-      "because": "an or of two comparisons with no side effects commutes, so the same visual lines are skipped"
+      "because": "an and of two comparisons with no side effects commutes, so the same visual lines are marked"
     }
   ]
 }

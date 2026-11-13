@@ -38,6 +38,7 @@ internal enum DiffBrush
     FindMatch,
     FindCurrentMatch,
     Emphasis,
+    EmphasisBar,
 }
 
 /// <summary>
@@ -79,6 +80,7 @@ internal sealed class DiffBrushes
         ("DiffView.FindMatchBrush", Color.Parse("#80FFD54F")),
         ("DiffView.FindCurrentMatchBrush", Color.Parse("#99FF8F00")),
         ("DiffView.EmphasisBrush", Color.Parse("#1F3949AB")),
+        ("DiffView.EmphasisBarBrush", Color.Parse("#3949AB")),
     ];
 
     private readonly IBrush[] _brushes;
