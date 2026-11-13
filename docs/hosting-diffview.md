@@ -146,6 +146,7 @@ You will not need most of the surface. These are the ones that change what a rea
 | `SideBySideDiffView.SyncHorizontalScroll` | Vertical scrolling is always coupled; horizontal is opt-in |
 | `SideBySideDiffView.ShowWhitespace`, `SideBySideDiffView.ShowLineEndings`, `SideBySideDiffView.TabWidth` | The editor's own view options |
 | `SideBySideDiffView.PaneFontSize`, `SideBySideDiffView.PaneFontFamily` | Leave unset to let the pane theme decide |
+| `SideBySideDiffView.LeftEmphasis`, `SideBySideDiffView.RightEmphasis` | A range of one side's lines your host marks, as a `LineRange` over that side's 0-based lines, `null` by default. Each marked line's own row is shaded, never the padding the other side's lines put above it, and a bar runs down the glyph column beside it, so a range reads as one block whatever colours its rows already carry. The range is yours: the control never moves it with an edit or clears it for a new source, so assign it again when the lines it means have moved. The unified view has none |
 
 Navigation is `SideBySideDiffView.NextChange` and `SideBySideDiffView.PreviousChange`, with
 `SideBySideDiffView.CurrentChangeIndex` and `SideBySideDiffView.ChangeCount` for a position
