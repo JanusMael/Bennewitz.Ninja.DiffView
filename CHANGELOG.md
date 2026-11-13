@@ -8,6 +8,13 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- **`LeftEmphasis` and `RightEmphasis`, a range of lines a host marks** — plan 00035. Both two-pane views take a
+  `LineRange?` per side, `null` by default, and each pane shades every marked line's own row in the new
+  `DiffView.EmphasisBrush`, over the row tints and under the selection and the find highlights, never over the
+  padding the other side's lines put above a line, and runs a bar of `DiffView.EmphasisBarBrush` down the glyph
+  column beside them, so a range reads as one block. A fold reaching into the range shades its row, lines past the
+  end are not shaded, and the range is the host's: the control never moves it with an edit or clears it for a new
+  source. The unified view has none.
 - **`docs/template-parts.md`, a reference the code writes** — plan 00030. Every control the library defines, its
   template parts with their elements and `AutomationId`s, and whether code looks each part up by its name, which
   is what someone re-templating a control or driving one needs. `TemplatePartReferenceTests` generates it from what
