@@ -3,6 +3,7 @@ using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Bennewitz.Ninja.DiffView.Core;
 
 namespace Bennewitz.Ninja.AgentBaseline.Tests;
 
@@ -29,6 +30,12 @@ public sealed class StandingLineTests
 
     /// <summary>The seed under a line that is in no section: One's body is at line 7, Three's at 11.</summary>
     private const string Preamble = "Read this first.\n\n# Rules\n\n## One\n\nAlpha.\n\n## Three\n\nGamma.\n";
+
+    /// <summary>One's mark in the seed and in <see cref="OneReworded"/>: its heading at line 3 to its rule at 5.</summary>
+    private static readonly LineRange OneMarked = new(2, 3);
+
+    /// <summary>Three's mark in the seed: its heading at line 7 to its rule at 9.</summary>
+    private static readonly LineRange ThreeMarked = new(6, 3);
 
     /// <summary>The seed and <paramref name="candidates"/>, reviewed in the order given.</summary>
     private static ReviewQueue QueueOf(FixtureTree tree, params string[] candidates)
@@ -231,4 +238,105 @@ public sealed class StandingLineTests
         await host.AwaitBuildAsync(() => host.Press(host.Right, Key.F8, RawInputModifiers.None, PhysicalKey.F8));
         Assert.False(window.OutcomeBand.IsVisible, "The band stayed on screen after a move cleared the line.");
     }
+
+    [AvaloniaFact]
+    public async Task The_mark_follows_the_caret_that_moved_last_and_leaves_the_other_pane_unmarked()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, OneReworded);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        ReviewHost.PutCaret(host.Right, 5);
+        AssertMarks(host, null, OneMarked, "the right caret went into One");
+
+        ReviewHost.PutCaret(host.Left, 9);
+        AssertMarks(host, ThreeMarked, null, "the left caret went into Three");
+
+        // Still in One on the right, which the line says again, and the mark goes back with it.
+        ReviewHost.PutCaret(host.Right, 4);
+        AssertMarks(host, null, OneMarked, "the right caret moved within One");
+    }
+
+    [AvaloniaFact]
+    public async Task A_mark_runs_from_its_sections_heading_to_its_last_line_of_text()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, OneReworded);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        // One governs lines 3 to 6: its heading, a blank line, its rule, and the blank line before Three, which
+        // carries no rule. The mark is the heading to the rule, from wherever in the section the caret is.
+        ReviewHost.PutCaret(host.Right, 6);
+        AssertMarks(host, null, OneMarked, "the right caret went to One's last line, a blank one");
+    }
+
+    [AvaloniaFact]
+    public async Task A_caret_in_no_section_marks_nothing_in_either_pane()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, Preamble);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        // One is lines 5 to 7 under the preamble.
+        ReviewHost.PutCaret(host.Right, 7);
+        AssertMarks(host, null, new LineRange(4, 3), "the right caret went into One");
+
+        ReviewHost.PutCaret(host.Right, 1);
+        AssertMarks(host, null, null, "the right caret went above the first heading");
+    }
+
+    [AvaloniaFact]
+    public async Task A_move_to_another_candidate_clears_the_mark_on_either_side()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, OneReworded, ThreeReworded);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        ReviewHost.PutCaret(host.Right, 5);
+        AssertMarks(host, null, OneMarked, "the right caret went into One");
+        await host.AwaitBuildAsync(() => host.Press(host.Right, Key.F8, RawInputModifiers.None, PhysicalKey.F8));
+        AssertMarks(host, null, null, "a move to the next candidate");
+
+        ReviewHost.PutCaret(host.Left, 9);
+        AssertMarks(host, ThreeMarked, null, "the left caret went into Three");
+        await host.AwaitBuildAsync(() => host.Press(host.Right, Key.F8, RawInputModifiers.Shift, PhysicalKey.F8));
+        AssertMarks(host, null, null, "a move back to the first candidate");
+    }
+
+    [AvaloniaFact]
+    public async Task Typing_that_moves_a_sections_end_under_its_heading_moves_the_mark_with_it()
+    {
+        using FixtureTree tree = new();
+        ReviewQueue queue = QueueOf(tree, OneReworded);
+        ReviewWindow window = new();
+        using ReviewHost host = new(window);
+        await host.AwaitBuildAsync(() => window.Review(queue));
+
+        ReviewHost.PutCaret(host.Left, 5);
+        AssertMarks(host, OneMarked, null, "the left caret went into One");
+
+        // A rule typed under One's own: the heading is One's still, which the line does not say again, and the mark
+        // reaches the new rule.
+        host.Type(host.Left, host.Left.Document.GetLineByNumber(5).EndOffset, "\nBeta.");
+        AssertMarks(host, new LineRange(2, 4), null, "a rule was typed under One's");
+    }
+
+    /// <summary>The two panes' marks are exactly <paramref name="left"/> and <paramref name="right"/>.</summary>
+    private static void AssertMarks(ReviewHost host, LineRange? left, LineRange? right, string after)
+    {
+        Assert.True(
+            host.View.LeftEmphasis == left && host.View.RightEmphasis == right,
+            $"after {after}, the left is marked {Describe(host.View.LeftEmphasis)} and the right {Describe(host.View.RightEmphasis)}, "
+                + $"where they should be {Describe(left)} and {Describe(right)}");
+    }
+
+    private static string Describe(LineRange? range) => range is { } r ? $"lines {r.Start + 1} to {r.End}" : "nothing";
 }
