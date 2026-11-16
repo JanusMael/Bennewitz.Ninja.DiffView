@@ -61,15 +61,15 @@
     {
       "name": "the folded lines are joined with nothing between them",
       "file": "src/AgentBaseline/ParagraphBreaks.cs",
-      "old": "folded.Append(normalised, copied, end - copied).Append(' ');",
-      "new": "folded.Append(normalised, copied, end - copied);",
+      "old": "folded.Append(normalised, copied, join.Start - copied).Append(' ');",
+      "new": "folded.Append(normalised, copied, join.Start - copied);",
       "killer": "One_paragraph_wrapped_three_ways_folds_to_one_text"
     },
     {
       "name": "the next line's indent and its quote's markers stay after the joining space",
       "file": "src/AgentBaseline/ParagraphBreaks.cs",
-      "old": "copied = next.Span.Start;",
-      "new": "copied = lineBreak.Span.Start + 1;",
+      "old": "breaks.Add(new SoftBreak(end, next.Span.Start));",
+      "new": "breaks.Add(new SoftBreak(end, lineBreak.Span.Start + 1));",
       "killer": "A_quotes_wrapped_paragraphs_fold_and_a_lazy_line_with_them"
     },
     {

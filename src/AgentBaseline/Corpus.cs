@@ -296,9 +296,16 @@ internal sealed class Corpus
     /// control computes one pair, so these N−1 diffs are the app's own.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// ⭐ <b>Most changes first.</b> Decision 11 makes any take stale every candidate reviewed before
     /// it that carries its own version of the section, so the candidates likeliest to give the most
     /// are reviewed while the fewest candidates lie behind them. Ties keep the corpus's own order.
+    /// </para>
+    /// <para>
+    /// Each candidate is counted as the right pane first shows it, re-broken against the seed
+    /// (<see cref="ShownCandidate"/>) — plan 00036 decision 9: a candidate that differs from the seed
+    /// only in where it breaks its lines is not the one likeliest to give the most.
+    /// </para>
     /// </remarks>
     /// <param name="seed">
     /// The seed's label, or <see langword="null"/> for the one the input named. ⛔ There is no third
@@ -322,7 +329,8 @@ internal sealed class Corpus
                 continue;
             }
 
-            DiffBuildResult diff = DiffDocumentBuilder.Build(left, new PaneSource(candidate.Document.Text), cancellationToken);
+            string shown = ShownCandidate.Of(candidate.Document.Text, chosen.Document.Text).Text;
+            DiffBuildResult diff = DiffDocumentBuilder.Build(left, new PaneSource(shown), cancellationToken);
             queued.Add(new QueuedCandidate(candidate, diff.Diagnostics));
         }
 

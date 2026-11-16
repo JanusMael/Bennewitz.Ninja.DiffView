@@ -174,7 +174,7 @@ public sealed class BaselineOutputTests
         (ReviewHost host, _, ReviewSession session) = await OpenAsync(queue, () => Task.FromResult<string?>(output));
         using (host)
         {
-            IReadOnlyList<MarkdownSection> sections = session.Current.Candidate.Document.Outline.Sections;
+            IReadOnlyList<MarkdownSection> sections = session.Shown.Outline.Sections;
             session.Leave(sections[0]);
             session.Take(sections[1]);
             session.Defer(sections[2]);
