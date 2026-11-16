@@ -202,8 +202,8 @@
     {
       "name": "a take is saved as edited exactly when it was not",
       "file": "src/AgentBaseline/DecisionStores.cs",
-      "old": "if (!string.Equals(result, take.Text, StringComparison.Ordinal))",
-      "new": "if (string.Equals(result, take.Text, StringComparison.Ordinal))",
+      "old": "if (result is null || SectionIdentity.HashOf(result) != take.Section.Hash)",
+      "new": "if (result is not null && SectionIdentity.HashOf(result) == take.Section.Hash)",
       "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them",
       "says": "is the text it took"
     },
@@ -302,9 +302,23 @@
     {
       "name": "an edit's result may be the text it took",
       "file": "src/AgentBaseline/DecisionFile.cs",
-      "old": "if (edited == text)",
+      "old": "if (edited is not null && SectionIdentity.HashOf(edited) == hash)",
       "new": "if (edited is null && text is null)",
       "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "a result that breaks the text taken otherwise is read as an edit",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "if (edited is not null && SectionIdentity.HashOf(edited) == hash)",
+      "new": "if (edited == text)",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
+    },
+    {
+      "name": "the file is still written and read at version 1",
+      "file": "src/AgentBaseline/DecisionFile.cs",
+      "old": "internal const int Version = 2;",
+      "new": "internal const int Version = 1;",
+      "killer": "Every_kind_of_decision_is_written_as_the_file_holds_it_and_read_back_as_it_was"
     },
     {
       "name": "the file escapes a rule's own characters",
@@ -445,8 +459,8 @@
     {
       "name": "a version is hashed from another encoding of its text",
       "file": "src/AgentBaseline/SectionIdentity.cs",
-      "old": "Encoding.UTF8.GetBytes(content)",
-      "new": "Encoding.Unicode.GetBytes(content)",
+      "old": "Encoding.UTF8.GetBytes(ParagraphBreaks.Fold(content))",
+      "new": "Encoding.Unicode.GetBytes(ParagraphBreaks.Fold(content))",
       "killer": "An_edited_take_is_saved_with_its_result_and_the_hash_its_source_had_over_normalised_text",
       "because": "decision 6's hash is SHA-256 of the UTF-8, restated in the test rather than asked of the code under it"
     },
@@ -457,6 +471,13 @@
       "new": "Convert.ToHexStringLower(SHA256",
       "killer": "Decisions_saved_with_a_baseline_are_found_by_the_next_run_and_nothing_put_off_is_among_them",
       "says": "is not a SHA-256 in upper-case hex"
+    },
+    {
+      "name": "a take's hash is checked against its text as written rather than its fold",
+      "file": "src/AgentBaseline/SectionIdentity.cs",
+      "old": "GetBytes(ParagraphBreaks.Fold(content))",
+      "new": "GetBytes(content)",
+      "killer": "A_decision_file_this_tool_did_not_write_is_refused_and_says_why"
     },
     {
       "name": "an edit's hashes are compared the other way round",

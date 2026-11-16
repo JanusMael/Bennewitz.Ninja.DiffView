@@ -9,7 +9,7 @@ internal enum TakeResult
     /// <summary>The accumulator held no section at that path, and now does.</summary>
     Inserted,
 
-    /// <summary>The accumulator already held exactly the candidate's version, so nothing was written.</summary>
+    /// <summary>The accumulator already held the candidate's version, however its paragraphs break, so nothing was written.</summary>
     Unchanged,
 }
 
@@ -99,7 +99,10 @@ internal static class AccumulatorEdits
         if (held.Count == 1)
         {
             MarkdownSection replaced = before.Sections[held[0]];
-            if (string.Equals(replaced.Content, taken.Content, StringComparison.Ordinal))
+
+            // The same version is the same identity, so one that differs from the accumulator's only where its
+            // paragraphs break is the one the accumulator holds, and writes nothing: plan 00036 decision 7.
+            if (SectionIdentity.Of(replaced) == SectionIdentity.Of(taken))
             {
                 return (new TextEdit(0, 0, string.Empty), TakeResult.Unchanged);
             }
