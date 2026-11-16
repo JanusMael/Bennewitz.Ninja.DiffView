@@ -1707,9 +1707,10 @@ wording.
     From step 3's frames Brian chose the fill plus a 2 px bar down the glyph column's outer edge, which reverses the
     plan's dismissed mark in the gutter and is in `DECISIONS.md` as his. Committed there: the approval, the token
     (step 1), the presenter's renderer (step 2), the views' two properties (step 3's code), the bar, the library's
-    record (step 4) and AgentBaseline's marks (step 5). Open: the two emphasis frames, rendered on Linux at the bar's
-    commit and with Brian for his last look, committed only on his word; then the owed proof sets, a full gate run,
-    the suite, the record and his look at the review window.
+    record (step 4), AgentBaseline's marks (step 5) and step 3's two frames, which Brian looked at before they were
+    committed. Proven over that code: the nine proof sets the branch owes, 332 mutations as declared; a full gate run,
+    137 as declared and 93 of 93 guards; the suite, 1022 on Windows, judged healthy. Open: the record and his look at
+    the review window.
 
 37. **Three tests read the building state with nothing holding the builds — found on `main`, 2026-11-10.**
     `ViewerStateTests.All_three_views_carry_the_same_pseudo_classes_through_the_same_states` went red in `main`'s
