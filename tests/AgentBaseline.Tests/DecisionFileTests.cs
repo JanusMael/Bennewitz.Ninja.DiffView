@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Bennewitz.Ninja.AgentBaseline.Tests;
@@ -23,8 +24,11 @@ public sealed class DecisionFileTests
 
     private static string Hash(string text) => SectionIdentity.HashOf(text);
 
+    /// <summary>SHA-256 of <paramref name="text"/> as written, its paragraphs not folded: what version 1 hashed.</summary>
+    private static string RawHash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
+
     /// <summary>A file around <paramref name="decision"/>, a decision written by hand.</summary>
-    private static string FileOf(string decision) => $$"""{ "version": 1, "decisions": [ {{decision}} ] }""";
+    private static string FileOf(string decision) => $$"""{ "version": 2, "decisions": [ {{decision}} ] }""";
 
     [Fact]
     public void Every_kind_of_decision_is_written_as_the_file_holds_it_and_read_back_as_it_was()
@@ -45,7 +49,7 @@ public sealed class DecisionFileTests
         Assert.Equal(
             $$"""
             {
-              "version": 1,
+              "version": 2,
               "target": "AGENTS.md",
               "scope": null,
               "decisions": [
@@ -104,7 +108,7 @@ public sealed class DecisionFileTests
 
         string written = DecisionFile.Format(root, []);
 
-        Assert.Equal("{\n  \"version\": 1,\n  \"target\": \"AGENTS.md\",\n  \"scope\": \"root\",\n  \"decisions\": []\n}\n", written);
+        Assert.Equal("{\n  \"version\": 2,\n  \"target\": \"AGENTS.md\",\n  \"scope\": \"root\",\n  \"decisions\": []\n}\n", written);
         Assert.Equal(root, DecisionFile.Parse(written).Target);
         Assert.Empty(DecisionFile.Parse(written).Decisions);
     }
@@ -118,20 +122,21 @@ public sealed class DecisionFileTests
             string take = $$""" "kind": "taken", "headingPath": "One", "hash": "{{hash}}", "source": "m", "text": "## One\n\nAlpha." """;
             string leave = $$""" "kind": "rejected", "headingPath": "One", "hash": "{{hash}}", "source": "m" """;
             string drop = $$""" "kind": "dropped", "headingPath": "One", "hash": "{{hash}}" """;
+            string wrappable = $$""" "kind": "taken", "headingPath": "One", "hash": "{{Hash("## One\n\nAlpha and beta.")}}", "source": "m", "text": "## One\n\nAlpha and beta." """;
             return new()
             {
                 { "not json", "the decision file is not JSON" },
                 { "[]", "the decision file is not a JSON object" },
-                { """{ "version": 1, "decisions": [], "notes": "" }""", "the decision file has a key \"notes\" it does not know" },
+                { """{ "version": 2, "decisions": [], "notes": "" }""", "the decision file has a key \"notes\" it does not know" },
                 { """{ "decisions": [] }""", "the decision file says no \"version\"" },
-                { """{ "version": 2, "decisions": [] }""", "the decision file is version 2, and this tool reads version 1 alone" },
-                { """{ "version": "1", "decisions": [] }""", "the decision file is version \"1\"" },
-                { """{ "version": 1 }""", "the decision file's \"decisions\" is not a list" },
-                { """{ "version": 1, "decisions": [] }""", "the decision file says no \"target\"" },
-                { """{ "version": 1, "target": 3, "scope": null, "decisions": [] }""", "the decision file's \"target\" is not a string" },
-                { """{ "version": 1, "target": " ", "scope": null, "decisions": [] }""", "the decision file's \"target\" is blank" },
-                { """{ "version": 1, "target": "AGENTS.md", "decisions": [] }""", "the decision file says no \"scope\"" },
-                { """{ "version": 1, "target": "AGENTS.md", "scope": 2, "decisions": [] }""", "the decision file's \"scope\" is not text or null" },
+                { """{ "version": 1, "decisions": [] }""", "the decision file is version 1, and this tool reads version 2 alone" },
+                { """{ "version": "2", "decisions": [] }""", "the decision file is version \"2\"" },
+                { """{ "version": 2 }""", "the decision file's \"decisions\" is not a list" },
+                { """{ "version": 2, "decisions": [] }""", "the decision file says no \"target\"" },
+                { """{ "version": 2, "target": 3, "scope": null, "decisions": [] }""", "the decision file's \"target\" is not a string" },
+                { """{ "version": 2, "target": " ", "scope": null, "decisions": [] }""", "the decision file's \"target\" is blank" },
+                { """{ "version": 2, "target": "AGENTS.md", "decisions": [] }""", "the decision file says no \"scope\"" },
+                { """{ "version": 2, "target": "AGENTS.md", "scope": 2, "decisions": [] }""", "the decision file's \"scope\" is not text or null" },
                 { FileOf("3"), "decision 1 is not a JSON object" },
                 { FileOf($$"""{ {{leave}}, "weight": 1 }"""), "decision 1 has a key \"weight\" it does not know" },
                 { FileOf($$"""{ "kind": "deferred", "headingPath": "One", "hash": "{{hash}}", "source": "m" }"""), "decision 1's \"kind\" is \"deferred\"" },
@@ -150,6 +155,11 @@ public sealed class DecisionFileTests
                 { FileOf($$"""{ {{take}}, "edited": true }"""), "decision 1 was edited and says no \"result\"" },
                 { FileOf($$"""{ {{take}}, "edited": true, "result": 3 }"""), "decision 1's \"result\" is not text or null" },
                 { FileOf($$"""{ {{take}}, "edited": true, "result": "## One\n\nAlpha." }"""), "decision 1 says it was edited, and its \"result\" is the text it took" },
+
+                // Plan 00036 decision 3: a version's hash is over its text's fold, so a take hashed over its text as
+                // written, as version 1 hashed it, is refused; and a result that breaks the text taken otherwise is no edit.
+                { FileOf($$"""{ "kind": "taken", "headingPath": "One", "hash": "{{RawHash("## One\n\nAlpha,\nwrapped.")}}", "source": "m", "text": "## One\n\nAlpha,\nwrapped.", "edited": false }"""), "decision 1's \"hash\" is not the hash of its \"text\"" },
+                { FileOf($$"""{ {{wrappable}}, "edited": true, "result": "## One\n\nAlpha and\nbeta." }"""), "decision 1 says it was edited, and its \"result\" is the text it took" },
             };
         }
     }

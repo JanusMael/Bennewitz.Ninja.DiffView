@@ -190,6 +190,13 @@
       "killer": "Staleness_is_said_candidate_by_candidate_with_each_ones_sections_listed"
     },
     {
+      "name": "a take the left holds with its paragraphs broken otherwise is saved as edited",
+      "file": "src/AgentBaseline/DecisionStores.cs",
+      "old": "if (result is null || SectionIdentity.HashOf(result) != take.Section.Hash)",
+      "new": "if (!string.Equals(result, take.Text, StringComparison.Ordinal))",
+      "killer": "The_report_says_a_take_the_left_holds_with_its_paragraphs_broken_otherwise_was_taken"
+    },
+    {
       "name": "this run's decisions are listed as a list rather than as a collection expression",
       "file": "src/AgentBaseline/BaselineOutput.cs",
       "old": "[.. kept.Skip(session.Durable.Inherited)]",

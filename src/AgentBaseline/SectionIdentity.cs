@@ -43,10 +43,16 @@ internal sealed record SectionIdentity(string HeadingPath, string Hash)
     }
 
     /// <summary>
-    /// The version half of an identity: SHA-256 of <paramref name="content"/> as UTF-8, in upper-case hex.
-    /// One function, so a decision file checking a take's hash against its text asks exactly what a review
-    /// asked when it recorded the take.
+    /// The version half of an identity: SHA-256 of <paramref name="content"/>'s fold as UTF-8, in upper-case
+    /// hex. One function, so a decision file checking a take's hash against its text asks exactly what a
+    /// review asked when it recorded the take.
     /// </summary>
+    /// <remarks>
+    /// ⭐ <b>Hashed over the fold</b> — plan 00036 decision 2. <see cref="ParagraphBreaks.Fold"/> turns each
+    /// soft line break inside a paragraph into a space, so one rule wrapped one way on one machine and
+    /// another way on the next is one version, and a decision about it holds for both. Text with no soft
+    /// break folds to itself, so its hash is the one it had before the fold.
+    /// </remarks>
     internal static string HashOf(string content) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ParagraphBreaks.Fold(content))));
 }
