@@ -37,6 +37,13 @@
               AutomationProperties.AutomationId="SaveBaseline"
               AutomationProperties.Name="Write the baseline and its provenance to a new file"
               ToolTip.Tip="Write the baseline and the decisions behind it to a new file, never over a file the corpus read. Over stale candidates it warns first, and saving again accepts the warning." />
+      <!-- Brian's of 2026-11-16, in the shape of ClaudeForge's theme button until AppKit publishes that one: its label,
+           set in code, names the theme a click switches to, and the application follows the system's theme until the
+           first click. -->
+      <Button x:Name="ThemeButton"
+              AutomationProperties.AutomationId="ToggleTheme"
+              AutomationProperties.Name="Toggle theme"
+              ToolTip.Tip="Toggle between the light and dark themes. Until the first click the window follows the system's theme, and nothing in the review changes." />
     </StackPanel>
 
     <StackPanel DockPanel.Dock="Bottom" Margin="8,4" Spacing="4">

@@ -4,13 +4,13 @@
 
 **`main` carries everything through PR #57** — PR #57 merged on 2026-11-12, and `main`'s run over it passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
-merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1022** here, `Passed!`,
-by a local run over plan 00035's branch: item 40's 1007 and the 15 tests the branch adds, its two frames being
+merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1023** here, `Passed!`,
+by a local run over plan 00035's branch: item 40's 1007 and the branch's 16 new tests, its two frames being
 Linux's. ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
 adding the 66 frame baselines back, which is precisely how **745** once reached this document against a measured
 **769**. Each leg lists by name the baselines it left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries **137** mutations and derives **93** guards from the gate files; CI runs its
-`--guards` half and its `--check` on Linux, and the last full run — over plan 00035's branch, on 2026-11-13, in four
+`--guards` half and its `--check` on Linux, and the last full run — over plan 00035's branch, on 2026-11-16, in four
 worktrees — gave all 137 as declared: 126 killed by the test each names, 9 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 93 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
@@ -1802,13 +1802,20 @@ wording.
     names its own ids. Nothing is red until the sync; before it, `release-target.cs` is read against
     `.github/workflows/release.yml` and the difference goes to him.
 
+44. **AgentBaseline's theme button gives way to AppKit's — Brian, 2026-11-16.** He asked for a switch between the
+    light and dark themes while he looked at the marks, and on seeing its first cut for one in the shape of
+    ClaudeForge's, which the window now has: its label names the theme a click switches to. On his word the AppKit
+    session was asked the same day to take ClaudeForge's switch into AppServices.Avalonia and publish it, the pattern
+    being one every app of his needs. Adopting it here waits for that package. `DECISIONS.md`, *The review window's
+    theme button is ClaudeForge's, until AppKit publishes one*.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 is done on
 `feat/a-host-marks-a-range-of-lines` and lands with its pull request, item 41 follows it and item 42 follows item 41,
-and item 43 waits for DiffView's next `repo-conventions` sync. **Every other open item was
+item 43 waits for DiffView's next `repo-conventions` sync, and item 44 for AppKit's package. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
