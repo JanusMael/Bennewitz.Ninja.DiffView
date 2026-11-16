@@ -52,6 +52,20 @@ public sealed class AccumulatorEditTests
     }
 
     [Fact]
+    public void Taking_a_version_whose_paragraphs_break_otherwise_than_the_accumulators_writes_nothing()
+    {
+        // ⭐ Plan 00036 decision 7: the same words wrapped otherwise are the version the accumulator holds, so a take of
+        // them leaves the accumulator's own lines where they were rather than writing the same words wrapped another way.
+        string accumulator = Doc("# Rules", "", "## One", "", "Alpha and beta,", "wrapped as the seed wraps them.", "", "## Two", "", "Beta.", "");
+        string candidate = Doc("# Rules", "", "## One", "", "Alpha and beta, wrapped as the seed wraps them.", "", "## Two", "", "Beta.", "");
+
+        (string after, TakeResult result) = Take(accumulator, candidate, "One");
+
+        Assert.Equal(TakeResult.Unchanged, result);
+        Assert.Equal(accumulator, after);
+    }
+
+    [Fact]
     public void A_section_the_accumulator_lacks_goes_after_its_nearest_preceding_sibling_and_everything_under_that()
     {
         // Two levels under One, so "everything under it" is read through a grandchild, not one level down.

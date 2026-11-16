@@ -1800,6 +1800,18 @@ wording.
     mutations. The four sets the step owes came out 110 of 110 as declared in four worktrees, in 20 minutes, every
     declared test killed but the four marked inert.
 
+    **Step 2, identity and the file, is done.** `SectionIdentity.HashOf` hashes a text's fold, so one rule wrapped two
+    ways is one version and text with no soft break hashes as it did; `DecisionFile.Version` is 2, a version-1 file
+    is refused naming the version this tool reads, and a take's hash is checked against its folded text. Every reader
+    that compared a section's text compares its version now: a take of the version the left holds, wrapped otherwise,
+    is `Unchanged` and writes nothing; staleness reads identities, so neither a re-wrap typed in the left nor a
+    candidate holding the version taken in other lines is stale; a save reads a take re-wrapped by hand as taken, not
+    edited; and a decision file whose take says it was edited into a re-wrap of its own text is refused, as one edited
+    into its own text was. New tests in `SectionIdentityTests`, `DecisionFileTests`, `AccumulatorEditTests`,
+    `StalenessTests` and `SaveTests`, seven new mutations across four sets, and four re-pointed where the code they
+    edit moved. The eight sets the branch owes against `main` came out 281 of 281 as declared in four worktrees, in 53
+    minutes, every declared test killed but the four marked inert.
+
 42. **CodeQuality to `2026.4.1113`, and the pin-revert proof item 40 lost — Brian, 2026-11-16, after item 41.**
     DiffView pins CodeQuality at `2026.4.1104`; the move owes at least one suppression in `scripts/mutate-gates.cs`,
     its reason in `DECISIONS.md`, and a full gate run. With it goes item 30's mutation that moved a pin back, which

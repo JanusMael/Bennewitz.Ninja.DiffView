@@ -193,8 +193,8 @@ internal sealed class DurableStore
     /// ⭐ <b>Decision 9c's three points.</b> Where what the baseline holds at this heading path follows from
     /// a take of this very candidate's section that was then edited, the edit was made against the version
     /// taken, and only the candidate can say whether that version still stands: the same hash — over
-    /// normalised text, so a source that changed only its line endings or its list indent is unchanged —
-    /// and the edit stands; another, and it is reviewed again. A later decision about this exact version
+    /// normalised text and its fold, so a source that changed only its line endings, its list indent or
+    /// where its paragraphs break is unchanged — and the edit stands; another, and it is reviewed again. A later decision about this exact version
     /// answers it instead.
     /// </para>
     /// <para>
@@ -247,9 +247,10 @@ internal sealed class DurableStore
     /// as taken — the left holds the later decision's text there, not an edit of this one.
     /// </para>
     /// <para>
-    /// The left's section at the take's path is compared with the text taken. The same, and the take is
-    /// kept as it was; different, and it is edited, with that section as its result; none, and it is edited
-    /// with no result, the baseline holding no rule under that path any more.
+    /// The left's section at the take's path is compared with the version taken, as identities compare, so
+    /// one whose paragraphs break otherwise is that version. The same, and the take is kept as it was;
+    /// different, and it is edited, with that section as its result; none, and it is edited with no result,
+    /// the baseline holding no rule under that path any more.
     /// </para>
     /// </remarks>
     /// <exception cref="SaveRefusedException">
@@ -278,8 +279,10 @@ internal sealed class DurableStore
                     + $"\"{take.Source}\", so a save cannot tell what that take became — make their headings differ by hand first");
             }
 
+            // Read as a version, so a take the left holds with its paragraphs broken otherwise is the take it was:
+            // plan 00036 decision 2.
             string? result = held.Count == 1 ? left.Sections[held[0]].Content : null;
-            if (!string.Equals(result, take.Text, StringComparison.Ordinal))
+            if (result is null || SectionIdentity.HashOf(result) != take.Section.Hash)
             {
                 kept[i] = take with { Edited = true, Result = result };
             }
@@ -456,10 +459,11 @@ internal sealed class SessionStore
     }
 
     /// <summary>
-    /// Every heading path <paramref name="outline"/> holds, each with the content of every section at it in
-    /// document order: the text a take carries and an identity hashes, without the blank lines after it that
-    /// say only where a section sits.
+    /// Every heading path <paramref name="outline"/> holds, each with the version of every section at it in
+    /// document order: its identity's hash, over the text a take carries without the blank lines after it that
+    /// say only where a section sits, and over that text's fold, so a section whose paragraphs break otherwise
+    /// is the version it was — plan 00036 decision 2.
     /// </summary>
     private static ILookup<string, string> VersionsIn(MarkdownOutline outline) =>
-        outline.Sections.ToLookup(s => s.HeadingPath, s => s.Content, StringComparer.Ordinal);
+        outline.Sections.ToLookup(s => s.HeadingPath, s => SectionIdentity.Of(s).Hash, StringComparer.Ordinal);
 }

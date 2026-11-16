@@ -49,8 +49,13 @@ internal sealed record DecisionFileContents(CandidateTarget Target, IReadOnlyLis
 /// </remarks>
 internal static class DecisionFile
 {
-    /// <summary>The one version this tool writes, and the one it reads.</summary>
-    internal const int Version = 1;
+    /// <summary>
+    /// The one version this tool writes, and the one it reads: 2 since plan 00036, decision 3, from which a
+    /// version's hash is over its text's fold. A version-1 file's hashes were taken over the text as written,
+    /// so read as these a take of a wrapped rule would fail its own check and a rejection of one stop matching
+    /// it; such a file is refused, and none was ever saved.
+    /// </summary>
+    internal const int Version = 2;
 
     private static readonly HashSet<string> FileKeys = ["version", "target", "scope", "decisions"];
 
@@ -290,7 +295,8 @@ internal static class DecisionFile
             JsonValueKind.String => result.GetString(),
             _ => throw Refused($"{what}'s \"result\" is not text or null"),
         };
-        if (edited == text)
+        // A result that is the text taken with its paragraphs broken otherwise is the version taken, and no edit.
+        if (edited is not null && SectionIdentity.HashOf(edited) == hash)
         {
             throw Refused($"{what} says it was edited, and its \"result\" is the text it took");
         }
