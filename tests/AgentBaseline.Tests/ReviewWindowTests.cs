@@ -1,10 +1,12 @@
 using System.Text;
+using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Logging;
+using Avalonia.Styling;
 using Bennewitz.Ninja.DiffView;
 using Bennewitz.Ninja.DiffView.Core;
 using Bennewitz.Ninja.DiffView.Tests;
@@ -126,6 +128,42 @@ public sealed class ReviewWindowTests
             $"Saved the baseline to {output}, its provenance to {Path.ChangeExtension(output, ".provenance.md")}, "
             + $"and its decisions to {Path.ChangeExtension(output, ".decisions.json")}.",
             window.OutcomeText.Text);
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    /// <summary>
+    /// Brian's of 2026-11-16: the theme button's label names the theme a click switches to, never the one on screen,
+    /// from the theme the window opens in, and a click switches the whole application, not the window alone.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_theme_button_names_the_theme_a_click_switches_to_and_a_click_switches_the_whole_app_to_it()
+    {
+        TestLogSink.Instance.Clear();
+        Application app = Application.Current!;
+        ThemeVariant? previous = app.RequestedThemeVariant;
+        try
+        {
+            app.RequestedThemeVariant = ThemeVariant.Dark;
+            ReviewWindow window = new();
+            Assert.Equal("☀ Light", window.ThemeButton.Content);
+            using ReviewHost host = new(window);
+            Assert.Equal(ThemeVariant.Dark, window.ActualThemeVariant);
+            Assert.Equal("☀ Light", window.ThemeButton.Content);
+
+            Click(window.ThemeButton);
+            Assert.Equal(ThemeVariant.Light, app.RequestedThemeVariant);
+            Assert.Equal(ThemeVariant.Light, window.ActualThemeVariant);
+            Assert.Equal("☾ Dark", window.ThemeButton.Content);
+
+            Click(window.ThemeButton);
+            Assert.Equal(ThemeVariant.Dark, window.ActualThemeVariant);
+            Assert.Equal("☀ Light", window.ThemeButton.Content);
+        }
+        finally
+        {
+            app.RequestedThemeVariant = previous;
+        }
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }

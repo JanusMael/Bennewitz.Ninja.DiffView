@@ -5522,3 +5522,21 @@ composite at a pixel of a plain row, and the padding and the changed rows past e
 **His look at the window.** On 2026-11-16 Brian looked at the review window built from this branch, over his
 2026-11-10 corpus, and said the marks look right. What made it hard to orient was not the mark: the first pair sets a
 candidate written a paragraph a line beside a seed wrapped near 100, which plan 00036 takes up.
+
+## The review window's theme button is ClaudeForge's, until AppKit publishes one
+
+Brian's of 2026-11-16, while he looked at the marks: a switch between the light and dark themes in the window's top
+row. Its first cut was a `ToggleButton` reading *Dark theme* whatever its state, which read as the theme on screen
+while it switched to the other, and did not look like a toggle. It is now a button in the shape of ClaudeForge's: the
+label names the theme a click switches to, *☾ Dark* while light and *☀ Light* while dark, and a click sets the
+application's theme, so the window's chrome and DiffView's tokens move together.
+
+**The system is followed until the first click, and nothing is subscribed to for it.** ClaudeForge listens to the
+platform's colour changes because it restores a saved choice, *System* among them. This window saves nothing, so
+leaving the application's requested theme at its default is what follows the system, and the first click is what stops
+it. The label follows the window's own `ActualThemeVariantChanged`, which a change of the system's theme raises too, so
+the window holds no handler on anything that outlives it.
+
+**AppKit was asked the same day to publish the pattern**, on Brian's word that the button might belong there if it is
+reusable: every app of his needs one, and ClaudeForge's is woven through its view model and its window state. This
+button gives way to AppKit's once that is published, open item 44.

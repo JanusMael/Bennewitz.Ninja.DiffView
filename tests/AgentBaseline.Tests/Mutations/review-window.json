@@ -388,6 +388,41 @@
       "killer": "The_report_logs_every_durable_decision_in_the_order_made_the_title_and_a_pipe_included"
     },
     {
+      "name": "the theme button is wired to nothing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "ThemeButton.Click += OnThemeButtonClick;",
+      "new": "",
+      "killer": "The_theme_button_names_the_theme_a_click_switches_to_and_a_click_switches_the_whole_app_to_it"
+    },
+    {
+      "name": "a click asks for the theme already on screen",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "app.RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;",
+      "new": "app.RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Dark : ThemeVariant.Light;",
+      "killer": "The_theme_button_names_the_theme_a_click_switches_to_and_a_click_switches_the_whole_app_to_it"
+    },
+    {
+      "name": "the theme button names the theme on screen rather than the one a click switches to",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "ThemeButton.Content = ActualThemeVariant == ThemeVariant.Dark ? \"☀ Light\" : \"☾ Dark\";",
+      "new": "ThemeButton.Content = ActualThemeVariant == ThemeVariant.Dark ? \"☾ Dark\" : \"☀ Light\";",
+      "killer": "The_theme_button_names_the_theme_a_click_switches_to_and_a_click_switches_the_whole_app_to_it"
+    },
+    {
+      "name": "the theme button's label never follows a change of theme",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "ActualThemeVariantChanged += OnActualThemeVariantChanged;",
+      "new": "",
+      "killer": "The_theme_button_names_the_theme_a_click_switches_to_and_a_click_switches_the_whole_app_to_it"
+    },
+    {
+      "name": "the theme button has no label until the theme changes",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "        ShowThemeLabel();",
+      "new": "        // ShowThemeLabel();",
+      "killer": "The_theme_button_names_the_theme_a_click_switches_to_and_a_click_switches_the_whole_app_to_it"
+    },
+    {
       "name": "a drop's outcome is concatenated rather than interpolated",
       "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
       "old": "return $\"Dropped {MarkdownOutline.Spoken(path)} from the baseline.\";",

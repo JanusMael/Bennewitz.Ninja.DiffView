@@ -1,8 +1,11 @@
 using System.Windows.Input;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using AvaloniaEdit.Editing;
 using Bennewitz.Ninja.DiffView;
@@ -100,9 +103,39 @@ internal sealed partial class ReviewWindow : Window
         KeyBindings.Add(new KeyBinding { Gesture = NextGesture, Command = next });
         KeyBindings.Add(new KeyBinding { Gesture = PreviousGesture, Command = previous });
 
+        ThemeButton.Click += OnThemeButtonClick;
+        ActualThemeVariantChanged += OnActualThemeVariantChanged;
+        ShowThemeLabel();
+
         ChooseSavePath = ChooseInDialogAsync;
         View.TemplateApplied += OnViewTemplateApplied;
     }
+
+    /// <summary>
+    /// Switches the whole application to the theme <see cref="ThemeButton"/> names, so the window's chrome and the view's
+    /// tokens move together. Until the first click the application's requested theme is its default, which follows the
+    /// system's; a click sets one, and the system is followed no longer.
+    /// </summary>
+    /// <remarks>
+    /// Brian's of 2026-11-16, in the shape of ClaudeForge's theme button, which AppKit was asked the same day to publish
+    /// for every app; this gives way to that one once it is out.
+    /// </remarks>
+    private void OnThemeButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (Application.Current is { } app)
+        {
+            app.RequestedThemeVariant = ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
+        }
+    }
+
+    private void OnActualThemeVariantChanged(object? sender, EventArgs e) => ShowThemeLabel();
+
+    /// <summary>
+    /// Labels <see cref="ThemeButton"/> with the theme a click switches to, never the one shown: a switch labelled with
+    /// the theme on screen reads as the other one the moment it is used, which is what Brian found of its first cut.
+    /// </summary>
+    private void ShowThemeLabel() =>
+        ThemeButton.Content = ActualThemeVariant == ThemeVariant.Dark ? "☀ Light" : "☾ Dark";
 
     /// <summary>
     /// Asks the operator for the baseline's path, or answers <see langword="null"/> when they choose none —
