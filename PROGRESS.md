@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` carries everything through PR #57** — PR #57 merged on 2026-11-12, and `main`'s run over it passed.
+**`main` carries everything through PR #58** — PR #58 merged on 2026-11-16, and `main`'s run over it passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
 merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1023** here, `Passed!`,
 by a local run over plan 00035's branch: item 40's 1007 and the branch's 16 new tests, its two frames being
@@ -1700,8 +1700,8 @@ wording.
     from the caret. A host cannot draw it right, aligned rows carrying the other file's padding, which only the library
     tells from text. A plan comes first, the change being public API.
 
-    ✅ **Done 2026-11-16 by plan 00035 on `feat/a-host-marks-a-range-of-lines`, and it lands with that branch's pull
-    request.** `SideBySideDiffView.LeftEmphasis` and `RightEmphasis`, and the viewer's two through `AddOwner`, take a
+    ✅ **Done 2026-11-16 by plan 00035, and landed that day as PR #58, Brian merging it and `main`'s run over it
+    passing.** `SideBySideDiffView.LeftEmphasis` and `RightEmphasis`, and the viewer's two through `AddOwner`, take a
     `LineRange?` per side. Each marked line's own row is shaded in `DiffView.EmphasisBrush`, a shaded row rather than
     the text bands asked for, decision 4, because two lines' bands leave a gap between them and rows touch; and a 2 px
     bar of `DiffView.EmphasisBarBrush` runs down the glyph column's outer edge beside it, Brian's choice from step 3's
@@ -1830,8 +1830,8 @@ Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
-same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 is done on
-`feat/a-host-marks-a-range-of-lines` and lands with its pull request, item 41 follows it and item 42 follows item 41,
+same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
+2026-11-16, item 41 follows it and item 42 follows item 41,
 item 43 waits for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and item 46 is done on
 `build/the-shared-reference-script`, to push on his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
