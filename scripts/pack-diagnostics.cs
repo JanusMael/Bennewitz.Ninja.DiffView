@@ -1,9 +1,9 @@
 // scripts/pack-diagnostics.cs — a .NET 10 file-based app.
 //
 // Packs ClaudeForge's LayeredEditors.Avalonia.Diagnostics into the local NuGet feed that
-// NuGet.config lists as "../nuget-local". The ClaudeForge checkout is the manifest's local
-// path when it exists, otherwise reference/ClaudeForge (fetch it first). Run from the
-// repository root; the .sh and .ps1 wrappers beside this file do that for you.
+// NuGet.config lists as "../nuget-local", from the ClaudeForge checkout that
+// reference/fetch-reference.cs makes under reference/ at the manifest's pin (fetch it first).
+// Run from the repository root; the .sh and .ps1 wrappers beside this file do that for you.
 //
 //   dotnet run scripts/pack-diagnostics.cs
 //   dotnet run scripts/pack-diagnostics.cs -- --feed <directory>
@@ -43,12 +43,12 @@ if (claudeForge is null)
     return 2;
 }
 
-string? checkout = claudeForge.Local is not null && Directory.Exists(claudeForge.Local)
-    ? claudeForge.Local
-    : Directory.Exists(claudeForge.Dir) ? claudeForge.Dir : null;
+// The checkout at the pin, never the sibling the manifest's "local" names: that is only where the
+// fetch clones from, and its own HEAD is wherever its owner left it.
+string? checkout = Directory.Exists(claudeForge.Dir) ? claudeForge.Dir : null;
 if (checkout is null)
 {
-    Console.Error.WriteLine("pack-diagnostics: no ClaudeForge checkout — run: dotnet run scripts/fetch-reference.cs -- ClaudeForge");
+    Console.Error.WriteLine("pack-diagnostics: no ClaudeForge checkout — run: dotnet run --file reference/fetch-reference.cs -- ClaudeForge");
     return 1;
 }
 

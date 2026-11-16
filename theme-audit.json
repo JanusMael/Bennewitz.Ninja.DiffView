@@ -1,8 +1,8 @@
 {
-  // The theme audit (plan 00001 §Phase 2). Themes come from the reference checkouts at their
-  // pins in reference/sources.json; consumers are DiffView's own templates, AvaloniaEdit's
-  // theme files, Fluent's control templates (what any Fluent-styled control may reach for),
-  // and ClaudeForge's views through the manifest's local entry or the fetched checkout.
+  // The theme audit (plan 00001 §Phase 2). Themes come from the reference checkouts at the
+  // pins reference/sources.json names or its packages record; consumers are DiffView's own
+  // templates, AvaloniaEdit's theme files, Fluent's control templates (what any Fluent-styled
+  // control may reach for), and ClaudeForge's views in its checkout, at its pin.
   //
   // The tool is Bennewitz.Ninja.XamlQuality.ThemeAudit:
   //   dotnet tool install --global Bennewitz.Ninja.XamlQuality.ThemeAudit
@@ -109,9 +109,9 @@
     {
       "name": "ClaudeForge",
       "paths": [
-        ["../cl/ClaudeForge/src/ClaudeForge", "reference/ClaudeForge/src/ClaudeForge"],
-        ["../cl/ClaudeForge/src/ClaudeForge.Avalonia", "reference/ClaudeForge/src/ClaudeForge.Avalonia"],
-        ["../cl/ClaudeForge/src/LayeredEditors.Avalonia", "reference/ClaudeForge/src/LayeredEditors.Avalonia"]
+        "reference/ClaudeForge/src/ClaudeForge",
+        "reference/ClaudeForge/src/ClaudeForge.Avalonia",
+        "reference/ClaudeForge/src/LayeredEditors.Avalonia"
       ],
       "themes": ["Semi", "Semi + compat"]
     }

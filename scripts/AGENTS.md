@@ -9,7 +9,6 @@ too, and the root `Directory.Build.targets` links no friend grants into them (`F
 |---|---|---|
 | `catch-crash` | Judges a test run from its summary's outcome rather than its counts, or re-runs the suite until it catches an abort; `--expect auto` makes a short total a failure | anyone, after a test run |
 | `drive-demo` | Drives the running demo: launch, key, click, drag, capture, hover, probe. `drive-demo-uia.ps1` is its UI Automation reader and `drive-demo-interactive.ps1` the attended pass, both Windows-only | by hand; root `AGENTS.md` §9 |
-| `fetch-reference` | Clones the sources `reference/sources.json` pins | CI, before every restore |
 | `pack-diagnostics` | Packs ClaudeForge's diagnostics package into the local feed the demo restores from | CI, before every restore |
 | `gen-strings` | Writes the neutral `Strings.resx` from `DiffViewStrings.EnglishDefaults` | after a string changes |
 | `gen-locale-review` | Writes `docs/locale-review/<culture>.md`, and `--check` compares | after a translation changes |
@@ -28,4 +27,4 @@ too, and the root `Directory.Build.targets` links no friend grants into them (`F
 | A `.sh` is committed executable, `100755` | `core.fileMode` is false on the Windows box, so a new one commits `100644` unless it is marked with `git update-index --chmod=+x`; `git ls-files -s scripts` shows the mode | review |
 | Nothing in the worktree is edited while `mutate-gates` runs, or `mutate-behaviour` outside `--parallel` | Each reverts what it mutates, and an edit outside its scope reads as a mutation's stray | root `AGENTS.md` §5 |
 | ⛔ The harness's own set never runs from `mutate-behaviour.cs` itself | Its tests `dotnet run` that file, which rebuilds the binary a harness started from it runs from — locked on Windows | root `AGENTS.md` §5 |
-| `fetch-reference` and `pack-diagnostics` run before any restore that includes the demo | The demo's `LayeredEditors.Avalonia.Diagnostics` comes from the local feed `NuGet.config` names, which `pack-diagnostics` fills | every job in `.github/workflows/ci.yml` |
+| `reference/fetch-reference.cs` and `pack-diagnostics` run before any restore that includes the demo | The demo's `LayeredEditors.Avalonia.Diagnostics` comes from the local feed `NuGet.config` names, which `pack-diagnostics` fills | every job in `.github/workflows/ci.yml` |

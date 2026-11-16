@@ -2,7 +2,7 @@
   <!-- A shield, not a configuration.
 
        Everything under reference/ is a read-only upstream checkout fetched by
-       scripts/fetch-reference.cs. Those projects are built with THEIR versioning rules, not this
+       fetch-reference.cs beside this file. Those projects are built with THEIR versioning rules, not this
        repository's, and MSBuild does not know that: Directory.Packages.props discovery walks up
        from each project until it finds one, so a checkout that ships none of its own would find
        the repository root's and inherit central package management from it. Every PackageReference

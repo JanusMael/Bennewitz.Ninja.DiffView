@@ -41,7 +41,7 @@ Requires the .NET SDK named in `global.json` and, for the demo and tests, the si
 feed at `../nuget-local`:
 
 ```bash
-dotnet run scripts/fetch-reference.cs
+dotnet run --file reference/fetch-reference.cs
 ```
 
 ```bash

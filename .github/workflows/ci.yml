@@ -33,10 +33,10 @@ jobs:
           global-json-file: global.json
 
       # The sibling feed (../nuget-local) holds packages built from the author's other
-      # repositories. The reference fetch clones ClaudeForge at its pin when no sibling
-      # checkout exists, and the pack script builds the diagnostics package from it.
+      # repositories. The reference fetch clones ClaudeForge at its pin, from a sibling
+      # checkout when one exists, and the pack script builds the diagnostics package from it.
       - name: Fetch reference sources
-        run: dotnet run scripts/fetch-reference.cs
+        run: dotnet run --file reference/fetch-reference.cs
 
       - name: Pack ClaudeForge diagnostics into the local feed
         run: dotnet run scripts/pack-diagnostics.cs
@@ -142,7 +142,7 @@ jobs:
           global-json-file: global.json
 
       - name: Fetch reference sources
-        run: dotnet run scripts/fetch-reference.cs
+        run: dotnet run --file reference/fetch-reference.cs
 
       - name: Pack ClaudeForge diagnostics into the local feed
         run: dotnet run scripts/pack-diagnostics.cs
@@ -213,7 +213,7 @@ jobs:
           global-json-file: global.json
 
       - name: Fetch reference sources
-        run: dotnet run scripts/fetch-reference.cs
+        run: dotnet run --file reference/fetch-reference.cs
 
       - name: Pack ClaudeForge diagnostics into the local feed
         run: dotnet run scripts/pack-diagnostics.cs
@@ -253,7 +253,7 @@ jobs:
           global-json-file: global.json
 
       - name: Fetch reference sources
-        run: dotnet run scripts/fetch-reference.cs
+        run: dotnet run --file reference/fetch-reference.cs
 
       - name: Pack ClaudeForge diagnostics into the local feed
         run: dotnet run scripts/pack-diagnostics.cs
