@@ -2,17 +2,15 @@
 
 ## Resume
 
-**`main` carries everything through PR #56** — PR #56 merged on a full 12-of-12, Brian merging it,
-2026-11-12, and `main`'s run over it passed. *A resume names the pull request it was written for and
-not a commit: the merge that lands this paragraph is the merge that moves the SHA, so a SHA here is
-wrong the moment it is true.* **Windows measured 1007** here, `Passed!`, by a local run over item 40's
-branch, as over item 26's: item 40 adds no test. ⛔ **The Linux
-total is deliberately not written down**: it is read off CI's own summary, never derived by adding the 64 frame baselines back, which is precisely how
-**745** once reached this document against a measured **769**. Each leg lists by name the baselines it
-left out. The trimmed publish carries no `IL` warning.
-`scripts/mutate-gates.sh` carries
-**137** mutations and derives **93** guards from the gate files; CI runs its `--guards` half and its
-`--check` on Linux, and the last full run — over item 40's branch, on 2026-11-12, in four
+**`main` carries everything through PR #57** — PR #57 merged on 2026-11-12, and `main`'s run over it passed.
+*A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
+merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1022** here, `Passed!`,
+by a local run over plan 00035's branch: item 40's 1007 and the 15 tests the branch adds, its two frames being
+Linux's. ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
+adding the 66 frame baselines back, which is precisely how **745** once reached this document against a measured
+**769**. Each leg lists by name the baselines it left out. The trimmed publish carries no `IL` warning.
+`scripts/mutate-gates.sh` carries **137** mutations and derives **93** guards from the gate files; CI runs its
+`--guards` half and its `--check` on Linux, and the last full run — over plan 00035's branch, on 2026-11-13, in four
 worktrees — gave all 137 as declared: 126 killed by the test each names, 9 by the build and 2 green by
 design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 93 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
@@ -1702,15 +1700,19 @@ wording.
     from the caret. A host cannot draw it right, aligned rows carrying the other file's padding, which only the library
     tells from text. A plan comes first, the change being public API.
 
-    ⏳ **Plan 00035, approved 2026-11-12, builds it on `feat/a-host-marks-a-range-of-lines`, not yet pushed.** A
-    shaded row rather than the text bands asked for, decision 4: two lines' bands leave a gap between them, rows touch.
-    From step 3's frames Brian chose the fill plus a 2 px bar down the glyph column's outer edge, which reverses the
-    plan's dismissed mark in the gutter and is in `DECISIONS.md` as his. Committed there: the approval, the token
-    (step 1), the presenter's renderer (step 2), the views' two properties (step 3's code), the bar, the library's
-    record (step 4), AgentBaseline's marks (step 5) and step 3's two frames, which Brian looked at before they were
-    committed. Proven over that code: the nine proof sets the branch owes, 332 mutations as declared; a full gate run,
-    137 as declared and 93 of 93 guards; the suite, 1022 on Windows, judged healthy. Open: the record and his look at
-    the review window.
+    ✅ **Done 2026-11-16 by plan 00035 on `feat/a-host-marks-a-range-of-lines`, and it lands with that branch's pull
+    request.** `SideBySideDiffView.LeftEmphasis` and `RightEmphasis`, and the viewer's two through `AddOwner`, take a
+    `LineRange?` per side. Each marked line's own row is shaded in `DiffView.EmphasisBrush`, a shaded row rather than
+    the text bands asked for, decision 4, because two lines' bands leave a gap between them and rows touch; and a 2 px
+    bar of `DiffView.EmphasisBarBrush` runs down the glyph column's outer edge beside it, Brian's choice from step 3's
+    frames, which reverses the plan's dismissed mark in the gutter. The review window marks the section the line under
+    the panes names, in the pane whose caret moved last. Proven over the branch: the nine proof sets it owes, 332
+    mutations as declared; a full gate run, 137 as declared and 93 of 93 guards; the suite, 1022 on Windows, judged
+    healthy; and on Linux all 66 frames at the zero fraction, the two new ones looked at by Brian before they were
+    committed. He looked at the window over his 2026-11-10 corpus on 2026-11-16 and said it looks right; what made it
+    hard to orient was the first pair's long lines, item 41. `DECISIONS.md`, *A range a host marks is shaded indigo*,
+    *A marked range has a bar in the glyph column* and *A host marks a range of lines, and the review window marks its
+    section*.
 
 37. **Three tests read the building state with nothing holding the builds — found on `main`, 2026-11-10.**
     `ViewerStateTests.All_three_views_carry_the_same_pseudo_classes_through_the_same_states` went red in `main`'s
@@ -1768,7 +1770,7 @@ wording.
     adopting it to the catch-up session: move the pin, put the rule in the place of `TooltipCoverageTests`' scan on a
     branch of its own, and push only on his word.
 
-    ✅ **Done 2026-11-12 on `test/the-tooltip-rule-replaces-its-test`, and it lands on his word, the push being his.**
+    ✅ **Landed as PR #57 on 2026-11-12, `main`'s run over it passing.**
     XamlQuality is at `2026.4.1111`, whose rules differ from `2026.4.1109`'s by the new one alone.
     `TooltipCoverageTests` runs `BNXQ1011` and reads what its scan read, 15 input controls in the library and 7 in the
     review window, nothing found or skipped, and reports a blank tooltip besides, which the scan passed. Its guards are
@@ -1781,12 +1783,32 @@ wording.
     back, which the build refuses now; and the suite ran 1007 of 1007 on Windows, `Passed!`, which `catch-crash` judged
     healthy. `DECISIONS.md`, *BNXQ1011 holds the tooltips, and XamlQuality moves to 2026.4.1111*.
 
+41. **A paragraph's line breaks are not a difference — Brian, 2026-11-16.** Looking at the review window with the
+    mark in it, he found its first pair hard to read by eye: JanusHalo writes a paragraph a line, up to 462
+    characters, where the seed wraps near 100, so though 85% of its text is the seed's word for word, only 60 of its
+    129 lines equal a seed line as shown. DiffView cannot wrap, and wrapping would not help: the diff would still set
+    one line beside three. Plan 00036, approved 2026-11-16, makes AgentBaseline fold a paragraph's soft breaks in a
+    section's identity, show the candidate re-broken where the accumulator breaks, and align a differing paragraph's
+    words with its counterpart's. Next, on a branch of its own once item 36's pull request is open.
+
+42. **CodeQuality to `2026.4.1113`, and the pin-revert proof item 40 lost — Brian, 2026-11-16, after item 41.**
+    DiffView pins CodeQuality at `2026.4.1104`; the move owes at least one suppression in `scripts/mutate-gates.cs`,
+    its reason in `DECISIONS.md`, and a full gate run. With it goes item 30's mutation that moved a pin back, which
+    the build refuses at XamlQuality `2026.4.1111`, rebuilt as a harness fixture that pins its own package.
+
+43. **Templates' release-target rule — Brian, 2026-11-16: decided at DiffView's next `repo-conventions` sync.**
+    Templates#90, merged 2026-11-11, has `check` require `scripts/release-target.cs` of a repository whose
+    `packages.push` names ids, and every release resolved through it, against Brian's choice that DiffView's release
+    names its own ids. Nothing is red until the sync; before it, `release-target.cs` is read against
+    `.github/workflows/release.yml` and the difference goes to him.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
-same day, items 39 and 26 landed as PRs #55 and #56 on 2026-11-12, item 36 waits for its plan, and item 40 is done on
-`test/the-tooltip-rule-replaces-its-test` and lands on his word. **Every other open item was
+same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 is done on
+`feat/a-host-marks-a-range-of-lines` and lands with its pull request, item 41 follows it and item 42 follows item 41,
+and item 43 waits for DiffView's next `repo-conventions` sync. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
