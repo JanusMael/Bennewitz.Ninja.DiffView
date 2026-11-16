@@ -1819,6 +1819,20 @@ wording.
     being one every app of his needs. Adopting it here waits for that package. `DECISIONS.md`, *The review window's
     theme button is ClaudeForge's, until AppKit publishes one*.
 
+45. **A headless flake DiffView's test assemblies are open to — the Templates session, 2026-11-16, routing a finding
+    of the ClaudeForge session's.** Under Avalonia's default `PerTest` isolation, a thread that reads
+    `Dispatcher.UIThread` before the headless platform builds its compositor takes the UI thread, and a test then fails
+    with *"The calling thread cannot access this object because a different thread owns it"* from
+    `HeadlessUnitTestSession.EnsureIsolatedApplication`: intermittently, a victim of whatever ran before it, most often
+    on macOS. Both test assemblies here are open to it as configured: each declares `AvaloniaTestApplication` and no
+    `AvaloniaTestIsolation`, `PerTest` is Avalonia 12.1.2's default as it is 12.1.6's, where it was read, and a build's
+    outcome is posted to the dispatcher from the thread pool. No CI run of the hundred before 2026-11-16 shows it: of the
+    seven that needed a re-run, two failed a ruleset check, one a network fetch, one an artifact service and one item
+    37's race, and two had their macOS job cancelled before it ran a step. Templates corrected its notice the same day:
+    `PerAssembly` isolation is no drop-in fix, one shared application breaking code that reads a null
+    `Application.Current` and leaking queued dispatcher work between tests. What DiffView does waits for the finder's
+    verdict once ClaudeForge's CI has run, and is then Brian's.
+
 46. **The reference sources, fetched by AppKit's shared script — the AppKit session, 2026-11-16, on Brian's direction
     that day.** One way across his repositories: AppKit's `reference/fetch-reference.cs`, which merges DiffView's,
     XamlQuality's and ClaudeForge's scripts, in place of `scripts/fetch-reference.cs` and its wrappers. Brian gave the
@@ -1847,8 +1861,8 @@ item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09,
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
-2026-11-16, item 41 follows it and item 42 follows item 41,
-item 43 waits for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and item 46 is done on
+2026-11-16, item 41 is under way and item 42 follows it, item 43 waits for DiffView's next `repo-conventions` sync,
+item 44 for AppKit's package, item 45 for the ClaudeForge session's verdict, and item 46 is done on
 `build/the-shared-reference-script`, pushed for its pull request on his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
