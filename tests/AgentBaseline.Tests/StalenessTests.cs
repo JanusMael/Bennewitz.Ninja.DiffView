@@ -47,7 +47,7 @@ public sealed class StalenessTests
         new(path, label, new CandidateTarget(Path.GetFileName(path), null));
 
     private static MarkdownSection SectionOf(ReviewSession session, string path) =>
-        session.Current.Candidate.Document.Outline.Sections.Single(s => s.HeadingPath == path);
+        session.Shown.Outline.Sections.Single(s => s.HeadingPath == path);
 
     /// <summary>The content of <paramref name="item"/>'s section at <paramref name="path"/>.</summary>
     private static string ContentAt(QueuedCandidate item, string path) =>

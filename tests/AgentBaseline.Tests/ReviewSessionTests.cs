@@ -31,13 +31,28 @@ public sealed class ReviewSessionTests
 
     private const string Edit = "Kept. ";
 
+    /// <summary>A seed whose paragraphs wrap, as JANUSSER6's do.</summary>
+    private const string WrappedSeed =
+        "# Rules\n\n## One\n\nAlpha, wrapped\nover two lines.\n\nGamma.\n\n## Two\n\nBeta, wrapped\nover two lines.\n";
+
+    /// <summary>
+    /// <see cref="WrappedSeed"/> as JanusHalo writes it, a paragraph a line, with a Gamma of its own: plan 00036's
+    /// first pair, in small.
+    /// </summary>
+    private const string OneLineEach =
+        "# Rules\n\n## One\n\nAlpha, wrapped over two lines.\n\nGamma, from the first.\n\n## Two\n\nBeta, wrapped over two lines.\n";
+
     /// <summary>
     /// The seed and <paramref name="candidates"/>, reviewed in the order given, so a position names a
     /// known candidate — <c>machine 1</c>, <c>machine 2</c> and so on.
     /// </summary>
-    private static (ReviewQueue Queue, string SeedPath) QueueOf(FixtureTree tree, params string[] candidates)
+    private static (ReviewQueue Queue, string SeedPath) QueueOf(FixtureTree tree, params string[] candidates) =>
+        QueueOverSeed(tree, Seed, candidates);
+
+    /// <summary><see cref="QueueOf"/> over <paramref name="seed"/> in place of <see cref="Seed"/>.</summary>
+    private static (ReviewQueue Queue, string SeedPath) QueueOverSeed(FixtureTree tree, string seed, params string[] candidates)
     {
-        string seedPath = tree.Write("Seed/AGENTS.md", Seed);
+        string seedPath = tree.Write("Seed/AGENTS.md", seed);
         List<CorpusEntry> entries = [Entry(seedPath, "seed")];
         for (int i = 0; i < candidates.Length; i++)
         {
@@ -50,6 +65,9 @@ public sealed class ReviewSessionTests
 
     private static CorpusEntry Entry(string path, string label) =>
         new(path, label, new CandidateTarget(Path.GetFileName(path), null));
+
+    private static MarkdownSection SectionOf(ReviewSession session, string path) =>
+        session.Shown.Outline.Sections.Single(s => s.HeadingPath == path);
 
     [AvaloniaFact]
     public async Task Editing_the_left_and_cycling_the_right_twice_keeps_the_edit_and_its_undo()
@@ -260,6 +278,90 @@ public sealed class ReviewSessionTests
         Assert.Contains("nothing to review", refused.Message, StringComparison.Ordinal);
         Assert.Null(host.View.LeftSource);
         Assert.True(host.View.LeftReadOnly, "The refused session opened the left for editing before it refused.");
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task The_right_shows_a_candidate_in_the_accumulators_lines_and_reads_its_sections_there()
+    {
+        TestLogSink.Instance.Clear();
+        using FixtureTree tree = new();
+        (ReviewQueue queue, _) = QueueOverSeed(tree, WrappedSeed, OneLineEach);
+        using ReviewHost host = new();
+        ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
+
+        // ⭐ Plan 00036 decision 4: Alpha and Beta hold the seed's words, so they are shown in its lines, and Gamma,
+        // whose words are the candidate's own, as the candidate wrote it.
+        Assert.Equal(
+            "# Rules\n\n## One\n\nAlpha, wrapped\nover two lines.\n\nGamma, from the first.\n\n## Two\n\nBeta, wrapped\nover two lines.\n",
+            host.View.RightDocument.Text);
+
+        // The right's lines are the shown text's: its line 9 is One's, where the candidate as written has Two's
+        // heading, and its line 13 is Two's, past the candidate's own last line.
+        Assert.Equal("One", session.CandidateSectionAt(9)?.HeadingPath);
+        Assert.Equal("Two", session.CandidateSectionAt(13)?.HeadingPath);
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task A_take_writes_the_section_as_the_right_shows_it()
+    {
+        TestLogSink.Instance.Clear();
+        using FixtureTree tree = new();
+        (ReviewQueue queue, _) = QueueOverSeed(tree, WrappedSeed, OneLineEach);
+        using ReviewHost host = new();
+        ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
+
+        Assert.Equal(TakeResult.Replaced, session.Take(SectionOf(session, "One")));
+
+        // Plan 00036 decision 7: what is taken is what the operator read, Alpha in the accumulator's own lines.
+        Assert.Equal(WrappedSeed.Replace("Gamma.", "Gamma, from the first.", StringComparison.Ordinal), session.Accumulator);
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task A_take_of_a_section_holding_the_accumulators_words_writes_nothing()
+    {
+        TestLogSink.Instance.Clear();
+        using FixtureTree tree = new();
+        (ReviewQueue queue, _) = QueueOverSeed(tree, WrappedSeed, OneLineEach);
+        using ReviewHost host = new();
+        ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
+
+        Assert.Equal(TakeResult.Unchanged, session.Take(SectionOf(session, "Two")));
+        Assert.Equal(WrappedSeed, session.Accumulator);
+        Assert.False(host.Left.CanUndo, "A take of the version the accumulator holds made an edit to undo.");
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task A_candidate_is_re_broken_against_the_accumulator_as_it_reads_when_the_candidate_is_shown()
+    {
+        TestLogSink.Instance.Clear();
+        using FixtureTree tree = new();
+
+        // Machine 1 rewords Gamma over two lines, and machine 2 holds the same words on one.
+        string twoLines = WrappedSeed.Replace("Gamma.", "Gamma, reworded by\nthe first machine.", StringComparison.Ordinal);
+        string oneLine = WrappedSeed.Replace("Gamma.", "Gamma, reworded by the first machine.", StringComparison.Ordinal);
+        (ReviewQueue queue, _) = QueueOverSeed(tree, WrappedSeed, twoLines, oneLine);
+        using ReviewHost host = new();
+        ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
+        Assert.Equal(TakeResult.Replaced, session.Take(SectionOf(session, "One")));
+
+        // ⭐ Plan 00036 decision 8: machine 2 is shown against the accumulator as it reads now, which holds machine
+        // 1's Gamma, and not against the seed, which has no paragraph of those words.
+        Assert.True(await host.AwaitBuildAsync(session.Next));
+        Assert.Equal(twoLines, host.View.RightDocument.Text);
+
+        // Typing in the left re-breaks nothing until the next move: the right keeps the source it was shown with.
+        PaneSource? shown = host.View.RightSource;
+        host.Type(host.Left, session.Accumulator.IndexOf("first machine.", StringComparison.Ordinal), "very ");
+        Assert.True(session.Accumulator.Contains("very first machine.", StringComparison.Ordinal), "The left refused the keystroke.");
+        Assert.Same(shown, host.View.RightSource);
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }
