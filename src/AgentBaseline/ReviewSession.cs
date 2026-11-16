@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using AvaloniaEdit.Document;
 using Bennewitz.Ninja.DiffView;
 using Bennewitz.Ninja.DiffView.Core;
@@ -7,9 +8,9 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// <summary>
 /// The review: the seed's text on the left as an accumulator, edited by hand and never replaced, and
 /// the queue's candidates shown on the right one at a time — plan 00034 step 5, <i>cycling with the
-/// accumulator intact</i> — and the four decisions made about a candidate's sections, step 6. Each
-/// pane shows its document's normalised text, which is the text the queue counted every candidate's
-/// changes over.
+/// accumulator intact</i> — and the four decisions made about a candidate's sections, step 6. The left
+/// shows the seed's normalised text, and the right each candidate's normalised text re-broken against the
+/// accumulator, which is the text the queue counted every candidate's changes over (plan 00036).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -50,6 +51,13 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// ⭐ A session begins from the decisions earlier runs made when it is given them — step 8, read back from
 /// the decision file a save wrote — so a version decided then is answered now (<see cref="StandingOf"/>).
 /// It never begins from an earlier session store: what was put off is offered again.
+/// </para>
+/// <para>
+/// ⭐ <b>The right shows the candidate as <see cref="ShownCandidate"/> re-breaks it</b> — plan 00036 decisions
+/// 4 and 8: each paragraph holding the words of one of the accumulator's is broken where the accumulator
+/// breaks that one, against the accumulator as it reads when the candidate is shown. Its outline is the right
+/// pane's, so the caret's section, the mark and every verb read it, and a take writes what the pane shows
+/// (decision 7). Each of its sections folds to the candidate's own, so each is the version the candidate holds.
 /// </para>
 /// <para>
 /// Every title ends with its candidate's own file name, because the control chooses a pane's grammar
@@ -135,15 +143,21 @@ internal sealed class ReviewSession
     /// <summary>The candidate the right pane shows.</summary>
     internal QueuedCandidate Current => Queue.Items[Position];
 
+    /// <summary>
+    /// <see cref="Current"/> as the right pane shows it: re-broken against the accumulator as it read when the
+    /// candidate was shown. Its sections are the handles every verb takes.
+    /// </summary>
+    internal ShownCandidate Shown { get; private set; }
+
     /// <summary>The accumulator's text as it now stands — takes, drops and typing alike: what a save writes.</summary>
     internal string Accumulator => view.LeftDocument.Text;
 
     /// <summary>
     /// The current candidate's section that governs 1-based <paramref name="line"/> of the right pane, or
     /// <see langword="null"/> for a line above its first heading or past its last line. The right shows
-    /// the text the candidate's outline was read from, so its lines are the outline's.
+    /// <see cref="Shown"/>, so its lines are that outline's.
     /// </summary>
-    internal MarkdownSection? CandidateSectionAt(int line) => SectionAt(Current.Candidate.Document.Outline, line);
+    internal MarkdownSection? CandidateSectionAt(int line) => SectionAt(Shown.Outline, line);
 
     /// <summary>
     /// The accumulator's section that governs 1-based <paramref name="line"/> of the left pane, read from a
@@ -191,9 +205,9 @@ internal sealed class ReviewSession
     }
 
     /// <summary>
-    /// Takes <paramref name="section"/> — one of the right's sections — into the accumulator: its
-    /// version replaces the left's section at the same heading path, or is inserted where the candidate
-    /// has it when the left holds none. Recorded as taken, with the content taken.
+    /// Takes <paramref name="section"/> — one of the right's sections — into the accumulator as the right
+    /// shows it: its version replaces the left's section at the same heading path, or is inserted where the
+    /// candidate has it when the left holds none. Recorded as taken, with the content taken.
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="section"/> is not one of the current candidate's.</exception>
     /// <exception cref="DecisionRefusedException">
@@ -203,7 +217,7 @@ internal sealed class ReviewSession
     {
         int index = IndexInCurrent(section);
         TextDocument left = view.LeftDocument;
-        (TextEdit edit, TakeResult result) = AccumulatorEdits.Take(left.Text, Current.Candidate.Document.Outline, index);
+        (TextEdit edit, TakeResult result) = AccumulatorEdits.Take(left.Text, Shown.Outline, index);
         if (result != TakeResult.Unchanged)
         {
             left.Replace(edit.Offset, edit.Length, edit.Text);
@@ -293,11 +307,16 @@ internal sealed class ReviewSession
         Show();
     }
 
-    /// <summary>Shows the candidate at <see cref="Position"/> on the right.</summary>
+    /// <summary>
+    /// Shows the candidate at <see cref="Position"/> on the right, re-broken against the accumulator as it
+    /// reads now.
+    /// </summary>
+    [MemberNotNull(nameof(Shown))]
     private void Show()
     {
         Candidate candidate = Current.Candidate;
-        view.RightSource = new PaneSource(candidate.Document.Text) { Title = TitleOf(candidate.Label, candidate) };
+        Shown = ShownCandidate.Of(candidate.Document.Text, view.LeftDocument.Text);
+        view.RightSource = new PaneSource(Shown.Text) { Title = TitleOf(candidate.Label, candidate) };
     }
 
     /// <summary>Records a durable decision, which settles any deferral of the same version.</summary>
@@ -308,13 +327,14 @@ internal sealed class ReviewSession
     }
 
     /// <summary>
-    /// Where <paramref name="section"/> is among the current candidate's sections. By reference: a
-    /// section is a handle on the right's own outline, and an equal one from elsewhere is not it.
+    /// Where <paramref name="section"/> is among the current candidate's sections as the right shows them.
+    /// By reference: a section is a handle on the right's own outline, and an equal one from elsewhere is
+    /// not it.
     /// </summary>
     private int IndexInCurrent(MarkdownSection section)
     {
         ArgumentNullException.ThrowIfNull(section);
-        IReadOnlyList<MarkdownSection> sections = Current.Candidate.Document.Outline.Sections;
+        IReadOnlyList<MarkdownSection> sections = Shown.Outline.Sections;
         for (int i = 0; i < sections.Count; i++)
         {
             if (ReferenceEquals(sections[i], section))

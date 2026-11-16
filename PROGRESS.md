@@ -1813,6 +1813,24 @@ wording.
     edit moved. The eight sets the branch owes against `main` came out 281 of 281 as declared in four worktrees, in 53
     minutes, every declared test killed but the four marked inert.
 
+    **Step 3, the shown candidate for exact matches, is done.** `ShownCandidate.Of` shows each paragraph of a
+    candidate that holds the words of one of the accumulator's in that one's lines, the one under the same heading path
+    first and then the first anywhere, each line after its first opening as the paragraph's own first line does: a
+    list item's marker turned to spaces, a quote's `>` kept. Every shown text is checked as decision 6 says: parsed, it
+    gives the candidate's heading paths in order, and what stands above the first heading and each section fold to the
+    candidate's own. A paragraph whose re-break fails the check is shown as written and the others are kept, each tried
+    over the ones kept before it. The fold and the re-break read a paragraph's breaks one way, `ParagraphBreaks.Paragraphs`,
+    a paragraph's text taken from its inlines' span: measured, its block's span takes in the spaces ending its last line
+    and, above a table pipe tables carved out of it, the whole table. `ReviewSession` makes the shown text on every move,
+    against the accumulator as it reads then, and reads its outline for the caret's section, the mark and every verb,
+    so a take writes what the pane shows; `Corpus.Queue` counts each candidate re-broken against the seed. Over the
+    2026-11-10 pair, 193 of JanusHalo's 214 shown lines equal a line of the seed, against 60 of 129 as ingested, and the
+    diff counts 8 changes where it counted 48, the re-break taking 20 ms. New tests in `ShownCandidateTests`,
+    `ReviewSessionTests` and `CorpusTests`; a new set, `shown-candidate.json`, of twelve mutations, seven more in
+    `review-session.json` and `corpus.json`, and five re-pointed where the code they edit moved. The five test classes
+    that hand the verbs a section take it from the shown outline now. The nine sets step 3 owes came out 354 of 354
+    as declared in four worktrees, in 36 minutes, every declared test killed but the two marked inert.
+
 42. **CodeQuality to `2026.4.1113`, and the pin-revert proof item 40 lost — Brian, 2026-11-16, after item 41.**
     DiffView pins CodeQuality at `2026.4.1104`; the move owes at least one suppression in `scripts/mutate-gates.cs`,
     its reason in `DECISIONS.md`, and a full gate run. With it goes item 30's mutation that moved a pin back, which

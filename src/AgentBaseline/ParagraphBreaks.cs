@@ -6,6 +6,40 @@ using Markdig.Syntax.Inlines;
 namespace Bennewitz.Ninja.AgentBaseline;
 
 /// <summary>
+/// One soft break inside a paragraph, as offsets into the text it was read from: the characters a fold turns into one
+/// space, the spaces and tabs ending the line through the indent and any quote markers beginning the next.
+/// </summary>
+/// <param name="Start">The first character the break takes: the first of the spaces ending its line, or the line ending.</param>
+/// <param name="End">The first character after it, where the next line's text begins.</param>
+internal readonly record struct SoftBreak(int Start, int End);
+
+/// <summary>One paragraph's text and its soft breaks, as offsets into the text it was read from.</summary>
+/// <param name="Start">Where the paragraph's text begins, past whatever its containers put before it on its first line.</param>
+/// <param name="End">Where its text ends, after its last inline and before the spaces CommonMark strips from its last line.</param>
+/// <param name="Breaks">Its soft breaks, in the order of their offsets.</param>
+internal sealed record ParagraphText(int Start, int End, IReadOnlyList<SoftBreak> Breaks)
+{
+    /// <summary>
+    /// The paragraph's lines as a fold reads them from <paramref name="text"/>, the text it was read from: the runs
+    /// between its soft breaks, without what a break takes. Joined with one space they are its words, the paragraph as
+    /// <see cref="ParagraphBreaks.Fold"/> writes it.
+    /// </summary>
+    internal IReadOnlyList<string> LinesIn(string text)
+    {
+        List<string> lines = new(Breaks.Count + 1);
+        int from = Start;
+        foreach (SoftBreak join in Breaks)
+        {
+            lines.Add(text[from..join.Start]);
+            from = join.End;
+        }
+
+        lines.Add(text[from..End]);
+        return lines;
+    }
+}
+
+/// <summary>
 /// Plan 00036 decision 1: a soft line break inside a paragraph is one space. Where a paragraph breaks its lines is
 /// layout, not content, so two texts that differ only there fold to one text.
 /// </summary>
@@ -24,6 +58,12 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// it starting where the next line's text does, past the indent and any <c>&gt;</c> a quote puts there. A
 /// <c>&gt;</c> that is text, as on a continuation line indented four spaces, is where that inline starts, so it stays;
 /// an escape's inline starts at its backslash. A setext heading's lines are one literal, with no break in it at all.
+/// </para>
+/// <para>
+/// ⭐ <b>One reading of where a paragraph's lines break</b>, <see cref="Paragraphs"/>, which the fold and the shown
+/// candidate share (plan 00036 decision 4), so the two never disagree about what a paragraph's words are. A paragraph
+/// is where its inlines are, measured: a <c>ParagraphBlock</c>'s own span takes in the spaces ending its last line,
+/// and above a table that pipe tables carved out of it, the whole table.
 /// </para>
 /// <para>
 /// ⚠ <b>A soft break with nothing after it in its paragraph is kept.</b> Two shapes leave one, both measured: pipe
@@ -58,14 +98,33 @@ internal static class ParagraphBreaks
         ArgumentNullException.ThrowIfNull(text);
 
         string normalised = MarkdownOutline.NormaliseLineEndings(text);
-        MarkdownDocument document = Markdig.Markdown.Parse(normalised, Pipeline);
-
         StringBuilder folded = new(normalised.Length);
         int copied = 0;
 
-        // Descendants walks the blocks, and each paragraph's inlines, in document order, so the joins come in the
-        // order of their offsets: one out of that order would hand Append a negative length and throw, never fold
-        // the wrong text.
+        foreach (ParagraphText paragraph in Paragraphs(normalised))
+        {
+            foreach (SoftBreak join in paragraph.Breaks)
+            {
+                folded.Append(normalised, copied, join.Start - copied).Append(' ');
+                copied = join.End;
+            }
+        }
+
+        return folded.Append(normalised, copied, normalised.Length - copied).ToString();
+    }
+
+    /// <summary>Every paragraph of <paramref name="normalised"/>, in document order, with its soft breaks.</summary>
+    /// <param name="normalised">A text whose line endings are LF, as every text this tool holds after ingest is.</param>
+    internal static IReadOnlyList<ParagraphText> Paragraphs(string normalised)
+    {
+        ArgumentNullException.ThrowIfNull(normalised);
+
+        MarkdownDocument document = Markdig.Markdown.Parse(normalised, Pipeline);
+        List<ParagraphText> paragraphs = [];
+
+        // Descendants walks the blocks, and each paragraph's inlines, in document order, so the breaks come in the
+        // order of their offsets: one out of that order would hand a fold a negative length and throw, never fold the
+        // wrong text.
         foreach (ParagraphBlock paragraph in document.Descendants<ParagraphBlock>())
         {
             if (paragraph.Inline is not { } inlines)
@@ -73,6 +132,7 @@ internal static class ParagraphBreaks
                 continue;
             }
 
+            List<SoftBreak> breaks = [];
             foreach (LineBreakInline lineBreak in inlines.Descendants<LineBreakInline>())
             {
                 Inline? next = lineBreak.NextSibling;
@@ -89,11 +149,12 @@ internal static class ParagraphBreaks
                     end--;
                 }
 
-                folded.Append(normalised, copied, end - copied).Append(' ');
-                copied = next.Span.Start;
+                breaks.Add(new SoftBreak(end, next.Span.Start));
             }
+
+            paragraphs.Add(new ParagraphText(inlines.Span.Start, inlines.Span.End + 1, breaks));
         }
 
-        return folded.Append(normalised, copied, normalised.Length - copied).ToString();
+        return paragraphs;
     }
 }

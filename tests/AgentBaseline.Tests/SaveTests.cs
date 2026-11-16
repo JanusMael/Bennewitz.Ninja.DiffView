@@ -70,7 +70,7 @@ public sealed class SaveTests
     }
 
     private static MarkdownSection SectionOf(ReviewSession session, string path) =>
-        session.Current.Candidate.Document.Outline.Sections.Single(s => s.HeadingPath == path);
+        session.Shown.Outline.Sections.Single(s => s.HeadingPath == path);
 
     private static string Said(params StaleSection[] stale) => ((IReadOnlyList<StaleSection>)stale).Spoken();
 

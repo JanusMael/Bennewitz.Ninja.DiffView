@@ -262,6 +262,25 @@ public sealed class CorpusTests
     }
 
     [Fact]
+    public void A_candidate_is_counted_re_broken_against_the_seed_so_one_that_only_re_wraps_it_comes_last()
+    {
+        const string wrapped = "# Rules\n\n## One\n\nAlpha, wrapped\nover two lines.\n\n## Two\n\nBeta, wrapped\nover two lines.\n";
+        using FixtureTree tree = new();
+        Corpus corpus = Corpus.Gather(CorpusRequest.Create(
+        [
+            Entry(tree.Write("Seed/AGENTS.md", wrapped), "seed"),
+            Entry(tree.Write("Halo/AGENTS.md", WrappedInAListItem(wrapped.Replace("wrapped\nover", "wrapped over", StringComparison.Ordinal))), "rewrapped"),
+            Entry(tree.Write("Word/AGENTS.md", wrapped.Replace("Beta, wrapped", "Beta, rewrapped", StringComparison.Ordinal)), "one word"),
+        ]));
+
+        // ⭐ Plan 00036 decision 9: re-broken against the seed, the candidate holding the seed's words a paragraph a
+        // line changes nothing, where as written it would change every paragraph and be reviewed first.
+        Assert.Equal(
+            [("one word", 1), ("rewrapped", 0)],
+            QueueOf(corpus, "seed").Items.Select(i => (i.Candidate.Label, i.Changes)));
+    }
+
+    [Fact]
     public void A_listed_order_reviews_the_candidates_as_the_manifest_lists_them()
     {
         using FixtureTree tree = new();

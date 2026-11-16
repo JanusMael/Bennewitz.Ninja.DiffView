@@ -1,0 +1,98 @@
+// Plan 00036 step 3: the shown candidate, for exact matches. A candidate's paragraph holding the words of one of the
+// accumulator's is shown in that one's lines, each line after its first opening as the paragraph's own containers
+// need, and a re-break that would change what the text is, is not made.
+//
+//   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/shown-candidate.json
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/ShownCandidateTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the accumulator's paragraphs are found by their lines, not their words",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "string words = string.Join(' ', lines);",
+      "new": "string words = string.Join('\\n', lines);",
+      "killer": "Every_block_equal_in_words_to_one_of_the_accumulators_shows_in_its_lines"
+    },
+    {
+      "name": "a candidate's paragraph is looked for by its lines, not its words",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "holders.TryGetValue(string.Join(' ', paragraph.LinesIn(text))",
+      "new": "holders.TryGetValue(string.Join('\\n', paragraph.LinesIn(text))",
+      "killer": "A_quotes_lines_keep_its_marker_and_a_list_items_are_indented_to_its_text"
+    },
+    {
+      "name": "the first paragraph holding the words gives its lines, whatever heading it is under",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "Holder holder = holding.FirstOrDefault(h => string.Equals(h.Path, path, StringComparison.Ordinal), holding[0]);",
+      "new": "Holder holder = holding[0];",
+      "killer": "A_paragraph_the_accumulator_holds_twice_is_shown_in_the_lines_of_the_one_under_its_own_heading"
+    },
+    {
+      "name": "a line after the first opens with nothing",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "string.Join(\"\\n\" + OpeningOf(text, paragraph.Start), holder.Lines)",
+      "new": "string.Join(\"\\n\", holder.Lines)",
+      "killer": "A_quotes_lines_keep_its_marker_and_a_list_items_are_indented_to_its_text"
+    },
+    {
+      "name": "a line after the first opens with a list item's marker",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "opening.Append(c is ' ' or '\\t' or '>' ? c : ' ');",
+      "new": "opening.Append(c);",
+      "killer": "Every_block_equal_in_words_to_one_of_the_accumulators_shows_in_its_lines"
+    },
+    {
+      "name": "a line after the first opens without a quote's marker",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "c is ' ' or '\\t' or '>' ? c : ' '",
+      "new": "c is ' ' or '\\t' ? c : ' '",
+      "killer": "A_quotes_lines_keep_its_marker_and_a_list_items_are_indented_to_its_text"
+    },
+    {
+      "name": "the check folds no section",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "|| !string.Equals(ParagraphBreaks.Fold(section.Content), sections[i], StringComparison.Ordinal)",
+      "new": "",
+      "killer": "A_paragraph_whose_re_break_would_open_a_list_is_shown_as_written_and_the_others_are_re_broken"
+    },
+    {
+      "name": "the check folds nothing above the first heading",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "|| !string.Equals(ParagraphBreaks.Fold(outline.Preamble), preamble, StringComparison.Ordinal)",
+      "new": "",
+      "killer": "A_paragraph_whose_re_break_would_open_a_list_is_shown_as_written_and_the_others_are_re_broken"
+    },
+    {
+      "name": "a text that fails the check is shown as the candidate wrote it, every paragraph of it",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "foreach (Rebreak rebreak in rebreaks)",
+      "new": "foreach (Rebreak rebreak in Array.Empty<Rebreak>())",
+      "killer": "A_paragraph_whose_re_break_would_open_a_list_is_shown_as_written_and_the_others_are_re_broken"
+    },
+    {
+      "name": "each re-break is tried alone, not over the ones kept before it",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "own.Check(Apply(text, [.. kept, rebreak]))",
+      "new": "own.Check(Apply(text, [rebreak]))",
+      "killer": "A_paragraph_whose_re_break_would_open_a_list_is_shown_as_written_and_the_others_are_re_broken"
+    },
+    {
+      "name": "a paragraph runs to the end of its block, the spaces ending its last line with it",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "new ParagraphText(inlines.Span.Start, inlines.Span.End + 1, breaks)",
+      "new": "new ParagraphText(inlines.Span.Start, paragraph.Span.End + 1, breaks)",
+      "killer": "A_paragraph_ending_in_spaces_is_re_broken_and_keeps_them"
+    },
+    {
+      "name": "the text after the last re-break is copied by a length written the other way round",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "text.Length - copied",
+      "new": "-copied + text.Length",
+      "expect": "green",
+      "because": "a control: addition commutes, so this changes nothing, and every test must stay green under it or the run is judging something other than the code it edited"
+    }
+  ]
+}
