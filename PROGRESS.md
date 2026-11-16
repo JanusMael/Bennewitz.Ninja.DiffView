@@ -1809,13 +1809,31 @@ wording.
     being one every app of his needs. Adopting it here waits for that package. `DECISIONS.md`, *The review window's
     theme button is ClaudeForge's, until AppKit publishes one*.
 
+46. **The reference sources, fetched by AppKit's shared script — the AppKit session, 2026-11-16, on Brian's direction
+    that day.** One way across his repositories: AppKit's `reference/fetch-reference.cs`, which merges DiffView's,
+    XamlQuality's and ClaudeForge's scripts, in place of `scripts/fetch-reference.cs` and its wrappers. Brian gave the
+    adoption to the session working plan 00036 the same day.
+
+    ✅ **Done 2026-11-16 on `build/the-shared-reference-script`, cut from PR #58's merge, local only.** The script is
+    AppKit's at `d3bdafe`, blob for blob, with its two empty shields beside the `Directory.Packages.props` kept here,
+    and every CI job, the release and the test project's `EnsureReferenceSources` run it as
+    `dotnet run --file reference/fetch-reference.cs`. Avalonia, AvaloniaEdit, DiffPlex and Semi.Avalonia are pinned by
+    their packages, at the commits the nuspecs record, measured first to move no file DiffView reads; ClaudeForge keeps
+    its commit. `scripts/pack-diagnostics.cs` and the theme audit read the pinned ClaudeForge checkout alone, and
+    `docs/theme-audit.md` changed in that row's paths and nothing else. The first `--update` fetched again four
+    checkouts whose `.git` had lost its `refs` folder, which the old script never asked git about. The suite ran 1023
+    of 1023 on Windows, judged healthy; `repo-conventions check` conforms; `mutate-gates --guards` holds and its
+    `--check` applies 137 of 137; and every set's `mutate-behaviour --check` holds. `DECISIONS.md`, *The reference
+    sources are fetched by AppKit's shared script*.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 is done on
 `feat/a-host-marks-a-range-of-lines` and lands with its pull request, item 41 follows it and item 42 follows item 41,
-item 43 waits for DiffView's next `repo-conventions` sync, and item 44 for AppKit's package. **Every other open item was
+item 43 waits for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and item 46 is done on
+`build/the-shared-reference-script`, to push on his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the

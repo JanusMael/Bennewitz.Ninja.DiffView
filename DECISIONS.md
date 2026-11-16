@@ -5540,3 +5540,41 @@ the window holds no handler on anything that outlives it.
 **AppKit was asked the same day to publish the pattern**, on Brian's word that the button might belong there if it is
 reusable: every app of his needs one, and ClaudeForge's is woven through its view model and its window state. This
 button gives way to AppKit's once that is published, open item 44.
+
+## The reference sources are fetched by AppKit's shared script
+
+On 2026-11-16 the AppKit session sent word that Brian wants one way across his repositories to fetch reference
+sources, and that the script merging DiffView's, XamlQuality's and ClaudeForge's was ready for DiffView to adopt; he
+gave the adoption to the session working plan 00036 the same day. `reference/fetch-reference.cs` is AppKit's,
+`JanusMael/Bennewitz.Ninja.AppKit`'s `reference/fetch-reference.cs` at `d3bdafe` blob for blob, with its two empty
+shields beside the `Directory.Packages.props` this repository already kept; `scripts/fetch-reference.cs` and its two
+wrappers are gone. Every CI job, the release, the spike workflow and the test project's `EnsureReferenceSources` run
+it as `dotnet run --file reference/fetch-reference.cs`, and like `scripts/repo-conventions.cs` it is never edited
+here: a change is made in AppKit and copied back.
+
+**Four sources are pinned by their packages.** An entry naming `packages` is fetched at the commit their nuspecs
+record for the version `Directory.Packages.props` pins, so a raised package moves its checkout with it instead of
+leaving a hand-written ref behind. Measured before the switch, against the refs it replaced: Avalonia's two theme
+packages and AvaloniaEdit's two record the commits their tags held; Semi.Avalonia 12.1.0.1 records `dc75ad4`, one
+commit before its tag `v12.1.0.1`, the two differing in Semi's own `Directory.Packages.props` alone; and DiffPlex 1.9.0
+records `3cb6415`, three commits before the `f500e73` pinned here, the three touching its WPF viewer and its CI alone.
+No file DiffView reads moved, which the theme audit confirmed by reporting every row as before. ClaudeForge keeps its
+commit `ref`: its diagnostics package is packed here from the checkout and records no source.
+
+**`local` is where a fetch clones from, never a checkout read in place.** The old script read a sibling checkout where
+it stood, at whatever commit it had moved on to; the new one clones the sibling into `reference/ClaudeForge` at the
+pin, falling back to the url. So the checkout under `reference/` is the one thing read: `scripts/pack-diagnostics.cs`
+packs from it alone, and the theme audit's ClaudeForge consumer names it alone, the report changing in that row's
+paths and in nothing else, its counts and digest the same.
+
+**`.gitignore` keeps `reference/*`, not AppKit's `/reference/*/`.** A checkout linked in from elsewhere is a symlink,
+which to git is a file a folder pattern does not match, the reason this repository chose the file pattern; the
+script's check that git ignores every checkout folder passes under either, and the three new tracked files are
+re-admitted by name.
+
+**The first `--update` found four checkouts broken.** Avalonia's, AvaloniaEdit's, DiffPlex's and Semi.Avalonia's
+`.git` folders held no `refs` folder, which a shallow clone keeps empty and a copy that skips empty folders drops,
+their folders last written on 2026-10-04; git read each as no repository and answered for DiffView's instead. Their
+files were intact, so the theme audit never noticed, and the old script, which asked git nothing about a checkout it
+found with a `.git` and a matching pin record, called them present. The new one asks for each checkout's `HEAD`, read
+DiffView's, called them off-pin, and fetched them again in 14 seconds.
