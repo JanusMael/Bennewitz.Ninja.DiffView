@@ -41,6 +41,6 @@
        before this project builds, so `dotnet test` on a fresh clone self-heals. The script is a
        no-op when everything is present. Skip with -p:SkipReferenceSources=true. -->
   <Target Name="EnsureReferenceSources" BeforeTargets="Build" Condition="'$(SkipReferenceSources)' != 'true'">
-    <Exec Command="dotnet run &quot;$(RepoRoot)scripts/fetch-reference.cs&quot; -- --quiet" WorkingDirectory="$(RepoRoot)" />
+    <Exec Command="dotnet run --file &quot;$(RepoRoot)reference/fetch-reference.cs&quot; -- --quiet" WorkingDirectory="$(RepoRoot)" />
   </Target>
 </Project>

@@ -49,7 +49,7 @@ jobs:
       # Same prerequisites the solution needs in ci.yml: the reference fetch clones ClaudeForge at
       # its pin, and the pack script builds the diagnostics package the demo resolves.
       - name: Fetch reference sources
-        run: dotnet run scripts/fetch-reference.cs
+        run: dotnet run --file reference/fetch-reference.cs
 
       - name: Pack ClaudeForge diagnostics into the local feed
         run: dotnet run scripts/pack-diagnostics.cs

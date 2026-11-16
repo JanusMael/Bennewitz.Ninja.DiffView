@@ -45,7 +45,7 @@ _none_
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `60346377b215` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `76fecb00930b` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d20b807c8919` | Fluent, Semi, Semi + compat |
-| ClaudeForge | `../cl/ClaudeForge/src/ClaudeForge or reference/ClaudeForge/src/ClaudeForge`, `../cl/ClaudeForge/src/ClaudeForge.Avalonia or reference/ClaudeForge/src/ClaudeForge.Avalonia`, `../cl/ClaudeForge/src/LayeredEditors.Avalonia or reference/ClaudeForge/src/LayeredEditors.Avalonia` | 43 | 1852 | 210 | 1109 | `b7ea0ec438c5` | Semi, Semi + compat |
+| ClaudeForge | `reference/ClaudeForge/src/ClaudeForge`, `reference/ClaudeForge/src/ClaudeForge.Avalonia`, `reference/ClaudeForge/src/LayeredEditors.Avalonia` | 43 | 1852 | 210 | 1109 | `b7ea0ec438c5` | Semi, Semi + compat |
 
 ## Undefined keys
 

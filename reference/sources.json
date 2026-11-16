@@ -3,27 +3,23 @@
     {
       "name": "Semi.Avalonia",
       "dir": "reference/Semi.Avalonia",
-      "url": "https://github.com/irihitech/Semi.Avalonia.git",
-      "ref": "v12.1.0.1"
+      "packages": ["Semi.Avalonia"]
     },
     {
       "name": "Avalonia",
       "dir": "reference/Avalonia",
-      "url": "https://github.com/AvaloniaUI/Avalonia.git",
-      "ref": "12.1.2",
+      "packages": ["Avalonia.Themes.Fluent", "Avalonia.Themes.Simple"],
       "sparse": ["src/Avalonia.Themes.Fluent", "src/Avalonia.Themes.Simple"]
     },
     {
       "name": "AvaloniaEdit",
       "dir": "reference/AvaloniaEdit",
-      "url": "https://github.com/AvaloniaUI/AvaloniaEdit.git",
-      "ref": "12.0.0"
+      "packages": ["Avalonia.AvaloniaEdit", "AvaloniaEdit.TextMate"]
     },
     {
       "name": "DiffPlex",
       "dir": "reference/DiffPlex",
-      "url": "https://github.com/mmanela/diffplex.git",
-      "ref": "f500e73f28e28813f942f1f16dec5a34b40e48e3"
+      "packages": ["DiffPlex"]
     },
     {
       "name": "ClaudeForge",

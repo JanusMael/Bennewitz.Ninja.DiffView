@@ -88,7 +88,7 @@ jobs:
       # The reference checkouts and the sibling feed, exactly as ci.yml needs them: the theme audit
       # reads the former and DiffView.Avalonia resolves LayeredEditors.* from the latter.
       - name: Fetch reference sources
-        run: dotnet run scripts/fetch-reference.cs
+        run: dotnet run --file reference/fetch-reference.cs
 
       - name: Pack ClaudeForge diagnostics into the local feed
         run: dotnet run scripts/pack-diagnostics.cs
