@@ -5481,3 +5481,44 @@ holds it to that floor against the gutter under every theme the audit reads.
 presenter's emphasis itself rather than the renderer's test seam, so a fault provoked there stays the renderer's alone.
 That the margin is repainted when the range changes, like the background layer's invalidation, is beyond what a
 captured frame can show, AGENTS.md §5, and no mutation of it is in a set.
+
+## A host marks a range of lines, and the review window marks its section
+
+Plan 00035, open item 36. `SideBySideDiffView.LeftEmphasis` and `RightEmphasis`, and the viewer's two through
+`AddOwner`, are `LineRange?` per side; each pane shades every marked line's own row through `EmphasisRenderer`, a bar
+runs down its glyph column beside them, and AgentBaseline's review window sets them from its carets.
+
+**Rows, not text bands.** Item 36 asked for the mark drawn by the text bands, and the plan's decision 4 chose rows:
+two lines' bands leave twice `PaddingSpec.HalfSlack` between them, so a section shaded by bands is striped, where rows
+touch and a section reads as one block wherever padding does not interrupt it. A row is the line's own, below the
+padding its `PaddingElement` carries, so the padding the other file's lines put there is never shaded.
+
+**The drawing order is read where it is kept.** The shade goes on the background layer right after the row fills, over
+the tints and the current block's border. Drawn under a tint instead, a marked row differs by about three levels a
+channel, inside the rounding any pixel comparison has to allow, so `EmphasisTests` asserts the layer and the renderer's
+place in the list, and its proof set swaps the two to show the assertion trips.
+
+**What no test here sees.** Assigning `DiffPanePresenter.Emphasis` invalidates the background layer, as `CurrentBlock`
+does, and repaints the marker margin, and nothing proves either: a captured frame draws the whole tree, AGENTS.md §5,
+so a test that captures after the change passes with the invalidation gone, and no mutation of either is in a set.
+
+**A set takes one class, so there are two.** `Mutations/emphasis.json` holds the presenter's `EmphasisTests`, 16
+mutations, five of them the bar's, and `Mutations/view-emphasis.json` the views' `EmphasisViewTests`, 6, each with its
+green control, both filtered to their class because the project also holds the harness's own tests.
+
+**The window's marks were proven in `startup.json`, not `review-window.json`.** The plan's step 5 names the second,
+and `StandingLineTests`, whose five new tests the marks are held by, belongs to the first. Its seven new mutations
+went there: the right caret marking nothing, a mark leaving the other pane's, a mark running on through a section's
+closing blank lines or starting below its heading, a caret in no section keeping the old mark, a move leaving the
+marks, and the left mark read again only when the heading path changes. The mark is set before the early return that
+lets a verb's outcome stand while the caret stays in its section, which is the last of those.
+
+**Two frames, Linux's.** `EmphasisSnapshotTests.A_range_marked_on_each_side_renders` marks the left's lines 5 to 12,
+across three rows of padding and into a block of deleted lines, and the right's 5 to 8, into a block of added lines, so
+the same colour shows inside each mark and beside it, in Light and Dark. Brian looked at both before they were
+committed. Beside each, the test asserts what a frame cannot be relied on for: the rows the renderer drew, the shade's
+composite at a pixel of a plain row, and the padding and the changed rows past each mark untouched.
+
+**His look at the window.** On 2026-11-16 Brian looked at the review window built from this branch, over his
+2026-11-10 corpus, and said the marks look right. What made it hard to orient was not the mark: the first pair sets a
+candidate written a paragraph a line beside a seed wrapped near 100, which plan 00036 takes up.
