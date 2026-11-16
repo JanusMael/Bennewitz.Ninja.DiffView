@@ -1789,7 +1789,17 @@ wording.
     129 lines equal a seed line as shown. DiffView cannot wrap, and wrapping would not help: the diff would still set
     one line beside three. Plan 00036, approved 2026-11-16, makes AgentBaseline fold a paragraph's soft breaks in a
     section's identity, show the candidate re-broken where the accumulator breaks, and align a differing paragraph's
-    words with its counterpart's. Next, on a branch of its own once item 36's pull request is open.
+    words with its counterpart's. Under way on `feat/a-paragraphs-line-breaks-are-not-a-difference`, moved onto `main`
+    once PR #58 merged.
+
+    **Step 1, the fold, is done.** `ParagraphBreaks.Fold` turns each soft break in a paragraph into one space and keeps
+    every other line break, reading the breaks from Markdig's inline tree: measured first, a paragraph's own lines are
+    empty once its inlines are parsed. It parses with pipe tables, which the outline's pipeline lacks, the 2026-11-10
+    seed holding a table among its 138 soft breaks; and it keeps a soft break with nothing after it in its paragraph,
+    which pipe tables leave above a table and a link leaves at the end of its text. `ParagraphBreaksTests` holds it in
+    ten tests, two of them pins of Markdig marked as the outline's two are, and `paragraph-breaks.json` in thirteen
+    mutations. The four sets the step owes came out 110 of 110 as declared in four worktrees, in 20 minutes, every
+    declared test killed but the four marked inert.
 
 42. **CodeQuality to `2026.4.1113`, and the pin-revert proof item 40 lost — Brian, 2026-11-16, after item 41.**
     DiffView pins CodeQuality at `2026.4.1104`; the move owes at least one suppression in `scripts/mutate-gates.cs`,

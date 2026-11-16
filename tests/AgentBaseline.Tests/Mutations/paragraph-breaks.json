@@ -1,0 +1,105 @@
+// Plan 00036 step 1: the fold. A soft line break inside a paragraph is one space, and every other line break is
+// kept. Two of its tests ask Markdig rather than the fold whether a code block and an HTML block are paragraphs, and
+// carry the marker that says so; every other test in the file is held to a mutation here.
+//
+//   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/paragraph-breaks.json
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/ParagraphBreaksTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the parse has no pipe tables, so a table's rows are a paragraph's lines",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": ".UseYamlFrontMatter().UsePipeTables().Build()",
+      "new": ".UseYamlFrontMatter().Build()",
+      "killer": "A_table_keeps_its_rows"
+    },
+    {
+      "name": "the parse has no front matter, so a document's YAML is read as paragraphs",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "new MarkdownPipelineBuilder().UseYamlFrontMatter().UsePipeTables()",
+      "new": "new MarkdownPipelineBuilder().UsePipeTables()",
+      "killer": "Text_with_no_soft_break_comes_out_byte_for_byte"
+    },
+    {
+      "name": "a hard break folds as a soft one does",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "lineBreak.IsHard || next is null",
+      "new": "next is null",
+      "killer": "A_hard_break_of_each_kind_keeps_its_line_break"
+    },
+    {
+      "name": "a hard break of two trailing spaces folds",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "lineBreak.IsHard ||",
+      "new": "lineBreak.IsBackslash ||",
+      "killer": "A_hard_break_of_each_kind_keeps_its_line_break"
+    },
+    {
+      "name": "a hard break of a backslash folds",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "lineBreak.IsHard ||",
+      "new": "(lineBreak.IsHard && !lineBreak.IsBackslash) ||",
+      "killer": "A_hard_break_of_each_kind_keeps_its_line_break"
+    },
+    {
+      "name": "the spaces and tabs ending a line stay before the joining space",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "normalised[end - 1] is ' ' or '\\t'",
+      "new": "normalised[end - 1] is '\\0'",
+      "killer": "One_paragraph_wrapped_three_ways_folds_to_one_text"
+    },
+    {
+      "name": "a tab ending a line stays before the joining space",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "is ' ' or '\\t')",
+      "new": "is ' ')",
+      "killer": "One_paragraph_wrapped_three_ways_folds_to_one_text"
+    },
+    {
+      "name": "the folded lines are joined with nothing between them",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "folded.Append(normalised, copied, end - copied).Append(' ');",
+      "new": "folded.Append(normalised, copied, end - copied);",
+      "killer": "One_paragraph_wrapped_three_ways_folds_to_one_text"
+    },
+    {
+      "name": "the next line's indent and its quote's markers stay after the joining space",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "copied = next.Span.Start;",
+      "new": "copied = lineBreak.Span.Start + 1;",
+      "killer": "A_quotes_wrapped_paragraphs_fold_and_a_lazy_line_with_them"
+    },
+    {
+      "name": "the walk takes the document's top-level paragraphs alone",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "document.Descendants<ParagraphBlock>()",
+      "new": "document.OfType<ParagraphBlock>()",
+      "killer": "A_lists_structure_keeps_its_lines_and_each_items_wrapped_paragraph_folds"
+    },
+    {
+      "name": "a break with nothing after it in its paragraph joins what follows the inline holding it",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "Inline? next = lineBreak.NextSibling;",
+      "new": "Inline? next = lineBreak.NextSibling ?? lineBreak.Parent?.NextSibling;",
+      "killer": "A_soft_break_with_nothing_after_it_in_its_paragraph_is_kept"
+    },
+    {
+      "name": "line endings are not normalised before the parse",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "string normalised = MarkdownOutline.NormaliseLineEndings(text);",
+      "new": "string normalised = text;",
+      "killer": "A_document_with_crlf_line_endings_folds_to_what_its_lf_form_folds_to"
+    },
+    {
+      "name": "the text after the last join is copied by a length written the other way round",
+      "file": "src/AgentBaseline/ParagraphBreaks.cs",
+      "old": "normalised.Length - copied",
+      "new": "-copied + normalised.Length",
+      "expect": "green",
+      "because": "a control: addition commutes, so this changes nothing, and every test must stay green under it or the run is judging something other than the code it edited"
+    }
+  ]
+}
