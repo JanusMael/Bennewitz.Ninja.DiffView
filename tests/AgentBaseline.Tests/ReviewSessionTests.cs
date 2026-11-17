@@ -291,8 +291,8 @@ public sealed class ReviewSessionTests
         using ReviewHost host = new();
         ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
 
-        // ⭐ Plan 00036 decision 4: Alpha and Beta hold the seed's words, so they are shown in its lines, and Gamma,
-        // whose words are the candidate's own, as the candidate wrote it.
+        // ⭐ Plan 00036 decision 4: Alpha and Beta hold the seed's words, so they are shown in its lines; and Gamma,
+        // whose words are the candidate's own, in the one line of the seed's Gamma, its counterpart (decision 5).
         Assert.Equal(
             "# Rules\n\n## One\n\nAlpha, wrapped\nover two lines.\n\nGamma, from the first.\n\n## Two\n\nBeta, wrapped\nover two lines.\n",
             host.View.RightDocument.Text);
@@ -344,16 +344,17 @@ public sealed class ReviewSessionTests
         TestLogSink.Instance.Clear();
         using FixtureTree tree = new();
 
-        // Machine 1 rewords Gamma over two lines, and machine 2 holds the same words on one.
-        string twoLines = WrappedSeed.Replace("Gamma.", "Gamma, reworded by\nthe first machine.", StringComparison.Ordinal);
-        string oneLine = WrappedSeed.Replace("Gamma.", "Gamma, reworded by the first machine.", StringComparison.Ordinal);
+        // Machine 1 adds a paragraph over two lines, and machine 2 holds the same words on one. The seed has no
+        // version of it, so machine 1 is shown as it wrote it.
+        string twoLines = WrappedSeed.Replace("Gamma.", "Gamma.\n\nDelta, added by\nthe first machine.", StringComparison.Ordinal);
+        string oneLine = WrappedSeed.Replace("Gamma.", "Gamma.\n\nDelta, added by the first machine.", StringComparison.Ordinal);
         (ReviewQueue queue, _) = QueueOverSeed(tree, WrappedSeed, twoLines, oneLine);
         using ReviewHost host = new();
         ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
         Assert.Equal(TakeResult.Replaced, session.Take(SectionOf(session, "One")));
 
         // ⭐ Plan 00036 decision 8: machine 2 is shown against the accumulator as it reads now, which holds machine
-        // 1's Gamma, and not against the seed, which has no paragraph of those words.
+        // 1's Delta, and not against the seed, which has no paragraph of those words.
         Assert.True(await host.AwaitBuildAsync(session.Next));
         Assert.Equal(twoLines, host.View.RightDocument.Text);
 
