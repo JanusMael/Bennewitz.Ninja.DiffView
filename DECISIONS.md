@@ -5570,7 +5570,10 @@ paths and in nothing else, its counts and digest the same.
 **`.gitignore` keeps `reference/*`, not AppKit's `/reference/*/`.** A checkout linked in from elsewhere is a symlink,
 which to git is a file a folder pattern does not match, the reason this repository chose the file pattern; the
 script's check that git ignores every checkout folder passes under either, and the three new tracked files are
-re-admitted by name.
+re-admitted by name. ⚠ **That reason held only while no checkout was a symlink**, the Templates session found on
+2026-11-17: the check asks git about each checkout's `.fetched-ref`, which git refuses for a path beyond a symbolic
+link, so a checkout linked in stops the script under either line. Templates' new layout, open item 47, asks about
+`reference/src` instead.
 
 **The first `--update` found four checkouts broken.** Avalonia's, AvaloniaEdit's, DiffPlex's and Semi.Avalonia's
 `.git` folders held no `refs` folder, which a shallow clone keeps empty and a copy that skips empty folders drops,
