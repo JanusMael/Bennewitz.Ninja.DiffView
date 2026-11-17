@@ -1913,14 +1913,35 @@ wording.
     corrections to its message, DiffView's ignore line being `reference/*` rather than `reference/*/` and DiffPlex's
     package recording a commit.
 
+47. **The reference checkouts move under `reference/src/` — the Templates session, 2026-11-17, its kit's layout changed
+    on Brian's word that day; adopted at DiffView's next `repo-conventions` sync.** Templates merged the layout as
+    `164c9a5`, its PR #108. Every checkout is a folder under `reference/src/`, which `.gitignore` ignores whole with one
+    line, `/reference/src`, and no `!` line, while the kit's own files stay in `reference/`, where the shields must be
+    for MSBuild's walk up from a checkout. Its `fetch-reference.cs` refuses a `dir` outside `reference/src/`, asks git
+    whether `reference/src` itself is ignored, and on Windows refuses unless `LongPathsEnabled` is 1, printing the
+    administrator's command and never changing the setting. Templates' `check` is to hold the `/reference/src` line,
+    and `check --repo` to fail a copy of the script that differs as drift, its plan 00013's steps 3 and 4, so the sync
+    that brings those brings this with it: the script and the three shields copied from Templates; the nine lines
+    `.gitignore` gives `reference/` replaced by `/reference/src`; every `dir` in `sources.json` moved under
+    `reference/src/`, the checkouts moved or fetched again; and every path the tests, the theme audit, the README's
+    source table and the documents read moved with them. Nothing is needed before then, the session says.
+
+    ⚠ **It corrects what DiffView told AppKit with PR #59.** The script never accepted a checkout linked in from
+    elsewhere, under any ignore line: its gate asks git about each checkout's `.fetched-ref`, which git refuses for a
+    path beyond a symbolic link, exit 128, and the script stops on that with its own exit 2. Templates measured it
+    under WSL with a real symlink and on Windows with a test canary, and the gate here reads as it says. So the reason
+    `DECISIONS.md` gives for keeping the file pattern `reference/*`, *The reference sources are fetched by AppKit's
+    shared script*, held only while no checkout was a symlink; the new gate asks about `reference/src` by that name, and
+    a test holds a checkout moved out and linked back in as present and out of `git status`.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
-2026-11-16 and item 46 as PR #59 the same day, item 41 is under way and item 42 follows it, item 43 waits for
-DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and item 45 for the ClaudeForge session's
-verdict. **Every other open item was
+2026-11-16 and item 46 as PR #59 the same day, item 41 is under way and item 42 follows it, items 43 and 47 wait
+for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and item 45 for the ClaudeForge
+session's verdict. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
