@@ -2,7 +2,7 @@
 
 ## Resume
 
-**`main` carries everything through PR #58** — PR #58 merged on 2026-11-16, and `main`'s run over it passed.
+**`main` carries everything through PR #59** — PR #59 merged on 2026-11-16, and `main`'s run over it passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
 merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1035** here, `Passed!`,
 by a local run over item 48's branch: plan 00035's 1023 and the branch's 12 new tests. ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
@@ -1867,23 +1867,28 @@ wording.
     XamlQuality's and ClaudeForge's scripts, in place of `scripts/fetch-reference.cs` and its wrappers. Brian gave the
     adoption to the session working plan 00036 the same day.
 
-    ✅ **Done 2026-11-16 on `build/the-shared-reference-script`, cut from PR #58's merge.** The script is
-    AppKit's at `d3bdafe`, blob for blob, with its two empty shields beside the `Directory.Packages.props` kept here,
-    and every CI job, the release and the test project's `EnsureReferenceSources` run it as
-    `dotnet run --file reference/fetch-reference.cs`. Avalonia, AvaloniaEdit, DiffPlex and Semi.Avalonia are pinned by
-    their packages, at the commits the nuspecs record, measured first to move no file DiffView reads; ClaudeForge keeps
-    its commit. `scripts/pack-diagnostics.cs` and the theme audit read the pinned ClaudeForge checkout alone, and
-    `docs/theme-audit.md` changed in that row's paths and nothing else. The first `--update` fetched again four
-    checkouts whose `.git` had lost its `refs` folder, which the old script never asked git about. The suite ran 1023
-    of 1023 on Windows, judged healthy; `repo-conventions check` conforms; `mutate-gates --guards` holds and its
-    `--check` applies 137 of 137; and every set's `mutate-behaviour --check` holds. `DECISIONS.md`, *The reference
-    sources are fetched by AppKit's shared script*.
+    ✅ **Done 2026-11-16, and landed that day as PR #59, the session merging it on Brian's word and `main`'s run over
+    it passing.** The script is AppKit's at `d3bdafe`, blob for blob, with its two empty shields beside the
+    `Directory.Packages.props` kept here, and every CI job, the release and the test project's
+    `EnsureReferenceSources` run it as `dotnet run --file reference/fetch-reference.cs`. Avalonia, AvaloniaEdit,
+    DiffPlex and Semi.Avalonia are pinned by their packages, at the commits the nuspecs record, measured first to move
+    no file DiffView reads; ClaudeForge keeps its commit, and its `local` path, `../cl/ClaudeForge`, older than the
+    adoption, fits a DiffView checked out beside `cl/` rather than in it, as this one is, so here ClaudeForge is cloned
+    from its URL, as the old script cloned it. `scripts/pack-diagnostics.cs` and the theme audit read the pinned
+    ClaudeForge checkout alone, and `docs/theme-audit.md` changed in that row's paths and nothing else. The first
+    `--update` fetched again four checkouts whose `.git` had lost its `refs` folder, which the old script never asked
+    git about. The suite ran 1023 of 1023 on Windows, judged healthy; `repo-conventions check` conforms;
+    `mutate-gates --guards` holds and its `--check` applies 137 of 137; and every set's `mutate-behaviour --check`
+    holds. `DECISIONS.md`, *The reference sources are fetched by AppKit's shared script*.
 
-    ⭐ **Pushed for its pull request on Brian's word the same day**, his `/choices` answer *"Push, PR, I merge"*, the
-    session merging it once the six required checks pass. CI is the script's first run off Windows, which AppKit's
-    message says it had not had. Once CI has run, the AppKit session is sent one message, his answer *"One message
-    after CI"*: what Linux and macOS made of the script, and two corrections to its message, DiffView's ignore line
-    being `reference/*` rather than `reference/*/` and DiffPlex's package recording a commit.
+    ⭐ **Pushed for its pull request on Brian's word the same day**, his `/choices` answer *"Push, PR, I merge"*, and
+    merged by the session once all twelve checks had passed, the six required among them. CI was the script's first
+    run off Windows, which AppKit's message said it had not had: on the Linux, macOS and Windows runners, in both runs
+    of the pull request, it fetched all five sources at their pins on a clean checkout, reading each of the four
+    nuspecs from nuget.org, and every job then built and tested green, the culture leg and the trim check included.
+    The AppKit session was then sent one message, his answer *"One message after CI"*: those results, and two
+    corrections to its message, DiffView's ignore line being `reference/*` rather than `reference/*/` and DiffPlex's
+    package recording a commit.
 
 48. **A drag over a padded line taller than its pane overflowed the stack — Brian, 2026-11-19.** In AgentBaseline's
     review window, JanusHalo against the seed, a drag in the right pane killed the process with `0xc00000fd`:
@@ -1916,10 +1921,10 @@ item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09,
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
-2026-11-16, item 41 is under way and item 42 follows it, item 43 waits for DiffView's next `repo-conventions` sync,
-item 44 for AppKit's package, item 45 for the ClaudeForge session's verdict, item 46 is done on
-`build/the-shared-reference-script`, pushed for its pull request on his word, and item 48 is done on
-`fix/a-padded-line-taller-than-the-pane`, its push waiting for his word. **Every other open item was
+2026-11-16 and item 46 as PR #59 the same day, item 41 is under way and item 42 follows it, item 43 waits for
+DiffView's next `repo-conventions` sync, item 44 for AppKit's package, item 45 for the ClaudeForge session's verdict,
+and item 48 is done on `fix/a-padded-line-taller-than-the-pane`, its push waiting for his word. **Every other open
+item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
