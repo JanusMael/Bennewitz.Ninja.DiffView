@@ -1,6 +1,7 @@
-// Plan 00036 step 3: the shown candidate, for exact matches. A candidate's paragraph holding the words of one of the
-// accumulator's is shown in that one's lines, each line after its first opening as the paragraph's own containers
-// need, and a re-break that would change what the text is, is not made.
+// Plan 00036 steps 3 and 4: the shown candidate. A candidate's paragraph holding the words of one of the accumulator's
+// is shown in that one's lines, a paragraph that differs from its counterpart in words is shown in the counterpart's
+// lines with each break moved to the matching word, each line after the first opening as the paragraph's own
+// containers need, and a re-break that would change what the text is, is not made.
 //
 //   dotnet run scripts/mutate-behaviour.cs -- --set tests/AgentBaseline.Tests/Mutations/shown-candidate.json
 {
@@ -10,31 +11,24 @@
   ],
   "mutations": [
     {
-      "name": "the accumulator's paragraphs are found by their lines, not their words",
+      "name": "a paragraph's words are its lines, its breaks kept",
       "file": "src/AgentBaseline/ShownCandidate.cs",
-      "old": "string words = string.Join(' ', lines);",
-      "new": "string words = string.Join('\\n', lines);",
+      "old": "internal string Words { get; } = string.Join(' ', Lines);",
+      "new": "internal string Words { get; } = string.Join('\\n', Lines);",
       "killer": "Every_block_equal_in_words_to_one_of_the_accumulators_shows_in_its_lines"
-    },
-    {
-      "name": "a candidate's paragraph is looked for by its lines, not its words",
-      "file": "src/AgentBaseline/ShownCandidate.cs",
-      "old": "holders.TryGetValue(string.Join(' ', paragraph.LinesIn(text))",
-      "new": "holders.TryGetValue(string.Join('\\n', paragraph.LinesIn(text))",
-      "killer": "A_quotes_lines_keep_its_marker_and_a_list_items_are_indented_to_its_text"
     },
     {
       "name": "the first paragraph holding the words gives its lines, whatever heading it is under",
       "file": "src/AgentBaseline/ShownCandidate.cs",
-      "old": "Holder holder = holding.FirstOrDefault(h => string.Equals(h.Path, path, StringComparison.Ordinal), holding[0]);",
-      "new": "Holder holder = holding[0];",
+      "old": ".FirstOrDefault(h => string.Equals(h.Path, paragraph.Path, StringComparison.Ordinal), holding[0])",
+      "new": ".First()",
       "killer": "A_paragraph_the_accumulator_holds_twice_is_shown_in_the_lines_of_the_one_under_its_own_heading"
     },
     {
       "name": "a line after the first opens with nothing",
       "file": "src/AgentBaseline/ShownCandidate.cs",
-      "old": "string.Join(\"\\n\" + OpeningOf(text, paragraph.Start), holder.Lines)",
-      "new": "string.Join(\"\\n\", holder.Lines)",
+      "old": "string.Join(\"\\n\" + OpeningOf(text, paragraph.Start), lines)",
+      "new": "string.Join(\"\\n\", lines)",
       "killer": "A_quotes_lines_keep_its_marker_and_a_list_items_are_indented_to_its_text"
     },
     {
@@ -85,6 +79,76 @@
       "old": "new ParagraphText(inlines.Span.Start, inlines.Span.End + 1, breaks)",
       "new": "new ParagraphText(inlines.Span.Start, paragraph.Span.End + 1, breaks)",
       "killer": "A_paragraph_ending_in_spaces_is_re_broken_and_keeps_them"
+    },
+    {
+      "name": "a paragraph holding no accumulator paragraph's words keeps its own lines",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "lines = LinesAs(paragraph, counterpart);",
+      "new": "lines = paragraph.Lines;",
+      "killer": "A_paragraph_differing_in_one_word_shows_every_other_line_as_the_accumulator_does_and_that_word_in_a_line_pair_of_its_own"
+    },
+    {
+      "name": "the counterpart is the accumulator's first paragraph under the heading, whatever the diff pairs",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "counterparts[here[right]] = there[left];",
+      "new": "counterparts[here[right]] = there[0];",
+      "killer": "A_paragraph_differing_in_one_word_shows_every_other_line_as_the_accumulator_does_and_that_word_in_a_line_pair_of_its_own"
+    },
+    {
+      "name": "the paragraphs are paired across headings",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "List<Paragraph> there = [.. theirs.Where(p => string.Equals(p.Path, path.Key, StringComparison.Ordinal))];",
+      "new": "List<Paragraph> there = [.. theirs];",
+      "killer": "A_paragraph_under_a_heading_the_accumulator_does_not_have_is_shown_as_written"
+    },
+    {
+      "name": "a heading the accumulator does not have is diffed as one empty line",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "if (there.Count == 0)",
+      "new": "if (there.Count < 0)",
+      "killer": "A_paragraph_under_a_heading_the_accumulator_does_not_have_is_shown_as_written"
+    },
+    {
+      "name": "a line ending inside a paragraph's words makes two lines of it in the diff",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "items.Select(item => item.Replace('\\n', ' '))",
+      "new": "items",
+      "killer": "A_hard_break_inside_a_paragraph_leaves_it_one_line_of_the_diff_that_pairs_the_paragraphs"
+    },
+    {
+      "name": "the first line's start is taken for a break",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "starts.Remove(0);",
+      "new": "",
+      "killer": "A_word_added_at_a_paragraphs_start_or_end_is_shown_on_its_first_or_last_line"
+    },
+    {
+      "name": "a break goes before the word after the one its line starts at",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "breaks.Add(before);",
+      "new": "breaks.Add(before + 1);",
+      "killer": "A_paragraph_twice_its_counterparts_length_is_broken_where_the_counterpart_is"
+    },
+    {
+      "name": "a word the counterpart does not have goes uncounted, so a break lands before it",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "if (row.RightLine is not null)",
+      "new": "if (row.LeftLine is not null && row.RightLine is not null)",
+      "killer": "A_word_added_where_two_lines_meet_ends_the_first_so_the_second_starts_at_the_accumulators_word"
+    },
+    {
+      "name": "a first word the candidate dropped takes its line's break with it",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "if (row.LeftLine is { } word && starts.Contains(word))",
+      "new": "if (row is { LeftLine: { } word, RightLine: not null } && starts.Contains(word))",
+      "killer": "A_line_whose_first_word_the_candidate_dropped_starts_where_that_word_was"
+    },
+    {
+      "name": "a break may land in a run of spaces",
+      "file": "src/AgentBaseline/ShownCandidate.cs",
+      "old": "breaks.Contains(i) && words[i - 1].Length > 0 && words[i].Length > 0",
+      "new": "breaks.Contains(i)",
+      "killer": "A_break_never_lands_in_a_run_of_spaces_and_the_others_are_still_made"
     },
     {
       "name": "the text after the last re-break is copied by a length written the other way round",

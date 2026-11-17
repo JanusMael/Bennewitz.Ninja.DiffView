@@ -1789,7 +1789,7 @@ wording.
     one line beside three. Plan 00036, approved 2026-11-16, makes AgentBaseline fold a paragraph's soft breaks in a
     section's identity, show the candidate re-broken where the accumulator breaks, and align a differing paragraph's
     words with its counterpart's. Under way on `feat/a-paragraphs-line-breaks-are-not-a-difference`, moved onto `main`
-    once PR #58 merged.
+    once PR #58 merged and again once PR #59 did.
 
     **Step 1, the fold, is done.** `ParagraphBreaks.Fold` turns each soft break in a paragraph into one space and keeps
     every other line break, reading the breaks from Markdig's inline tree: measured first, a paragraph's own lines are
@@ -1829,6 +1829,28 @@ wording.
     `review-session.json` and `corpus.json`, and five re-pointed where the code they edit moved. The five test classes
     that hand the verbs a section take it from the shown outline now. The nine sets step 3 owes came out 354 of 354
     as declared in four worktrees, in 36 minutes, every declared test killed but the two marked inert.
+
+    **Step 4, near matches, is done.** A paragraph that holds no accumulator paragraph's words is shown in its
+    counterpart's lines: the accumulator's paragraph that a line diff of the paragraphs at its heading path, one
+    paragraph's words a line, pairs it with. A word diff of the two, one word a line, moves each of the counterpart's
+    breaks to the candidate's word paired with the first word of the line it starts, or to where that word would be
+    had the candidate kept it, so a word added where two lines meet ends the first of them; and never into a run of
+    spaces, which a fold reads as one. Both diffs are the public `DiffDocumentBuilder.Build`, a hard break's line
+    ending read there as a space so a paragraph stays one line, and a paragraph under a heading the accumulator does
+    not have is shown as written. Over the 2026-11-10 pair, 199 of JanusHalo's 222 shown lines equal a line of the
+    seed, and each paragraph that differs from the seed's is a pair of short lines: the diff counts 9 changes where
+    step 3 counted 8, because a block of 73 seed lines that step 3's one long line held together is now a one-line pair
+    and two removals, split at a blank line the two share. The re-break takes 19 ms, and brianb-2025 reads as it did.
+    Eight new tests in `ShownCandidateTests`, and three fixtures moved: JanusHalo's Reviews paragraph is shown in the
+    seed's lines now; the paragraph ending in spaces sits under a heading of its own below a title both documents
+    have, so it is still matched by its words alone; and decision 8's test in `ReviewSessionTests` adds a paragraph the
+    seed has no version of, a reworded one taking its counterpart's single line. `shown-candidate.json` holds 21
+    mutations, ten of them new, three re-pointed and one gone, the candidate's words being read as the accumulator's
+    are. The two sets step 4 owes came out as declared in four worktrees, `review-session.json` 30 of 30 and
+    `shown-candidate.json` 21 of 21, every declared test killed. ⚠ The first run of the second left the spaces test's
+    mutation surviving: its fixture had put each paragraph under a document's only heading, which the outline reads as
+    the document's title, in no heading path, so the two were one section and the near match re-broke the paragraph
+    anyway.
 
 42. **CodeQuality to `2026.4.1113`, and the pin-revert proof item 40 lost — Brian, 2026-11-16, after item 41.**
     DiffView pins CodeQuality at `2026.4.1104`; the move owes at least one suppression in `scripts/mutate-gates.cs`,
