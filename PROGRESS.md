@@ -1934,6 +1934,14 @@ wording.
     shared script*, held only while no checkout was a symlink; the new gate asks about `reference/src` by that name, and
     a test holds a checkout moved out and linked back in as present and out of `git status`.
 
+    ⭐ **Templates `2026.4.1119` carries the kit**, published on 2026-11-19 from Templates' `main` at `c0c74fe` and
+    verified on nuget.org, the session reports. Its `repo-conventions.cs`, from `templates/bbpkg/scripts/`, fails
+    `check` on a tracked kit without the `/reference/src` line, on any file under `reference/src` git sees and on a
+    `fetch-reference.*` outside `reference/`; and `check --repo`, run from Templates, fails a
+    `reference/fetch-reference.cs` that differs from Templates' copy. So until DiffView syncs, Templates' `check --repo
+    JanusMael/Bennewitz.Ninja.DiffView` reports `reference` and `drift` failing. DiffView's own `conventions` check
+    runs this repository's copy of the script, and stays as it is until the sync brings the new one.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
