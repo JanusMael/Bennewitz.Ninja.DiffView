@@ -5578,3 +5578,58 @@ their folders last written on 2026-10-04; git read each as no repository and ans
 files were intact, so the theme audit never noticed, and the old script, which asked git nothing about a checkout it
 found with a `.git` and a matching pin record, called them present. The new one asks for each checkout's `HEAD`, read
 DiffView's, called them off-pin, and fetched them again in 14 seconds.
+
+## A padded line taller than its pane is brought into view by its own row
+
+On 2026-11-19 Brian dragged to select in the right pane of AgentBaseline's review window — JanusHalo against the
+seed, in a window shorter than his screen — and the process died with `0xc00000fd`, a stack overflow, its trace
+repeating four of AvaloniaEdit's frames: `SelectionMouseHandler.TextView_ScrollOffsetChanged`,
+`ExtendSelectionToMouse`, `Caret.BringCaretToView` and `TextView.MakeVisible`. That pane's line near 132 carries 63
+rows of padding for the seed's removed sections. He had dragged in the pane, and may have turned the wheel as well:
+either way the button was held while the pane scrolled, the trace's entry being a pointer move and a wheel's being
+the scroll itself.
+
+**AvaloniaEdit brings the caret in as its whole visual line, and on a padded line that is the padding too.**
+`Caret.CalcCaretRectangle` spans the caret's `TextLine`, which the padding run makes `(1 + rows) × lineHeight` tall
+(`AGENTS.md` §3), and `MakeVisible` has no fixed point for a rectangle taller than the viewport: shown from its top,
+its bottom overflows, so it scrolls to the bottom, and from there the top does. While the left button is held, the
+selection handler re-extends the selection inside the scroll-offset event, lands the caret on the same line and
+brings it in again with a border of 5, so the two offsets alternated until the stack ran out; a release does the
+same, through `ExtendSelectionOnMouseUp`. Measured headless before the fix: two calls in a row left the pane at
+195.4 and then 13.9, and each of four drags, in a pane, in the editor and in the viewer, scrolled 65 times inside
+one pointer move before a tripwire stopped it. The same rectangle made Up onto such a line scroll to the top of its
+padding, the line's own row out of view. The test of the wheel, written once he said he may have turned it, fails
+with them when a pane is built over AvaloniaEdit's own text area, which is the mutation that puts the old code back.
+
+**`DiffTextView` brings in the caret's row, and settles on a rectangle that covers the viewport.** The caret a pane
+draws is a row tall (`DiffCaretRenderer`, `TextBands`), and the row is what a reader looks for, so a rectangle that
+is exactly the caret's visual line inflated by a border becomes the line's own row inflated by the same border, and
+any other rectangle is brought in whole. And a rectangle that already covers the viewport from top to bottom leaves
+it where it is, so `MakeVisible` settles after one move whatever it is given: a pane shorter than a row and its
+border flipped the same way with no padding at all, measured.
+
+**Two subclasses, the route Brian chose on 2026-11-19.** `TextView.MakeVisible` is virtual, and a text area takes a
+view of its own only through AvaloniaEdit's protected constructor, so `DiffTextArea` exists to hand it one. That
+constructor leaves out the two tunnel key handlers the public one adds, which offer each key to the stacked input
+handlers before the text area handles it; `DiffTextArea` adds them back, a few lines of AvaloniaEdit's restated.
+Each subclass keeps AvaloniaEdit's style key, so a style written for a `TextArea` or a `TextView` still reaches a
+pane's, and the package stays upstream's (*AvaloniaEdit: upstream package, no fork*). Weighed and put to him beside
+it: a weak scroll listener on each pane, which runs ahead of the selection handler, redrawing on a scroll raised
+inside another so the handler's `VisualLinesValid` check skips its re-extension. It added no type, but it leaned on
+that subscription order and that check, both AvaloniaEdit's internals, and it left a drag on the padding's top and
+Up hiding the row.
+
+**The inside of a pane is not a control of its own to a person.** Plan 00026's walk requires every concrete control
+type of the library to be a control element of its type, and a control element at the text area would sit between
+a pane and its margins. So `AccessibilityCoverageTests.ConcreteControls` leaves out a subclass of AvaloniaEdit's
+`TextArea` or `TextView`; both keep the stock peer, which the pane's stands for, and
+`The_inside_of_a_pane_is_left_to_the_pane_in_the_control_view` holds what leaves to what a pane is built from and
+asserts both claims, so the control view is what it was. `BNXQ1003` skips `DiffTextArea`, no theme in the markup
+targeting it — the presenter hands it the text area's theme by key, in code — and `TemplatePartTests` holds it to
+looking up exactly what AvaloniaEdit's `TextArea` does, which the findings check against that theme. Each of the four
+new guards is tripped first by a mutation of its own.
+
+**The tests' drags run under `ScrollTripwire`**, which listens through AvaloniaEdit's weak event manager. The
+manager subscribes to a view once, in `TextArea`'s constructor, ahead of the selection handler, so the tripwire runs
+first at every level of the recursion and its throw unwinds it: a regression fails a test instead of killing the
+host, and before the fix it stopped all four drags cleanly. The unified view was never exposed: it has no padding.

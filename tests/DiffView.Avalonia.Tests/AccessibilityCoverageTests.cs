@@ -714,8 +714,41 @@ public sealed class AccessibilityCoverageTests
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }
 
+    [AvaloniaFact]
+    public void The_inside_of_a_pane_is_left_to_the_pane_in_the_control_view()
+    {
+        // ⛔ What leaves the walk's requirement is derived, as the requirement is — every control type of ours
+        // that subclasses AvaloniaEdit's text area or text view — so it is held to what a pane is really built
+        // from, both ways: a derivation that read nothing would excuse nothing and pass everything below, and
+        // one that read more would excuse a control a person meets.
+        using CompositeHost host = new();
+        host.Show();
+        DiffPanePresenter pane = host.Left;
+        Control[] insides = [pane.TextArea, pane.TextArea.TextView];
+
+        Assert.Equal(
+            insides.Select(c => c.GetType().Name).Order(StringComparer.Ordinal),
+            OurControlTypes().Where(IsInsideOfAPane).Select(t => t.Name).Order(StringComparer.Ordinal));
+
+        foreach (Control inside in insides)
+        {
+            AutomationPeer peer = ControlAutomationPeer.CreatePeerForElement(inside);
+            Assert.False(
+                peer.IsControlElement(),
+                $"{inside.GetType().Name} is a control element, so the control view puts it between its pane and "
+                + "everything the pane holds.");
+
+            Control? parent = ControlViewParentOf(peer);
+            Assert.True(
+                parent == pane,
+                $"{inside.GetType().Name} sits under {parent?.GetType().Name ?? "nothing"} in the control view, "
+                + "not under the pane that stands for it.");
+        }
+    }
+
     /// <summary>
-    /// Every concrete control type this library defines, internal ones included, by name, in ordinal order.
+    /// Every concrete control type this library defines, internal ones included, by name, in ordinal order —
+    /// save the inside of a pane, which <see cref="IsInsideOfAPane"/> leaves to the pane.
     /// </summary>
     /// <remarks>
     /// ⛔ <b><c>GetTypes</c>, not <c>GetExportedTypes</c>.</b> The pane's two margins are internal, and a
@@ -724,11 +757,28 @@ public sealed class AccessibilityCoverageTests
     /// </remarks>
     internal static string[] ConcreteControls() =>
     [
-        .. typeof(SideBySideDiffView).Assembly.GetTypes()
-            .Where(t => typeof(Control).IsAssignableFrom(t) && !t.IsAbstract)
+        .. OurControlTypes()
+            .Where(t => !IsInsideOfAPane(t))
             .Select(t => t.Name)
             .Order(StringComparer.Ordinal),
     ];
+
+    /// <summary>Every concrete control type this library defines, internal ones included.</summary>
+    private static IEnumerable<Type> OurControlTypes() =>
+        typeof(SideBySideDiffView).Assembly.GetTypes()
+            .Where(t => typeof(Control).IsAssignableFrom(t) && !t.IsAbstract);
+
+    /// <summary>
+    /// Whether a control type of ours is AvaloniaEdit's text area or text view, subclassed: the inside of a
+    /// pane, <see cref="DiffTextArea"/> and <see cref="DiffTextView"/>, which exist to change what a pane brings
+    /// into view. To a person the pane is the control — its peer is the <c>Edit</c> a harness finds, and it
+    /// answers for the text area's keyboard focus — so the inside keeps AvaloniaEdit's stock peer, which is no
+    /// control element, and the control view is what it was before the subclasses:
+    /// <see cref="The_inside_of_a_pane_is_left_to_the_pane_in_the_control_view"/>.
+    /// </summary>
+    private static bool IsInsideOfAPane(Type type) =>
+        typeof(AvaloniaEdit.Editing.TextArea).IsAssignableFrom(type)
+        || typeof(AvaloniaEdit.Rendering.TextView).IsAssignableFrom(type);
 
     /// <summary>
     /// Every concrete control type of this library that the library's markup gives a

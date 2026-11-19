@@ -1,0 +1,110 @@
+{
+  // A pane's text view brings the caret into view as its line's own row, and leaves the pane where it is for a
+  // rectangle that already covers it — the stack overflow of 2026-11-19, a drag over a padded line taller than the
+  // pane: DiffTextViewTests. Five edits break what the view brings in: the whole padded line, the row taken from
+  // the top of the padding, the row without its border, any rectangle taken for the caret's, and a covering
+  // rectangle moved anyway. Two cut the view off from the fix: a text area that hands its view no caret, and a pane
+  // built over AvaloniaEdit's own text area. Three break what the two subclasses must keep of AvaloniaEdit's: the
+  // stacked input handlers offered a key first, and a style written for either type reaching it. The green one
+  // takes an absolute difference the other way round.
+  //
+  //   dotnet run scripts/mutate-behaviour.cs -- --set tests/DiffView.Avalonia.Tests/Mutations/text-view.json
+  //
+  // Every run is filtered to the one class, the green one included: the whole project holds
+  // MutateBehaviourTests, which runs this harness's own script and so rebuilds the binary running it.
+  "project": "tests/DiffView.Avalonia.Tests/DiffView.Avalonia.Tests.csproj",
+  "class": "Bennewitz.Ninja.DiffView.Tests.Presenter.DiffTextViewTests",
+  "tests": [
+    "tests/DiffView.Avalonia.Tests/Presenter/DiffTextViewTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "the caret's rectangle is brought in whole, padding and all",
+      "file": "src/DiffView.Avalonia/DiffTextView.cs",
+      "old": "base.MakeVisible(Settled(OwnRowOfCaret(rectangle)));",
+      "new": "base.MakeVisible(Settled(rectangle));",
+      "killer": "Pressing_Up_onto_a_padded_line_taller_than_the_pane_keeps_its_own_row_in_view",
+      "says": "own row spans"
+    },
+    {
+      "name": "the own row is taken from the top of the padding above it",
+      "file": "src/DiffView.Avalonia/DiffTextView.cs",
+      "old": "line.VisualTop + padding.Above * lineHeight",
+      "new": "line.VisualTop",
+      "killer": "Pressing_Up_onto_a_padded_line_taller_than_the_pane_keeps_its_own_row_in_view",
+      "says": "own row spans"
+    },
+    {
+      "name": "the own row is brought in without the border the caret asked for",
+      "file": "src/DiffView.Avalonia/DiffTextView.cs",
+      "old": "whole.Width, lineHeight).Inflate(border);",
+      "new": "whole.Width, lineHeight);",
+      "killer": "Bringing_the_caret_into_view_again_leaves_the_scroll_where_the_first_time_put_it",
+      "says": "The first time brought the caret's row in at"
+    },
+    {
+      "name": "any rectangle reaching above the caret's line is taken for the caret's",
+      "file": "src/DiffView.Avalonia/DiffTextView.cs",
+      "old": "if (border < 0 || !IsClose(rectangle, whole.Inflate(border)))",
+      "new": "if (border < 0)",
+      "killer": "A_rectangle_other_than_the_carets_is_brought_into_view_whole",
+      "says": "A rectangle over the first line left the pane scrolled to"
+    },
+    {
+      "name": "a rectangle that already covers the pane moves it anyway",
+      "file": "src/DiffView.Avalonia/DiffTextView.cs",
+      "old": "base.MakeVisible(Settled(OwnRowOfCaret(rectangle)));",
+      "new": "base.MakeVisible(OwnRowOfCaret(rectangle));",
+      "killer": "Bringing_the_caret_into_view_in_a_pane_shorter_than_a_row_settles_where_the_first_time_put_it",
+      "says": "Bringing the caret into view again moved the scroll"
+    },
+    {
+      "name": "the text area hands its view no caret",
+      "file": "src/DiffView.Avalonia/DiffTextArea.cs",
+      "old": "        ((DiffTextView)TextView).Caret = Caret;\n",
+      "new": "",
+      "killer": "Pressing_Up_onto_a_padded_line_taller_than_the_pane_keeps_its_own_row_in_view",
+      "says": "own row spans"
+    },
+    {
+      "name": "the pane is built over AvaloniaEdit's own text area",
+      "file": "src/DiffView.Avalonia/DiffPanePresenter.cs",
+      "old": "        : base(new DiffTextArea())\n",
+      "new": "",
+      "killer": "A_drag_from_the_padding_of_a_line_taller_than_the_pane_settles_with_its_own_row_in_view",
+      "says": "The scroll offset changed"
+    },
+    {
+      "name": "a stacked input handler is offered a key only after the text area has handled it",
+      "file": "src/DiffView.Avalonia/DiffTextArea.cs",
+      "old": "AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);",
+      "new": "AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Bubble);",
+      "killer": "A_stacked_input_handler_is_offered_each_key_before_the_text_area_handles_it",
+      "says": "The stacked input handler was offered"
+    },
+    {
+      "name": "the text area answers to styles for its own type rather than AvaloniaEdit's",
+      "file": "src/DiffView.Avalonia/DiffTextArea.cs",
+      "old": "    protected override Type StyleKeyOverride => typeof(TextArea);\n",
+      "new": "",
+      "killer": "A_style_written_for_AvaloniaEdits_text_area_or_text_view_reaches_a_panes",
+      "says": "A style written for TextArea left the pane's text area"
+    },
+    {
+      "name": "the text view answers to styles for its own type rather than AvaloniaEdit's",
+      "file": "src/DiffView.Avalonia/DiffTextView.cs",
+      "old": "    protected override Type StyleKeyOverride => typeof(TextView);\n",
+      "new": "",
+      "killer": "A_style_written_for_AvaloniaEdits_text_area_or_text_view_reaches_a_panes",
+      "says": "A style written for TextView did not reach"
+    },
+    {
+      "name": "the distance between two left edges is taken the other way round",
+      "file": "src/DiffView.Avalonia/DiffTextView.cs",
+      "old": "Math.Abs(a.X - b.X) < Tolerance",
+      "new": "Math.Abs(b.X - a.X) < Tolerance",
+      "expect": "green",
+      "because": "an absolute difference is the same whichever operand comes first, so the same rectangles are close"
+    }
+  ]
+}
