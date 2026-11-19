@@ -4,8 +4,10 @@
 
 **`main` carries everything through PR #59** — PR #59 merged on 2026-11-16, and `main`'s run over it passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
-merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1035** here, `Passed!`,
-by a local run over item 48's branch: plan 00035's 1023 and the branch's 12 new tests. ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
+merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1058** here, `Passed!`,
+by a local run over plan 00036's branch before its rebase onto item 48's fix, which measured 1035 over its own: plan
+00035's 1023, the branch's 35 new tests and the fix's 12, none of them a frame.
+⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
 adding the 66 frame baselines back, which is precisely how **745** once reached this document against a measured
 **769**. Each leg lists by name the baselines it left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries **141** mutations and derives **97** guards from the gate files; CI runs its
@@ -1852,6 +1854,17 @@ wording.
     the document's title, in no heading path, so the two were one section and the near match re-broke the paragraph
     anyway.
 
+    ✅ **Done 2026-11-17 by plan 00036, and it lands with `feat/a-paragraphs-line-breaks-are-not-a-difference`'s pull
+    request.** Step 5 is the record: `AGENTS.md` §10's identity row says a section's identity is taken over its fold,
+    and a row of its own holds the shown candidate; `DECISIONS.md`, *A paragraph's line breaks are not a difference*,
+    records what the steps settled that the plan left open. Over the 2026-11-10 pair, all 74 of JanusHalo's blocks that
+    are one of the seed's word for word show as lines each equal to a line of the seed, where 34 did as ingested, and
+    199 of its 222 lines shown equal a line of the seed, against 60 of 129. The suite ran 1058 of 1058 on Windows,
+    judged healthy by `catch-crash --expect auto`. Brian looked at the first pair on 2026-11-19 and passed it; the two
+    pairs that differ in backticks alone are the files' own escaping, the seed's rendering as meant. The look turned up
+    two things of its own: a stack overflow in the library while a button is held over a padded line taller than the
+    pane, being fixed apart, and buttons that walk the sections, which he asked for and which are planned apart.
+
 42. **CodeQuality to `2026.4.1113`, and the pin-revert proof item 40 lost — Brian, 2026-11-16, after item 41.**
     DiffView pins CodeQuality at `2026.4.1104`; the move owes at least one suppression in `scripts/mutate-gates.cs`,
     its reason in `DECISIONS.md`, and a full gate run. With it goes item 30's mutation that moved a pin back, which
@@ -1972,10 +1985,10 @@ item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09,
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
-2026-11-16 and item 46 as PR #59 the same day, item 41 is under way and item 42 follows it, items 43 and 47 wait
-for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, item 45 for the ClaudeForge session's
-verdict, and item 48 is done on `fix/a-padded-line-taller-than-the-pane`, its push waiting for his word. **Every
-other open item was
+2026-11-16 and item 46 as PR #59 the same day, item 41 is done on its branch and lands with its pull request, item
+42 follows it, items 43 and 47 wait for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, item
+45 for the ClaudeForge session's verdict, and item 48 is done on `fix/a-padded-line-taller-than-the-pane`, its push
+waiting for his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
