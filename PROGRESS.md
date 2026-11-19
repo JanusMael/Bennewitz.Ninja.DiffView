@@ -4,15 +4,14 @@
 
 **`main` carries everything through PR #58** — PR #58 merged on 2026-11-16, and `main`'s run over it passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
-merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1023** here, `Passed!`,
-by a local run over plan 00035's branch: item 40's 1007 and the branch's 16 new tests, its two frames being
-Linux's. ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
+merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1035** here, `Passed!`,
+by a local run over item 48's branch: plan 00035's 1023 and the branch's 12 new tests. ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
 adding the 66 frame baselines back, which is precisely how **745** once reached this document against a measured
 **769**. Each leg lists by name the baselines it left out. The trimmed publish carries no `IL` warning.
-`scripts/mutate-gates.sh` carries **137** mutations and derives **93** guards from the gate files; CI runs its
-`--guards` half and its `--check` on Linux, and the last full run — over plan 00035's branch, on 2026-11-16, in four
-worktrees — gave all 137 as declared: 126 killed by the test each names, 9 by the build and 2 green by
-design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 93 guards tripped
+`scripts/mutate-gates.sh` carries **141** mutations and derives **97** guards from the gate files; CI runs its
+`--guards` half and its `--check` on Linux, and the last full run — over item 48's branch, on 2026-11-19, in four
+worktrees — gave all 141 as declared: 130 killed by the test each names, 9 by the build and 2 green by
+design, with nothing survived, no-op, unexpectedly red, wrong-killer or aborted; all 97 guards tripped
 first by one of them, no `inert-at-pin` marker standing, and the worktrees removed after it. Node reuse
 has been off for every run since the first of item 14's two lost three mutations to `MSB4166`, an MSBuild
 worker node ending under the build that held it, and each harness now sets that for itself; `DECISIONS.md`
@@ -1832,6 +1831,26 @@ wording.
     after CI"*: what Linux and macOS made of the script, and two corrections to its message, DiffView's ignore line
     being `reference/*` rather than `reference/*/` and DiffPlex's package recording a commit.
 
+48. **A drag over a padded line taller than its pane overflowed the stack — Brian, 2026-11-19.** In AgentBaseline's
+    review window, JanusHalo against the seed, a drag in the right pane killed the process with `0xc00000fd`:
+    AvaloniaEdit brings the caret into view as its whole padded line, `MakeVisible` alternates between the edges of a
+    rectangle taller than the viewport, and the selection handler brings the caret in again on every scroll it
+    causes. Every view with padding was exposed, the editor and the viewer; the unified view has none.
+
+    ✅ **Fixed 2026-11-19 on `fix/a-padded-line-taller-than-the-pane`, cut from `main` at `b863932`, local.**
+    `DiffTextView` brings the caret in as its line's own row and leaves the pane where it is for a rectangle that
+    already covers it, reached through `DiffTextArea`, the route Brian chose over a scroll listener; the
+    accessibility gate leaves the two to the pane, and `BNXQ1003`'s reading holds the text area to AvaloniaEdit's
+    lookups. The six tests written first failed before the fix as the crash predicts, each drag stopped by
+    `ScrollTripwire` rather than by the stack, and `DiffTextViewTests` grew to eleven: a pane shorter than a row, a
+    rectangle other than the caret's, the two subclasses' parity with AvaloniaEdit's, and the wheel he said he may
+    have turned with the button held. A full gate run in four worktrees gave all 141 as declared and tripped all 97 guards
+    first, the four new ones among them; the four sets the change owes came out as declared, 39 mutations with every
+    declared test killed, `Mutations/text-view.json`'s eleven among them, its pane built over AvaloniaEdit's own text
+    area failing eight of the eleven tests; and the suite ran 1035 of 1035 on Windows, `Passed!`, which `catch-crash`
+    judged healthy. Push and the pull request wait for his word. `DECISIONS.md`, *A padded line taller than its pane
+    is brought into view by its own row*.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
@@ -1839,7 +1858,8 @@ and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
 2026-11-16, item 41 follows it and item 42 follows item 41,
 item 43 waits for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and item 46 is done on
-`build/the-shared-reference-script`, pushed for its pull request on his word. **Every other open item was
+`build/the-shared-reference-script`, pushed for its pull request on his word, and item 48 is done on
+`fix/a-padded-line-taller-than-the-pane`, its push waiting for his word. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the

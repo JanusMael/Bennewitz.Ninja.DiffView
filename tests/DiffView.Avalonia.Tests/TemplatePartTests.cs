@@ -144,17 +144,33 @@ public sealed class TemplatePartTests
         // gained parts, which is a real change and should need a visible edit. AvaloniaEdit's five vanish
         // together when its assembly is not handed in — the floor cannot see that, its one part being
         // well inside the slack — and an AvaloniaEdit bump that adds a control declaring parts adds a name.
+        //
+        // DiffTextArea is AvaloniaEdit's text area, subclassed so that a pane can hand it a view of its own. It is
+        // skipped because nothing in the markup targets it — the presenter applies the text area's theme to it by
+        // key, in code — and the assertion after this one is what keeps that skip from hiding a lookup.
         Assert.Equal(
             [
                 nameof(AvaloniaEdit.CodeCompletion.CompletionList),
                 nameof(AvaloniaEdit.CodeCompletion.CompletionListBox),
                 nameof(DiffPaneHeader),
                 nameof(DiffStatusStrip),
+                nameof(DiffTextArea),
                 nameof(AvaloniaEdit.CodeCompletion.OverloadViewer),
                 nameof(AvaloniaEdit.Search.SearchPanel),
                 nameof(AvaloniaEdit.TextEditor),
             ],
             result.Skipped.Select(s => s.Subject).OrderBy(s => s, StringComparer.Ordinal));
+
+        // What DiffTextArea looks up is AvaloniaEdit's TextArea's, which the findings below check against the
+        // theme the presenter hands it — so long as it looks up nothing of its own, which no theme would be checked
+        // against. And not nothing at all, or this would compare two absences.
+        TemplatePartReading parts = TemplatePartRule.ReadParts(Scan());
+        string[] own = PartsLookedUpBy(parts, nameof(DiffTextArea));
+        string[] inherited = PartsLookedUpBy(parts, nameof(AvaloniaEdit.Editing.TextArea));
+        Assert.True(
+            own.Length > 0 && own.SequenceEqual(inherited),
+            $"DiffTextArea looks up [{string.Join(", ", own)}] and AvaloniaEdit's TextArea [{string.Join(", ", inherited)}]. "
+            + "A part the subclass looks up of its own is checked against no theme, since none in the markup targets it.");
 
         // The controller's lookups are findings here too: from 2026.3.925 the rule checks each one
         // against the theme of every control whose template it runs on. So are AvaloniaEdit's, on the
@@ -164,4 +180,15 @@ public sealed class TemplatePartTests
             "A control looks up a template part its own theme does not declare:" + Environment.NewLine
             + string.Join(Environment.NewLine, result.Findings.Select(f => "  " + f)));
     }
+
+    /// <summary>The parts the rule's reading says <paramref name="control"/> looks up, each once, in ordinal order.</summary>
+    private static string[] PartsLookedUpBy(TemplatePartReading reading, string control) =>
+    [
+        .. reading.Controls
+            .Where(c => c.Name == control)
+            .SelectMany(c => c.Lookups)
+            .Select(l => l.Part)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal),
+    ];
 }

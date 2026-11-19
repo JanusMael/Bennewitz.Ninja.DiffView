@@ -84,6 +84,8 @@ const string HeaderSource = "src/DiffView.Avalonia/DiffPaneHeader.cs";
 const string ViewPeer = "src/DiffView.Avalonia/DiffViewAutomationPeer.cs";
 const string HeaderPeer = "src/DiffView.Avalonia/DiffPaneHeaderAutomationPeer.cs";
 const string StripPeer = "src/DiffView.Avalonia/DiffStatusStripAutomationPeer.cs";
+const string PanePeer = "src/DiffView.Avalonia/DiffPanePresenterAutomationPeer.cs";
+const string TextAreaSource = "src/DiffView.Avalonia/DiffTextArea.cs";
 const string MarginSource = "src/DiffView.Avalonia/Margins/DiffMargin.cs";
 const string PresenterTheme = "src/DiffView.Avalonia/Themes/DiffPanePresenter.axaml";
 const string MenuSource = "src/DiffView.Avalonia/DiffPaneMenu.cs";
@@ -561,6 +563,15 @@ List<Mutation> mutations =
             "$1\n    /// <summary>Planted.</summary>\n    public const string ProbePart = \"PART_Probe\";\n"),
         "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
 
+    // The pane's text area is skipped, nothing in the markup targeting it, and what keeps that skip from
+    // hiding a lookup is that it looks up what AvaloniaEdit's TextArea does: one of its own is what trips.
+    new("the pane's text area looks up a part of its own", PartsClass,
+        () => Sub(TextAreaSource, @"(protected override Type StyleKeyOverride => typeof\(TextArea\);)",
+            "$1\n\n    protected override void OnApplyTemplate(global::Avalonia.Controls.Primitives.TemplateAppliedEventArgs e)\n"
+            + "    {\n        base.OnApplyTemplate(e);\n"
+            + "        _ = e.NameScope.Find(\"PART_Probe\");\n    }"),
+        "Every_template_part_a_control_looks_up_is_declared_in_its_theme"),
+
     // The model assembly is forward cover: it must stay inert, and this is the moment it stops being.
     // ⚠ The control needs a THEME to be inspected. Without one the rule skips it, and the expected-
     // Skipped assertion is what trips — measured — which is a real guard but not this one.
@@ -747,6 +758,26 @@ List<Mutation> mutations =
     new("the margin host is left in the control view", A11yClass,
         () => Sub(PresenterTheme, @"\s*AutomationProperties\.AccessibilityView=""Raw""", ""),
         "Every_control_of_ours_on_screen_is_a_control_element_of_its_type"),
+
+    // ---- The inside of a pane, which the derivation leaves to the pane: DiffTextArea and DiffTextView,
+    // AvaloniaEdit's text area and text view subclassed to change what a pane brings into view. What leaves is
+    // derived and held to what a pane is built from, and each thing the exclusion claims has a mutation of its own.
+    new("the text area is not counted the inside of a pane", A11yClass,
+        () => Sub(A11yGate,
+            @"typeof\(AvaloniaEdit\.Editing\.TextArea\)\.IsAssignableFrom\(type\)\s*\|\|\s*typeof\(AvaloniaEdit\.Rendering\.TextView\)",
+            "typeof(AvaloniaEdit.Rendering.TextView)"),
+        "The_inside_of_a_pane_is_left_to_the_pane_in_the_control_view"),
+
+    new("the pane's text area is a control element", A11yClass,
+        () => Sub(TextAreaSource, @"(protected override Type StyleKeyOverride => typeof\(TextArea\);)",
+            "$1\n\n    protected override global::Avalonia.Automation.Peers.AutomationPeer OnCreateAutomationPeer() =>\n"
+            + "        new global::Avalonia.Automation.Peers.ControlAutomationPeer(this);"),
+        "The_inside_of_a_pane_is_left_to_the_pane_in_the_control_view"),
+
+    new("the pane's peer is not a control element", A11yClass,
+        () => Sub(PanePeer, @"(=> AutomationControlType\.Edit;)",
+            "$1\n\n    protected override bool IsControlElementCore() => false;"),
+        "The_inside_of_a_pane_is_left_to_the_pane_in_the_control_view"),
 
     // ---- BNXQ1007, plan 00026 phase 3, over the library's markup with a derivation of its own. No Expander
     // forward cover and no Skipped guard: the rule adds Expander itself and has no skip path at 928, so
