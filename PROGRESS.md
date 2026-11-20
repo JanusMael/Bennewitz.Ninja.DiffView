@@ -1851,6 +1851,12 @@ wording.
     judged healthy. Push and the pull request wait for his word. `DECISIONS.md`, *A padded line taller than its pane
     is brought into view by its own row*.
 
+    ⭐ **It held when Brian retried it by hand on 2026-11-20: *"no crash"*.** The build was plan 00036's tip, `6700120`,
+    with this branch's `DiffTextView.cs`, `DiffTextArea.cs` and `DiffPanePresenter.cs` laid over it, each equal to
+    `0384b3f`'s, on the 2026-11-10 corpus with JanusHalo against the seed: he pressed and dragged in the right pane in
+    the blank space opposite the removed blocks near line 132, and turned the wheel there with the button held. The
+    Linux and macOS legs are CI's.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
