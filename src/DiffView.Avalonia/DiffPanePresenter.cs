@@ -105,6 +105,9 @@ public class DiffPanePresenter : TextEditor
 
     /// <summary>Creates a presenter with an empty document and no model.</summary>
     public DiffPanePresenter()
+        // Over a text area whose view brings the caret into view as its line's own row: AvaloniaEdit
+        // brings in the whole padded line, which can be taller than the pane, and never settles on it.
+        : base(new DiffTextArea())
     {
         // The control themes travel with the control, so the structure never depends on a host
         // include; the DiffView.* tokens they bind to come from the host's theme include, with

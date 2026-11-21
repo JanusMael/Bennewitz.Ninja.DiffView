@@ -773,6 +773,13 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Fixed
 
+- **A drag over a padded line taller than its pane no longer kills the process.** A padded line's padding, the rows
+  standing in for the other side's lines, counted as part of the caret, and AvaloniaEdit cannot bring a rectangle
+  taller than the pane into view and stay there: shown from its top, its bottom overflows, and shown from its bottom,
+  its top does. Dragging over such a line, or turning the wheel with the button held there, scrolled the pane back
+  and forth until the stack overflowed, in the editor and the viewer alike, and Up onto one scrolled its text out of
+  view. A pane brings the caret in as its
+  line's own row now, and stays where it is for a rectangle that already fills it.
 - **The Semi compat dictionary gives a focused Fluent text box its border.** `FluentKeys.Semi.axaml` had copied
   Fluent's `TextControlBorderThemeThicknessFocused` as `0`, the value Fluent's `ComboBox` gives its own editable text
   box, where Fluent's theme sets `2`, so under Semi a Fluent-styled `TextBox` or `CalendarDatePicker` lost its border
