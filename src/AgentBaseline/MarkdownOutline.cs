@@ -142,10 +142,11 @@ internal sealed record MarkdownSection(
 internal sealed class MarkdownOutline
 {
     /// <summary>
-    /// The one pipeline this tool parses with. Shared because a pipeline is immutable once built and
-    /// building one per document is pure cost; internal because ingest's unwrap reads the same tree,
-    /// and two pipelines that disagree about front matter would disagree about whether a document is
-    /// nested at all.
+    /// The pipeline the outline and ingest's unwrap parse with. Shared because a pipeline is immutable
+    /// once built and building one per document is pure cost; internal because ingest's unwrap reads
+    /// the same tree, and two pipelines that disagree about front matter would disagree about whether a
+    /// document is nested at all. <see cref="ParagraphBreaks"/> parses with its own, which keeps this
+    /// one's front matter and adds pipe tables.
     /// </summary>
     internal static readonly MarkdownPipeline Pipeline =
         new MarkdownPipelineBuilder().UseYamlFrontMatter().Build();

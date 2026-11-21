@@ -47,7 +47,7 @@ public sealed class StalenessTests
         new(path, label, new CandidateTarget(Path.GetFileName(path), null));
 
     private static MarkdownSection SectionOf(ReviewSession session, string path) =>
-        session.Current.Candidate.Document.Outline.Sections.Single(s => s.HeadingPath == path);
+        session.Shown.Outline.Sections.Single(s => s.HeadingPath == path);
 
     /// <summary>The content of <paramref name="item"/>'s section at <paramref name="path"/>.</summary>
     private static string ContentAt(QueuedCandidate item, string path) =>
@@ -127,6 +127,27 @@ public sealed class StalenessTests
     }
 
     [AvaloniaFact]
+    public async Task A_candidate_holding_the_version_taken_with_its_paragraphs_broken_otherwise_is_not_stale_there()
+    {
+        TestLogSink.Instance.Clear();
+        using FixtureTree tree = new();
+
+        // ⭐ Plan 00036 decision 2: machine 1 carries One wrapped, and machine 2 the same words on one line.
+        ReviewQueue queue = QueueOf(tree, Seed, WithOne("Alpha, as both machines\nhave it."), WithOne("Alpha, as both machines have it."));
+        using ReviewHost host = new();
+        ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
+        Assert.True(await host.AwaitBuildAsync(session.Next));
+
+        Assert.Equal(TakeResult.Replaced, session.Take(SectionOf(session, "One")));
+
+        // Machine 1 was reviewed against another One, and holds the one taken in other lines.
+        Assert.NotEqual(LeftContentAt(host, "One"), ContentAt(queue.Items[0], "One"));
+        AssertStale(session, "After a take of the One machine 1 holds with its paragraph broken otherwise");
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
     public async Task Typing_stales_a_candidate_reviewed_before_it_but_never_the_one_on_the_right()
     {
         TestLogSink.Instance.Clear();
@@ -148,6 +169,28 @@ public sealed class StalenessTests
         // Leaving machine 1 records what it was reviewed against, the typing included.
         Assert.True(await host.AwaitBuildAsync(session.Next));
         AssertStale(session, "After machine 1 left the right pane again");
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task Re_wrapping_a_section_by_typing_changes_no_version_so_it_stales_nothing()
+    {
+        TestLogSink.Instance.Clear();
+        using FixtureTree tree = new();
+        string seed = Doc("# Rules", "", "## One", "", "Alpha and beta, as the seed has them.", "", "## Two", "", "Beta.", "");
+        ReviewQueue queue = QueueOf(tree, seed, WithOne("Alpha, as machine 1 has it."), WithOne("Alpha, as machine 2 has it."));
+        using ReviewHost host = new();
+        ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
+        Assert.True(await host.AwaitBuildAsync(session.Next));
+
+        // ⭐ Plan 00036 decision 2: a line break typed after a space inside One's paragraph wraps it there, and the
+        // paragraph says what it said, so machine 1, reviewed before it and carrying a One of its own, is not stale.
+        string left = host.View.LeftDocument.Text;
+        host.Type(host.Left, left.IndexOf("beta, ", StringComparison.Ordinal) + "beta, ".Length, "\n");
+
+        Assert.NotEqual(MarkdownOutline.Read(seed).Sections.Single(s => s.HeadingPath == "One").Content, LeftContentAt(host, "One"));
+        AssertStale(session, "After One was wrapped otherwise by typing");
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }

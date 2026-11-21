@@ -62,7 +62,7 @@ public sealed class SectionDecisionTests
         new(path, label, new CandidateTarget(Path.GetFileName(path), null));
 
     private static MarkdownSection SectionOf(ReviewSession session, string path) =>
-        session.Current.Candidate.Document.Outline.Sections.Single(s => s.HeadingPath == path);
+        session.Shown.Outline.Sections.Single(s => s.HeadingPath == path);
 
     [AvaloniaFact]
     public async Task Taking_a_section_from_a_reordered_candidate_leaves_every_other_section_of_the_accumulator_byte_identical()

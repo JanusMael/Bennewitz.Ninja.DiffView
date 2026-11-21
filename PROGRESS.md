@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #58** — PR #58 merged on 2026-11-16, and `main`'s run over it passed.
+**`main` carries everything through PR #59** — PR #59 merged on 2026-11-16, and `main`'s run over it passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
-merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1023** here, `Passed!`,
-by a local run over plan 00035's branch: item 40's 1007 and the branch's 16 new tests, its two frames being
-Linux's. ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
+merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1058** here, `Passed!`,
+by a local run over plan 00036's branch: plan 00035's 1023 and the branch's 35 new tests, none of them a frame.
+⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
 adding the 66 frame baselines back, which is precisely how **745** once reached this document against a measured
 **769**. Each leg lists by name the baselines it left out. The trimmed publish carries no `IL` warning.
 `scripts/mutate-gates.sh` carries **137** mutations and derives **93** guards from the gate files; CI runs its
@@ -1789,7 +1789,80 @@ wording.
     129 lines equal a seed line as shown. DiffView cannot wrap, and wrapping would not help: the diff would still set
     one line beside three. Plan 00036, approved 2026-11-16, makes AgentBaseline fold a paragraph's soft breaks in a
     section's identity, show the candidate re-broken where the accumulator breaks, and align a differing paragraph's
-    words with its counterpart's. Next, on a branch of its own once item 36's pull request is open.
+    words with its counterpart's. Under way on `feat/a-paragraphs-line-breaks-are-not-a-difference`, moved onto `main`
+    once PR #58 merged and again once PR #59 did.
+
+    **Step 1, the fold, is done.** `ParagraphBreaks.Fold` turns each soft break in a paragraph into one space and keeps
+    every other line break, reading the breaks from Markdig's inline tree: measured first, a paragraph's own lines are
+    empty once its inlines are parsed. It parses with pipe tables, which the outline's pipeline lacks, the 2026-11-10
+    seed holding a table among its 138 soft breaks; and it keeps a soft break with nothing after it in its paragraph,
+    which pipe tables leave above a table and a link leaves at the end of its text. `ParagraphBreaksTests` holds it in
+    ten tests, two of them pins of Markdig marked as the outline's two are, and `paragraph-breaks.json` in thirteen
+    mutations. The four sets the step owes came out 110 of 110 as declared in four worktrees, in 20 minutes, every
+    declared test killed but the four marked inert.
+
+    **Step 2, identity and the file, is done.** `SectionIdentity.HashOf` hashes a text's fold, so one rule wrapped two
+    ways is one version and text with no soft break hashes as it did; `DecisionFile.Version` is 2, a version-1 file
+    is refused naming the version this tool reads, and a take's hash is checked against its folded text. Every reader
+    that compared a section's text compares its version now: a take of the version the left holds, wrapped otherwise,
+    is `Unchanged` and writes nothing; staleness reads identities, so neither a re-wrap typed in the left nor a
+    candidate holding the version taken in other lines is stale; a save reads a take re-wrapped by hand as taken, not
+    edited; and a decision file whose take says it was edited into a re-wrap of its own text is refused, as one edited
+    into its own text was. New tests in `SectionIdentityTests`, `DecisionFileTests`, `AccumulatorEditTests`,
+    `StalenessTests` and `SaveTests`, seven new mutations across four sets, and four re-pointed where the code they
+    edit moved. The eight sets the branch owes against `main` came out 281 of 281 as declared in four worktrees, in 53
+    minutes, every declared test killed but the four marked inert.
+
+    **Step 3, the shown candidate for exact matches, is done.** `ShownCandidate.Of` shows each paragraph of a
+    candidate that holds the words of one of the accumulator's in that one's lines, the one under the same heading path
+    first and then the first anywhere, each line after its first opening as the paragraph's own first line does: a
+    list item's marker turned to spaces, a quote's `>` kept. Every shown text is checked as decision 6 says: parsed, it
+    gives the candidate's heading paths in order, and what stands above the first heading and each section fold to the
+    candidate's own. A paragraph whose re-break fails the check is shown as written and the others are kept, each tried
+    over the ones kept before it. The fold and the re-break read a paragraph's breaks one way, `ParagraphBreaks.Paragraphs`,
+    a paragraph's text taken from its inlines' span: measured, its block's span takes in the spaces ending its last line
+    and, above a table pipe tables carved out of it, the whole table. `ReviewSession` makes the shown text on every move,
+    against the accumulator as it reads then, and reads its outline for the caret's section, the mark and every verb,
+    so a take writes what the pane shows; `Corpus.Queue` counts each candidate re-broken against the seed. Over the
+    2026-11-10 pair, 193 of JanusHalo's 214 shown lines equal a line of the seed, against 60 of 129 as ingested, and the
+    diff counts 8 changes where it counted 48, the re-break taking 20 ms. New tests in `ShownCandidateTests`,
+    `ReviewSessionTests` and `CorpusTests`; a new set, `shown-candidate.json`, of twelve mutations, seven more in
+    `review-session.json` and `corpus.json`, and five re-pointed where the code they edit moved. The five test classes
+    that hand the verbs a section take it from the shown outline now. The nine sets step 3 owes came out 354 of 354
+    as declared in four worktrees, in 36 minutes, every declared test killed but the two marked inert.
+
+    **Step 4, near matches, is done.** A paragraph that holds no accumulator paragraph's words is shown in its
+    counterpart's lines: the accumulator's paragraph that a line diff of the paragraphs at its heading path, one
+    paragraph's words a line, pairs it with. A word diff of the two, one word a line, moves each of the counterpart's
+    breaks to the candidate's word paired with the first word of the line it starts, or to where that word would be
+    had the candidate kept it, so a word added where two lines meet ends the first of them; and never into a run of
+    spaces, which a fold reads as one. Both diffs are the public `DiffDocumentBuilder.Build`, a hard break's line
+    ending read there as a space so a paragraph stays one line, and a paragraph under a heading the accumulator does
+    not have is shown as written. Over the 2026-11-10 pair, 199 of JanusHalo's 222 shown lines equal a line of the
+    seed, and each paragraph that differs from the seed's is a pair of short lines: the diff counts 9 changes where
+    step 3 counted 8, because a block of 73 seed lines that step 3's one long line held together is now a one-line pair
+    and two removals, split at a blank line the two share. The re-break takes 19 ms, and brianb-2025 reads as it did.
+    Eight new tests in `ShownCandidateTests`, and three fixtures moved: JanusHalo's Reviews paragraph is shown in the
+    seed's lines now; the paragraph ending in spaces sits under a heading of its own below a title both documents
+    have, so it is still matched by its words alone; and decision 8's test in `ReviewSessionTests` adds a paragraph the
+    seed has no version of, a reworded one taking its counterpart's single line. `shown-candidate.json` holds 21
+    mutations, ten of them new, three re-pointed and one gone, the candidate's words being read as the accumulator's
+    are. The two sets step 4 owes came out as declared in four worktrees, `review-session.json` 30 of 30 and
+    `shown-candidate.json` 21 of 21, every declared test killed. ⚠ The first run of the second left the spaces test's
+    mutation surviving: its fixture had put each paragraph under a document's only heading, which the outline reads as
+    the document's title, in no heading path, so the two were one section and the near match re-broke the paragraph
+    anyway.
+
+    ✅ **Done 2026-11-17 by plan 00036, and it lands with `feat/a-paragraphs-line-breaks-are-not-a-difference`'s pull
+    request.** Step 5 is the record: `AGENTS.md` §10's identity row says a section's identity is taken over its fold,
+    and a row of its own holds the shown candidate; `DECISIONS.md`, *A paragraph's line breaks are not a difference*,
+    records what the steps settled that the plan left open. Over the 2026-11-10 pair, all 74 of JanusHalo's blocks that
+    are one of the seed's word for word show as lines each equal to a line of the seed, where 34 did as ingested, and
+    199 of its 222 lines shown equal a line of the seed, against 60 of 129. The suite ran 1058 of 1058 on Windows,
+    judged healthy by `catch-crash --expect auto`. Brian looked at the first pair on 2026-11-19 and passed it; the two
+    pairs that differ in backticks alone are the files' own escaping, the seed's rendering as meant. The look turned up
+    two things of its own: a stack overflow in the library while a button is held over a padded line taller than the
+    pane, being fixed apart, and buttons that walk the sections, which he asked for and which are planned apart.
 
 42. **CodeQuality to `2026.4.1113`, and the pin-revert proof item 40 lost — Brian, 2026-11-16, after item 41.**
     DiffView pins CodeQuality at `2026.4.1104`; the move owes at least one suppression in `scripts/mutate-gates.cs`,
@@ -1809,37 +1882,85 @@ wording.
     being one every app of his needs. Adopting it here waits for that package. `DECISIONS.md`, *The review window's
     theme button is ClaudeForge's, until AppKit publishes one*.
 
+45. **A headless flake DiffView's test assemblies are open to — the Templates session, 2026-11-16, routing a finding
+    of the ClaudeForge session's.** Under Avalonia's default `PerTest` isolation, a thread that reads
+    `Dispatcher.UIThread` before the headless platform builds its compositor takes the UI thread, and a test then fails
+    with *"The calling thread cannot access this object because a different thread owns it"* from
+    `HeadlessUnitTestSession.EnsureIsolatedApplication`: intermittently, a victim of whatever ran before it, most often
+    on macOS. Both test assemblies here are open to it as configured: each declares `AvaloniaTestApplication` and no
+    `AvaloniaTestIsolation`, `PerTest` is Avalonia 12.1.2's default as it is 12.1.6's, where it was read, and a build's
+    outcome is posted to the dispatcher from the thread pool. No CI run of the hundred before 2026-11-16 shows it: of the
+    seven that needed a re-run, two failed a ruleset check, one a network fetch, one an artifact service and one item
+    37's race, and two had their macOS job cancelled before it ran a step. Templates corrected its notice the same day:
+    `PerAssembly` isolation is no drop-in fix, one shared application breaking code that reads a null
+    `Application.Current` and leaking queued dispatcher work between tests. What DiffView does waits for the finder's
+    verdict once ClaudeForge's CI has run, and is then Brian's.
+
 46. **The reference sources, fetched by AppKit's shared script — the AppKit session, 2026-11-16, on Brian's direction
     that day.** One way across his repositories: AppKit's `reference/fetch-reference.cs`, which merges DiffView's,
     XamlQuality's and ClaudeForge's scripts, in place of `scripts/fetch-reference.cs` and its wrappers. Brian gave the
     adoption to the session working plan 00036 the same day.
 
-    ✅ **Done 2026-11-16 on `build/the-shared-reference-script`, cut from PR #58's merge.** The script is
-    AppKit's at `d3bdafe`, blob for blob, with its two empty shields beside the `Directory.Packages.props` kept here,
-    and every CI job, the release and the test project's `EnsureReferenceSources` run it as
-    `dotnet run --file reference/fetch-reference.cs`. Avalonia, AvaloniaEdit, DiffPlex and Semi.Avalonia are pinned by
-    their packages, at the commits the nuspecs record, measured first to move no file DiffView reads; ClaudeForge keeps
-    its commit. `scripts/pack-diagnostics.cs` and the theme audit read the pinned ClaudeForge checkout alone, and
-    `docs/theme-audit.md` changed in that row's paths and nothing else. The first `--update` fetched again four
-    checkouts whose `.git` had lost its `refs` folder, which the old script never asked git about. The suite ran 1023
-    of 1023 on Windows, judged healthy; `repo-conventions check` conforms; `mutate-gates --guards` holds and its
-    `--check` applies 137 of 137; and every set's `mutate-behaviour --check` holds. `DECISIONS.md`, *The reference
-    sources are fetched by AppKit's shared script*.
+    ✅ **Done 2026-11-16, and landed that day as PR #59, the session merging it on Brian's word and `main`'s run over
+    it passing.** The script is AppKit's at `d3bdafe`, blob for blob, with its two empty shields beside the
+    `Directory.Packages.props` kept here, and every CI job, the release and the test project's
+    `EnsureReferenceSources` run it as `dotnet run --file reference/fetch-reference.cs`. Avalonia, AvaloniaEdit,
+    DiffPlex and Semi.Avalonia are pinned by their packages, at the commits the nuspecs record, measured first to move
+    no file DiffView reads; ClaudeForge keeps its commit, and its `local` path, `../cl/ClaudeForge`, older than the
+    adoption, fits a DiffView checked out beside `cl/` rather than in it, as this one is, so here ClaudeForge is cloned
+    from its URL, as the old script cloned it. `scripts/pack-diagnostics.cs` and the theme audit read the pinned
+    ClaudeForge checkout alone, and `docs/theme-audit.md` changed in that row's paths and nothing else. The first
+    `--update` fetched again four checkouts whose `.git` had lost its `refs` folder, which the old script never asked
+    git about. The suite ran 1023 of 1023 on Windows, judged healthy; `repo-conventions check` conforms;
+    `mutate-gates --guards` holds and its `--check` applies 137 of 137; and every set's `mutate-behaviour --check`
+    holds. `DECISIONS.md`, *The reference sources are fetched by AppKit's shared script*.
 
-    ⭐ **Pushed for its pull request on Brian's word the same day**, his `/choices` answer *"Push, PR, I merge"*, the
-    session merging it once the six required checks pass. CI is the script's first run off Windows, which AppKit's
-    message says it had not had. Once CI has run, the AppKit session is sent one message, his answer *"One message
-    after CI"*: what Linux and macOS made of the script, and two corrections to its message, DiffView's ignore line
-    being `reference/*` rather than `reference/*/` and DiffPlex's package recording a commit.
+    ⭐ **Pushed for its pull request on Brian's word the same day**, his `/choices` answer *"Push, PR, I merge"*, and
+    merged by the session once all twelve checks had passed, the six required among them. CI was the script's first
+    run off Windows, which AppKit's message said it had not had: on the Linux, macOS and Windows runners, in both runs
+    of the pull request, it fetched all five sources at their pins on a clean checkout, reading each of the four
+    nuspecs from nuget.org, and every job then built and tested green, the culture leg and the trim check included.
+    The AppKit session was then sent one message, his answer *"One message after CI"*: those results, and two
+    corrections to its message, DiffView's ignore line being `reference/*` rather than `reference/*/` and DiffPlex's
+    package recording a commit.
+
+47. **The reference checkouts move under `reference/src/` — the Templates session, 2026-11-17, its kit's layout changed
+    on Brian's word that day; adopted at DiffView's next `repo-conventions` sync.** Templates merged the layout as
+    `164c9a5`, its PR #108. Every checkout is a folder under `reference/src/`, which `.gitignore` ignores whole with one
+    line, `/reference/src`, and no `!` line, while the kit's own files stay in `reference/`, where the shields must be
+    for MSBuild's walk up from a checkout. Its `fetch-reference.cs` refuses a `dir` outside `reference/src/`, asks git
+    whether `reference/src` itself is ignored, and on Windows refuses unless `LongPathsEnabled` is 1, printing the
+    administrator's command and never changing the setting. Templates' `check` is to hold the `/reference/src` line,
+    and `check --repo` to fail a copy of the script that differs as drift, its plan 00013's steps 3 and 4, so the sync
+    that brings those brings this with it: the script and the three shields copied from Templates; the nine lines
+    `.gitignore` gives `reference/` replaced by `/reference/src`; every `dir` in `sources.json` moved under
+    `reference/src/`, the checkouts moved or fetched again; and every path the tests, the theme audit, the README's
+    source table and the documents read moved with them. Nothing is needed before then, the session says.
+
+    ⚠ **It corrects what DiffView told AppKit with PR #59.** The script never accepted a checkout linked in from
+    elsewhere, under any ignore line: its gate asks git about each checkout's `.fetched-ref`, which git refuses for a
+    path beyond a symbolic link, exit 128, and the script stops on that with its own exit 2. Templates measured it
+    under WSL with a real symlink and on Windows with a test canary, and the gate here reads as it says. So the reason
+    `DECISIONS.md` gives for keeping the file pattern `reference/*`, *The reference sources are fetched by AppKit's
+    shared script*, held only while no checkout was a symlink; the new gate asks about `reference/src` by that name, and
+    a test holds a checkout moved out and linked back in as present and out of `git status`.
+
+    ⭐ **Templates `2026.4.1119` carries the kit**, published on 2026-11-19 from Templates' `main` at `c0c74fe` and
+    verified on nuget.org, the session reports. Its `repo-conventions.cs`, from `templates/bbpkg/scripts/`, fails
+    `check` on a tracked kit without the `/reference/src` line, on any file under `reference/src` git sees and on a
+    `fetch-reference.*` outside `reference/`; and `check --repo`, run from Templates, fails a
+    `reference/fetch-reference.cs` that differs from Templates' copy. So until DiffView syncs, Templates' `check --repo
+    JanusMael/Bennewitz.Ninja.DiffView` reports `reference` and `drift` failing. DiffView's own `conventions` check
+    runs this repository's copy of the script, and stays as it is until the sync brings the new one.
 
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
-2026-11-16, item 41 follows it and item 42 follows item 41,
-item 43 waits for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and item 46 is done on
-`build/the-shared-reference-script`, pushed for its pull request on his word. **Every other open item was
+2026-11-16 and item 46 as PR #59 the same day, item 41 is done on its branch and lands with its pull request, item
+42 follows it, items 43 and 47 wait for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, and
+item 45 for the ClaudeForge session's verdict. **Every other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the

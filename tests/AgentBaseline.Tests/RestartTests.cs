@@ -95,7 +95,7 @@ public sealed class RestartTests
         new(path, label, new CandidateTarget(Path.GetFileName(path), null));
 
     private static MarkdownSection SectionOf(ReviewSession session, string path) =>
-        session.Current.Candidate.Document.Outline.Sections.Single(s => s.HeadingPath == path);
+        session.Shown.Outline.Sections.Single(s => s.HeadingPath == path);
 
     private static async Task<(ReviewHost Host, ReviewSession Session)> OpenAsync(
         ReviewQueue queue, IReadOnlyList<SectionDecision>? earlier = null)

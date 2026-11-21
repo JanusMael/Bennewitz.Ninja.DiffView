@@ -156,9 +156,16 @@
     {
       "name": "the same version is written over itself when its blank lines differ",
       "file": "src/AgentBaseline/AccumulatorEdits.cs",
-      "old": "if (string.Equals(replaced.Content, taken.Content, StringComparison.Ordinal))",
-      "new": "if (string.Equals(replaced.Text, taken.Text, StringComparison.Ordinal))",
+      "old": "if (SectionIdentity.Of(replaced) == SectionIdentity.Of(taken))",
+      "new": "if (SectionIdentity.HashOf(replaced.Text) == SectionIdentity.HashOf(taken.Text))",
       "killer": "Taking_the_version_the_accumulator_already_holds_writes_nothing"
+    },
+    {
+      "name": "a version whose paragraphs break otherwise is written over the accumulator's",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (SectionIdentity.Of(replaced) == SectionIdentity.Of(taken))",
+      "new": "if (string.Equals(replaced.Content, taken.Content, StringComparison.Ordinal))",
+      "killer": "Taking_a_version_whose_paragraphs_break_otherwise_than_the_accumulators_writes_nothing"
     },
     {
       "name": "a take of a path held twice is placed rather than refused",
@@ -414,6 +421,13 @@
       "old": "HashOf(section.Content)",
       "new": "HashOf(section.HeadingPath)",
       "killer": "One_rule_in_two_files_titled_differently_is_one_identity"
+    },
+    {
+      "name": "identity hashes a section's text as written rather than its fold",
+      "file": "src/AgentBaseline/SectionIdentity.cs",
+      "old": "GetBytes(ParagraphBreaks.Fold(content))",
+      "new": "GetBytes(content)",
+      "killer": "A_rule_wrapped_otherwise_keeps_its_identity_and_text_with_no_soft_break_hashes_as_it_did"
     },
     {
       "name": "an edit's tail starts at its length plus its offset rather than its offset plus its length",

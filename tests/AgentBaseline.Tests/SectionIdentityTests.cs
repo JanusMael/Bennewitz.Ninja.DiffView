@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Bennewitz.Ninja.AgentBaseline.Tests;
@@ -66,5 +67,23 @@ public sealed class SectionIdentityTests
 
         // Two trailing spaces are a markdown hard line break, so they are part of what the rule says.
         Assert.NotEqual(SectionIdentity.Of(middle).Hash, SectionIdentity.Of(hardBreak).Hash);
+    }
+
+    [Fact]
+    public void A_rule_wrapped_otherwise_keeps_its_identity_and_text_with_no_soft_break_hashes_as_it_did()
+    {
+        // ⭐ Plan 00036 decision 2: where a paragraph breaks its lines is layout, so the same words wrapped otherwise are
+        // the same version, and a decision about one holds for the other. A hard break is part of what a rule says.
+        MarkdownSection oneLine = MarkdownOutline.Read("# Rules\n\n## One\n\nAlpha and beta, as one line has them.\n").Sections[1];
+        MarkdownSection wrapped = MarkdownOutline.Read("# Rules\n\n## One\n\nAlpha and beta,\nas one line has them.\n").Sections[1];
+        MarkdownSection hardBreak = MarkdownOutline.Read("# Rules\n\n## One\n\nAlpha and beta,  \nas one line has them.\n").Sections[1];
+
+        Assert.Equal(SectionIdentity.Of(oneLine), SectionIdentity.Of(wrapped));
+        Assert.NotEqual(SectionIdentity.Of(oneLine).Hash, SectionIdentity.Of(hardBreak).Hash);
+
+        // Text with no soft break folds to itself, so its hash is SHA-256 of its UTF-8, as before the fold existed.
+        Assert.Equal(
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(oneLine.Content))),
+            SectionIdentity.Of(oneLine).Hash);
     }
 }

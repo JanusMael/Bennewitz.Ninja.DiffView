@@ -5570,7 +5570,10 @@ paths and in nothing else, its counts and digest the same.
 **`.gitignore` keeps `reference/*`, not AppKit's `/reference/*/`.** A checkout linked in from elsewhere is a symlink,
 which to git is a file a folder pattern does not match, the reason this repository chose the file pattern; the
 script's check that git ignores every checkout folder passes under either, and the three new tracked files are
-re-admitted by name.
+re-admitted by name. ⚠ **That reason held only while no checkout was a symlink**, the Templates session found on
+2026-11-17: the check asks git about each checkout's `.fetched-ref`, which git refuses for a path beyond a symbolic
+link, so a checkout linked in stops the script under either line. Templates' new layout, open item 47, asks about
+`reference/src` instead.
 
 **The first `--update` found four checkouts broken.** Avalonia's, AvaloniaEdit's, DiffPlex's and Semi.Avalonia's
 `.git` folders held no `refs` folder, which a shallow clone keeps empty and a copy that skips empty folders drops,
@@ -5578,3 +5581,72 @@ their folders last written on 2026-10-04; git read each as no repository and ans
 files were intact, so the theme audit never noticed, and the old script, which asked git nothing about a checkout it
 found with a `.git` and a matching pin record, called them present. The new one asks for each checkout's `HEAD`, read
 DiffView's, called them off-pin, and fetched them again in 14 seconds.
+
+## A paragraph's line breaks are not a difference
+
+Plan 00036, open item 41. AgentBaseline reads a soft line break inside a paragraph as one space, as CommonMark renders
+it: a section's identity hashes the section folded, the decision file is at version 2, and the right pane shows a
+candidate broken where the accumulator breaks, so one rule wrapped two ways is one version and reads as no change. The
+left is the accumulator byte for byte, the text a save writes, and DiffView does not change.
+
+**The breaks are read from Markdig's inline tree.** Measured before the fold was written, against Markdig 1.4.1: once
+a paragraph's inlines are parsed, its `Lines` are empty, and a soft break is a `LineBreakInline` that is not hard, the
+inline after it starting where the next line's text does, past the indent and a quote's markers. The fold's parse
+enables pipe tables and the outline's does not, because under the outline's pipeline the 2026-11-10 seed's one table
+is a paragraph whose rows a fold would join. A soft break with nothing after it in its paragraph is kept: pipe tables
+leave one above a table they carve out of a paragraph, and a link whose text ends at a line ending keeps one as its
+last child, so joining either would put a table's row or a link's syntax inside a line.
+
+**A take edited into a re-wrap of its own text is refused, as one edited into its own text was.** A take records the
+text it took, whether it was edited, and, when it was, the result. A result whose fold is the taken text's says the
+take was edited where it was only re-wrapped, so `DecisionFile` refuses the file, as it refused a result equal to the
+text taken.
+
+**One reading of a paragraph, shared.** `ParagraphBreaks.Paragraphs` is where both the fold and the shown candidate
+read a paragraph's lines, so the two never disagree about what its words are. A paragraph's text is its inlines' span,
+measured: its block's span takes in the spaces ending its last line, and above a table pipe tables carved out of it,
+the whole table.
+
+**A re-break that fails the check is left out alone.** Decision 6 holds every shown text to the candidate's outline,
+folded section by section. All the re-breaks are tried at once; when that fails, each is tried over those kept before
+it, so a paragraph whose re-break would open a list is shown as written and costs no other paragraph its lines.
+
+**A near match keeps the accumulator's line starts.** Decision 5 moves each of the counterpart's breaks to the
+candidate's word that a word diff pairs with the first word of the line it starts, so wherever the candidate kept that
+word, its line starts where the accumulator's does; where it dropped it, the break goes where the word was. A word
+added where two lines meet ends the first of them: the word diff cannot tell an addition at the end of one line from
+one at the start of the next, and keeping the second line's start keeps that line equal. No break lands in a run of
+spaces, which a fold reads as one space, so one would change the paragraph's words and the check would refuse every
+break in it. Both diffs read a line ending inside a paragraph's words, a hard break's, as a space, so a paragraph and a
+word are each one line of the diff; and a paragraph under a heading the accumulator does not have pairs with nothing
+and is shown as written. A paragraph the candidate reworded whose counterpart is one line is shown on one line:
+decision 5 makes no exception for it, the paragraph's own breaks being layout like any other's, which moved the
+fixture of decision 8's test from a reworded paragraph to an added one.
+
+**A document's only heading is its title.** The outline takes a document's first heading for its title when every
+heading after it is deeper, and a title is in no heading path, open item 22; so two documents each holding one heading
+hold one section between them, whatever the headings say. Step 4's first proof run found it: a fixture meant to put a
+paragraph under a heading the accumulator does not have used one lone heading on each side, the near match paired the
+two, and the mutation the test was there to kill survived. Its documents now have a title each.
+
+**The count of changes can rise.** Over the 2026-11-10 pair, step 3's re-break took the diff the window shows for
+JanusHalo from 48 changes to 8, and step 4's took it to 9: one paragraph that differs from the seed's sat as one long
+line inside a run of 73 seed lines the candidate removes, which held the run together as one block, and broken as the
+seed breaks it, the paragraph is a one-line pair and the removed lines are two blocks, split at a blank line the two
+share. Every paragraph that differs is now a pair of short lines.
+
+**The measure.** Over the 2026-11-10 pair, cut at blank lines with every run of whitespace read as one space, 74 of
+JanusHalo's 85 blocks are a block of the seed's word for word. As ingested, 34 of those 74 showed as lines each equal
+to a line of the seed; as shown, all 74 do, and 199 of the 222 lines shown equal a line of the seed, against 60 of 129.
+brianb-2025, wrapped like the seed, reads as it did: 79 of its 97 blocks, all 79 as equal lines, and 210 of its 251
+lines. The re-break takes about 20 ms on this box.
+
+**His look at the window.** Brian looked at the first pair, JanusHalo against the seed, in a window built from
+`5a620cf`, on 2026-11-19, and passed all of it: no line on the right longer than its neighbours, and the file
+uncoloured outside its differences, five wording pairs each a short pair of lines, the three sections only the seed has
+as removed blocks and the one only JanusHalo has as an added one. Two of the five pairs differ in backticks alone, and
+the difference is the files' own: at line 33 the seed writes ```` ` ```mermaid ` ```` and JanusHalo
+````` ````mermaid` `````, at line 130 the seed writes ```` `` ` `` ```` and JanusHalo ```` ``` ````. The seed's are code
+spans that render as meant; JanusHalo's are runs of backticks that close nothing and render as themselves. The window
+died once under him, a stack overflow in the library while a button was held over a padded line taller than the pane,
+which any removal longer than the pane puts opposite it with or without this plan; it is being fixed apart from it.

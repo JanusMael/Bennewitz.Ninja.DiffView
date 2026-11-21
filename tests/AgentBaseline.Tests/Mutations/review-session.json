@@ -91,8 +91,8 @@
     {
       "name": "the right shows the seed rather than the candidate",
       "file": "src/AgentBaseline/ReviewSession.cs",
-      "old": "new PaneSource(candidate.Document.Text)",
-      "new": "new PaneSource(Queue.Seed.Document.Text)",
+      "old": "ShownCandidate.Of(candidate.Document.Text,",
+      "new": "ShownCandidate.Of(Queue.Seed.Document.Text,",
       "killer": "Next_and_previous_stop_at_the_ends_and_a_jump_shows_the_candidate_it_names"
     },
     {
@@ -140,8 +140,8 @@
     {
       "name": "the right shows a candidate's bytes rather than its normalised text",
       "file": "src/AgentBaseline/ReviewSession.cs",
-      "old": "new PaneSource(candidate.Document.Text)",
-      "new": "new PaneSource(PaneSource.FromBytes([.. candidate.Document.RawBytes]).Text)",
+      "old": "ShownCandidate.Of(candidate.Document.Text,",
+      "new": "ShownCandidate.Of(PaneSource.FromBytes([.. candidate.Document.RawBytes]).Text,",
       "killer": "Each_pane_shows_its_documents_normalised_text_and_not_its_bytes"
     },
     {
@@ -172,6 +172,49 @@
       "new": "ArgumentNullException.ThrowIfNull(view); view.LeftReadOnly = false;",
       "killer": "A_queue_holding_only_the_seed_is_refused_before_the_view_is_touched",
       "says": "opened the left for editing before it refused"
+    },
+    {
+      "name": "the right shows the candidate as written rather than re-broken against the accumulator",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "new PaneSource(Shown.Text)",
+      "new": "new PaneSource(candidate.Document.Text)",
+      "killer": "The_right_shows_a_candidate_in_the_accumulators_lines_and_reads_its_sections_there"
+    },
+    {
+      "name": "the right pane's lines are read in the candidate's outline as written",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "SectionAt(Shown.Outline, line)",
+      "new": "SectionAt(Current.Candidate.Document.Outline, line)",
+      "killer": "The_right_shows_a_candidate_in_the_accumulators_lines_and_reads_its_sections_there"
+    },
+    {
+      "name": "a take writes the candidate's section as written rather than as the right shows it",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "AccumulatorEdits.Take(left.Text, Shown.Outline, index)",
+      "new": "AccumulatorEdits.Take(left.Text, Current.Candidate.Document.Outline, index)",
+      "killer": "A_take_writes_the_section_as_the_right_shows_it"
+    },
+    {
+      "name": "a verb's section is looked for among the candidate's sections as written",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "IReadOnlyList<MarkdownSection> sections = Shown.Outline.Sections;",
+      "new": "IReadOnlyList<MarkdownSection> sections = Current.Candidate.Document.Outline.Sections;",
+      "killer": "A_take_writes_the_section_as_the_right_shows_it",
+      "says": "is not one of the sections"
+    },
+    {
+      "name": "a take of the version the accumulator holds is made anyway",
+      "file": "src/AgentBaseline/AccumulatorEdits.cs",
+      "old": "if (SectionIdentity.Of(replaced) == SectionIdentity.Of(taken))",
+      "new": "if (SectionIdentity.Of(replaced) == SectionIdentity.Of(taken) && taken.LineCount < 0)",
+      "killer": "A_take_of_a_section_holding_the_accumulators_words_writes_nothing"
+    },
+    {
+      "name": "a candidate is re-broken against the seed rather than the accumulator as it reads",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "ShownCandidate.Of(candidate.Document.Text, view.LeftDocument.Text)",
+      "new": "ShownCandidate.Of(candidate.Document.Text, Queue.Seed.Document.Text)",
+      "killer": "A_candidate_is_re_broken_against_the_accumulator_as_it_reads_when_the_candidate_is_shown"
     },
     {
       "name": "a pane's title is concatenated rather than interpolated",

@@ -45,9 +45,11 @@ public sealed class SaveTests
 
     private static string Doc(params string[] lines) => string.Join("\n", lines);
 
-    private static ReviewQueue QueueOf(FixtureTree tree, params string[] candidates)
+    private static ReviewQueue QueueOf(FixtureTree tree, params string[] candidates) => QueueOverSeed(tree, Seed, candidates);
+
+    private static ReviewQueue QueueOverSeed(FixtureTree tree, string seed, params string[] candidates)
     {
-        List<CorpusEntry> entries = [Entry(tree.Write("Seed/AGENTS.md", Seed), "seed")];
+        List<CorpusEntry> entries = [Entry(tree.Write("Seed/AGENTS.md", seed), "seed")];
         for (int i = 0; i < candidates.Length; i++)
         {
             entries.Add(Entry(tree.Write($"Machine{i + 1}/AGENTS.md", candidates[i]), $"machine {i + 1}"));
@@ -68,7 +70,7 @@ public sealed class SaveTests
     }
 
     private static MarkdownSection SectionOf(ReviewSession session, string path) =>
-        session.Current.Candidate.Document.Outline.Sections.Single(s => s.HeadingPath == path);
+        session.Shown.Outline.Sections.Single(s => s.HeadingPath == path);
 
     private static string Said(params StaleSection[] stale) => ((IReadOnlyList<StaleSection>)stale).Spoken();
 
@@ -265,6 +267,39 @@ public sealed class SaveTests
             File.ReadAllText(saved.ReportPath),
             StringComparison.Ordinal);
         Assert.Equal(queue.Target, DecisionFile.Read(saved.DecisionsPath).Target);
+
+        TestLogSink.AssertNoWarnings(LogArea.Binding);
+    }
+
+    [AvaloniaFact]
+    public async Task The_report_says_a_take_the_left_holds_with_its_paragraphs_broken_otherwise_was_taken()
+    {
+        TestLogSink.Instance.Clear();
+        using FixtureTree tree = new();
+
+        // The seed wraps One's paragraph and machine 1 writes it on one line; Two is in words of machine 1's own.
+        string seed = Doc("# Rules", "", "## One", "", "Alpha and beta,", "as the seed wraps them.", "", "## Two", "", "Beta.", "");
+        ReviewQueue queue = QueueOverSeed(
+            tree,
+            seed,
+            Doc("# Rules", "", "## One", "", "Alpha and beta, as the seed wraps them.", "", "## Two", "", "Beta, as machine 1 has it at length.", ""));
+        string output = Path.Combine(tree.MakeDirectory("Baseline"), "AGENTS.md");
+        using ReviewHost host = new();
+        ReviewSession session = await host.AwaitBuildAsync(() => new ReviewSession(queue, host.View));
+
+        // One is the version the left holds, so its take writes nothing; Two is taken, then wrapped otherwise by hand.
+        Assert.Equal(TakeResult.Unchanged, session.Take(SectionOf(session, "One")));
+        Assert.Equal(TakeResult.Replaced, session.Take(SectionOf(session, "Two")));
+        string left = host.View.LeftDocument.Text;
+        host.Type(host.Left, left.IndexOf("has it ", StringComparison.Ordinal) + "has it ".Length, "\n");
+
+        SavedBaseline saved = BaselineOutput.Write(session, output);
+
+        // ⭐ Plan 00036 decision 2: whether a take was edited is read as identities are, so neither of these was.
+        Assert.Contains(
+            "| 1 | taken | One | machine 1 |\n| 2 | taken | Two | machine 1 |\n",
+            File.ReadAllText(saved.ReportPath),
+            StringComparison.Ordinal);
 
         TestLogSink.AssertNoWarnings(LogArea.Binding);
     }
