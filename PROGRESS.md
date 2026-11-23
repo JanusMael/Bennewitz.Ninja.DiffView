@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #59** — PR #59 merged on 2026-11-16, and `main`'s run over it passed.
+**`main` carries everything through PR #60** — PR #60 merged on 2026-11-23 once all twelve of its checks had passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
-merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1058** here, `Passed!`,
-by a local run over plan 00036's branch before its rebase onto item 48's fix, which measured 1035 over its own: plan
-00035's 1023, the branch's 35 new tests and the fix's 12, none of them a frame.
+merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1070** here, `Passed!`,
+by a local run over plan 00036's branch rebased onto PR #60: plan 00035's 1023, the branch's 35 new tests and the
+fix's 12, none of them a frame.
 ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
 adding the 66 frame baselines back, which is precisely how **745** once reached this document against a measured
 **769**. Each leg lists by name the baselines it left out. The trimmed publish carries no `IL` warning.
@@ -1855,7 +1855,7 @@ wording.
     anyway.
 
     ✅ **Done 2026-11-17 by plan 00036, and it lands with `feat/a-paragraphs-line-breaks-are-not-a-difference`'s pull
-    request.** Step 5 is the record: `AGENTS.md` §10's identity row says a section's identity is taken over its fold,
+    request, PR #61.** Step 5 is the record: `AGENTS.md` §10's identity row says a section's identity is taken over its fold,
     and a row of its own holds the shown candidate; `DECISIONS.md`, *A paragraph's line breaks are not a difference*,
     records what the steps settled that the plan left open. Over the 2026-11-10 pair, all 74 of JanusHalo's blocks that
     are one of the seed's word for word show as lines each equal to a line of the seed, where 34 did as ingested, and
@@ -1960,7 +1960,8 @@ wording.
     rectangle taller than the viewport, and the selection handler brings the caret in again on every scroll it
     causes. Every view with padding was exposed, the editor and the viewer; the unified view has none.
 
-    ✅ **Fixed 2026-11-19 on `fix/a-padded-line-taller-than-the-pane`, cut from `main` at `b863932`, local.**
+    ✅ **Fixed 2026-11-19 on `fix/a-padded-line-taller-than-the-pane`, cut from `main` at `b863932`, and landed as
+    PR #60 on 2026-11-23.**
     `DiffTextView` brings the caret in as its line's own row and leaves the pane where it is for a rectangle that
     already covers it, reached through `DiffTextArea`, the route Brian chose over a scroll listener; the
     accessibility gate leaves the two to the pane, and `BNXQ1003`'s reading holds the text area to AvaloniaEdit's
@@ -1971,8 +1972,7 @@ wording.
     first, the four new ones among them; the four sets the change owes came out as declared, 39 mutations with every
     declared test killed, `Mutations/text-view.json`'s eleven among them, its pane built over AvaloniaEdit's own text
     area failing eight of the eleven tests; and the suite ran 1035 of 1035 on Windows, `Passed!`, which `catch-crash`
-    judged healthy. Push and the pull request wait for his word. `DECISIONS.md`, *A padded line taller than its pane
-    is brought into view by its own row*.
+    judged healthy. `DECISIONS.md`, *A padded line taller than its pane is brought into view by its own row*.
 
     ⭐ **It held when Brian retried it by hand on 2026-11-20: *"no crash"*.** The build was plan 00036's tip, `6700120`,
     with this branch's `DiffTextView.cs`, `DiffTextArea.cs` and `DiffPanePresenter.cs` laid over it, each equal to
@@ -1980,15 +1980,19 @@ wording.
     the blank space opposite the removed blocks near line 132, and turned the wheel there with the button held. The
     Linux and macOS legs are CI's.
 
+    ⭐ **Pushed on Brian's word, his `/choices` answer *"Push both, fix first"*, and merged on 2026-11-23** once all
+    twelve of its checks had passed, the six required among them, the Linux and macOS legs included. Plan 00036's
+    branch, pushed beside it as PR #61, was rebased onto it.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
-2026-11-16 and item 46 as PR #59 the same day, item 41 is done on its branch and lands with its pull request, item
-42 follows it, items 43 and 47 wait for DiffView's next `repo-conventions` sync, item 44 for AppKit's package, item
-45 for the ClaudeForge session's verdict, and item 48 is done on `fix/a-padded-line-taller-than-the-pane`, its push
-waiting for his word. **Every other open item was
+2026-11-16 and item 46 as PR #59 the same day, item 48 landed as PR #60 on 2026-11-23, item 41 is done on its
+branch and lands with its pull request, PR #61, item 42 follows it, items 43 and 47 wait for DiffView's next
+`repo-conventions` sync, item 44 for AppKit's package, and item 45 for the ClaudeForge session's verdict. **Every
+other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
 19's attended run at 200% made on 2026-11-06; and item 23's brief went to the Inspections repository. Item 25 came the
