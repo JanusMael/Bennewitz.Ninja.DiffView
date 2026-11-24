@@ -1,0 +1,347 @@
+// Plan 00038: the review window's section walk — Previous section and Next section, Ctrl+P and Ctrl+N — over the
+// sections that differ, each in the pane that has it, in the rows the panes show, and where a press lands.
+{
+  "project": "tests/AgentBaseline.Tests/AgentBaseline.Tests.csproj",
+  "tests": [
+    "tests/AgentBaseline.Tests/SectionWalkTests.cs"
+  ],
+  "mutations": [
+    {
+      "name": "a section the two hold alike is walked too",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "!held.Contains(VersionOf(s))",
+      "new": "held.Count >= 0",
+      "killer": "The_walk_holds_the_sections_that_differ_each_in_the_pane_that_has_it"
+    },
+    {
+      "name": "a section only the baseline has goes to the right pane",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "new Stop(DiffSide.Left, s)",
+      "new": "new Stop(DiffSide.Right, s)",
+      "killer": "The_walk_holds_the_sections_that_differ_each_in_the_pane_that_has_it"
+    },
+    {
+      "name": "every section of the baseline's is walked, its versions of the candidate's sections included",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "!paths.Contains(s.HeadingPath)",
+      "new": "paths.Count >= 0",
+      "killer": "The_walk_holds_the_sections_that_differ_each_in_the_pane_that_has_it"
+    },
+    {
+      "name": "no section only the baseline has is walked",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "!paths.Contains(s.HeadingPath)",
+      "new": "paths.Count < 0",
+      "killer": "The_walk_holds_the_sections_that_differ_each_in_the_pane_that_has_it"
+    },
+    {
+      "name": "a section's version is its text as written rather than as a decision reads it",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "=> SectionIdentity.Of(section);",
+      "new": "=> new SectionIdentity(section.HeadingPath, section.Content);",
+      "killer": "The_walk_holds_the_sections_that_differ_each_in_the_pane_that_has_it",
+      "because": "Flags folds to the seed's version and is shown as written, so only a folded reading passes over it"
+    },
+    {
+      "name": "a line's row is read as its own index",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "index < lines.Count ? lines[index].Row : model.Rows.Count",
+      "new": "index < lines.Count ? index : model.Rows.Count",
+      "killer": "The_walk_runs_in_the_rows_the_panes_show_and_so_in_the_candidates_own_order",
+      "because": "Gone's line is above every changed line of the candidate's but Added's, and its row below all of them"
+    },
+    {
+      "name": "a line past the end of a model that lags an edit is read as though the model held it",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "index < lines.Count ? lines[index].Row : model.Rows.Count",
+      "new": "lines[index].Row",
+      "killer": "Before_the_re_diff_after_a_take_a_press_still_finds_the_baselines_own_section_where_the_take_moved_it"
+    },
+    {
+      "name": "on one row the candidate's section comes before the baseline's",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "side == DiffSide.Left ? 0 : 1",
+      "new": "side == DiffSide.Left ? 1 : 0",
+      "killer": "On_one_row_the_baselines_section_comes_before_the_candidates"
+    },
+    {
+      "name": "the baseline's version of a section the candidate holds is not that section's place in the walk",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "if (side == DiffSide.Left)",
+      "new": "if (side != DiffSide.Left)",
+      "killer": "A_press_counts_from_past_the_section_its_caret_is_in_from_a_caret_in_no_section_and_from_the_top",
+      "because": "a press from the seed's One then goes across to the candidate's One, on the same row, rather than on past it"
+    },
+    {
+      "name": "Next from inside a section of the walk lands back on it",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "walk.FindIndex(p => p.Key.CompareTo(anchor) > 0)",
+      "new": "walk.FindIndex(p => p.Key.CompareTo(anchor) >= 0)",
+      "killer": "A_press_counts_from_past_the_section_its_caret_is_in_from_a_caret_in_no_section_and_from_the_top"
+    },
+    {
+      "name": "Previous from inside a section of the walk lands back on it",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "walk.FindLastIndex(p => p.Key.CompareTo(anchor) < 0)",
+      "new": "walk.FindLastIndex(p => p.Key.CompareTo(anchor) <= 0)",
+      "killer": "A_press_counts_from_past_the_section_its_caret_is_in_from_a_caret_in_no_section_and_from_the_top"
+    },
+    {
+      "name": "a press from inside a section counts from its caret's row rather than from past the section",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "return KeyOf(model, side, section.FirstLine);",
+      "new": "return KeyOf(model, side, line);",
+      "killer": "A_press_counts_from_past_the_section_its_caret_is_in_from_a_caret_in_no_section_and_from_the_top",
+      "because": "Previous from One's rule then lands on One's own heading"
+    },
+    {
+      "name": "a caret in no section counts from the top",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "return KeyOf(model, side, line);",
+      "new": "return (-1, -1, -1);",
+      "killer": "A_press_counts_from_past_the_section_its_caret_is_in_from_a_caret_in_no_section_and_from_the_top",
+      "because": "the seed's Early shares row 0 with machine 1's first line, in no section, and lies behind a press from there"
+    },
+    {
+      "name": "the walk comes round when told not to",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "if (!wrap)",
+      "new": "if (!wrap && line < 0)",
+      "killer": "At_either_end_the_walk_comes_round_or_with_wrapping_off_stops"
+    },
+    {
+      "name": "coming round lands on the end it came from",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "Stop round = forward ? walk[0].Stop : walk[^1].Stop;",
+      "new": "Stop round = forward ? walk[^1].Stop : walk[0].Stop;",
+      "killer": "At_either_end_the_walk_comes_round_or_with_wrapping_off_stops"
+    },
+    {
+      "name": "with nothing that differs a press goes on as though something did",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "if (stops.Count == 0)",
+      "new": "if (stops.Count < 0)",
+      "killer": "With_nothing_that_differs_or_no_rows_yet_a_press_finds_nothing_and_says_which"
+    },
+    {
+      "name": "with no model yet a press says nothing differs",
+      "file": "src/AgentBaseline/SectionWalk.cs",
+      "old": "return new WalkStep(WalkOutcome.NotBuilt, default, null);",
+      "new": "return new WalkStep(WalkOutcome.NoneDiffers, default, null);",
+      "killer": "With_nothing_that_differs_or_no_rows_yet_a_press_finds_nothing_and_says_which"
+    },
+    {
+      "name": "Next goes to the previous section",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Walk(side, line, wrap, forward: true)",
+      "new": "Walk(side, line, wrap, forward: false)",
+      "killer": "The_walk_holds_the_sections_that_differ_each_in_the_pane_that_has_it"
+    },
+    {
+      "name": "the walk reads the seed rather than the accumulator as it now stands",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "MarkdownOutline.Read(view.LeftDocument.Text), Shown.Outline, view.Document",
+      "new": "Queue.Seed.Document.Outline, Shown.Outline, view.Document",
+      "killer": "Before_the_re_diff_after_a_take_a_press_still_finds_the_baselines_own_section_where_the_take_moved_it"
+    },
+    {
+      "name": "the walk reads the candidate as written rather than as the right pane shows it",
+      "file": "src/AgentBaseline/ReviewSession.cs",
+      "old": "Shown.Outline, view.Document",
+      "new": "Current.Candidate.Document.Outline, view.Document",
+      "killer": "The_walk_holds_the_sections_that_differ_each_in_the_pane_that_has_it",
+      "because": "its sections are then not the right pane's own, the ones its caret and every verb read"
+    },
+    {
+      "name": "the next section button runs the previous section command",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "NextSectionButton.Command = nextSection;",
+      "new": "NextSectionButton.Command = previousSection;",
+      "killer": "Each_button_and_each_chord_lands_on_a_section_with_the_keyboard_in_its_pane"
+    },
+    {
+      "name": "the previous section button runs the next section command",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "PreviousSectionButton.Command = previousSection;",
+      "new": "PreviousSectionButton.Command = nextSection;",
+      "killer": "Each_button_and_each_chord_lands_on_a_section_with_the_keyboard_in_its_pane"
+    },
+    {
+      "name": "the next section command takes another key than Beyond Compare's",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "NextSectionGesture = new(Key.N, KeyModifiers.Control);",
+      "new": "NextSectionGesture = new(Key.M, KeyModifiers.Control);",
+      "killer": "Each_button_and_each_chord_lands_on_a_section_with_the_keyboard_in_its_pane"
+    },
+    {
+      "name": "the previous section command takes another key than Beyond Compare's",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "PreviousSectionGesture = new(Key.P, KeyModifiers.Control);",
+      "new": "PreviousSectionGesture = new(Key.O, KeyModifiers.Control);",
+      "killer": "Each_button_and_each_chord_lands_on_a_section_with_the_keyboard_in_its_pane"
+    },
+    {
+      "name": "the next section command is never bound to a key",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "KeyBindings.Add(new KeyBinding { Gesture = NextSectionGesture, Command = nextSection });",
+      "new": "",
+      "killer": "Each_button_and_each_chord_lands_on_a_section_with_the_keyboard_in_its_pane"
+    },
+    {
+      "name": "the next section command is never told the review began",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "commands = [next, previous, nextSection, previousSection, take, leave, defer, drop, save];",
+      "new": "commands = [next, previous, previousSection, take, leave, defer, drop, save];",
+      "killer": "The_section_buttons_carry_their_ids_name_their_chords_and_wait_for_a_review",
+      "says": "stayed disabled once the review began"
+    },
+    {
+      "name": "the next section command is enabled before there is a review",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "new(() => WalkSections(forward: true), HasReview)",
+      "new": "new(() => WalkSections(forward: true), () => true)",
+      "killer": "The_section_buttons_carry_their_ids_name_their_chords_and_wait_for_a_review",
+      "says": "is enabled with no review to walk"
+    },
+    {
+      "name": "a landing leaves the keyboard where it was",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "pane.TextArea.Focus();",
+      "new": "",
+      "killer": "A_pointers_click_on_a_section_button_leaves_the_keyboard_in_the_pane_and_not_on_the_button",
+      "says": "does not have the keyboard"
+    },
+    {
+      "name": "a landing leaves a selection standing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "pane.TextArea.ClearSelection();",
+      "new": "",
+      "killer": "A_landing_clears_the_selection_and_marks_its_section_where_the_caret_already_was",
+      "says": "left a selection standing"
+    },
+    {
+      "name": "a landing where the right's caret already is leaves the mark in the other pane",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "OnRightCaretMoved(caret, EventArgs.Empty);",
+      "new": "",
+      "killer": "A_landing_clears_the_selection_and_marks_its_section_where_the_caret_already_was"
+    },
+    {
+      "name": "a landing does not scroll",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "pane.ScrollTo(section.FirstLine, 1, VisualYPosition.TextTop, 0, 0);",
+      "new": "",
+      "killer": "The_headings_row_comes_to_the_top_of_the_view_below_any_padding_and_as_far_as_the_view_goes_near_the_end",
+      "says": "should be the top row in view"
+    },
+    {
+      "name": "a landing brings the padding above a heading to the top rather than the heading's own row",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "VisualYPosition.TextTop",
+      "new": "VisualYPosition.LineTop",
+      "killer": "The_headings_row_comes_to_the_top_of_the_view_below_any_padding_and_as_far_as_the_view_goes_near_the_end",
+      "says": "Target's own row, below its padding,"
+    },
+    {
+      "name": "a press counts from the caret that moved last, a take's edit moving the left's",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "private void OnLeftCaretPlaced(object? sender, EventArgs e) => caretPlaced = true;",
+      "new": "private void OnLeftCaretPlaced(object? sender, EventArgs e) => (caretPlaced, keyboardPane) = (true, DiffSide.Left);",
+      "killer": "A_press_after_a_take_counts_from_the_pane_with_the_keyboard_and_not_from_the_caret_the_take_moved"
+    },
+    {
+      "name": "the left pane's taking the keyboard is not followed",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "private void OnLeftPaneFocused(object? sender, RoutedEventArgs e) => keyboardPane = DiffSide.Left;",
+      "new": "private void OnLeftPaneFocused(object? sender, RoutedEventArgs e) => keyboardPane = DiffSide.Right;",
+      "killer": "After_F6_a_press_counts_from_the_pane_F6_gave_the_keyboard"
+    },
+    {
+      "name": "the first press on a candidate counts from the caret its showing reset",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "caretPlaced = false;",
+      "new": "",
+      "killer": "The_first_press_on_a_candidate_counts_from_the_top_with_the_keyboard_in_a_pane"
+    },
+    {
+      "name": "a press counts from a caret before any has moved",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "DiffSide? from = caretPlaced ? keyboardPane : null;",
+      "new": "DiffSide? from = caretPlaced || !caretPlaced ? keyboardPane : null;",
+      "because": "the field is still read, as the build requires of a field that is assigned, and no longer decides anything",
+      "killer": "The_first_press_on_a_candidate_counts_from_the_top_with_the_keyboard_in_a_pane"
+    },
+    {
+      "name": "coming round is not said",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say($\"{OutcomeText.Text} Came round to the {(forward ? \"first\" : \"last\")} section that differs.\");",
+      "new": "",
+      "killer": "Each_end_comes_round_and_says_so_and_with_wrapping_off_stops_and_says_so"
+    },
+    {
+      "name": "coming round names the end the walk left",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "(forward ? \"first\" : \"last\")",
+      "new": "(forward ? \"last\" : \"first\")",
+      "killer": "Each_end_comes_round_and_says_so_and_with_wrapping_off_stops_and_says_so"
+    },
+    {
+      "name": "at an end with the walk not wrapping nothing is said",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say($\"No section of \\\"{label}\\\" {(forward ? \"after\" : \"before\")} this point differs from the baseline.\");",
+      "new": "",
+      "killer": "Each_end_comes_round_and_says_so_and_with_wrapping_off_stops_and_says_so"
+    },
+    {
+      "name": "at an end the walk names the wrong side of the caret",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "(forward ? \"after\" : \"before\")",
+      "new": "(forward ? \"before\" : \"after\")",
+      "killer": "Each_end_comes_round_and_says_so_and_with_wrapping_off_stops_and_says_so"
+    },
+    {
+      "name": "with nothing that differs a press says nothing",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say($\"No section of \\\"{label}\\\" differs from the baseline.\");",
+      "new": "",
+      "killer": "A_press_on_a_candidate_with_nothing_that_differs_says_so_and_moves_nothing"
+    },
+    {
+      "name": "the walk does not wrap by default",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "defaultValue: true",
+      "new": "defaultValue: false",
+      "killer": "Each_end_comes_round_and_says_so_and_with_wrapping_off_stops_and_says_so",
+      "says": "does not wrap by default"
+    },
+    {
+      "name": "the next section button loses its id",
+      "file": "src/AgentBaseline/ReviewWindow.axaml",
+      "old": "AutomationProperties.AutomationId=\"NextSection\"",
+      "new": "",
+      "killer": "The_section_buttons_carry_their_ids_name_their_chords_and_wait_for_a_review"
+    },
+    {
+      "name": "the previous section button loses its id",
+      "file": "src/AgentBaseline/ReviewWindow.axaml",
+      "old": "AutomationProperties.AutomationId=\"PreviousSection\"",
+      "new": "",
+      "killer": "The_section_buttons_carry_their_ids_name_their_chords_and_wait_for_a_review"
+    },
+    {
+      "name": "the next section button's tooltip names another chord",
+      "file": "src/AgentBaseline/ReviewWindow.axaml",
+      "old": "(Ctrl+N).\" />",
+      "new": "(Ctrl+M).\" />",
+      "killer": "The_section_buttons_carry_their_ids_name_their_chords_and_wait_for_a_review"
+    },
+    {
+      "name": "the line for a candidate with nothing that differs is concatenated rather than interpolated",
+      "file": "src/AgentBaseline/ReviewWindow.axaml.cs",
+      "old": "Say($\"No section of \\\"{label}\\\" differs from the baseline.\");",
+      "new": "Say(\"No section of \\\"\" + label + \"\\\" differs from the baseline.\");",
+      "expect": "green",
+      "because": "a control: interpolating strings with no format is concatenating them, so the line says the same words — an edit that changes nothing must leave every test green, or the run is judging something other than the code it edited"
+    }
+  ]
+}

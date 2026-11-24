@@ -7,7 +7,9 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using AvaloniaEdit;
 using AvaloniaEdit.Editing;
+using AvaloniaEdit.Rendering;
 using Bennewitz.Ninja.DiffView;
 using Bennewitz.Ninja.DiffView.Core;
 
@@ -24,6 +26,15 @@ namespace Bennewitz.Ninja.AgentBaseline;
 /// Neither the view's key map nor AvaloniaEdit binds F8. The bindings are the window's, and a window is
 /// an ancestor of both panes, so they fire while either pane has the keyboard, as the view's own F7 does.
 /// At either end the command says so in the window and moves nothing, as F7 stops at the last change.
+/// </para>
+/// <para>
+/// ⭐ <b>Ctrl+N goes to the next section that differs, and Ctrl+P to the previous one</b> — plan 00038, Brian's of
+/// 2026-11-19, Beyond Compare's next and previous difference — as do the two section buttons. A press lands on the
+/// section's heading in the pane that has it, the right when both do, with the keyboard there and the heading's row
+/// at the top of the view, and the mark and the line follow the caret as they follow a click. It counts from the
+/// caret of the pane that has the keyboard, or last had it while a button has it, and from the top until a caret
+/// moves on the candidate shown; <see cref="WrapSectionWalk"/> says whether a press past an end comes round.
+/// <see cref="SectionWalk"/> says which sections differ and in what order.
 /// </para>
 /// <para>
 /// A verb acts on the section at its own pane's caret: take, leave and defer on the candidate's section at
@@ -62,6 +73,16 @@ internal sealed partial class ReviewWindow : Window
     /// <summary>The previous command's gesture.</summary>
     internal static readonly KeyGesture PreviousGesture = new(Key.F8, KeyModifiers.Shift);
 
+    /// <summary>The next section command's gesture: Beyond Compare's next difference.</summary>
+    internal static readonly KeyGesture NextSectionGesture = new(Key.N, KeyModifiers.Control);
+
+    /// <summary>The previous section command's gesture: Beyond Compare's previous difference.</summary>
+    internal static readonly KeyGesture PreviousSectionGesture = new(Key.P, KeyModifiers.Control);
+
+    /// <summary>Identifies the <see cref="WrapSectionWalk"/> property.</summary>
+    internal static readonly StyledProperty<bool> WrapSectionWalkProperty =
+        AvaloniaProperty.Register<ReviewWindow, bool>(nameof(WrapSectionWalk), defaultValue: true);
+
     private readonly ReviewCommand[] commands;
     private ReviewSession? session;
     private MarkdownSection? sectionSpoken;
@@ -78,6 +99,24 @@ internal sealed partial class ReviewWindow : Window
     /// </summary>
     private (IReadOnlyList<StaleSection> Stale, string Accumulator)? warned;
 
+    /// <summary>The left pane, once the view's template has made it: the section walk moves its caret.</summary>
+    private DiffPanePresenter? leftPane;
+
+    /// <summary>The right pane, once the view's template has made it.</summary>
+    private DiffPanePresenter? rightPane;
+
+    /// <summary>
+    /// The pane that has the keyboard, or last had it while something else has it now: the one whose caret a press of
+    /// the section walk counts from (plan 00038 decision 4), F6 included.
+    /// </summary>
+    private DiffSide? keyboardPane;
+
+    /// <summary>
+    /// Whether a caret has moved since the candidate on the right was shown: until one has, a press of the section walk
+    /// counts from the top.
+    /// </summary>
+    private bool caretPlaced;
+
     /// <summary>Builds the window with no review in it; <see cref="Review"/> starts one.</summary>
     public ReviewWindow()
     {
@@ -85,15 +124,19 @@ internal sealed partial class ReviewWindow : Window
 
         ReviewCommand next = new(() => Move(forward: true), HasReview);
         ReviewCommand previous = new(() => Move(forward: false), HasReview);
+        ReviewCommand nextSection = new(() => WalkSections(forward: true), HasReview);
+        ReviewCommand previousSection = new(() => WalkSections(forward: false), HasReview);
         ReviewCommand take = new(OnTake, HasReview);
         ReviewCommand leave = new(OnLeave, HasReview);
         ReviewCommand defer = new(OnDefer, HasReview);
         ReviewCommand drop = new(OnDrop, HasReview);
         ReviewCommand save = new(OnSave, HasReview);
-        commands = [next, previous, take, leave, defer, drop, save];
+        commands = [next, previous, nextSection, previousSection, take, leave, defer, drop, save];
 
         NextButton.Command = next;
         PreviousButton.Command = previous;
+        NextSectionButton.Command = nextSection;
+        PreviousSectionButton.Command = previousSection;
         TakeButton.Command = take;
         LeaveButton.Command = leave;
         DeferButton.Command = defer;
@@ -102,6 +145,8 @@ internal sealed partial class ReviewWindow : Window
 
         KeyBindings.Add(new KeyBinding { Gesture = NextGesture, Command = next });
         KeyBindings.Add(new KeyBinding { Gesture = PreviousGesture, Command = previous });
+        KeyBindings.Add(new KeyBinding { Gesture = NextSectionGesture, Command = nextSection });
+        KeyBindings.Add(new KeyBinding { Gesture = PreviousSectionGesture, Command = previousSection });
 
         ThemeButton.Click += OnThemeButtonClick;
         ActualThemeVariantChanged += OnActualThemeVariantChanged;
@@ -147,6 +192,18 @@ internal sealed partial class ReviewWindow : Window
     internal ReviewSession? Session => session;
 
     /// <summary>
+    /// Whether a press of the section walk with nothing further that way comes round to the other end — plan 00038
+    /// decision 5, Brian's of 2026-11-19: <see langword="true"/> by default, and a styled property that a setting or a
+    /// style may bind, though nothing binds it yet. Set <see langword="false"/>, a press at an end says so and moves
+    /// nothing, as F8 does at the last candidate.
+    /// </summary>
+    internal bool WrapSectionWalk
+    {
+        get => GetValue(WrapSectionWalkProperty);
+        set => SetValue(WrapSectionWalkProperty, value);
+    }
+
+    /// <summary>
     /// Starts reviewing <paramref name="queue"/>: its seed on the left as the accumulator, its first
     /// candidate on the right, and <paramref name="earlier"/> — the decisions earlier runs made, read back
     /// from the decision file a save wrote — in its durable store. A window holds one review.
@@ -185,11 +242,89 @@ internal sealed partial class ReviewWindow : Window
             leftSectionSaid = null;
             ShowPosition();
             Say(string.Empty);
+
+            // The section walk counts from the top of the candidate now shown until a caret moves on it, and the
+            // reset of the right's caret that showing it made is not such a move.
+            caretPlaced = false;
             return;
         }
 
         Say($"\"{review.Current.Candidate.Label}\" is the {(forward ? "last" : "first")} candidate, so there is no {(forward ? "next" : "previous")} one.");
     }
+
+    /// <summary>
+    /// Goes to the next or the previous section that differs — plan 00038 — or says why there is none to go to.
+    /// </summary>
+    private void WalkSections(bool forward)
+    {
+        ReviewSession review = session!;
+        DiffSide? from = caretPlaced ? keyboardPane : null;
+        int line = from is { } side ? PaneOf(side)?.TextArea.Caret.Line ?? 0 : 0;
+        WalkStep step = forward
+            ? review.SectionAfter(from, line, WrapSectionWalk)
+            : review.SectionBefore(from, line, WrapSectionWalk);
+        string label = review.Current.Candidate.Label;
+        switch (step.Outcome)
+        {
+            case WalkOutcome.Found or WalkOutcome.CameRound:
+                Land(step, forward);
+                break;
+            case WalkOutcome.AtEnd:
+                Say($"No section of \"{label}\" {(forward ? "after" : "before")} this point differs from the baseline.");
+                break;
+            case WalkOutcome.NoneDiffers:
+                Say($"No section of \"{label}\" differs from the baseline.");
+                break;
+            default:
+                Say($"Not yet: \"{label}\" is still being compared with the baseline.");
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Puts the keyboard in the pane <paramref name="step"/> goes to and its caret at the start of the section's
+    /// heading, with nothing selected, and scrolls the heading's row to the top of the view — plan 00038 decisions 2,
+    /// 7 and 8. The mark and the line follow the caret, as for a click.
+    /// </summary>
+    private void Land(WalkStep step, bool forward)
+    {
+        if (PaneOf(step.Side) is not { } pane || step.Section is not { } section)
+        {
+            return;
+        }
+
+        // A landing names its section whether or not the line named it last.
+        sectionSpoken = null;
+        leftSectionSaid = null;
+        pane.TextArea.Focus();
+        pane.TextArea.ClearSelection();
+        Caret caret = pane.TextArea.Caret;
+        if (caret.Line != section.FirstLine || caret.Column != 1)
+        {
+            caret.Position = new TextViewPosition(section.FirstLine, 1);
+        }
+        else if (step.Side == DiffSide.Left)
+        {
+            // A caret already at the heading does not move, so the handler a move would run is run here.
+            OnLeftCaretMoved(caret, EventArgs.Empty);
+        }
+        else
+        {
+            OnRightCaretMoved(caret, EventArgs.Empty);
+        }
+
+        caretPlaced = true;
+
+        // The heading's own row, below any padding the other pane's lines put above it.
+        pane.ScrollTo(section.FirstLine, 1, VisualYPosition.TextTop, 0, 0);
+        if (step.Outcome == WalkOutcome.CameRound)
+        {
+            Say($"{OutcomeText.Text} Came round to the {(forward ? "first" : "last")} section that differs.");
+        }
+    }
+
+    /// <summary>The pane on <paramref name="side"/>, once the view's template has made it.</summary>
+    private DiffPanePresenter? PaneOf(DiffSide side) => side == DiffSide.Left ? leftPane : rightPane;
 
     private void OnTake()
     {
@@ -347,19 +482,38 @@ internal sealed partial class ReviewWindow : Window
     /// <summary>
     /// Follows both panes' carets, which the view's template makes: this window applies no theme of
     /// its own, so the template is applied once, and a pane a later one replaced would move no caret.
+    /// The section walk follows the panes' keyboard focus too, and keeps the panes it moves.
     /// </summary>
     private void OnViewTemplateApplied(object? sender, TemplateAppliedEventArgs e)
     {
         if (e.NameScope.Find<DiffPanePresenter>(SideBySideDiffView.RightPanePart) is { } right)
         {
             right.TextArea.Caret.PositionChanged += OnRightCaretMoved;
+            right.TextArea.Caret.PositionChanged += OnRightCaretPlaced;
+            right.TextArea.GotFocus += OnRightPaneFocused;
+            rightPane = right;
         }
 
         if (e.NameScope.Find<DiffPanePresenter>(SideBySideDiffView.LeftPanePart) is { } left)
         {
             left.TextArea.Caret.PositionChanged += OnLeftCaretMoved;
+            left.TextArea.Caret.PositionChanged += OnLeftCaretPlaced;
+            left.TextArea.GotFocus += OnLeftPaneFocused;
+            leftPane = left;
         }
     }
+
+    /// <summary>A caret moved on the candidate shown, so a press of the section walk counts from a caret now.</summary>
+    private void OnLeftCaretPlaced(object? sender, EventArgs e) => caretPlaced = true;
+
+    /// <inheritdoc cref="OnLeftCaretPlaced"/>
+    private void OnRightCaretPlaced(object? sender, EventArgs e) => caretPlaced = true;
+
+    /// <summary>The left pane has the keyboard, so a press of the section walk counts from its caret.</summary>
+    private void OnLeftPaneFocused(object? sender, RoutedEventArgs e) => keyboardPane = DiffSide.Left;
+
+    /// <summary>The right pane has the keyboard, so a press of the section walk counts from its caret.</summary>
+    private void OnRightPaneFocused(object? sender, RoutedEventArgs e) => keyboardPane = DiffSide.Right;
 
     /// <summary>
     /// Marks the candidate's section at the right pane's caret, and says what the durable store knows about
