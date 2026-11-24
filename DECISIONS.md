@@ -5705,3 +5705,56 @@ the difference is the files' own: at line 33 the seed writes ```` ` ```mermaid `
 spans that render as meant; JanusHalo's are runs of backticks that close nothing and render as themselves. The window
 died once under him, a stack overflow in the library while a button was held over a padded line taller than the pane,
 which any removal longer than the pane puts opposite it with or without this plan; it is being fixed apart from it.
+
+## Two buttons walk the sections that differ
+
+Plan 00038, open item 50. AgentBaseline's review window has *Previous section* and *Next section*, and Ctrl+P and
+Ctrl+N bound on the window, which go to the previous or the next section the accumulator and the candidate on the
+right do not hold alike, each in the pane that has it and the right when both do, with the keyboard there, the caret
+at the heading's first column and the heading's row at the top of the view, so the mark plan 00035 puts on the
+caret's section shows. Brian settled the plan's choices on 2026-11-19: the sections that differ, in the order the
+panes show their rows, wrapping round by default behind a styled property nothing binds yet, Beyond Compare's Ctrl+N
+and Ctrl+P, the heading scrolled to the top, and the pane that has the keyboard, F6 included. `SectionWalk` is the
+walk, read from two outlines and the view's public model; `ReviewSession` hands it the accumulator's live outline and
+the shown candidate's; the window keeps where a press counts from and lands it. The library does not change.
+
+**Where a press counts from, against the plan's words.** Decision 4 counts from the caret of the pane that has the
+keyboard, and from the top until the walk lands or *"a click or a key moves a caret"*. The window cannot tell a
+click's caret move from an edit's, and need not: a take's or a drop's edit moves the left's caret and not the
+keyboard, so counting from a caret after it goes on from the pane the operator was working in. So the walk counts
+from the top until any caret moves on the candidate shown, and `Move` forgets the move its own showing made, the
+right's caret put back at its start as AvaloniaEdit swaps the document, which it does synchronously. And a caret in
+the accumulator's version of a section the walk visits on the right counts as being at that section: on one row with
+the candidate's heading, Next would otherwise go across to the same section rather than on past it.
+
+**Decision 8 is made by comparing the caret's line and column, not by waiting for a move.** AvaloniaEdit's
+`Caret.Position` raises its move only for a position unequal to the one it holds, and the equality takes in the
+visual column, which the position's getter fills in for whatever reads it. Whether a landing on the line and column
+a caret already holds raises a move therefore depends on what last read the caret. `ReviewWindow.Land` reads the line
+and column itself, sets the position when they differ and otherwise runs the move's handler, so the mark and the line
+follow a landing exactly once either way. A caret that moves takes a selection with it, measured: a selection set
+and then the caret leaves none. So `ClearSelection` matters only to a landing where the caret is already in place,
+which is the case its test builds.
+
+**What comes to the top is the heading's text.** `TextEditor.ScrollTo` with `VisualYPosition.TextTop` puts the top
+of a line's text at the top of the view, below any padding the other pane's lines put above it: the row's top plus
+half the slack between a row and its text, 1.2 px at the bundled font. The tests hold the property and not the pixel,
+that the top row in view is the heading's with less than half of it scrolled past, and the padded case is a heading
+under more rows of padding than the pane holds.
+
+**What no test runs.** The window's sentence for a press before the candidate's diff has landed: AgentBaseline's
+host has no public seam to hold a build, and a build can complete before the assignment that started it returns, so
+the state is proven where it is decided, `SectionWalk.Step` given no model, and the window's one sentence for it is
+read rather than run. A press is not logged: the window has no log until plan 00037's step 3 gives it one, with the
+window's other acts.
+
+**Plan drift.** Step 2 names decisions 5 to 8 and 10, and builds 2 and 4 as well, the window being where the
+keyboard goes and where a press counts from.
+
+**Proven on 2026-11-24, over the change on `d17a632`.** `Mutations/section-walk.json`, 46 mutations with its green
+control, came out as declared and killed all seventeen of `SectionWalkTests`; its first run found one mutation the
+compiler refused, a field left assigned and never read being `CS0414` under warnings as errors, and it reads the field
+now without heeding it. The eight sets the change owes gave 374 mutations as declared and killed all 138 of their
+declared tests; the suite ran 1087 of 1087 on Windows, `catch-crash` judging it healthy; and a full gate run gave all
+141 as declared with all 97 guards tripped first, the accessibility gate's floor reading the 11 elements the window
+carries now, measured.
