@@ -1984,6 +1984,28 @@ wording.
     twelve of its checks had passed, the six required among them, the Linux and macOS legs included. Plan 00036's
     branch, pushed beside it as PR #61, was rebased onto it.
 
+50. **Two buttons walk the sections that differ — Brian, 2026-11-19.** Looking at JanusHalo's `CLAUDE.md` against the
+    JANUSSER6 seed in the review window, finding each section's mark meant scrolling and clicking, and the drag that
+    did it was item 48's crash. Plan 00038, approved the same day once his `/choices` had settled it: *Previous
+    section* and *Next section*, and Ctrl+P and Ctrl+N, Beyond Compare's keys, over the sections the baseline and the
+    candidate do not hold alike, in the order the panes show their rows, each in the pane that has it and the right
+    when both do, the keyboard there and the heading's row at the top of the view; past an end the walk comes round,
+    behind `WrapSectionWalk`, a styled property nothing binds yet.
+
+    ✅ **Built 2026-11-24 on `feat/two-buttons-walk-the-sections-that-differ`**, its plan committed on a branch of its
+    own cut from `main` at `b863932` and rebased onto `d17a632` once items 48 and 41 had landed. `SectionWalk` and
+    `ReviewSession.SectionAfter` and `SectionBefore` are the walk, and `ReviewWindow` its buttons, chords, keyboard,
+    caret and scroll. `SectionWalkTests`' seventeen are held by `Mutations/section-walk.json`, 46 mutations as declared
+    with its green control and every declared test killed, its first run having found one mutation the compiler
+    refused rather than a test killed, a field left assigned and unread; the eight sets the change owes came out as
+    declared, 374 mutations with all 138 of their declared tests killed, in 33 minutes over four worktrees; the suite
+    ran 1087 of 1087 on Windows, `Passed!`, which `catch-crash` judged healthy; and a full gate run in four worktrees, owed by the window's markup and the
+    accessibility gate's remark, gave all 141 as declared, 130 killed by the test each names, 9 by the build and 2
+    green by design, with all 97 guards tripped first. `DECISIONS.md`, *Two buttons
+    walk the sections that differ*, records where the build read the plan's words more narrowly than they say.
+    ⚠ **Not pushed**: the push and the pull request wait for Brian's word, and his look at the walk over the first
+    pair, which no test gives, is still to come.
+
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
@@ -1991,7 +2013,8 @@ and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
 2026-11-16 and item 46 as PR #59 the same day, item 48 landed as PR #60 on 2026-11-23, item 41 is done on its
 branch and lands with its pull request, PR #61, item 42 follows it, items 43 and 47 wait for DiffView's next
-`repo-conventions` sync, item 44 for AppKit's package, and item 45 for the ClaudeForge session's verdict. **Every
+`repo-conventions` sync, item 44 for AppKit's package, item 45 for the ClaudeForge session's verdict, and item 50,
+done on its branch, for Brian's word to push it. **Every
 other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item

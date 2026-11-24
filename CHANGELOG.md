@@ -8,6 +8,12 @@ All notable changes to DiffView are recorded here. The format follows
 
 ### Added
 
+- **The review window walks the sections that differ** — plan 00038. *Previous section* and *Next section*, and
+  Ctrl+P and Ctrl+N, Beyond Compare's keys for the same, go to the previous or the next section the baseline and the
+  candidate do not hold alike, in the order the panes show their rows, each in the pane that has it and the right
+  when both do, with the keyboard there, the caret at its heading and the heading's row at the top of the view, so its
+  mark shows. Past either end the walk comes round and says so, unless `WrapSectionWalk`, a styled property nothing
+  binds yet, is set false.
 - **`LeftEmphasis` and `RightEmphasis`, a range of lines a host marks** — plan 00035. Both two-pane views take a
   `LineRange?` per side, `null` by default, and each pane shades every marked line's own row in the new
   `DiffView.EmphasisBrush`, over the row tints and under the selection and the find highlights, never over the
