@@ -166,6 +166,18 @@ internal sealed class ReviewSession
     internal MarkdownSection? AccumulatorSectionAt(int line) => SectionAt(MarkdownOutline.Read(view.LeftDocument.Text), line);
 
     /// <summary>
+    /// The next section that differs after the caret at 1-based <paramref name="line"/> of <paramref name="side"/>'s
+    /// pane, or after the top when <paramref name="side"/> is <see langword="null"/> — plan 00038, read as
+    /// <see cref="SectionWalk"/> says. With nothing further, <paramref name="wrap"/> says whether the walk comes round.
+    /// </summary>
+    internal WalkStep SectionAfter(DiffSide? side, int line, bool wrap) => Walk(side, line, wrap, forward: true);
+
+    /// <summary>
+    /// The previous section that differs before that caret, or before the top: <see cref="SectionAfter"/>'s mirror.
+    /// </summary>
+    internal WalkStep SectionBefore(DiffSide? side, int line, bool wrap) => Walk(side, line, wrap, forward: false);
+
+    /// <summary>
     /// Shows the next candidate. At the last there is none, so nothing moves and the answer is
     /// <see langword="false"/>.
     /// </summary>
@@ -349,10 +361,18 @@ internal sealed class ReviewSession
     }
 
     /// <summary>
+    /// A press of the section walk over the accumulator as it now stands, the candidate as the right shows it and the
+    /// rows of the view's latest model.
+    /// </summary>
+    private WalkStep Walk(DiffSide? side, int line, bool wrap, bool forward) =>
+        SectionWalk.Step(MarkdownOutline.Read(view.LeftDocument.Text), Shown.Outline, view.Document, side, line, forward, wrap);
+
+    /// <summary>
     /// The section of <paramref name="outline"/> whose lines hold <paramref name="line"/>. A section runs to
     /// the line before the next heading of any level, so the sections never overlap and at most one does.
+    /// <see cref="SectionWalk"/> reads a caret's section through this too.
     /// </summary>
-    private static MarkdownSection? SectionAt(MarkdownOutline outline, int line) =>
+    internal static MarkdownSection? SectionAt(MarkdownOutline outline, int line) =>
         outline.Sections.FirstOrDefault(s => s.FirstLine <= line && line <= s.LastLine);
 
     private static string TitleOf(string name, Candidate candidate) =>

@@ -347,8 +347,8 @@ public sealed class ReviewWindowTests
         using ReviewHost host = new(window);
         Button[] buttons =
         [
-            window.PreviousButton, window.NextButton, window.TakeButton, window.LeaveButton,
-            window.DeferButton, window.DropButton, window.SaveButton,
+            window.PreviousButton, window.NextButton, window.PreviousSectionButton, window.NextSectionButton,
+            window.TakeButton, window.LeaveButton, window.DeferButton, window.DropButton, window.SaveButton,
         ];
         Assert.All(buttons, b => Assert.False(b.IsEffectivelyEnabled, $"{b.Name} is enabled with no review to act on."));
 

@@ -7,7 +7,9 @@
         Width="1280" Height="800">
   <DockPanel>
     <!-- The review's commands. Each verb acts on the section at its own pane's caret: take, leave and
-         defer read the candidate on the right, drop reads the accumulator on the left. -->
+         defer read the candidate on the right, drop reads the accumulator on the left. The section buttons
+         between the candidates' and the verbs walk the sections that differ, each in the pane that has it
+         (plan 00038). -->
     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="8,4">
       <Button x:Name="PreviousButton" Content="Previous candidate"
               AutomationProperties.AutomationId="PreviousCandidate"
@@ -17,6 +19,14 @@
               AutomationProperties.AutomationId="NextCandidate"
               AutomationProperties.Name="Show the next candidate on the right"
               ToolTip.Tip="Show the next candidate on the right (F8)." />
+      <Button x:Name="PreviousSectionButton" Content="Previous section"
+              AutomationProperties.AutomationId="PreviousSection"
+              AutomationProperties.Name="Go to the previous section that differs from the baseline"
+              ToolTip.Tip="Go to the previous section that differs from the baseline, in the pane that has it, and put the keyboard there (Ctrl+P)." />
+      <Button x:Name="NextSectionButton" Content="Next section"
+              AutomationProperties.AutomationId="NextSection"
+              AutomationProperties.Name="Go to the next section that differs from the baseline"
+              ToolTip.Tip="Go to the next section that differs from the baseline, in the pane that has it, and put the keyboard there (Ctrl+N)." />
       <Button x:Name="TakeButton" Content="Take"
               AutomationProperties.AutomationId="Take"
               AutomationProperties.Name="Take the section at the right pane's caret into the baseline"

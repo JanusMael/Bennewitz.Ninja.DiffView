@@ -155,8 +155,9 @@ public sealed class AccessibilityCoverageTests
     private const int DemoInspectedFloor = 41;
 
     /// <summary>
-    /// A floor on the baseline tool's share of the findings scan, half the 8 its review window carries —
-    /// seven buttons and the view.
+    /// A floor on the baseline tool's share of the findings scan, set at half the 8 its review window carried
+    /// when the floor came — seven buttons and the view — and below the 11 it carries since plan 00038's two
+    /// section buttons: ten buttons and the view.
     /// </summary>
     /// <remarks>
     /// ⛔ <b>Asserted against the tool's own subject, as the demo's floor is against the demo's</b>, and for
