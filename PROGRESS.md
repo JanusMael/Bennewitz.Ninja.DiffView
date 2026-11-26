@@ -2,11 +2,11 @@
 
 ## Resume
 
-**`main` carries everything through PR #60** — PR #60 merged on 2026-11-23 once all twelve of its checks had passed.
+**`main` carries everything through PR #61** — PR #61 merged on 2026-11-24 once all twelve of its checks had passed.
 *A resume names the pull request it was written for and not a commit: the merge that lands this paragraph is the
-merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1070** here, `Passed!`,
-by a local run over plan 00036's branch rebased onto PR #60: plan 00035's 1023, the branch's 35 new tests and the
-fix's 12, none of them a frame.
+merge that moves the SHA, so a SHA here is wrong the moment it is true.* **Windows measured 1087** here, `Passed!`,
+by a local run over plan 00038's branch, the tree PR #62 lands: plan 00035's 1023, plan 00036's 35, item 48's 12
+and the walk's 17, none of them a frame.
 ⛔ **The Linux total is deliberately not written down**: it is read off CI's own summary, never derived by
 adding the 66 frame baselines back, which is precisely how **745** once reached this document against a measured
 **769**. Each leg lists by name the baselines it left out. The trimmed publish carries no `IL` warning.
@@ -1854,8 +1854,8 @@ wording.
     the document's title, in no heading path, so the two were one section and the near match re-broke the paragraph
     anyway.
 
-    ✅ **Done 2026-11-17 by plan 00036, and it lands with `feat/a-paragraphs-line-breaks-are-not-a-difference`'s pull
-    request, PR #61.** Step 5 is the record: `AGENTS.md` §10's identity row says a section's identity is taken over its fold,
+    ✅ **Done 2026-11-17 by plan 00036, and landed as PR #61 on 2026-11-24** once all twelve of its checks had
+    passed. Step 5 is the record: `AGENTS.md` §10's identity row says a section's identity is taken over its fold,
     and a row of its own holds the shown candidate; `DECISIONS.md`, *A paragraph's line breaks are not a difference*,
     records what the steps settled that the plan left open. Over the 2026-11-10 pair, all 74 of JanusHalo's blocks that
     are one of the seed's word for word show as lines each equal to a line of the seed, where 34 did as ingested, and
@@ -2003,18 +2003,19 @@ wording.
     accessibility gate's remark, gave all 141 as declared, 130 killed by the test each names, 9 by the build and 2
     green by design, with all 97 guards tripped first. `DECISIONS.md`, *Two buttons
     walk the sections that differ*, records where the build read the plan's words more narrowly than they say.
-    ⚠ **Not pushed**: the push and the pull request wait for Brian's word, and his look at the walk over the first
-    pair, which no test gives, is still to come.
+    **Pushed on Brian's word of 2026-11-26, and it lands with its pull request, PR #62**, ahead of plan 00037, which
+    rebases onto it and writes the walk's lines; his look at the walk over the first pair, which no test gives, comes
+    with plan 00037's pass through the tool.
 
 Items 3 and 10 are Brian's own, item 3 kept on hold by his choices of 2026-11-10, which also closed item 9 and settled
 item 26 on layout F; item 16 is shelved, item 27 landed as PR #47 on 2026-11-09, item 23 is Inspections' to start now
 that item 27's results have reached it, items 30, 32 and 33 landed as PRs #48, #49 and #50 on 2026-11-10 and items 31
 and 34 as PRs #51 and #52 the same day, items 35 and 37 landed as PR #53 on 2026-11-11 and item 38 as PR #54 the
 same day, items 39, 26 and 40 landed as PRs #55, #56 and #57 on 2026-11-12, item 36 landed as PR #58 on
-2026-11-16 and item 46 as PR #59 the same day, item 48 landed as PR #60 on 2026-11-23, item 41 is done on its
-branch and lands with its pull request, PR #61, item 42 follows it, items 43 and 47 wait for DiffView's next
-`repo-conventions` sync, item 44 for AppKit's package, item 45 for the ClaudeForge session's verdict, and item 50,
-done on its branch, for Brian's word to push it. **Every
+2026-11-16 and item 46 as PR #59 the same day, item 48 landed as PR #60 on 2026-11-23 and item 41 as PR #61 on
+2026-11-24, item 42 follows it, items 43 and 47 wait for DiffView's next
+`repo-conventions` sync, item 44 for AppKit's package, item 45 for the ClaudeForge session's verdict, and item 50
+lands with its pull request, PR #62. **Every
 other open item was
 scheduled by Brian on 2026-10-30**: item 24 conforms on its branch, `apply` and the new required check left to Brian, and item
 14 follows it; items 19, 20 and 21 are done together on `chore/the-small-items`, stacked on it, with item
